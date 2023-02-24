@@ -1,6 +1,7 @@
 use std::{
 	cell::RefCell,
-	rc::{Rc, Weak}, fmt::Debug,
+	fmt::Debug,
+	rc::{Rc, Weak},
 };
 
 use crate::{
@@ -29,6 +30,12 @@ impl From<Weak<RefCell<Robot>>> for LinkParent {
 	}
 }
 
+#[derive(Debug)]
+pub struct Visual;
+
+#[derive(Debug)]
+pub struct Collision;
+
 pub trait LinkTrait: Debug {
 	/// Returns the parent of the `Link` wrapped in a optional.
 	fn get_parent(&self) -> Option<LinkParent>;
@@ -39,6 +46,12 @@ pub trait LinkTrait: Debug {
 
 	fn get_joints(&self) -> Vec<Rc<RefCell<Joint>>>; // TODO: Not final?
 	fn attach_child(&mut self, link: Link, joint_type: JointType);
+
+	// fn get_visual(&self) -> Vec<()>;
+	// fn get_colliders(&self) -> Vec<()>;
+	
+	fn add_visual(&mut self, visual: Visual) -> Self;
+	fn add_collider(&mut self, Collider: Collision) -> Self;
 }
 
 #[derive(Debug)]
@@ -83,5 +96,13 @@ impl LinkTrait for Link {
 		todo!();
 		// TODO: NEEDS TO DO SOMETHING WITH JOINT TYPE
 		// self.child_joints.push();
+	}
+
+	fn add_visual(&mut self, visual: Visual) -> Self {
+		todo!()
+	}
+
+	fn add_collider(&mut self, Collider: Collision) -> Self {
+		todo!()
 	}
 }

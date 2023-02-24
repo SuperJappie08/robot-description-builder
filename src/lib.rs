@@ -1,7 +1,7 @@
 mod joint;
 mod link;
 use joint::Joint;
-use link::LinkTrait;
+use link::{LinkTrait, Link};
 
 use std::{
 	cell::RefCell,
@@ -13,17 +13,18 @@ use std::{
 #[derive(Debug)]
 pub struct Robot {
 	name: String,
-	pub root_link: Rc<RefCell<Box<dyn LinkTrait>>>,
+	pub root_link: Rc<RefCell<Link>>,
 	//TODO: In this implementation the Keys, are not linked to the objects and could be changed.
 	material_index: HashMap<String, Rc<RefCell<Material>>>,
-	links: HashMap<String, Weak<RefCell<Box<dyn LinkTrait>>>>,
+	links: HashMap<String, Weak<RefCell<Link>>>,
 	joints: HashMap<String, Weak<RefCell<Joint>>>,
-	transmissions: HashMap<String, Rc<RefCell<Transmission>>>, // is_rigid: bool // ? For gazebo
+	transmissions: HashMap<String, Rc<RefCell<Transmission>>>,
+	// is_rigid: bool // ? For gazebo
 }
 
 impl Robot {
 	//TODO: There is a posiblility for this to fail, do something with that
-	pub fn new(name: String, root_link: Box<dyn LinkTrait>) -> Rc<RefCell<Self>> {
+	pub fn new(name: String, root_link: Link) -> Rc<RefCell<Self>> {
 		let mut root_link = Rc::new(RefCell::new(root_link));
 		let mut material_index = HashMap::new();
 		let mut links = HashMap::new();
@@ -102,7 +103,7 @@ mod tests {
 
 	#[test]
 	fn new() {
-		let link: Box<dyn LinkTrait> = Box::new(Link::new("test_link_1".to_owned(), None));
+		let link = Link::new("test_link_1".to_owned(), None);
 
 		let robot = Robot::new("robot".to_owned(), link);
 		println!("{:?}", robot);
