@@ -5,7 +5,9 @@ use std::{
 };
 
 use crate::{
-	cluster_objects::{kinematic_tree::KinematicTree, kinematic_tree_data::KinematicTreeData},
+	cluster_objects::{
+		kinematic_tree::KinematicTree, kinematic_tree_data::KinematicTreeData, KinematicInterface,
+	},
 	joint::{Joint, JointType},
 	Robot,
 };
@@ -65,7 +67,12 @@ pub trait LinkTrait: Debug {
 	fn get_name(&self) -> String; // TODO: This might be temp because I want dynamic names.
 
 	fn get_joints(&self) -> Vec<Rc<RefCell<Joint>>>; // TODO: Not final?
-	fn attach_child(&mut self, link: Link, joint_type: JointType);
+	fn try_attach_child(
+		&mut self,
+		tree: Box<dyn KinematicInterface>,
+		joint_name: String,
+		_joint_type: JointType,
+	) -> Result<(), String>;
 
 	// fn get_visual(&self) -> Vec<()>;
 	// fn get_colliders(&self) -> Vec<()>;
@@ -118,10 +125,34 @@ impl LinkTrait for Link {
 			.collect()
 	}
 
-	fn attach_child(&mut self, link: Link, joint_type: JointType) {
-		todo!();
+	///Maybe rename to try attach child
+	fn try_attach_child(
+		&mut self,
+		tree: Box<dyn KinematicInterface>,
+		joint_name: String,
+		_joint_type: JointType,
+	) -> Result<(), String> {
 		// TODO: NEEDS TO DO SOMETHING WITH JOINT TYPE
-		// self.child_joints.push();
+		let joint = Rc::new(RefCell::new(Joint {
+			name: joint_name,
+			parent_link: Weak::clone(
+				self.tree
+					.upgrade()
+					.unwrap()
+					.borrow()
+					.links
+					.get(&self.get_name())
+					.unwrap(),
+			),
+			child_link: tree.get_root_link(),
+		}));
+
+		self.child_joints.push(joint);
+
+		let mut parent_tree = self.tree.upgrade().unwrap().borrow_mut();
+		parent_tree.try_merge(tree.get_kinematic_data())?;
+		parent_tree.try_add_joint(joint)?;
+		Ok(())
 	}
 
 	fn add_visual(&mut self, visual: Visual) -> Self {

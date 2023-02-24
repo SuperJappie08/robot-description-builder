@@ -61,3 +61,33 @@ impl From<BorrowError> for TryAddDataError {
 		TryAddDataError::Borrow(value)
 	}
 }
+
+/// An error returned by [`KinematicTreeData::try_merge`].
+///
+/// TODO: Finish
+#[derive(Debug)]
+pub enum TryMergeError {
+	TryAddData(TryAddDataError),
+}
+
+impl fmt::Display for TryMergeError {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		match self {
+			TryMergeError::TryAddData(err) => err.fmt(f),
+		}
+	}
+}
+
+impl Error for TryMergeError {
+	fn source(&self) -> Option<&(dyn Error + 'static)> {
+		match self {
+			TryMergeError::TryAddData(err) => Some(err),
+		}
+	}
+}
+
+impl From<TryAddDataError> for TryMergeError {
+	fn from(value: TryAddDataError) -> Self {
+		Self::TryAddData(value)
+	}
+}

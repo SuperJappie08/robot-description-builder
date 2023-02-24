@@ -8,7 +8,7 @@ use crate::link::Link;
 #[derive(Debug)]
 pub struct Joint {
 	pub name: String,
-	parent_link: Weak<RefCell<Link>>,
+	pub(crate) parent_link: Weak<RefCell<Link>>,
 	pub child_link: Rc<RefCell<Link>>, //temp pub TODO: THIS PROBABLY ISN'T THE NICEST WAY TO DO THIS.
 }
 

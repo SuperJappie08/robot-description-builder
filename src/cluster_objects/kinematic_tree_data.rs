@@ -10,7 +10,7 @@ use crate::{
 	Material, Transmission,
 };
 
-use super::kinematic_data_errors::{TryAddDataError, TryAddMaterialError};
+use super::kinematic_data_errors::{TryAddDataError, TryAddMaterialError, TryMergeError};
 
 pub(crate) trait KinematicTreeTrait {}
 
@@ -19,11 +19,11 @@ pub struct KinematicTreeData {
 	pub root_link: Rc<RefCell<Link>>,
 	//TODO: In this implementation the Keys, are not linked to the objects and could be changed.
 	material_index: HashMap<String, Rc<RefCell<Material>>>,
-	links: HashMap<String, Weak<RefCell<Link>>>,
+	pub links: HashMap<String, Weak<RefCell<Link>>>,
 	joints: HashMap<String, Weak<RefCell<Joint>>>,
 	transmissions: HashMap<String, Rc<RefCell<Transmission>>>,
 
-	newest_link: Weak<RefCell<Link>>,
+	pub(crate) newest_link: Weak<RefCell<Link>>,
 }
 
 impl KinematicTreeData {
@@ -113,6 +113,29 @@ impl KinematicTreeData {
 			self.newest_link = Rc::downgrade(&link);
 			Ok(())
 		}
+	}
+
+	pub fn try_add_joint(&mut self, joint: Rc<RefCell<Joint>>) -> Result<(), TryAddDataError> {
+		let name = joint.try_borrow()?.name.clone();
+		if let Some(preexisting_joint) = self
+			.joints
+			.get(&name)
+			.and_then(|weak_joint| weak_joint.upgrade())
+		{
+			if *preexisting_joint.try_borrow()? != *joint.try_borrow()? {
+				Err(TryAddDataError::Conflict(name))
+			} else {
+				Ok(())
+			}
+		} else {
+			self.joints.insert(name.to_string(), Rc::downgrade(&joint));
+			Ok(())
+		}
+	}
+
+	pub(crate) fn try_merge(&mut self, other_tree: KinematicTreeData) -> Result<(), TryMergeError> {
+		todo!()
+		// self.newest_link = other_tree.newest_link;
 	}
 }
 
