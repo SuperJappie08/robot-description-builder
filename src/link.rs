@@ -5,6 +5,7 @@ use std::{
 };
 
 use crate::{
+	cluster_objects::{kinematic_tree::KinematicTree, kinematic_tree_data::KinematicTreeData},
 	joint::{Joint, JointType},
 	Robot,
 };
@@ -13,6 +14,7 @@ use crate::{
 pub enum LinkParent {
 	Robot(Weak<RefCell<Robot>>),
 	Joint(Weak<RefCell<Joint>>),
+	KinematicTree(Weak<RefCell<KinematicTreeData>>),
 }
 
 impl Clone for LinkParent {
@@ -20,6 +22,7 @@ impl Clone for LinkParent {
 		match self {
 			Self::Robot(robot) => Self::Robot(Weak::clone(robot)),
 			Self::Joint(joint) => Self::Joint(Weak::clone(joint)),
+			Self::KinematicTree(tree) => todo!(),
 		}
 	}
 }
@@ -27,6 +30,23 @@ impl Clone for LinkParent {
 impl From<Weak<RefCell<Robot>>> for LinkParent {
 	fn from(value: Weak<RefCell<Robot>>) -> Self {
 		Self::Robot(value)
+	}
+}
+
+impl From<Weak<RefCell<KinematicTreeData>>> for LinkParent {
+	fn from(value: Weak<RefCell<KinematicTreeData>>) -> Self {
+		Self::KinematicTree(value)
+	}
+}
+
+impl PartialEq for LinkParent {
+	fn eq(&self, other: &Self) -> bool {
+		match (self, other) {
+			(Self::Robot(l0), Self::Robot(r0)) => l0.upgrade() == r0.upgrade(),
+			(Self::Joint(l0), Self::Joint(r0)) => l0.upgrade() == r0.upgrade(),
+			(Self::KinematicTree(l0), Self::KinematicTree(r0)) => l0.upgrade() == r0.upgrade(),
+			_ => false,
+		}
 	}
 }
 
@@ -49,7 +69,7 @@ pub trait LinkTrait: Debug {
 
 	// fn get_visual(&self) -> Vec<()>;
 	// fn get_colliders(&self) -> Vec<()>;
-	
+
 	fn add_visual(&mut self, visual: Visual) -> Self;
 	fn add_collider(&mut self, Collider: Collision) -> Self;
 }
@@ -57,27 +77,33 @@ pub trait LinkTrait: Debug {
 #[derive(Debug)]
 pub struct Link {
 	pub name: String,
-	parent: Option<LinkParent>,
+	pub(crate) tree: Weak<RefCell<KinematicTreeData>>,
+	direct_parent: Option<LinkParent>,
 	child_joints: Vec<Rc<RefCell<Joint>>>,
 }
 
 impl Link {
-	pub fn new(name: String, parent: Option<LinkParent>) -> Self {
-		Self {
+	pub fn new(name: String) -> KinematicTree {
+		let link = Link {
 			name,
-			parent,
+			tree: Weak::new(),
+			direct_parent: None,
 			child_joints: Vec::new(),
-		}
+		};
+
+		let tree = KinematicTreeData::new_link(link);
+
+		KinematicTree::new(tree)
 	}
 }
 
 impl LinkTrait for Link {
 	fn get_parent(&self) -> Option<LinkParent> {
-		self.parent.clone()
+		self.direct_parent.clone()
 	}
 
 	fn set_parent(&mut self, parent: LinkParent) {
-		self.parent = Some(parent);
+		self.direct_parent = Some(parent);
 		// TODO: Add yourself to registry.
 	}
 
@@ -104,5 +130,14 @@ impl LinkTrait for Link {
 
 	fn add_collider(&mut self, Collider: Collision) -> Self {
 		todo!()
+	}
+}
+
+impl PartialEq for Link {
+	fn eq(&self, other: &Self) -> bool {
+		self.name == other.name
+			&& self.direct_parent == other.direct_parent
+			&& self.child_joints == other.child_joints
+			&& self.tree.upgrade() == other.tree.upgrade()
 	}
 }

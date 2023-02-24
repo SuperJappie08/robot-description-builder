@@ -12,6 +12,14 @@ pub struct Joint {
 	pub child_link: Rc<RefCell<Link>>, //temp pub TODO: THIS PROBABLY ISN'T THE NICEST WAY TO DO THIS.
 }
 
+impl PartialEq for Joint {
+	fn eq(&self, other: &Self) -> bool {
+		self.name == other.name
+			&& self.parent_link.upgrade() == other.parent_link.upgrade()
+			&& self.child_link == other.child_link
+	}
+}
+
 /// TODO: Might add data of specif joint type to Struct Spaces.
 #[derive(Debug)]
 pub enum JointType {

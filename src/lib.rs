@@ -1,7 +1,8 @@
+mod cluster_objects;
 mod joint;
 mod link;
 use joint::Joint;
-use link::{LinkTrait, Link};
+use link::{Link, LinkTrait};
 
 use std::{
 	cell::RefCell,
@@ -84,12 +85,23 @@ impl Robot {
 	}
 }
 
-//tmp
-#[derive(Debug)]
-struct Material;
+impl PartialEq for Robot {
+	fn eq(&self, other: &Self) -> bool {
+		self.name == other.name
+			&& self.root_link == other.root_link
+			&& self.material_index == other.material_index
+			&& self.transmissions == other.transmissions
+	}
+}
 
 //tmp
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
+pub struct Material {
+	pub name: String,
+}
+
+//tmp
+#[derive(Debug, PartialEq, Eq)]
 struct Transmission;
 
 pub fn add(left: usize, right: usize) -> usize {
@@ -98,16 +110,17 @@ pub fn add(left: usize, right: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-	use super::*;
 	use super::link::Link;
+	use super::*;
 
 	#[test]
 	fn new() {
-		let link = Link::new("test_link_1".to_owned(), None);
+		let link = Link::new("test_link_1".to_owned());
 
-		let robot = Robot::new("robot".to_owned(), link);
-		println!("{:?}", robot);
-		todo!()
+		todo!("This test is very broken. 😢");
+		// let robot = Robot::new("robot".to_owned(), link);
+		// println!("{:?}", robot);
+		// todo!()
 	}
 
 	#[test]
