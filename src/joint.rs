@@ -3,13 +3,26 @@ use std::{
 	rc::{Rc, Weak},
 };
 
-use crate::link::Link;
+use crate::{cluster_objects::kinematic_tree_data::KinematicTreeData, link::Link};
 
 #[derive(Debug)]
 pub struct Joint {
 	pub name: String,
+	pub(crate) tree: Weak<RefCell<KinematicTreeData>>,
 	pub(crate) parent_link: Weak<RefCell<Link>>,
 	pub child_link: Rc<RefCell<Link>>, //temp pub TODO: THIS PROBABLY ISN'T THE NICEST WAY TO DO THIS.
+}
+
+impl Joint {
+	pub(crate) fn add_to_tree(&mut self, new_parent_tree: &Rc<RefCell<KinematicTreeData>>) {
+		{
+			let mut new_ptree = new_parent_tree.borrow_mut();
+			new_ptree.try_add_link(Rc::clone(&self.child_link)).unwrap();
+			// TODO: Add materials, and other stuff
+		}
+		self.child_link.borrow_mut().add_to_tree(new_parent_tree);
+		self.tree = Rc::downgrade(new_parent_tree);
+	}
 }
 
 impl PartialEq for Joint {

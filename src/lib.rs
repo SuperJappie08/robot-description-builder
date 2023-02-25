@@ -2,7 +2,8 @@ mod cluster_objects;
 mod joint;
 mod link;
 use joint::Joint;
-use link::{Link, LinkTrait};
+use link::Link;
+// use link::LinkTrait;
 
 use std::{
 	cell::RefCell,

@@ -1,10 +1,14 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{
+	cell::RefCell,
+	collections::HashMap,
+	rc::{Rc, Weak},
+};
 
-use crate::link::Link;
+use crate::{joint::Joint, link::Link};
 
 use self::kinematic_tree_data::KinematicTreeData;
 
-mod kinematic_data_errors;
+pub mod kinematic_data_errors;
 pub mod kinematic_tree;
 pub(crate) mod kinematic_tree_data;
 
@@ -12,5 +16,15 @@ pub trait KinematicInterface {
 	// NOTE: THIS IS NOT FINAL;
 	// fn merge(&mut self, other: dyn KinematicInterface);
 	fn get_root_link(&self) -> Rc<RefCell<Link>>;
-	fn get_kinematic_data(&self) -> KinematicTreeData;
+	/// TODO: Maybe make this return a Rc instead of a weak
+	fn get_newest_link(&self) -> Weak<RefCell<Link>>;
+
+	//#[deprecated]
+	/// Maybe deprecate?
+	fn get_kinematic_data(&self) -> Rc<RefCell<KinematicTreeData>>;
+
+	fn get_links(&self) -> Rc<RefCell<HashMap<String, Weak<RefCell<Link>>>>>;
+	fn get_joints(&self) -> Rc<RefCell<HashMap<String, Weak<RefCell<Joint>>>>>;
+
+	// TODO: Expand
 }
