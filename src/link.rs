@@ -7,18 +7,16 @@ use std::{
 
 use crate::{
 	cluster_objects::{
-		kinematic_data_errors::{TryAddDataError, TryMergeTreeError},
+		kinematic_data_errors::{AddJointError, AddLinkError, TryAddDataError, TryMergeTreeError},
 		kinematic_tree::KinematicTree,
 		kinematic_tree_data::KinematicTreeData,
 		KinematicInterface,
 	},
 	joint::{Joint, JointType},
-	Robot,
 };
 
 #[derive(Debug)]
 pub enum LinkParent {
-	Robot(Weak<RefCell<Robot>>),
 	Joint(Weak<RefCell<Joint>>),
 	KinematicTree(Weak<RefCell<KinematicTreeData>>),
 }
@@ -26,16 +24,9 @@ pub enum LinkParent {
 impl Clone for LinkParent {
 	fn clone(&self) -> Self {
 		match self {
-			Self::Robot(robot) => Self::Robot(Weak::clone(robot)),
 			Self::Joint(joint) => Self::Joint(Weak::clone(joint)),
 			Self::KinematicTree(tree) => todo!(),
 		}
-	}
-}
-
-impl From<Weak<RefCell<Robot>>> for LinkParent {
-	fn from(value: Weak<RefCell<Robot>>) -> Self {
-		Self::Robot(value)
 	}
 }
 
@@ -48,7 +39,6 @@ impl From<Weak<RefCell<KinematicTreeData>>> for LinkParent {
 impl PartialEq for LinkParent {
 	fn eq(&self, other: &Self) -> bool {
 		match (self, other) {
-			(Self::Robot(l0), Self::Robot(r0)) => l0.upgrade() == r0.upgrade(),
 			(Self::Joint(l0), Self::Joint(r0)) => l0.upgrade() == r0.upgrade(),
 			(Self::KinematicTree(l0), Self::KinematicTree(r0)) => l0.upgrade() == r0.upgrade(),
 			_ => false,
@@ -141,7 +131,7 @@ impl Link {
 		let joint = Rc::new(RefCell::new(Joint {
 			name: joint_name,
 			tree: Weak::clone(&self.tree),
-			parent_link: Weak::clone(
+			parent_link: Weak::clone({
 				self.tree
 					.upgrade()
 					.unwrap()
@@ -149,8 +139,8 @@ impl Link {
 					.links
 					.borrow() // TODO: This might panic!
 					.get(&self.get_name())
-					.unwrap(),
-			),
+					.unwrap()
+			}),
 			child_link: tree.get_root_link(),
 		}));
 
@@ -159,8 +149,9 @@ impl Link {
 		// Maybe I can just go down the tree and add everything by hand for now? It sounds like a terrible Idea, let's do it!
 
 		let parent_tree = self.tree.upgrade().unwrap();
-		tree.get_root_link().borrow_mut().add_to_tree(&parent_tree);
-
+		{
+			tree.get_root_link().borrow_mut().add_to_tree(&parent_tree);
+		}
 		// parent_tree.try_merge(tree.get_kinematic_data())?;
 		// Moved addign upwards
 
@@ -202,17 +193,19 @@ impl PartialEq for Link {
 	}
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum TryAttachChildError {
 	MergeTree(TryMergeTreeError),
-	AddData(TryAddDataError),
+	AddLink(AddLinkError),
+	AddJoint(AddJointError),
 }
 
 impl fmt::Display for TryAttachChildError {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		match self {
-			TryAttachChildError::MergeTree(err) => err.fmt(f),
-			TryAttachChildError::AddData(err) => err.fmt(f),
+			Self::MergeTree(err) => err.fmt(f),
+			Self::AddLink(err) => err.fmt(f),
+			Self::AddJoint(err) => err.fmt(f),
 		}
 	}
 }
@@ -220,21 +213,28 @@ impl fmt::Display for TryAttachChildError {
 impl Error for TryAttachChildError {
 	fn source(&self) -> Option<&(dyn Error + 'static)> {
 		match self {
-			TryAttachChildError::MergeTree(err) => Some(err),
-			TryAttachChildError::AddData(err) => Some(err),
+			Self::MergeTree(err) => Some(err),
+			Self::AddLink(err) => Some(err),
+			Self::AddJoint(err) => Some(err),
 		}
 	}
 }
 
 impl From<TryMergeTreeError> for TryAttachChildError {
 	fn from(value: TryMergeTreeError) -> Self {
-		TryAttachChildError::MergeTree(value)
+		Self::MergeTree(value)
 	}
 }
 
-impl From<TryAddDataError> for TryAttachChildError {
-	fn from(value: TryAddDataError) -> Self {
-		TryAttachChildError::AddData(value)
+impl From<AddLinkError> for TryAttachChildError {
+	fn from(value: AddLinkError) -> Self {
+		Self::AddLink(value)
+	}
+}
+
+impl From<AddJointError> for TryAttachChildError {
+	fn from(value: AddJointError) -> Self {
+		Self::AddJoint(value)
 	}
 }
 
@@ -259,17 +259,30 @@ mod tests {
 			}
 		});
 
-		let newest_link = tree.get_newest_link().upgrade().unwrap();
-		assert_eq!(
-			newest_link.borrow().name,
-			root_link.name
-		);
-		assert_eq!(
-			newest_link.as_ptr(),
-			binding.as_ptr()
-		);
+		let newest_link = tree.get_newest_link();
+		assert_eq!(newest_link.borrow().name, root_link.name);
+		assert_eq!(newest_link.as_ptr(), binding.as_ptr());
 
 		assert_eq!(tree.get_links().try_borrow().unwrap().len(), 1);
 		assert_eq!(tree.get_joints().try_borrow().unwrap().len(), 0);
+	}
+
+	#[test]
+	fn try_attach_child() {
+		let tree = Link::new("base_link".into());
+
+		assert_eq!(
+			tree.get_newest_link().borrow_mut().try_attach_child(
+				Box::new(Link::new("child_link".into())),
+				"steve".into(),
+				crate::joint::JointType::Fixed
+			),
+			Ok(())
+		);
+
+		assert_eq!(tree.get_root_link().borrow().get_name(), "base_link");
+		assert_eq!(tree.get_newest_link().borrow().get_name(), "child_link");
+		println!("{:#?}", tree);
+		todo!()
 	}
 }

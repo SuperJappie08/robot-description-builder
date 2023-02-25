@@ -11,13 +11,14 @@ use self::kinematic_tree_data::KinematicTreeData;
 pub mod kinematic_data_errors;
 pub mod kinematic_tree;
 pub(crate) mod kinematic_tree_data;
+pub mod robot;
 
 pub trait KinematicInterface {
 	// NOTE: THIS IS NOT FINAL;
 	// fn merge(&mut self, other: dyn KinematicInterface);
 	fn get_root_link(&self) -> Rc<RefCell<Link>>;
-	/// TODO: Maybe make this return a Rc instead of a weak
-	fn get_newest_link(&self) -> Weak<RefCell<Link>>;
+	/// TODO: Maybe make this return a Ref instead of a Rc (WAS WEAK)
+	fn get_newest_link(&self) -> Rc<RefCell<Link>>;
 
 	//#[deprecated]
 	/// Maybe deprecate?

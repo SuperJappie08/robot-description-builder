@@ -7,7 +7,9 @@ use std::{
 use crate::{joint::Joint, link::Link, Material, Transmission};
 // use crate::link::LinkTrait;
 
-use super::kinematic_data_errors::{TryAddDataError, TryAddMaterialError, TryMergeTreeError};
+use super::kinematic_data_errors::{
+	AddJointError, AddLinkError, TryAddMaterialError, TryMergeTreeError,
+};
 
 // pub(crate) trait KinematicTreeTrait {}
 
@@ -22,6 +24,7 @@ pub struct KinematicTreeData {
 	pub(crate) joints: Rc<RefCell<HashMap<String, Weak<RefCell<Joint>>>>>,
 	// transmissions: Rc<HashMap<String, Rc<RefCell<Transmission>>>>,
 	pub(crate) newest_link: Weak<RefCell<Link>>,
+	// is_rigid: bool // ? For gazebo
 }
 
 impl KinematicTreeData {
@@ -94,38 +97,34 @@ impl KinematicTreeData {
 	// 	}
 	// }
 
-	pub fn try_add_link(&mut self, link: Rc<RefCell<Link>>) -> Result<(), TryAddDataError> {
+	pub fn try_add_link(&mut self, link: Rc<RefCell<Link>>) -> Result<(), AddLinkError> {
 		let name = link.try_borrow()?.name.clone();
-		if let Some(preexisting_link) = self
-			.links
-			.try_borrow()?
-			.get(&name)
-			.and_then(|weak_link| weak_link.upgrade())
-		{
+		let other = { self.links.try_borrow()?.get(&name) }
+			.and_then(|weak_link| Some(Weak::clone(weak_link)));
+		if let Some(preexisting_link) = other.and_then(|weak_link| weak_link.upgrade()) {
 			if *preexisting_link.try_borrow()? != *link.try_borrow()? {
-				Err(TryAddDataError::Conflict(name))
+				Err(AddLinkError::Conflict(name))
 			} else {
 				Ok(())
 			}
 		} else {
-			self.links
+			assert!(self
+				.links
 				.try_borrow_mut()?
-				.insert(name.to_string(), Rc::downgrade(&link));
+				.insert(name, Rc::downgrade(&link))
+				.is_none());
 			self.newest_link = Rc::downgrade(&link);
 			Ok(())
 		}
 	}
 
-	pub fn try_add_joint(&mut self, joint: Rc<RefCell<Joint>>) -> Result<(), TryAddDataError> {
+	pub fn try_add_joint(&mut self, joint: Rc<RefCell<Joint>>) -> Result<(), AddJointError> {
 		let name = joint.try_borrow()?.name.clone();
-		if let Some(preexisting_joint) = self
-			.joints
-			.try_borrow()?
-			.get(&name)
-			.and_then(|weak_joint| weak_joint.upgrade())
-		{
+		let other = { self.joints.borrow().get(&name) }
+			.and_then(|weak_joint| Some(Weak::clone(weak_joint)));
+		if let Some(preexisting_joint) = other.and_then(|weak_joint| weak_joint.upgrade()) {
 			if *preexisting_joint.try_borrow()? != *joint.try_borrow()? {
-				Err(TryAddDataError::Conflict(name))
+				Err(AddJointError::Conflict(name))
 			} else {
 				Ok(())
 			}

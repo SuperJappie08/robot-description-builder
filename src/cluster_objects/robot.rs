@@ -9,32 +9,29 @@ use crate::{cluster_objects::kinematic_tree_data::KinematicTreeData, joint::Join
 use super::KinematicInterface;
 
 #[derive(Debug)]
-pub struct KinematicTree(Rc<RefCell<KinematicTreeData>>);
-
-impl KinematicTree {
-	pub fn new(data: Rc<RefCell<KinematicTreeData>>) -> KinematicTree {
-		KinematicTree(data)
-	}
+pub struct Robot {
+	pub name: String, //TODO: Temp Pub
+	data: Rc<RefCell<KinematicTreeData>>,
 }
 
-impl KinematicInterface for KinematicTree {
+impl KinematicInterface for Robot {
 	fn get_root_link(&self) -> Rc<RefCell<Link>> {
-		Rc::clone(&self.0.borrow().root_link)
-	}
-
-	fn get_kinematic_data(&self) -> Rc<RefCell<KinematicTreeData>> {
-		Rc::clone(&self.0)
-	}
-
-	fn get_links(&self) -> Rc<RefCell<HashMap<String, Weak<RefCell<Link>>>>> {
-		Rc::clone(&self.0.borrow().links)
-	}
-
-	fn get_joints(&self) -> Rc<RefCell<HashMap<String, Weak<RefCell<Joint>>>>> {
-		Rc::clone(&self.0.borrow().joints)
+		Rc::clone(&self.data.borrow().root_link)
 	}
 
 	fn get_newest_link(&self) -> Rc<RefCell<Link>> {
-		self.0.borrow().newest_link.upgrade().unwrap()
+		self.data.borrow().newest_link.upgrade().unwrap()
+	}
+
+	fn get_kinematic_data(&self) -> Rc<RefCell<KinematicTreeData>> {
+		Rc::clone(&self.data)
+	}
+
+	fn get_links(&self) -> Rc<RefCell<HashMap<String, Weak<RefCell<Link>>>>> {
+		Rc::clone(&self.data.borrow().links)
+	}
+
+	fn get_joints(&self) -> Rc<RefCell<HashMap<String, Weak<RefCell<Joint>>>>> {
+		Rc::clone(&self.data.borrow().joints)
 	}
 }

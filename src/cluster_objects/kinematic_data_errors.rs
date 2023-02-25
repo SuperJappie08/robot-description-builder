@@ -37,6 +37,106 @@ impl From<BorrowError> for TryAddMaterialError {
 }
 
 #[derive(Debug)]
+pub enum AddLinkError {
+	Borrow(BorrowError),
+	BorrowMut(BorrowMutError),
+	Conflict(String),
+}
+
+impl fmt::Display for AddLinkError {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		match self {
+			Self::Borrow(err) => err.fmt(f),
+			Self::BorrowMut(err) => err.fmt(f),
+			Self::Conflict(name) => write!(f, "Duplicate Link name '{}'", name),
+		}
+	}
+}
+
+impl Error for AddLinkError {
+	fn source(&self) -> Option<&(dyn Error + 'static)> {
+		match self {
+			Self::Borrow(err) => Some(err),
+			Self::BorrowMut(err) => Some(err),
+			Self::Conflict(_) => None,
+		}
+	}
+}
+
+impl From<BorrowError> for AddLinkError {
+	fn from(value: BorrowError) -> Self {
+		Self::Borrow(value)
+	}
+}
+
+impl From<BorrowMutError> for AddLinkError {
+	fn from(value: BorrowMutError) -> Self {
+		Self::BorrowMut(value)
+	}
+}
+
+impl PartialEq for AddLinkError {
+	fn eq(&self, other: &Self) -> bool {
+		match (self, other) {
+			(Self::Borrow(_), Self::Borrow(_)) => true,
+			(Self::BorrowMut(_), Self::BorrowMut(_)) => true,
+			(Self::Conflict(l0), Self::Conflict(r0)) => l0 == r0,
+			_ => false,
+		}
+	}
+}
+
+#[derive(Debug)]
+pub enum AddJointError {
+	Borrow(BorrowError),
+	BorrowMut(BorrowMutError),
+	Conflict(String),
+}
+
+impl fmt::Display for AddJointError {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		match self {
+			Self::Borrow(err) => err.fmt(f),
+			Self::BorrowMut(err) => err.fmt(f),
+			Self::Conflict(name) => write!(f, "Duplicate Joint name '{}'", name),
+		}
+	}
+}
+
+impl Error for AddJointError {
+	fn source(&self) -> Option<&(dyn Error + 'static)> {
+		match self {
+			Self::Borrow(err) => Some(err),
+			Self::BorrowMut(err) => Some(err),
+			Self::Conflict(_) => None,
+		}
+	}
+}
+
+impl From<BorrowError> for AddJointError {
+	fn from(value: BorrowError) -> Self {
+		Self::Borrow(value)
+	}
+}
+
+impl From<BorrowMutError> for AddJointError {
+	fn from(value: BorrowMutError) -> Self {
+		Self::BorrowMut(value)
+	}
+}
+
+impl PartialEq for AddJointError {
+	fn eq(&self, other: &Self) -> bool {
+		match (self, other) {
+			(Self::Borrow(_), Self::Borrow(_)) => true,
+			(Self::BorrowMut(_), Self::BorrowMut(_)) => true,
+			(Self::Conflict(l0), Self::Conflict(r0)) => l0 == r0,
+			_ => false,
+		}
+	}
+}
+
+#[derive(Debug)]
 pub enum TryAddDataError {
 	Borrow(BorrowError),
 	BorrowMut(BorrowMutError),
@@ -75,10 +175,21 @@ impl From<BorrowMutError> for TryAddDataError {
 	}
 }
 
+impl PartialEq for TryAddDataError {
+	fn eq(&self, other: &Self) -> bool {
+		match (self, other) {
+			(Self::Borrow(_), Self::Borrow(_)) => true,
+			(Self::BorrowMut(_), Self::BorrowMut(_)) => true,
+			(Self::Conflict(l0), Self::Conflict(r0)) => l0 == r0,
+			_ => false,
+		}
+	}
+}
+
 /// An error returned by [`KinematicTreeData::try_merge`].
 ///
 /// TODO: Finish
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum TryMergeTreeError {
 	TryAddData(TryAddDataError),
 }
