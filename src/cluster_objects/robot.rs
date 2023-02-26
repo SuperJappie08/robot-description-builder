@@ -34,4 +34,22 @@ impl KinematicInterface for Robot {
 	fn get_joints(&self) -> Rc<RefCell<HashMap<String, Weak<RefCell<Joint>>>>> {
 		Rc::clone(&self.data.borrow().joints)
 	}
+
+	fn get_link(&self, name: &str) -> Option<Rc<RefCell<Link>>> {
+		self.data
+			.borrow()
+			.links
+			.borrow()
+			.get(name)
+			.and_then(|weak_link| weak_link.upgrade())
+	}
+
+	fn get_joint(&self, name: &str) -> Option<Rc<RefCell<Joint>>> {
+		self.data
+			.borrow()
+			.joints
+			.borrow()
+			.get(name)
+			.and_then(|weak_joint| weak_joint.upgrade())
+	}
 }

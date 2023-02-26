@@ -74,7 +74,7 @@ impl KinematicTreeData {
 				.root_link
 				.try_borrow_mut()
 				.unwrap()
-				.tree = Rc::downgrade(&tree).into();
+				.tree = Rc::downgrade(&tree);
 		}
 
 		tree
@@ -99,8 +99,7 @@ impl KinematicTreeData {
 
 	pub fn try_add_link(&mut self, link: Rc<RefCell<Link>>) -> Result<(), AddLinkError> {
 		let name = link.try_borrow()?.name.clone();
-		let other = { self.links.try_borrow()?.get(&name) }
-			.and_then(|weak_link| Some(Weak::clone(weak_link)));
+		let other = { self.links.try_borrow()?.get(&name) }.map(Weak::clone);
 		if let Some(preexisting_link) = other.and_then(|weak_link| weak_link.upgrade()) {
 			if *preexisting_link.try_borrow()? != *link.try_borrow()? {
 				Err(AddLinkError::Conflict(name))
@@ -120,8 +119,7 @@ impl KinematicTreeData {
 
 	pub fn try_add_joint(&mut self, joint: Rc<RefCell<Joint>>) -> Result<(), AddJointError> {
 		let name = joint.try_borrow()?.name.clone();
-		let other = { self.joints.borrow().get(&name) }
-			.and_then(|weak_joint| Some(Weak::clone(weak_joint)));
+		let other = { self.joints.borrow().get(&name) }.map(Weak::clone);
 		if let Some(preexisting_joint) = other.and_then(|weak_joint| weak_joint.upgrade()) {
 			if *preexisting_joint.try_borrow()? != *joint.try_borrow()? {
 				Err(AddJointError::Conflict(name))
@@ -131,7 +129,7 @@ impl KinematicTreeData {
 		} else {
 			self.joints
 				.try_borrow_mut()?
-				.insert(name.to_string(), Rc::downgrade(&joint));
+				.insert(name, Rc::downgrade(&joint));
 			Ok(())
 		}
 	}

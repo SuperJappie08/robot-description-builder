@@ -8,9 +8,8 @@ use std::{
 use crate::{
 	cluster_objects::{
 		kinematic_data_errors::{AddJointError, AddLinkError, TryAddDataError, TryMergeTreeError},
-		kinematic_tree::KinematicTree,
 		kinematic_tree_data::KinematicTreeData,
-		KinematicInterface,
+		KinematicInterface, KinematicTree,
 	},
 	joint::{Joint, JointType},
 };
@@ -25,7 +24,7 @@ impl Clone for LinkParent {
 	fn clone(&self) -> Self {
 		match self {
 			Self::Joint(joint) => Self::Joint(Weak::clone(joint)),
-			Self::KinematicTree(tree) => todo!(),
+			Self::KinematicTree(tree) => Self::KinematicTree(Weak::clone(tree)),
 		}
 	}
 }
@@ -84,6 +83,7 @@ pub struct Link {
 }
 
 impl Link {
+	/// NOTE: Maybe change name to `Impl Into<String>` or a `&str`, for ease of use?
 	pub fn new(name: String) -> KinematicTree {
 		let link = Link {
 			name,
@@ -116,7 +116,7 @@ impl Link {
 	pub fn get_joints(&self) -> Vec<Rc<RefCell<Joint>>> {
 		self.child_joints
 			.iter()
-			.map(|joint| Rc::clone(joint))
+			.map(Rc::clone)
 			.collect()
 	}
 
@@ -127,6 +127,8 @@ impl Link {
 		joint_name: String,
 		_joint_type: JointType,
 	) -> Result<(), TryAttachChildError> {
+		// Generics dont workt that well Rc<RefCell<T>>  where T: KinematicInterface
+		//Box<Rc<RefCell<dyn KinematicInterface>>>
 		// TODO: NEEDS TO DO SOMETHING WITH JOINT TYPE
 		let joint = Rc::new(RefCell::new(Joint {
 			name: joint_name,
@@ -146,6 +148,11 @@ impl Link {
 
 		self.child_joints.push(Rc::clone(&joint));
 
+		{
+			tree.get_root_link().borrow_mut().direct_parent =
+				Some(LinkParent::Joint(Rc::downgrade(&joint)))
+		}
+
 		// Maybe I can just go down the tree and add everything by hand for now? It sounds like a terrible Idea, let's do it!
 
 		let parent_tree = self.tree.upgrade().unwrap();
@@ -159,6 +166,7 @@ impl Link {
 		parent_tree.try_add_link(tree.get_root_link())?;
 		parent_tree.try_add_joint(joint)?;
 		Ok(())
+		// Ok(self.tree.upgrade().unwrap())
 	}
 
 	pub(crate) fn add_to_tree(&mut self, new_parent_tree: &Rc<RefCell<KinematicTreeData>>) {
@@ -179,7 +187,7 @@ impl Link {
 		todo!()
 	}
 
-	pub fn add_collider(&mut self, Collider: Collision) -> Self {
+	pub fn add_collider(&mut self, collider: Collision) -> Self {
 		todo!()
 	}
 }
@@ -240,16 +248,18 @@ impl From<AddJointError> for TryAttachChildError {
 
 #[cfg(test)]
 mod tests {
+	use std::rc::Weak;
+
 	use super::Link;
 	use crate::{cluster_objects::KinematicInterface, link::LinkParent};
 
 	#[test]
 	fn new() {
-		let tree = Link::new("Link-on-Park".to_owned());
+		let tree = Link::new("Link-on-Park".into());
 
 		let binding = tree.get_root_link();
 		let root_link = binding.try_borrow().unwrap();
-		assert_eq!(root_link.name, "Link-on-Park".to_owned());
+		assert_eq!(root_link.name, "Link-on-Park".to_string());
 
 		assert!(root_link.direct_parent.is_some());
 		assert!({
@@ -268,7 +278,7 @@ mod tests {
 	}
 
 	#[test]
-	fn try_attach_child() {
+	fn try_attach_single_child() {
 		let tree = Link::new("base_link".into());
 
 		assert_eq!(
@@ -282,7 +292,38 @@ mod tests {
 
 		assert_eq!(tree.get_root_link().borrow().get_name(), "base_link");
 		assert_eq!(tree.get_newest_link().borrow().get_name(), "child_link");
-		println!("{:#?}", tree);
-		todo!()
+
+		assert!(tree.get_links().borrow().contains_key("base_link"));
+		assert!(tree.get_links().borrow().contains_key("child_link"));
+		assert!(tree.get_joints().borrow().contains_key("steve"));
+
+		assert_eq!(
+			tree.get_joint("steve")
+				.unwrap()
+				.borrow()
+				.get_parent_link()
+				.borrow()
+				.get_name(),
+			"base_link"
+		);
+		assert_eq!(
+			tree.get_joint("steve")
+				.unwrap()
+				.borrow()
+				.get_child_link()
+				.borrow()
+				.get_name(),
+			"child_link"
+		);
+
+		let weak_joint = Weak::clone(tree.get_joints().borrow().get("steve").unwrap());
+
+		assert_eq!(
+			tree.get_link("child_link").unwrap().borrow().direct_parent,
+			Some(LinkParent::Joint(weak_joint))
+		);
+		
+		// println!("{:#?}", tree);
+		// todo!()
 	}
 }

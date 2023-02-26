@@ -9,9 +9,12 @@ use crate::{joint::Joint, link::Link};
 use self::kinematic_tree_data::KinematicTreeData;
 
 pub mod kinematic_data_errors;
-pub mod kinematic_tree;
+mod kinematic_tree;
 pub(crate) mod kinematic_tree_data;
-pub mod robot;
+mod robot;
+
+pub use kinematic_tree::KinematicTree;
+pub use robot::Robot;
 
 pub trait KinematicInterface {
 	// NOTE: THIS IS NOT FINAL;
@@ -26,6 +29,9 @@ pub trait KinematicInterface {
 
 	fn get_links(&self) -> Rc<RefCell<HashMap<String, Weak<RefCell<Link>>>>>;
 	fn get_joints(&self) -> Rc<RefCell<HashMap<String, Weak<RefCell<Joint>>>>>;
+
+	fn get_link(&self, name: &str) -> Option<Rc<RefCell<Link>>>;
+	fn get_joint(&self, name: &str) -> Option<Rc<RefCell<Joint>>>;
 
 	// TODO: Expand
 }

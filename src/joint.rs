@@ -23,6 +23,19 @@ impl Joint {
 		self.child_link.borrow_mut().add_to_tree(new_parent_tree);
 		self.tree = Rc::downgrade(new_parent_tree);
 	}
+
+	/// For now pub crate, this should maybe go to joint trait
+	pub fn get_parent_link(&self) -> Rc<RefCell<Link>> {
+		// If this panics, the joint is not initialized propperly.
+		self.parent_link.upgrade().unwrap()
+	}
+
+	/// For now pub crate, this should maybe go to joint trait
+	/// Is this even necessary?
+	pub fn get_child_link(&self) -> Rc<RefCell<Link>> {
+		// If this panics, the joint is not initialized propperly.
+		Rc::clone(&self.child_link)
+	}
 }
 
 impl PartialEq for Joint {

@@ -22,6 +22,10 @@ impl KinematicInterface for KinematicTree {
 		Rc::clone(&self.0.borrow().root_link)
 	}
 
+	fn get_newest_link(&self) -> Rc<RefCell<Link>> {
+		self.0.borrow().newest_link.upgrade().unwrap()
+	}
+
 	fn get_kinematic_data(&self) -> Rc<RefCell<KinematicTreeData>> {
 		Rc::clone(&self.0)
 	}
@@ -34,7 +38,21 @@ impl KinematicInterface for KinematicTree {
 		Rc::clone(&self.0.borrow().joints)
 	}
 
-	fn get_newest_link(&self) -> Rc<RefCell<Link>> {
-		self.0.borrow().newest_link.upgrade().unwrap()
+	fn get_link(&self, name: &str) -> Option<Rc<RefCell<Link>>> {
+		self.0
+			.borrow()
+			.links
+			.borrow()
+			.get(name)
+			.and_then(|weak_link| weak_link.upgrade())
+	}
+
+	fn get_joint(&self, name: &str) -> Option<Rc<RefCell<Joint>>> {
+		self.0
+			.borrow()
+			.joints
+			.borrow()
+			.get(name)
+			.and_then(|weak_joint| weak_joint.upgrade())
 	}
 }
