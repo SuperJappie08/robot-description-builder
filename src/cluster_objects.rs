@@ -27,6 +27,7 @@ pub trait KinematicInterface {
 	/// Maybe deprecate?
 	fn get_kinematic_data(&self) -> Rc<RefCell<KinematicTreeData>>;
 
+	// These do not have to be mutable
 	fn get_links(&self) -> Rc<RefCell<HashMap<String, Weak<RefCell<Link>>>>>;
 	fn get_joints(&self) -> Rc<RefCell<HashMap<String, Weak<RefCell<Joint>>>>>;
 

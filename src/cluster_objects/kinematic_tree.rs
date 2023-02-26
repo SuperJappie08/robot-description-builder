@@ -56,3 +56,9 @@ impl KinematicInterface for KinematicTree {
 			.and_then(|weak_joint| weak_joint.upgrade())
 	}
 }
+
+impl Into<Box<dyn KinematicInterface>> for KinematicTree {
+	fn into(self) -> Box<dyn KinematicInterface> {
+		Box::new(self)
+	}
+}

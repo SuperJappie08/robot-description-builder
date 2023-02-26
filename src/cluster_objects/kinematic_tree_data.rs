@@ -19,7 +19,7 @@ pub struct KinematicTreeData {
 	//TODO: In this implementation the Keys, are not linked to the objects and could be changed.
 	// material_index: Rc<HashMap<String, Rc<RefCell<Material>>>>,
 
-	// TODO: Might change this to be public
+	// TODO: Why is this an `Rc<RefCell<_>`?
 	pub(crate) links: Rc<RefCell<HashMap<String, Weak<RefCell<Link>>>>>,
 	pub(crate) joints: Rc<RefCell<HashMap<String, Weak<RefCell<Joint>>>>>,
 	// transmissions: Rc<HashMap<String, Rc<RefCell<Transmission>>>>,
@@ -41,16 +41,6 @@ impl KinematicTreeData {
 		);
 
 		// There exist no child links, because a new link is being made.
-		// let mut extra_links = Vec::new();
-
-		// for joint in root_link.borrow().get_joints() {
-		// 	if joints.contains_key(&joint.borrow().name) {
-		// 		panic!("Joint name not unique: {:?}", joint)
-		// 	}
-		// 	joints.insert(joint.borrow().name.clone(), Rc::downgrade(&joint));
-
-		// 	extra_links.push(Rc::clone(&joint.borrow().child_link));
-		// }
 
 		let tree = Rc::new(RefCell::new(Self {
 			newest_link: Rc::downgrade(&root_link),
@@ -97,11 +87,11 @@ impl KinematicTreeData {
 	// 	}
 	// }
 
-	pub fn try_add_link(&mut self, link: Rc<RefCell<Link>>) -> Result<(), AddLinkError> {
+	pub(crate) fn try_add_link(&mut self, link: Rc<RefCell<Link>>) -> Result<(), AddLinkError> {
 		let name = link.try_borrow()?.name.clone();
 		let other = { self.links.try_borrow()?.get(&name) }.map(Weak::clone);
 		if let Some(preexisting_link) = other.and_then(|weak_link| weak_link.upgrade()) {
-			if *preexisting_link.try_borrow()? != *link.try_borrow()? {
+			if Rc::ptr_eq(&preexisting_link, &link) {
 				Err(AddLinkError::Conflict(name))
 			} else {
 				Ok(())
@@ -117,19 +107,21 @@ impl KinematicTreeData {
 		}
 	}
 
-	pub fn try_add_joint(&mut self, joint: Rc<RefCell<Joint>>) -> Result<(), AddJointError> {
+	pub(crate) fn try_add_joint(&mut self, joint: Rc<RefCell<Joint>>) -> Result<(), AddJointError> {
 		let name = joint.try_borrow()?.name.clone();
 		let other = { self.joints.borrow().get(&name) }.map(Weak::clone);
 		if let Some(preexisting_joint) = other.and_then(|weak_joint| weak_joint.upgrade()) {
-			if *preexisting_joint.try_borrow()? != *joint.try_borrow()? {
+			if Rc::ptr_eq(&preexisting_joint, &joint) {
 				Err(AddJointError::Conflict(name))
 			} else {
 				Ok(())
 			}
 		} else {
-			self.joints
+			assert!(self
+				.joints
 				.try_borrow_mut()?
-				.insert(name, Rc::downgrade(&joint));
+				.insert(name, Rc::downgrade(&joint))
+				.is_none());
 			Ok(())
 		}
 	}
@@ -140,6 +132,16 @@ impl KinematicTreeData {
 	) -> Result<(), TryMergeTreeError> {
 		todo!()
 		// self.newest_link = other_tree.newest_link;
+	}
+
+	/// Cleans up broken `Joint` and `Link` entries from the `links` and `joints` HashMaps.
+	pub fn purge(&mut self) {
+		self.joints
+			.borrow_mut()
+			.retain(|_, weak_joint| weak_joint.upgrade().is_some());
+		self.links
+			.borrow_mut()
+			.retain(|_, weak_link| weak_link.upgrade().is_some());
 	}
 }
 

@@ -38,8 +38,8 @@ impl From<Weak<RefCell<KinematicTreeData>>> for LinkParent {
 impl PartialEq for LinkParent {
 	fn eq(&self, other: &Self) -> bool {
 		match (self, other) {
-			(Self::Joint(l0), Self::Joint(r0)) => l0.upgrade() == r0.upgrade(),
-			(Self::KinematicTree(l0), Self::KinematicTree(r0)) => l0.upgrade() == r0.upgrade(),
+			(Self::Joint(l0), Self::Joint(r0)) => l0.ptr_eq(r0),
+			(Self::KinematicTree(l0), Self::KinematicTree(r0)) => l0.ptr_eq(r0),
 			_ => false,
 		}
 	}
@@ -76,7 +76,7 @@ pub struct Collision;
 
 #[derive(Debug)]
 pub struct Link {
-	pub name: String,
+	pub(crate) name: String,
 	pub(crate) tree: Weak<RefCell<KinematicTreeData>>,
 	direct_parent: Option<LinkParent>,
 	child_joints: Vec<Rc<RefCell<Joint>>>,
@@ -114,13 +114,12 @@ impl Link {
 	}
 
 	pub fn get_joints(&self) -> Vec<Rc<RefCell<Joint>>> {
-		self.child_joints
-			.iter()
-			.map(Rc::clone)
-			.collect()
+		self.child_joints.iter().map(Rc::clone).collect()
 	}
 
-	///Maybe rename to try attach child
+	/// Maybe rename to try attach child
+	/// DEFINED BEHAVIOR:
+	///  - The newest link get transfered from the child tree.
 	pub fn try_attach_child(
 		&mut self,
 		tree: Box<dyn KinematicInterface>,
@@ -157,14 +156,14 @@ impl Link {
 
 		let parent_tree = self.tree.upgrade().unwrap();
 		{
+			let mut parent_tree = parent_tree.borrow_mut();
+			parent_tree.try_add_link(tree.get_root_link())?;
+			parent_tree.try_add_joint(joint)?;
+		}
+		{
 			tree.get_root_link().borrow_mut().add_to_tree(&parent_tree);
 		}
-		// parent_tree.try_merge(tree.get_kinematic_data())?;
-		// Moved addign upwards
 
-		let mut parent_tree = parent_tree.borrow_mut();
-		parent_tree.try_add_link(tree.get_root_link())?;
-		parent_tree.try_add_joint(joint)?;
 		Ok(())
 		// Ok(self.tree.upgrade().unwrap())
 	}
@@ -197,7 +196,7 @@ impl PartialEq for Link {
 		self.name == other.name
 			&& self.direct_parent == other.direct_parent
 			&& self.child_joints == other.child_joints
-			&& self.tree.upgrade() == other.tree.upgrade()
+			&& self.tree.ptr_eq(&other.tree)
 	}
 }
 
@@ -283,7 +282,7 @@ mod tests {
 
 		assert_eq!(
 			tree.get_newest_link().borrow_mut().try_attach_child(
-				Box::new(Link::new("child_link".into())),
+				Link::new("child_link".into()).into(),
 				"steve".into(),
 				crate::joint::JointType::Fixed
 			),
@@ -316,14 +315,152 @@ mod tests {
 			"child_link"
 		);
 
-		let weak_joint = Weak::clone(tree.get_joints().borrow().get("steve").unwrap());
-
+		let weak_joint = { Weak::clone(tree.get_joints().borrow().get("steve").unwrap()) };
 		assert_eq!(
 			tree.get_link("child_link").unwrap().borrow().direct_parent,
 			Some(LinkParent::Joint(weak_joint))
 		);
-		
+
 		// println!("{:#?}", tree);
 		// todo!()
+	}
+
+	#[test]
+	fn try_attach_multi_child() {
+		let tree = Link::new("root".into());
+		let other_tree = Link::new("other_root".into());
+		let tree_three = Link::new("3".into());
+
+		other_tree
+			.get_newest_link()
+			.borrow_mut()
+			.try_attach_child(
+				Link::new("other_child_link".into()).into(),
+				"other_joint".into(),
+				crate::JointType::Fixed,
+			)
+			.unwrap();
+
+		tree.get_root_link()
+			.borrow_mut()
+			.try_attach_child(
+				other_tree.into(),
+				"initial_joint".into(),
+				crate::JointType::Fixed,
+			)
+			.unwrap();
+
+		//TODO: What should be the defined behavior?
+		assert_eq!(
+			tree.get_newest_link().borrow().get_name(),
+			"other_child_link"
+		);
+
+		tree.get_root_link()
+			.borrow_mut()
+			.try_attach_child(tree_three.into(), "joint-3".into(), crate::JointType::Fixed)
+			.unwrap();
+
+		assert_eq!(tree.get_root_link().borrow().get_name(), "root");
+		assert_eq!(tree.get_newest_link().borrow().get_name(), "3");
+
+		{
+			let binding = tree.get_links();
+			let links = binding.borrow();
+			assert_eq!(links.len(), 4);
+			assert!(links.contains_key("root"));
+			assert!(links.contains_key("other_root"));
+			assert!(links.contains_key("other_child_link"));
+			assert!(links.contains_key("3"));
+		}
+
+		{
+			let binding = tree.get_joints();
+			let joints = binding.borrow();
+			assert_eq!(joints.len(), 3);
+			assert!(joints.contains_key("other_joint"));
+			assert!(joints.contains_key("initial_joint"));
+			assert!(joints.contains_key("joint-3"));
+		}
+
+		let binding = tree.get_root_link();
+		let root_link = binding.borrow();
+		assert_eq!(
+			root_link.direct_parent,
+			Some(LinkParent::KinematicTree(Weak::clone(&root_link.tree)))
+		);
+		assert_eq!(root_link.child_joints.len(), 2);
+		assert_eq!(root_link.child_joints[0].borrow().name, "initial_joint");
+		assert_eq!(
+			root_link.child_joints[0]
+				.borrow()
+				.get_child_link()
+				.borrow()
+				.name,
+			"other_root"
+		);
+		assert_eq!(
+			root_link.child_joints[0]
+				.borrow()
+				.get_child_link()
+				.borrow()
+				.get_joints()
+				.len(),
+			1
+		);
+		assert_eq!(
+			root_link.child_joints[0]
+				.borrow()
+				.get_child_link()
+				.borrow()
+				.get_joints()[0]
+				.borrow()
+				.name,
+			"other_joint"
+		);
+		assert_eq!(
+			root_link.child_joints[0]
+				.borrow()
+				.get_child_link()
+				.borrow()
+				.get_joints()[0]
+				.borrow()
+				.get_child_link()
+				.borrow()
+				.name,
+			"other_child_link"
+		);
+		assert_eq!(
+			root_link.child_joints[0]
+				.borrow()
+				.get_child_link()
+				.borrow()
+				.get_joints()[0]
+				.borrow()
+				.get_child_link()
+				.borrow()
+				.get_joints()
+				.len(),
+			0
+		);
+
+		assert_eq!(root_link.child_joints[1].borrow().name, "joint-3");
+		assert_eq!(
+			root_link.child_joints[1]
+				.borrow()
+				.get_child_link()
+				.borrow()
+				.name,
+			"3"
+		);
+		assert_eq!(
+			root_link.child_joints[1]
+				.borrow()
+				.get_child_link()
+				.borrow()
+				.get_joints()
+				.len(),
+			0
+		);
 	}
 }
