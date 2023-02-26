@@ -5,11 +5,8 @@ use std::{
 };
 
 use crate::{joint::Joint, link::Link, Material, Transmission};
-// use crate::link::LinkTrait;
 
-use super::kinematic_data_errors::{
-	AddJointError, AddLinkError, TryAddMaterialError, TryMergeTreeError,
-};
+use super::kinematic_data_errors::{AddJointError, AddLinkError, AddMaterialError};
 
 // pub(crate) trait KinematicTreeTrait {}
 
@@ -17,12 +14,12 @@ use super::kinematic_data_errors::{
 pub struct KinematicTreeData {
 	pub root_link: Rc<RefCell<Link>>,
 	//TODO: In this implementation the Keys, are not linked to the objects and could be changed.
-	// material_index: Rc<HashMap<String, Rc<RefCell<Material>>>>,
+	// material_index: Rc<RefCell<HashMap<String, Rc<RefCell<Material>>>>>,
 
 	// TODO: Why is this an `Rc<RefCell<_>`?
 	pub(crate) links: Rc<RefCell<HashMap<String, Weak<RefCell<Link>>>>>,
 	pub(crate) joints: Rc<RefCell<HashMap<String, Weak<RefCell<Joint>>>>>,
-	// transmissions: Rc<HashMap<String, Rc<RefCell<Transmission>>>>,
+	// transmissions: Rc<RefCell<HashMap<String, Rc<RefCell<Transmission>>>>>,
 	pub(crate) newest_link: Weak<RefCell<Link>>,
 	// is_rigid: bool // ? For gazebo
 }
@@ -73,11 +70,11 @@ impl KinematicTreeData {
 	// pub fn try_add_material(
 	// 	&mut self,
 	// 	material: Rc<RefCell<Material>>,
-	// ) -> Result<(), TryAddMaterialError> {
+	// ) -> Result<(), AddMaterialError> {
 	// 	let name = material.try_borrow()?.name.clone();
 	// 	if let Some(preexisting_material) = self.material_index.get(&name) {
 	// 		if *preexisting_material.try_borrow()? != *material.try_borrow()? {
-	// 			Err(TryAddMaterialError::MaterialConflict(name))
+	// 			Err(AddMaterialError::MaterialConflict(name))
 	// 		} else {
 	// 			Ok(())
 	// 		}
@@ -126,22 +123,17 @@ impl KinematicTreeData {
 		}
 	}
 
-	pub(crate) fn try_merge(
-		&mut self,
-		other_tree: KinematicTreeData,
-	) -> Result<(), TryMergeTreeError> {
-		todo!()
-		// self.newest_link = other_tree.newest_link;
-	}
-
 	/// Cleans up broken `Joint` and `Link` entries from the `links` and `joints` HashMaps.
 	pub fn purge(&mut self) {
 		self.joints
 			.borrow_mut()
 			.retain(|_, weak_joint| weak_joint.upgrade().is_some());
+		self.joints.borrow_mut().shrink_to_fit();
+
 		self.links
 			.borrow_mut()
 			.retain(|_, weak_link| weak_link.upgrade().is_some());
+		self.links.borrow_mut().shrink_to_fit();
 	}
 }
 

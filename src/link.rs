@@ -1,5 +1,5 @@
 use std::{
-	cell::{BorrowMutError, RefCell},
+	cell::RefCell,
 	error::Error,
 	fmt,
 	rc::{Rc, Weak},
@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
 	cluster_objects::{
-		kinematic_data_errors::{AddJointError, AddLinkError, TryAddDataError, TryMergeTreeError},
+		kinematic_data_errors::{AddJointError, AddLinkError},
 		kinematic_tree_data::KinematicTreeData,
 		KinematicInterface, KinematicTree,
 	},
@@ -105,8 +105,8 @@ impl Link {
 
 	pub(crate) fn set_parent(&mut self, parent: LinkParent) {
 		self.direct_parent = Some(parent);
-		// TODO: Add yourself to registry.
-		// Maybe that has already happend tho?
+		// NO-FIXME: Add yourself to registry.
+		// Maybe that has already happend tho? -> You can't because of the Rc Pointer thing
 	}
 
 	pub fn get_name(&self) -> String {
@@ -125,7 +125,7 @@ impl Link {
 		tree: Box<dyn KinematicInterface>,
 		joint_name: String,
 		_joint_type: JointType,
-	) -> Result<(), TryAttachChildError> {
+	) -> Result<(), AttachChildError> {
 		// Generics dont workt that well Rc<RefCell<T>>  where T: KinematicInterface
 		//Box<Rc<RefCell<dyn KinematicInterface>>>
 		// TODO: NEEDS TO DO SOMETHING WITH JOINT TYPE
@@ -201,45 +201,36 @@ impl PartialEq for Link {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum TryAttachChildError {
-	MergeTree(TryMergeTreeError),
+pub enum AttachChildError {
 	AddLink(AddLinkError),
 	AddJoint(AddJointError),
 }
 
-impl fmt::Display for TryAttachChildError {
+impl fmt::Display for AttachChildError {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		match self {
-			Self::MergeTree(err) => err.fmt(f),
 			Self::AddLink(err) => err.fmt(f),
 			Self::AddJoint(err) => err.fmt(f),
 		}
 	}
 }
 
-impl Error for TryAttachChildError {
+impl Error for AttachChildError {
 	fn source(&self) -> Option<&(dyn Error + 'static)> {
 		match self {
-			Self::MergeTree(err) => Some(err),
 			Self::AddLink(err) => Some(err),
 			Self::AddJoint(err) => Some(err),
 		}
 	}
 }
 
-impl From<TryMergeTreeError> for TryAttachChildError {
-	fn from(value: TryMergeTreeError) -> Self {
-		Self::MergeTree(value)
-	}
-}
-
-impl From<AddLinkError> for TryAttachChildError {
+impl From<AddLinkError> for AttachChildError {
 	fn from(value: AddLinkError) -> Self {
 		Self::AddLink(value)
 	}
 }
 
-impl From<AddJointError> for TryAttachChildError {
+impl From<AddJointError> for AttachChildError {
 	fn from(value: AddJointError) -> Self {
 		Self::AddJoint(value)
 	}
@@ -320,9 +311,6 @@ mod tests {
 			tree.get_link("child_link").unwrap().borrow().direct_parent,
 			Some(LinkParent::Joint(weak_joint))
 		);
-
-		// println!("{:#?}", tree);
-		// todo!()
 	}
 
 	#[test]

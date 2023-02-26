@@ -20,10 +20,10 @@ pub trait KinematicInterface {
 	// NOTE: THIS IS NOT FINAL;
 	// fn merge(&mut self, other: dyn KinematicInterface);
 	fn get_root_link(&self) -> Rc<RefCell<Link>>;
-	/// TODO: Maybe make this return a Ref instead of a Rc (WAS WEAK)
+	/// TODO: Maybe make this return a Ref instead of a Rc (WAS WEAK) -> UPDATE: You can't, it is not allowed by the scoping rules
 	fn get_newest_link(&self) -> Rc<RefCell<Link>>;
 
-	//#[deprecated]
+	#[deprecated]
 	/// Maybe deprecate?
 	fn get_kinematic_data(&self) -> Rc<RefCell<KinematicTreeData>>;
 
