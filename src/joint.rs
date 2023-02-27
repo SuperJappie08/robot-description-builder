@@ -12,7 +12,7 @@ pub struct Joint {
 	pub(crate) parent_link: Weak<RefCell<Link>>,
 	pub child_link: Rc<RefCell<Link>>, //temp pub TODO: THIS PROBABLY ISN'T THE NICEST WAY TO DO THIS.
 	/// The information specific to the JointType: TODO: DECIDE IF THIS SHOULD BE PUBLIC
-	pub(crate) joint_type: JointType
+	pub(crate) joint_type: JointType,
 }
 
 impl Joint {

@@ -61,21 +61,41 @@ impl Clone for KinematicTree {
 	fn clone(&self) -> Self {
 		// TODO: Maybe update identifier?
 		let tree = Link::new(self.get_root_link().borrow().name.clone());
-		
+
 		let mut change = true;
 		while change {
-			let keys: Vec<String> = tree.get_links().borrow().keys().map(|key| key.clone()).collect();
+			let keys: Vec<String> = tree
+				.get_links()
+				.borrow()
+				.keys()
+				.map(|key| key.clone())
+				.collect();
 			let key_count = keys.len();
 
 			for key in keys {
 				let binding = tree.get_link(&key).unwrap();
 				let mut current_link = binding.borrow_mut();
-				if current_link.get_joints().len() == self.get_link(&key).unwrap().borrow().get_joints().len() {
+				if current_link.get_joints().len()
+					== self.get_link(&key).unwrap().borrow().get_joints().len()
+				{
 					// TODO: Clone other internal data
 					continue;
 				} else {
-					for joint in self.get_link(&key).unwrap().borrow().get_joints().iter().map(|joint| joint.borrow()) {
-						current_link.try_attach_child(Link::new(joint.get_child_link().borrow().name.clone()).into(), joint.name.clone(), joint.joint_type.clone()).unwrap()
+					for joint in self
+						.get_link(&key)
+						.unwrap()
+						.borrow()
+						.get_joints()
+						.iter()
+						.map(|joint| joint.borrow())
+					{
+						current_link
+							.try_attach_child(
+								Link::new(joint.get_child_link().borrow().name.clone()).into(),
+								joint.name.clone(),
+								joint.joint_type.clone(),
+							)
+							.unwrap()
 					}
 				}
 			}
@@ -390,12 +410,23 @@ mod tests {
 
 		println!(
 			"tree->..->links        | ptr: {:#?} | keys: {:?}",
-			Rc::as_ptr(&tree.get_links()), &tree.get_links().borrow().keys().map(|key| key.clone()).collect::<Vec<String>>()
+			Rc::as_ptr(&tree.get_links()),
+			&tree
+				.get_links()
+				.borrow()
+				.keys()
+				.map(|key| key.clone())
+				.collect::<Vec<String>>()
 		);
 		println!(
 			"cloned_tree->..->links | ptr: {:#?} | keys: {:?}\n",
 			Rc::as_ptr(&cloned_tree.get_links()),
-			&cloned_tree.get_links().borrow().keys().map(|key| key.clone()).collect::<Vec<String>>()
+			&cloned_tree
+				.get_links()
+				.borrow()
+				.keys()
+				.map(|key| key.clone())
+				.collect::<Vec<String>>()
 		);
 		assert!(!Rc::ptr_eq(&tree.get_links(), &cloned_tree.get_links()));
 		assert_eq!(
