@@ -124,7 +124,7 @@ impl Link {
 		&mut self,
 		tree: Box<dyn KinematicInterface>,
 		joint_name: String,
-		_joint_type: JointType,
+		joint_type: JointType,
 	) -> Result<(), AttachChildError> {
 		// Generics dont workt that well Rc<RefCell<T>>  where T: KinematicInterface
 		//Box<Rc<RefCell<dyn KinematicInterface>>>
@@ -143,6 +143,7 @@ impl Link {
 					.unwrap()
 			}),
 			child_link: tree.get_root_link(),
+			joint_type,
 		}));
 
 		self.child_joints.push(Rc::clone(&joint));

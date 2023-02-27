@@ -57,8 +57,413 @@ impl KinematicInterface for KinematicTree {
 	}
 }
 
+impl Clone for KinematicTree {
+	fn clone(&self) -> Self {
+		// TODO: Maybe update identifier?
+		let tree = Link::new(self.get_root_link().borrow().name.clone());
+		
+		let mut change = true;
+		while change {
+			let keys: Vec<String> = tree.get_links().borrow().keys().map(|key| key.clone()).collect();
+			let key_count = keys.len();
+
+			for key in keys {
+				let binding = tree.get_link(&key).unwrap();
+				let mut current_link = binding.borrow_mut();
+				if current_link.get_joints().len() == self.get_link(&key).unwrap().borrow().get_joints().len() {
+					// TODO: Clone other internal data
+					continue;
+				} else {
+					for joint in self.get_link(&key).unwrap().borrow().get_joints().iter().map(|joint| joint.borrow()) {
+						current_link.try_attach_child(Link::new(joint.get_child_link().borrow().name.clone()).into(), joint.name.clone(), joint.joint_type.clone()).unwrap()
+					}
+				}
+			}
+
+			change = key_count != tree.get_links().borrow().len();
+		}
+		tree
+	}
+}
+
 impl Into<Box<dyn KinematicInterface>> for KinematicTree {
 	fn into(self) -> Box<dyn KinematicInterface> {
 		Box::new(self)
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use std::rc::{Rc, Weak};
+
+	use crate::{
+		link::{Link, LinkParent},
+		JointType, KinematicInterface,
+	};
+
+	#[test]
+	fn clone_single() {
+		let tree = Link::new("example-link".into());
+		let cloned_tree = tree.clone();
+
+		println!("tree->data        | ptr: {:#?}", Rc::as_ptr(&tree.0));
+		println!(
+			"cloned_tree->data | ptr: {:#?}\n",
+			Rc::as_ptr(&cloned_tree.0)
+		);
+		assert!(!Rc::ptr_eq(&tree.0, &cloned_tree.0));
+
+		println!(
+			"tree->..->root_link        | ptr: {:#?}",
+			Rc::as_ptr(&tree.get_root_link())
+		);
+		println!(
+			"cloned_tree->..->root_link | ptr: {:#?}\n",
+			Rc::as_ptr(&cloned_tree.get_root_link())
+		);
+		assert!(!Rc::ptr_eq(
+			&tree.get_root_link(),
+			&cloned_tree.get_root_link()
+		));
+
+		// Note: This may not be permanent behavior
+		println!(
+			"tree->..->root_link->name        | ptr: {:#?}",
+			&tree.get_root_link().borrow().name.as_ptr()
+		);
+		println!(
+			"cloned_tree->..->root_link->name | ptr: {:#?}\n",
+			&cloned_tree.get_root_link().borrow().name.as_ptr()
+		);
+		assert_eq!(
+			&tree.get_root_link().borrow().get_name(),
+			&cloned_tree.get_root_link().borrow().get_name()
+		);
+
+		println!(
+			"tree->..->root_link->tree        | ptr: {:#?}",
+			Weak::as_ptr(&tree.get_root_link().borrow().tree)
+		);
+		println!(
+			"cloned_tree->..->root_link->tree | ptr: {:#?}\n",
+			Weak::as_ptr(&cloned_tree.get_root_link().borrow().tree)
+		);
+		assert!(!Weak::ptr_eq(
+			&tree.get_root_link().borrow().tree,
+			&cloned_tree.get_root_link().borrow().tree
+		));
+
+		println!(
+			"tree->..->root_link->direct_parent->0        | ptr: {:#?}",
+			Weak::as_ptr(match &tree.get_root_link().borrow().get_parent().unwrap() {
+				LinkParent::KinematicTree(weak_tree) => weak_tree,
+				LinkParent::Joint(_) => panic!("This should not return a Joint Parent"),
+			})
+		);
+		println!(
+			"cloned_tree->..->root_link->direct_parent->0 | ptr: {:#?}\n",
+			Weak::as_ptr(
+				match &cloned_tree.get_root_link().borrow().get_parent().unwrap() {
+					LinkParent::KinematicTree(weak_tree) => weak_tree,
+					LinkParent::Joint(_) => panic!("This should not return a Joint Parent"),
+				}
+			)
+		);
+		assert_ne!(
+			&tree.get_root_link().borrow().get_parent(),
+			&cloned_tree.get_root_link().borrow().get_parent()
+		);
+
+		println!(
+			"tree->..->root_link->child_joints:        {:#?}",
+			&tree.get_root_link().borrow().get_joints()
+		);
+		println!(
+			"cloned_tree->..->root_link->child_joints: {:#?}\n",
+			&cloned_tree.get_root_link().borrow().get_joints()
+		);
+		assert_eq!(
+			tree.get_root_link().borrow().get_joints().len(),
+			cloned_tree.get_root_link().borrow().get_joints().len()
+		);
+
+		println!(
+			"tree->..->links        | ptr: {:#?}",
+			Rc::as_ptr(&tree.get_links())
+		);
+		println!(
+			"cloned_tree->..->links | ptr: {:#?}\n",
+			Rc::as_ptr(&cloned_tree.get_links())
+		);
+		assert!(!Rc::ptr_eq(&tree.get_links(), &cloned_tree.get_links()));
+		assert_eq!(
+			tree.get_links().borrow().len(),
+			cloned_tree.get_links().borrow().len()
+		);
+
+		println!(
+			"tree->..->links[\"example-link\"]        | ptr: {:#?}",
+			Weak::as_ptr(&tree.get_links().borrow().get("example-link").unwrap())
+		);
+		println!(
+			"cloned_tree->..->links[\"example-link\"] | ptr: {:#?}\n",
+			Weak::as_ptr(
+				&cloned_tree
+					.get_links()
+					.borrow()
+					.get("example-link")
+					.unwrap()
+			)
+		);
+		assert!(!Weak::ptr_eq(
+			&tree.get_links().borrow().get("example-link").unwrap(),
+			&cloned_tree
+				.get_links()
+				.borrow()
+				.get("example-link")
+				.unwrap()
+		));
+
+		println!(
+			"tree->..->root_link->child_joints:        {:#?}",
+			&tree.get_root_link().borrow().get_joints()
+		);
+		println!(
+			"cloned_tree->..->root_link->child_joints: {:#?}\n",
+			&cloned_tree.get_root_link().borrow().get_joints()
+		);
+		assert_eq!(
+			tree.get_root_link().borrow().get_joints().len(),
+			cloned_tree.get_root_link().borrow().get_joints().len()
+		);
+
+		println!(
+			"tree->..->joints        | ptr: {:#?}",
+			Rc::as_ptr(&tree.get_joints())
+		);
+		println!(
+			"cloned_tree->..->joints | ptr: {:#?}\n",
+			Rc::as_ptr(&cloned_tree.get_joints())
+		);
+		assert!(!Rc::ptr_eq(&tree.get_joints(), &cloned_tree.get_joints()));
+		assert_eq!(
+			tree.get_joints().borrow().len(),
+			cloned_tree.get_joints().borrow().len()
+		);
+
+		println!(
+			"tree->..->newest_link        | ptr: {:#?}",
+			Rc::as_ptr(&tree.get_newest_link())
+		);
+		println!(
+			"cloned_tree->..->newest_link | ptr: {:#?}\n",
+			Rc::as_ptr(&cloned_tree.get_newest_link())
+		);
+		assert!(!Rc::ptr_eq(
+			&tree.get_newest_link(),
+			&cloned_tree.get_newest_link()
+		));
+	}
+
+	#[test]
+	fn clone_multi() {
+		let tree = Link::new("example-link".into());
+		let other_tree = Link::new("other-link".into());
+		other_tree
+			.get_newest_link()
+			.borrow_mut()
+			.try_attach_child(
+				Link::new("other-child".into()).into(),
+				"other-child-joint".into(),
+				JointType::Fixed,
+			)
+			.unwrap();
+
+		tree.get_root_link()
+			.borrow_mut()
+			.try_attach_child(other_tree.into(), "other-joint".into(), JointType::Fixed)
+			.unwrap();
+
+		tree.get_root_link()
+			.borrow_mut()
+			.try_attach_child(
+				Link::new("3".into()).into(),
+				"three".into(),
+				JointType::Fixed,
+			)
+			.unwrap();
+
+		let cloned_tree = tree.clone();
+
+		println!("tree->data        | ptr: {:#?}", Rc::as_ptr(&tree.0));
+		println!(
+			"cloned_tree->data | ptr: {:#?}\n",
+			Rc::as_ptr(&cloned_tree.0)
+		);
+		assert!(!Rc::ptr_eq(&tree.0, &cloned_tree.0));
+
+		println!(
+			"tree->..->root_link        | ptr: {:#?}",
+			Rc::as_ptr(&tree.get_root_link())
+		);
+		println!(
+			"cloned_tree->..->root_link | ptr: {:#?}\n",
+			Rc::as_ptr(&cloned_tree.get_root_link())
+		);
+		assert!(!Rc::ptr_eq(
+			&tree.get_root_link(),
+			&cloned_tree.get_root_link()
+		));
+
+		// Note: This may not be permanent behavior
+		println!(
+			"tree->..->root_link->name        | ptr: {:#?}",
+			&tree.get_root_link().borrow().name.as_ptr()
+		);
+		println!(
+			"cloned_tree->..->root_link->name | ptr: {:#?}\n",
+			&cloned_tree.get_root_link().borrow().name.as_ptr()
+		);
+		assert_eq!(
+			&tree.get_root_link().borrow().get_name(),
+			&cloned_tree.get_root_link().borrow().get_name()
+		);
+
+		println!(
+			"tree->..->root_link->tree        | ptr: {:#?}",
+			Weak::as_ptr(&tree.get_root_link().borrow().tree)
+		);
+		println!(
+			"cloned_tree->..->root_link->tree | ptr: {:#?}\n",
+			Weak::as_ptr(&cloned_tree.get_root_link().borrow().tree)
+		);
+		assert!(!Weak::ptr_eq(
+			&tree.get_root_link().borrow().tree,
+			&cloned_tree.get_root_link().borrow().tree
+		));
+
+		println!(
+			"tree->..->root_link->direct_parent->0        | ptr: {:#?}",
+			Weak::as_ptr(match &tree.get_root_link().borrow().get_parent().unwrap() {
+				LinkParent::KinematicTree(weak_tree) => weak_tree,
+				LinkParent::Joint(_) => panic!("This should not return a Joint Parent"),
+			})
+		);
+		println!(
+			"cloned_tree->..->root_link->direct_parent->0 | ptr: {:#?}\n",
+			Weak::as_ptr(
+				match &cloned_tree.get_root_link().borrow().get_parent().unwrap() {
+					LinkParent::KinematicTree(weak_tree) => weak_tree,
+					LinkParent::Joint(_) => panic!("This should not return a Joint Parent"),
+				}
+			)
+		);
+		assert_ne!(
+			&tree.get_root_link().borrow().get_parent(),
+			&cloned_tree.get_root_link().borrow().get_parent()
+		);
+
+		println!(
+			"tree->..->root_link->child_joints:        {:?}",
+			&tree
+				.get_root_link()
+				.borrow()
+				.get_joints()
+				.iter()
+				.map(|joint| joint.borrow().name.clone())
+				.collect::<Vec<String>>()
+		);
+		println!(
+			"cloned_tree->..->root_link->child_joints: {:?}\n",
+			&cloned_tree
+				.get_root_link()
+				.borrow()
+				.get_joints()
+				.iter()
+				.map(|joint| joint.borrow().name.clone())
+				.collect::<Vec<String>>()
+		);
+		assert_eq!(
+			tree.get_root_link().borrow().get_joints().len(),
+			cloned_tree.get_root_link().borrow().get_joints().len()
+		);
+
+		println!(
+			"tree->..->links        | ptr: {:#?} | keys: {:?}",
+			Rc::as_ptr(&tree.get_links()), &tree.get_links().borrow().keys().map(|key| key.clone()).collect::<Vec<String>>()
+		);
+		println!(
+			"cloned_tree->..->links | ptr: {:#?} | keys: {:?}\n",
+			Rc::as_ptr(&cloned_tree.get_links()),
+			&cloned_tree.get_links().borrow().keys().map(|key| key.clone()).collect::<Vec<String>>()
+		);
+		assert!(!Rc::ptr_eq(&tree.get_links(), &cloned_tree.get_links()));
+		assert_eq!(
+			tree.get_links().borrow().len(),
+			cloned_tree.get_links().borrow().len()
+		);
+
+		println!(
+			"tree->..->links[\"example-link\"]        | ptr: {:#?}",
+			Weak::as_ptr(&tree.get_links().borrow().get("example-link").unwrap())
+		);
+		println!(
+			"cloned_tree->..->links[\"example-link\"] | ptr: {:#?}\n",
+			Weak::as_ptr(
+				&cloned_tree
+					.get_links()
+					.borrow()
+					.get("example-link")
+					.unwrap()
+			)
+		);
+		assert!(!Weak::ptr_eq(
+			&tree.get_links().borrow().get("example-link").unwrap(),
+			&cloned_tree
+				.get_links()
+				.borrow()
+				.get("example-link")
+				.unwrap()
+		));
+
+		println!(
+			"tree->..->root_link->child_joints:        {:#?}",
+			&tree.get_root_link().borrow().get_joints()
+		);
+		println!(
+			"cloned_tree->..->root_link->child_joints: {:#?}\n",
+			&cloned_tree.get_root_link().borrow().get_joints()
+		);
+		assert_eq!(
+			tree.get_root_link().borrow().get_joints().len(),
+			cloned_tree.get_root_link().borrow().get_joints().len()
+		);
+
+		println!(
+			"tree->..->joints        | ptr: {:#?}",
+			Rc::as_ptr(&tree.get_joints())
+		);
+		println!(
+			"cloned_tree->..->joints | ptr: {:#?}\n",
+			Rc::as_ptr(&cloned_tree.get_joints())
+		);
+		assert!(!Rc::ptr_eq(&tree.get_joints(), &cloned_tree.get_joints()));
+		assert_eq!(
+			tree.get_joints().borrow().len(),
+			cloned_tree.get_joints().borrow().len()
+		);
+
+		println!(
+			"tree->..->newest_link        | ptr: {:#?}",
+			Rc::as_ptr(&tree.get_newest_link())
+		);
+		println!(
+			"cloned_tree->..->newest_link | ptr: {:#?}\n",
+			Rc::as_ptr(&cloned_tree.get_newest_link())
+		);
+		assert!(!Rc::ptr_eq(
+			&tree.get_newest_link(),
+			&cloned_tree.get_newest_link()
+		));
 	}
 }

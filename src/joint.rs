@@ -11,6 +11,8 @@ pub struct Joint {
 	pub(crate) tree: Weak<RefCell<KinematicTreeData>>,
 	pub(crate) parent_link: Weak<RefCell<Link>>,
 	pub child_link: Rc<RefCell<Link>>, //temp pub TODO: THIS PROBABLY ISN'T THE NICEST WAY TO DO THIS.
+	/// The information specific to the JointType: TODO: DECIDE IF THIS SHOULD BE PUBLIC
+	pub(crate) joint_type: JointType
 }
 
 impl Joint {
@@ -43,11 +45,12 @@ impl PartialEq for Joint {
 		self.name == other.name
 			&& self.parent_link.upgrade() == other.parent_link.upgrade()
 			&& self.child_link == other.child_link
+			&& self.joint_type == other.joint_type
 	}
 }
 
 /// TODO: Might add data of specif joint type to Struct Spaces.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum JointType {
 	Fixed, // — this is not really a joint because it cannot move. All degrees of freedom are locked. This type of joint does not require the <axis>, <calibration>, <dynamics>, <limits> or <safety_controller>.
 	Revolute, // — a hinge joint that rotates along the axis and has a limited range specified by the upper and lower limits.
