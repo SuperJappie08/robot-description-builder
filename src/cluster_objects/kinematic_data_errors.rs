@@ -148,3 +148,53 @@ impl PartialEq for AddJointError {
 		}
 	}
 }
+
+#[derive(Debug)]
+pub enum AddTransmissionError {
+	Borrow(BorrowError),
+	BorrowMut(BorrowMutError),
+	Conflict(String),
+}
+
+impl fmt::Display for AddTransmissionError {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		match self {
+			Self::Borrow(err) => err.fmt(f),
+			Self::BorrowMut(err) => err.fmt(f),
+			Self::Conflict(name) => write!(f, "Duplicate Transmission name '{}'", name),
+		}
+	}
+}
+
+impl Error for AddTransmissionError {
+	fn source(&self) -> Option<&(dyn Error + 'static)> {
+		match self {
+			Self::Borrow(err) => Some(err),
+			Self::BorrowMut(err) => Some(err),
+			Self::Conflict(_) => None,
+		}
+	}
+}
+
+impl From<BorrowError> for AddTransmissionError {
+	fn from(value: BorrowError) -> Self {
+		Self::Borrow(value)
+	}
+}
+
+impl From<BorrowMutError> for AddTransmissionError {
+	fn from(value: BorrowMutError) -> Self {
+		Self::BorrowMut(value)
+	}
+}
+
+impl PartialEq for AddTransmissionError {
+	fn eq(&self, other: &Self) -> bool {
+		match (self, other) {
+			(Self::Borrow(_), Self::Borrow(_)) => true,
+			(Self::BorrowMut(_), Self::BorrowMut(_)) => true,
+			(Self::Conflict(l0), Self::Conflict(r0)) => l0 == r0,
+			_ => false,
+		}
+	}
+}

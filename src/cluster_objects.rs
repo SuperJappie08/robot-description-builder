@@ -4,9 +4,15 @@ use std::{
 	rc::{Rc, Weak},
 };
 
-use crate::{joint::Joint, link::Link, material::Material};
-
-use self::kinematic_tree_data::KinematicTreeData;
+use crate::{
+	cluster_objects::{
+		kinematic_data_errors::AddTransmissionError, kinematic_tree_data::KinematicTreeData,
+	},
+	joint::Joint,
+	link::Link,
+	material::Material,
+	Transmission,
+};
 
 pub mod kinematic_data_errors;
 mod kinematic_tree;
@@ -30,11 +36,21 @@ pub trait KinematicInterface {
 	// These do not have to be mutable
 	fn get_links(&self) -> Rc<RefCell<HashMap<String, Weak<RefCell<Link>>>>>;
 	fn get_joints(&self) -> Rc<RefCell<HashMap<String, Weak<RefCell<Joint>>>>>;
-	fn get_material_index(&self) -> Rc<RefCell<HashMap<String, Rc<RefCell<Material>>>>>;
+	fn get_materials(&self) -> Rc<RefCell<HashMap<String, Rc<RefCell<Material>>>>>;
+	fn get_transmissions(&self) -> Rc<RefCell<HashMap<String, Rc<RefCell<Transmission>>>>>;
 
 	fn get_link(&self, name: &str) -> Option<Rc<RefCell<Link>>>;
 	fn get_joint(&self, name: &str) -> Option<Rc<RefCell<Joint>>>;
 	fn get_material(&self, name: &str) -> Option<Rc<RefCell<Material>>>;
+	fn get_transmission(&self, name: &str) -> Option<Rc<RefCell<Transmission>>>;
+
+	// TODO: ADD try_add_material()
+	/// TODO: NOT FINAL
+	/// TODO: Maybe remove rcrefcell from transmission parameter
+	fn try_add_transmission(
+		&self,
+		transmission: Rc<RefCell<Transmission>>,
+	) -> Result<(), AddTransmissionError>;
 
 	// TODO: Expand
 }

@@ -4,9 +4,9 @@ use std::{
 	rc::{Rc, Weak},
 };
 
-use crate::{joint::Joint, link::Link, Material, Transmission};
+use crate::{joint::Joint, link::Link, material::Material, Transmission};
 
-use super::kinematic_data_errors::{AddJointError, AddLinkError, AddMaterialError};
+use crate::cluster_objects::kinematic_data_errors::*;
 
 // pub(crate) trait KinematicTreeTrait {}
 
@@ -18,7 +18,7 @@ pub struct KinematicTreeData {
 	// TODO: Why is this an `Rc<RefCell<_>`?
 	pub(crate) links: Rc<RefCell<HashMap<String, Weak<RefCell<Link>>>>>,
 	pub(crate) joints: Rc<RefCell<HashMap<String, Weak<RefCell<Joint>>>>>,
-	// transmissions: Rc<RefCell<HashMap<String, Rc<RefCell<Transmission>>>>>,
+	pub(crate) transmissions: Rc<RefCell<HashMap<String, Rc<RefCell<Transmission>>>>>,
 	pub(crate) newest_link: Weak<RefCell<Link>>,
 	// is_rigid: bool // ? For gazebo -> TO AdvancedSimulationData [ASD]
 }
@@ -29,7 +29,7 @@ impl KinematicTreeData {
 		let material_index = HashMap::new();
 		let mut links = HashMap::new();
 		let joints = HashMap::new();
-		// let transmissions = Rc::new(HashMap::new());
+		let transmissions = HashMap::new();
 
 		links.insert(
 			root_link.try_borrow().unwrap().get_name(),
@@ -44,7 +44,7 @@ impl KinematicTreeData {
 			material_index: Rc::new(RefCell::new(material_index)),
 			links: Rc::new(RefCell::new(links)),
 			joints: Rc::new(RefCell::new(joints)),
-			// transmissions,
+			transmissions: Rc::new(RefCell::new(transmissions)),
 		}));
 
 		{
@@ -131,17 +131,57 @@ impl KinematicTreeData {
 		}
 	}
 
-	/// Cleans up broken `Joint` and `Link` entries from the `links` and `joints` HashMaps.
-	pub fn purge(&mut self) {
+	pub(crate) fn try_add_transmission(
+		&mut self,
+		transmission: Rc<RefCell<Transmission>>,
+	) -> Result<(), AddTransmissionError> {
+		let name = transmission.try_borrow()?.name.clone();
+		let other_transmission = { self.transmissions.try_borrow()?.get(&name) }.map(Rc::clone);
+		if let Some(preexisting_transmission) = other_transmission {
+			if Rc::ptr_eq(&preexisting_transmission, &transmission) {
+				Err(AddTransmissionError::Conflict(name))
+			} else {
+				Ok(())
+			}
+		} else {
+			assert!(self
+				.transmissions
+				.try_borrow_mut()?
+				.insert(name, transmission)
+				.is_none());
+			Ok(())
+		}
+	}
+
+	/// Cleans up broken `Joint` entries from the `joints` HashMap.
+	///
+	/// TODO: Maybe make pub(crate), since you can not remove a `joint` normally from outside the crate. and cleanup should be done by the crate.
+	pub fn purge_joints(&mut self) {
 		self.joints
 			.borrow_mut()
 			.retain(|_, weak_joint| weak_joint.upgrade().is_some());
 		self.joints.borrow_mut().shrink_to_fit();
+	}
 
+	/// Cleans up broken `Link` entries from the `links` HashMap.
+	///
+	/// TODO: Maybe make pub(crate), since you can not remove a `link` normally from outside the crate. and cleanup should be done by the crate.
+	pub fn purge_links(&mut self) {
 		self.links
 			.borrow_mut()
 			.retain(|_, weak_link| weak_link.upgrade().is_some());
 		self.links.borrow_mut().shrink_to_fit();
+	}
+
+	/// Cleans up broken `Joint` and `Link` entries from the `links` and `joints` HashMaps.
+	///
+	/// TODO: Rewrite DOC
+	pub fn purge(&mut self) {
+		self.purge_joints();
+
+		self.purge_links();
+
+		//TODO: UPDATE FOR MATERIALS
 	}
 }
 

@@ -6,10 +6,10 @@ use std::{
 
 use crate::{
 	cluster_objects::kinematic_tree_data::KinematicTreeData, joint::Joint, link::Link,
-	material::Material,
+	material::Material, Transmission,
 };
 
-use super::KinematicInterface;
+use super::{kinematic_data_errors::AddTransmissionError, KinematicInterface};
 
 #[derive(Debug)]
 pub struct KinematicTree(Rc<RefCell<KinematicTreeData>>);
@@ -41,8 +41,12 @@ impl KinematicInterface for KinematicTree {
 		Rc::clone(&self.0.borrow().joints)
 	}
 
-	fn get_material_index(&self) -> Rc<RefCell<HashMap<String, Rc<RefCell<Material>>>>> {
+	fn get_materials(&self) -> Rc<RefCell<HashMap<String, Rc<RefCell<Material>>>>> {
 		Rc::clone(&self.0.borrow().material_index)
+	}
+
+	fn get_transmissions(&self) -> Rc<RefCell<HashMap<String, Rc<RefCell<Transmission>>>>> {
+		Rc::clone(&self.0.borrow().transmissions)
 	}
 
 	fn get_link(&self, name: &str) -> Option<Rc<RefCell<Link>>> {
@@ -70,6 +74,22 @@ impl KinematicInterface for KinematicTree {
 			.borrow()
 			.get(name)
 			.and_then(|material_rc| Some(Rc::clone(material_rc)))
+	}
+
+	fn get_transmission(&self, name: &str) -> Option<Rc<RefCell<Transmission>>> {
+		self.0
+			.borrow()
+			.transmissions
+			.borrow()
+			.get(name)
+			.and_then(|transmission_rc| Some(Rc::clone(transmission_rc)))
+	}
+
+	fn try_add_transmission(
+		&self,
+		transmission: Rc<RefCell<Transmission>>,
+	) -> Result<(), AddTransmissionError> {
+		self.0.borrow_mut().try_add_transmission(transmission)
 	}
 }
 

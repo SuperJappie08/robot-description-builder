@@ -166,8 +166,8 @@ impl Link {
 		self.tree = Rc::downgrade(new_parent_tree);
 	}
 
-	pub fn add_visual(&mut self, visual: Visual) -> Self {
-		todo!()
+	pub fn add_visual(&mut self, visual: Visual) -> &mut Self {
+		self.try_add_visual(visual).unwrap()
 	}
 
 	pub fn try_add_visual(&mut self, visual: Visual) -> Result<&mut Self, AddVisualError> {

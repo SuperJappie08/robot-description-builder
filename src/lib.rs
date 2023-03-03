@@ -8,9 +8,11 @@ pub use joint::{Joint, JointType};
 pub use link::{helper_functions, Link};
 pub use material::Material;
 
-//tmp
 #[derive(Debug, PartialEq, Eq)]
-struct Transmission;
+/// TODO: IMPLEMENT PROPPERLY, THIS IS TEMPORARY
+pub struct Transmission {
+	pub name: String,
+}
 
 pub fn add(left: usize, right: usize) -> usize {
 	left + right
