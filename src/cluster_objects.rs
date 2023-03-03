@@ -4,7 +4,7 @@ use std::{
 	rc::{Rc, Weak},
 };
 
-use crate::{joint::Joint, link::Link};
+use crate::{joint::Joint, link::Link, material::Material};
 
 use self::kinematic_tree_data::KinematicTreeData;
 
@@ -30,9 +30,11 @@ pub trait KinematicInterface {
 	// These do not have to be mutable
 	fn get_links(&self) -> Rc<RefCell<HashMap<String, Weak<RefCell<Link>>>>>;
 	fn get_joints(&self) -> Rc<RefCell<HashMap<String, Weak<RefCell<Joint>>>>>;
+	fn get_material_index(&self) -> Rc<RefCell<HashMap<String, Rc<RefCell<Material>>>>>;
 
 	fn get_link(&self, name: &str) -> Option<Rc<RefCell<Link>>>;
 	fn get_joint(&self, name: &str) -> Option<Rc<RefCell<Joint>>>;
+	fn get_material(&self, name: &str) -> Option<Rc<RefCell<Material>>>;
 
 	// TODO: Expand
 }

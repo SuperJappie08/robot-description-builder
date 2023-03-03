@@ -35,6 +35,10 @@ impl KinematicInterface for Robot {
 		Rc::clone(&self.data.borrow().joints)
 	}
 
+	fn get_material_index(&self) -> Rc<RefCell<HashMap<String, Rc<RefCell<crate::Material>>>>> {
+		Rc::clone(&self.data.borrow().material_index)
+	}
+
 	fn get_link(&self, name: &str) -> Option<Rc<RefCell<Link>>> {
 		self.data
 			.borrow()
@@ -51,6 +55,15 @@ impl KinematicInterface for Robot {
 			.borrow()
 			.get(name)
 			.and_then(|weak_joint| weak_joint.upgrade())
+	}
+
+	fn get_material(&self, name: &str) -> Option<Rc<RefCell<crate::Material>>> {
+		self.data
+			.borrow()
+			.material_index
+			.borrow()
+			.get(name)
+			.and_then(|material_rc| Some(Rc::clone(material_rc)))
 	}
 }
 

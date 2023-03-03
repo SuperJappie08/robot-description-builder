@@ -1,3 +1,16 @@
+mod collision;
+mod geometry;
+pub mod helper_functions;
+mod link_parent;
+mod visual;
+
+#[cfg(feature = "logging")]
+use log::{info, log_enabled, Level};
+
+pub use collision::Collision;
+pub use link_parent::LinkParent;
+pub use visual::Visual;
+
 use std::{
 	cell::RefCell,
 	error::Error,
@@ -7,49 +20,12 @@ use std::{
 
 use crate::{
 	cluster_objects::{
-		kinematic_data_errors::{AddJointError, AddLinkError},
+		kinematic_data_errors::{AddJointError, AddLinkError, AddMaterialError},
 		kinematic_tree_data::KinematicTreeData,
 		KinematicInterface, KinematicTree,
 	},
 	joint::{Joint, JointType},
 };
-
-#[derive(Debug)]
-pub enum LinkParent {
-	Joint(Weak<RefCell<Joint>>),
-	KinematicTree(Weak<RefCell<KinematicTreeData>>),
-}
-
-impl Clone for LinkParent {
-	fn clone(&self) -> Self {
-		match self {
-			Self::Joint(joint) => Self::Joint(Weak::clone(joint)),
-			Self::KinematicTree(tree) => Self::KinematicTree(Weak::clone(tree)),
-		}
-	}
-}
-
-impl From<Weak<RefCell<KinematicTreeData>>> for LinkParent {
-	fn from(value: Weak<RefCell<KinematicTreeData>>) -> Self {
-		Self::KinematicTree(value)
-	}
-}
-
-impl PartialEq for LinkParent {
-	fn eq(&self, other: &Self) -> bool {
-		match (self, other) {
-			(Self::Joint(l0), Self::Joint(r0)) => l0.ptr_eq(r0),
-			(Self::KinematicTree(l0), Self::KinematicTree(r0)) => l0.ptr_eq(r0),
-			_ => false,
-		}
-	}
-}
-
-#[derive(Debug)]
-pub struct Visual;
-
-#[derive(Debug)]
-pub struct Collision;
 
 // pub trait LinkTrait: Debug {
 // 	/// Returns the parent of the `Link` wrapped in a optional.
@@ -80,16 +56,23 @@ pub struct Link {
 	pub(crate) tree: Weak<RefCell<KinematicTreeData>>,
 	direct_parent: Option<LinkParent>,
 	child_joints: Vec<Rc<RefCell<Joint>>>,
+	visuals: Vec<Visual>,
+	colliders: Vec<Collision>,
 }
 
 impl Link {
 	/// NOTE: Maybe change name to `Impl Into<String>` or a `&str`, for ease of use?
 	pub fn new(name: String) -> KinematicTree {
+		#[cfg(feature = "logging")]
+		info!("Making a Link[name = \"{}\"", name);
+
 		let link = Link {
 			name,
 			tree: Weak::new(),
 			direct_parent: None,
 			child_joints: Vec::new(),
+			visuals: Vec::new(),
+			colliders: Vec::new(),
 		};
 
 		let tree = KinematicTreeData::new_link(link);
@@ -187,8 +170,36 @@ impl Link {
 		todo!()
 	}
 
-	pub fn add_collider(&mut self, collider: Collision) -> Self {
-		todo!()
+	pub fn try_add_visual(&mut self, visual: Visual) -> Result<&mut Self, AddVisualError> {
+		if visual.material.is_some() {
+			let result = self
+				.tree
+				.upgrade()
+				.unwrap()
+				.borrow_mut()
+				.try_add_material(Rc::clone(&visual.material.as_ref().unwrap()));
+			if let Err(material_error) = result {
+				match material_error {
+					AddMaterialError::NoName =>
+					{
+						#[cfg(feature = "logging")]
+						if log_enabled!(Level::Info) {
+							info!("An attempt was made to add a material, without a `name`. So Moving on!")
+						}
+					}
+					_ => Err(material_error)?,
+				}
+			}
+		}
+
+		self.visuals.push(visual);
+		Ok(self)
+	}
+
+	/// TODO:NOTE: Originally returned self for chaining, dont now if that is neccessary? so removed for now
+	pub fn add_collider(&mut self, collider: Collision) -> &mut Self {
+		self.colliders.push(collider);
+		self
 	}
 }
 
@@ -234,6 +245,33 @@ impl From<AddLinkError> for AttachChildError {
 impl From<AddJointError> for AttachChildError {
 	fn from(value: AddJointError) -> Self {
 		Self::AddJoint(value)
+	}
+}
+
+#[derive(Debug)]
+pub enum AddVisualError {
+	AddMaterial(AddMaterialError),
+}
+
+impl fmt::Display for AddVisualError {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		match self {
+			Self::AddMaterial(err) => err.fmt(f),
+		}
+	}
+}
+
+impl Error for AddVisualError {
+	fn source(&self) -> Option<&(dyn Error + 'static)> {
+		match self {
+			Self::AddMaterial(err) => Some(err),
+		}
+	}
+}
+
+impl From<AddMaterialError> for AddVisualError {
+	fn from(value: AddMaterialError) -> Self {
+		Self::AddMaterial(value)
 	}
 }
 

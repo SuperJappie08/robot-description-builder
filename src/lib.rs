@@ -1,16 +1,12 @@
 mod cluster_objects;
 mod joint;
 mod link;
+mod material;
 
 pub use cluster_objects::{KinematicInterface, KinematicTree, Robot};
 pub use joint::{Joint, JointType};
-pub use link::Link;
-
-//tmp
-#[derive(Debug, PartialEq, Eq)]
-pub struct Material {
-	pub name: String,
-}
+pub use link::{helper_functions, Link};
+pub use material::Material;
 
 //tmp
 #[derive(Debug, PartialEq, Eq)]

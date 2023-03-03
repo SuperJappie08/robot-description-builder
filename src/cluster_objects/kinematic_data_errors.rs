@@ -7,16 +7,21 @@ use std::{
 #[derive(Debug)]
 pub enum AddMaterialError {
 	Borrow(BorrowError),
-	MaterialConflict(String),
+	BorrowMut(BorrowMutError),
+	Conflict(String),
+	/// To be returned when the material has no name to index by.
+	NoName,
 }
 
 impl fmt::Display for AddMaterialError {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		match self {
-			AddMaterialError::Borrow(err) => err.fmt(f),
-			AddMaterialError::MaterialConflict(name) => {
+			Self::Borrow(err) => err.fmt(f),
+			Self::BorrowMut(err) => err.fmt(f),
+			Self::Conflict(name) => {
 				write!(f, "Duplicate material name '{}'", name)
 			}
+			Self::NoName => write!(f, "The material has no name, to be used as index."),
 		}
 	}
 }
@@ -24,15 +29,23 @@ impl fmt::Display for AddMaterialError {
 impl Error for AddMaterialError {
 	fn source(&self) -> Option<&(dyn Error + 'static)> {
 		match self {
-			AddMaterialError::Borrow(err) => Some(err),
-			AddMaterialError::MaterialConflict(_) => None,
+			Self::Borrow(err) => Some(err),
+			Self::BorrowMut(err) => Some(err),
+			Self::Conflict(_) => None,
+			Self::NoName => None,
 		}
 	}
 }
 
 impl From<BorrowError> for AddMaterialError {
 	fn from(value: BorrowError) -> Self {
-		AddMaterialError::Borrow(value)
+		Self::Borrow(value)
+	}
+}
+
+impl From<BorrowMutError> for AddMaterialError {
+	fn from(value: BorrowMutError) -> Self {
+		Self::BorrowMut(value)
 	}
 }
 

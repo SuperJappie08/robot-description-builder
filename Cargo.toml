@@ -18,3 +18,4 @@ pollster = { version = "0.3.0", optional = true }
 [features]
 default = []
 viewer = ["dep:winit", "dep:env_logger", "dep:log","dep:wgpu", "dep:pollster"]
+logging = ["dep:log"]
