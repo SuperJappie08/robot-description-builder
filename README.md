@@ -2,7 +2,8 @@
 
 
 ## Roadmap:
-- [ ] Implement geometries
+- [x] Implement geometries
+- [ ] Implement Materials fully
 - [ ] Implement to URDF some way.
 - [ ] Implement mirroring
   - `KinematicInterface::Mirror(...)`

@@ -24,9 +24,54 @@ pub use robot::Robot;
 
 pub trait KinematicInterface {
 	// NOTE: THIS IS NOT FINAL;
-	// fn merge(&mut self, other: dyn KinematicInterface);
+
+	/// Returns the root link of the Kinematic Tree
+	///
+	/// # Example
+	/// ```
+	/// # use rdf_builder::{KinematicInterface, Link, JointType};
+	/// let tree = Link::new("the root link".to_owned());
+	///
+	/// /// This is equivalent to `get_root_link` in this case, since this is a new tree/Link.
+	/// tree.get_newest_link().borrow_mut().try_attach_child(
+	/// 	Link::new("his one and only child".to_owned()).into(),
+	/// 	"just a joint".to_owned(),
+	/// 	JointType::Fixed
+	/// ).unwrap();
+	///
+	/// assert_eq!(tree.get_root_link().borrow().get_name(), "the root link")
+	/// ```
 	fn get_root_link(&self) -> Rc<RefCell<Link>>;
-	/// TODO: Maybe make this return a Ref instead of a Rc (WAS WEAK) -> UPDATE: You can't, it is not allowed by the scoping rules
+
+	/// Returns the newest link of the Kinematic Tree
+	///
+	/// # Example
+	/// ```
+	/// # use rdf_builder::{KinematicInterface, Link, JointType};
+	/// let tree = Link::new("the root link".to_owned());
+	///
+	/// assert_eq!(tree.get_newest_link().borrow().get_name(), "the root link");
+	///
+	/// tree.get_newest_link().borrow_mut().try_attach_child(
+	/// 	Link::new("his one and only child".to_owned()).into(),
+	/// 	"just a joint".to_owned(), JointType::Fixed
+	/// ).unwrap();
+	///
+	/// assert_eq!(tree.get_newest_link().borrow().get_name(), "his one and only child");
+	///
+	/// let long_sub_tree = Link::new("the other child". to_owned());
+	///
+	/// long_sub_tree.get_newest_link().borrow_mut().try_attach_child(
+	/// 	Link::new("the latest child".to_owned()).into(),
+	/// 	"second joint".to_owned(), JointType::Fixed
+	/// ).unwrap();
+	///
+	/// tree.get_root_link().borrow_mut().try_attach_child(long_sub_tree.into(),
+	/// 	"third joint".to_owned(), JointType::Fixed
+	/// ).unwrap();
+	///
+	/// assert_eq!(tree.get_newest_link().borrow().get_name(), "the latest child");
+	/// ```
 	fn get_newest_link(&self) -> Rc<RefCell<Link>>;
 
 	#[deprecated]

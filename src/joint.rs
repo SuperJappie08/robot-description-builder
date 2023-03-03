@@ -7,8 +7,11 @@ use crate::{cluster_objects::kinematic_tree_data::KinematicTreeData, link::Link}
 
 #[derive(Debug)]
 pub struct Joint {
+	/// The name of the `Joint`
 	pub name: String,
+	/// A Reference to the parent Kinematic Tree
 	pub(crate) tree: Weak<RefCell<KinematicTreeData>>,
+	/// A Reference to the parent `Link`
 	pub(crate) parent_link: Weak<RefCell<Link>>,
 	pub child_link: Rc<RefCell<Link>>, //temp pub TODO: THIS PROBABLY ISN'T THE NICEST WAY TO DO THIS.
 	/// The information specific to the JointType: TODO: DECIDE IF THIS SHOULD BE PUBLIC
@@ -16,6 +19,7 @@ pub struct Joint {
 }
 
 impl Joint {
+	/// Adds the `Joint` to a kinematic tree
 	pub(crate) fn add_to_tree(&mut self, new_parent_tree: &Rc<RefCell<KinematicTreeData>>) {
 		{
 			let mut new_ptree = new_parent_tree.borrow_mut();
@@ -26,16 +30,19 @@ impl Joint {
 		self.tree = Rc::downgrade(new_parent_tree);
 	}
 
+	/// Returns a reference to the parent `Link`
+	///
+	/// TODO: ADD EXAMPLE
+	///
 	/// For now pub crate, this should maybe go to joint trait
 	pub fn get_parent_link(&self) -> Rc<RefCell<Link>> {
-		// If this panics, the joint is not initialized propperly.
+		// If this panics, the Joint is not initialized propperly.
 		self.parent_link.upgrade().unwrap()
 	}
 
 	/// For now pub crate, this should maybe go to joint trait
 	/// Is this even necessary?
 	pub fn get_child_link(&self) -> Rc<RefCell<Link>> {
-		// If this panics, the joint is not initialized propperly.
 		Rc::clone(&self.child_link)
 	}
 }

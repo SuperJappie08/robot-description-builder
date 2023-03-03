@@ -177,7 +177,7 @@ impl Link {
 				.upgrade()
 				.unwrap()
 				.borrow_mut()
-				.try_add_material(Rc::clone(&visual.material.as_ref().unwrap()));
+				.try_add_material(Rc::clone(visual.material.as_ref().unwrap()));
 			if let Err(material_error) = result {
 				match material_error {
 					AddMaterialError::NoName =>
