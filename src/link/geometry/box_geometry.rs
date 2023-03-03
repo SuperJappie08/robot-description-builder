@@ -33,8 +33,8 @@ impl GeometryInterface for BoxGeometry {
 	}
 }
 
-impl Into<Box<dyn GeometryInterface>> for BoxGeometry {
-	fn into(self) -> Box<dyn GeometryInterface> {
-		Box::new(self)
+impl From<BoxGeometry> for Box<dyn GeometryInterface> {
+	fn from(value: BoxGeometry) -> Self {
+		Box::new(value)
 	}
 }

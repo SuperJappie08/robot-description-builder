@@ -27,8 +27,8 @@ impl GeometryInterface for SphereGeometry {
 	}
 }
 
-impl Into<Box<dyn GeometryInterface>> for SphereGeometry {
-	fn into(self) -> Box<dyn GeometryInterface> {
-		Box::new(self)
+impl From<SphereGeometry> for Box<dyn GeometryInterface> {
+	fn from(value: SphereGeometry) -> Self {
+		Box::new(value)
 	}
 }

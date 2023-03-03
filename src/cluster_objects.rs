@@ -34,9 +34,9 @@ pub trait KinematicInterface {
 	///
 	/// /// This is equivalent to `get_root_link` in this case, since this is a new tree/Link.
 	/// tree.get_newest_link().borrow_mut().try_attach_child(
-	/// 	Link::new("his one and only child".to_owned()).into(),
-	/// 	"just a joint".to_owned(),
-	/// 	JointType::Fixed
+	///     Link::new("his one and only child".to_owned()).into(),
+	///     "just a joint".to_owned(),
+	///     JointType::Fixed
 	/// ).unwrap();
 	///
 	/// assert_eq!(tree.get_root_link().borrow().get_name(), "the root link")
@@ -53,8 +53,8 @@ pub trait KinematicInterface {
 	/// assert_eq!(tree.get_newest_link().borrow().get_name(), "the root link");
 	///
 	/// tree.get_newest_link().borrow_mut().try_attach_child(
-	/// 	Link::new("his one and only child".to_owned()).into(),
-	/// 	"just a joint".to_owned(), JointType::Fixed
+	///     Link::new("his one and only child".to_owned()).into(),
+	///     "just a joint".to_owned(), JointType::Fixed
 	/// ).unwrap();
 	///
 	/// assert_eq!(tree.get_newest_link().borrow().get_name(), "his one and only child");
@@ -62,12 +62,12 @@ pub trait KinematicInterface {
 	/// let long_sub_tree = Link::new("the other child". to_owned());
 	///
 	/// long_sub_tree.get_newest_link().borrow_mut().try_attach_child(
-	/// 	Link::new("the latest child".to_owned()).into(),
-	/// 	"second joint".to_owned(), JointType::Fixed
+	///     Link::new("the latest child".to_owned()).into(),
+	///     "second joint".to_owned(), JointType::Fixed
 	/// ).unwrap();
 	///
 	/// tree.get_root_link().borrow_mut().try_attach_child(long_sub_tree.into(),
-	/// 	"third joint".to_owned(), JointType::Fixed
+	///     "third joint".to_owned(), JointType::Fixed
 	/// ).unwrap();
 	///
 	/// assert_eq!(tree.get_newest_link().borrow().get_name(), "the latest child");

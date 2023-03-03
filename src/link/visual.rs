@@ -26,7 +26,7 @@ impl Visual {
 	) -> Self {
 		Self {
 			name,
-			reference: reference,
+			reference,
 			geometry,
 			material,
 		}

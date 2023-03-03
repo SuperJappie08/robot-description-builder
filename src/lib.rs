@@ -6,7 +6,7 @@ mod material;
 pub use cluster_objects::{KinematicInterface, KinematicTree, Robot};
 pub use joint::{Joint, JointType};
 pub use link::{helper_functions, Link};
-pub use material::Material;
+pub use material::{Material, MaterialData};
 
 #[derive(Debug, PartialEq, Eq)]
 /// TODO: IMPLEMENT PROPPERLY, THIS IS TEMPORARY
@@ -20,7 +20,7 @@ pub struct Transmission {
 
 #[cfg(test)]
 mod tests {
-	use super::*;
+	// use super::*;
 
 	// #[test]
 	// fn it_works() {

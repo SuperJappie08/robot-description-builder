@@ -73,7 +73,7 @@ impl KinematicInterface for KinematicTree {
 			.material_index
 			.borrow()
 			.get(name)
-			.and_then(|material_rc| Some(Rc::clone(material_rc)))
+			.map(Rc::clone)
 	}
 
 	fn get_transmission(&self, name: &str) -> Option<Rc<RefCell<Transmission>>> {
@@ -82,7 +82,7 @@ impl KinematicInterface for KinematicTree {
 			.transmissions
 			.borrow()
 			.get(name)
-			.and_then(|transmission_rc| Some(Rc::clone(transmission_rc)))
+			.map(Rc::clone)
 	}
 
 	fn try_add_transmission(
@@ -100,12 +100,7 @@ impl Clone for KinematicTree {
 
 		let mut change = true;
 		while change {
-			let keys: Vec<String> = tree
-				.get_links()
-				.borrow()
-				.keys()
-				.map(|key| key.clone())
-				.collect();
+			let keys: Vec<String> = tree.get_links().borrow().keys().cloned().collect();
 			let key_count = keys.len();
 
 			for key in keys {
@@ -142,9 +137,9 @@ impl Clone for KinematicTree {
 	}
 }
 
-impl Into<Box<dyn KinematicInterface>> for KinematicTree {
-	fn into(self) -> Box<dyn KinematicInterface> {
-		Box::new(self)
+impl From<KinematicTree> for Box<dyn KinematicInterface> {
+	fn from(value: KinematicTree) -> Self {
+		Box::new(value)
 	}
 }
 

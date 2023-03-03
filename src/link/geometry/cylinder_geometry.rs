@@ -28,8 +28,8 @@ impl GeometryInterface for CylinderGeometry {
 	}
 }
 
-impl Into<Box<dyn GeometryInterface>> for CylinderGeometry {
-	fn into(self) -> Box<dyn GeometryInterface> {
-		Box::new(self)
+impl From<CylinderGeometry> for Box<dyn GeometryInterface> {
+	fn from(value: CylinderGeometry) -> Self {
+		Box::new(value)
 	}
 }

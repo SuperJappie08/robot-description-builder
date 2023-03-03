@@ -69,7 +69,7 @@ impl KinematicInterface for Robot {
 			.material_index
 			.borrow()
 			.get(name)
-			.and_then(|material_rc| Some(Rc::clone(material_rc)))
+			.map(Rc::clone)
 	}
 
 	fn get_transmission(&self, name: &str) -> Option<Rc<RefCell<Transmission>>> {
@@ -78,7 +78,7 @@ impl KinematicInterface for Robot {
 			.transmissions
 			.borrow()
 			.get(name)
-			.and_then(|transmission_rc| Some(Rc::clone(transmission_rc)))
+			.map(Rc::clone)
 	}
 
 	fn try_add_transmission(
@@ -89,8 +89,8 @@ impl KinematicInterface for Robot {
 	}
 }
 
-impl Into<Box<dyn KinematicInterface>> for Robot {
-	fn into(self) -> Box<dyn KinematicInterface> {
-		Box::new(self)
+impl From<Robot> for Box<dyn KinematicInterface> {
+	fn from(value: Robot) -> Self {
+		Box::new(value)
 	}
 }
