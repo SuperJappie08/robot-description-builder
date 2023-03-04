@@ -12,10 +12,10 @@ pub use link_parent::LinkParent;
 pub use visual::Visual;
 
 use std::{
-	cell::RefCell,
+	collections::HashMap,
 	error::Error,
 	fmt,
-	rc::{Rc, Weak},
+	sync::{Arc, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard, Weak},
 };
 
 use crate::{
@@ -53,9 +53,9 @@ use crate::{
 #[derive(Debug)]
 pub struct Link {
 	pub(crate) name: String,
-	pub(crate) tree: Weak<RefCell<KinematicTreeData>>,
+	pub(crate) tree: Weak<RwLock<KinematicTreeData>>,
 	direct_parent: Option<LinkParent>,
-	child_joints: Vec<Rc<RefCell<Joint>>>,
+	child_joints: Vec<Arc<RwLock<Joint>>>,
 	visuals: Vec<Visual>,
 	colliders: Vec<Collision>,
 }
@@ -96,8 +96,8 @@ impl Link {
 		self.name.clone()
 	}
 
-	pub fn get_joints(&self) -> Vec<Rc<RefCell<Joint>>> {
-		self.child_joints.iter().map(Rc::clone).collect()
+	pub fn get_joints(&self) -> Vec<Arc<RwLock<Joint>>> {
+		self.child_joints.iter().map(Arc::clone).collect()
 	}
 
 	/// Maybe rename to try attach child
@@ -112,58 +112,60 @@ impl Link {
 		// Generics dont workt that well Rc<RefCell<T>>  where T: KinematicInterface
 		//Box<Rc<RefCell<dyn KinematicInterface>>>
 		// TODO: NEEDS TO DO SOMETHING WITH JOINT TYPE
-		let joint = Rc::new(RefCell::new(Joint {
+		let parent_link = self
+			.tree
+			.upgrade()
+			.unwrap()
+			.read()?
+			.links
+			.read()?
+			.get(self.name.as_str())
+			.map(Weak::clone)
+			.unwrap();
+
+		let joint = Arc::new(RwLock::new(Joint {
 			name: joint_name,
 			tree: Weak::clone(&self.tree),
-			parent_link: Weak::clone({
-				self.tree
-					.upgrade()
-					.unwrap()
-					.borrow()
-					.links
-					.borrow() // TODO: This might panic!
-					.get(&self.get_name())
-					.unwrap()
-			}),
+			parent_link,
 			child_link: tree.get_root_link(),
 			joint_type,
 		}));
 
-		self.child_joints.push(Rc::clone(&joint));
+		self.child_joints.push(Arc::clone(&joint));
 
 		{
-			tree.get_root_link().borrow_mut().direct_parent =
-				Some(LinkParent::Joint(Rc::downgrade(&joint)))
+			tree.get_root_link().write()?.direct_parent =
+				Some(LinkParent::Joint(Arc::downgrade(&joint)))
 		}
 
 		// Maybe I can just go down the tree and add everything by hand for now? It sounds like a terrible Idea, let's do it!
 
 		let parent_tree = self.tree.upgrade().unwrap();
 		{
-			let mut parent_tree = parent_tree.borrow_mut();
+			let mut parent_tree = parent_tree.write()?; // FIXME: Probably shouldn't unwrap
 			parent_tree.try_add_link(tree.get_root_link())?;
 			parent_tree.try_add_joint(joint)?;
 		}
 		{
-			tree.get_root_link().borrow_mut().add_to_tree(&parent_tree);
+			tree.get_root_link().write()?.add_to_tree(&parent_tree);
 		}
 
 		Ok(())
 		// Ok(self.tree.upgrade().unwrap())
 	}
 
-	pub(crate) fn add_to_tree(&mut self, new_parent_tree: &Rc<RefCell<KinematicTreeData>>) {
+	pub(crate) fn add_to_tree(&mut self, new_parent_tree: &Arc<RwLock<KinematicTreeData>>) {
 		{
-			let mut new_ptree = new_parent_tree.borrow_mut();
+			let mut new_ptree = new_parent_tree.write().unwrap(); // FIXME: Probably shouldn't unwrap
 			self.child_joints
 				.iter()
-				.for_each(|joint| new_ptree.try_add_joint(Rc::clone(joint)).unwrap());
+				.for_each(|joint| new_ptree.try_add_joint(Arc::clone(joint)).unwrap());
 			// TODO: Add materials, and other stuff
 		}
 		self.child_joints.iter().for_each(|joint| {
-			joint.borrow_mut().add_to_tree(new_parent_tree);
+			joint.write().unwrap().add_to_tree(new_parent_tree); // FIXME: Probably shouldn't unwrap
 		});
-		self.tree = Rc::downgrade(new_parent_tree);
+		self.tree = Arc::downgrade(new_parent_tree);
 	}
 
 	pub fn add_visual(&mut self, visual: Visual) -> &mut Self {
@@ -172,12 +174,9 @@ impl Link {
 
 	pub fn try_add_visual(&mut self, visual: Visual) -> Result<&mut Self, AddVisualError> {
 		if visual.material.is_some() {
-			let result = self
-				.tree
-				.upgrade()
-				.unwrap()
-				.borrow_mut()
-				.try_add_material(Rc::clone(visual.material.as_ref().unwrap()));
+			let binding = self.tree.upgrade().unwrap();
+			let mut tree = binding.write()?;
+			let result = tree.try_add_material(Arc::clone(visual.material.as_ref().unwrap()));
 			if let Err(material_error) = result {
 				match material_error {
 					AddMaterialError::NoName =>
@@ -207,7 +206,7 @@ impl PartialEq for Link {
 	fn eq(&self, other: &Self) -> bool {
 		self.name == other.name
 			&& self.direct_parent == other.direct_parent
-			&& self.child_joints == other.child_joints
+			// && self.child_joints == other.child_joints // FIXME: Fix this
 			&& self.tree.ptr_eq(&other.tree)
 	}
 }
@@ -216,6 +215,10 @@ impl PartialEq for Link {
 pub enum AttachChildError {
 	AddLink(AddLinkError),
 	AddJoint(AddJointError),
+	ReadTree,      //(PoisonError<RwLockReadGuard<'a, KinematicTreeData>>),
+	ReadLinkIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, Weak<RwLock<Link>>>>>),
+	WriteLink,
+	WriteTree,
 }
 
 impl fmt::Display for AttachChildError {
@@ -223,6 +226,12 @@ impl fmt::Display for AttachChildError {
 		match self {
 			Self::AddLink(err) => err.fmt(f),
 			Self::AddJoint(err) => err.fmt(f),
+			// Self::ReadTree(err) => err.fmt(f),
+			Self::ReadTree => write!(f, "Read Tree Error"),
+			// Self::ReadLinkIndex(err) => err.fmt(f),
+			Self::ReadLinkIndex => write!(f, "Read LinkIndex Error"),
+			Self::WriteLink => write!(f, "Write Link Error"),
+			Self::WriteTree => write!(f, "Write Tree Error"),
 		}
 	}
 }
@@ -232,6 +241,12 @@ impl Error for AttachChildError {
 		match self {
 			Self::AddLink(err) => Some(err),
 			Self::AddJoint(err) => Some(err),
+			// Self::ReadTree(err) => Some(err),
+			Self::ReadTree => None,
+			// Self::ReadLinkIndex(err) => Some(err),
+			Self::ReadLinkIndex => None,
+			Self::WriteLink => None,
+			Self::WriteTree => None,
 		}
 	}
 }
@@ -248,15 +263,43 @@ impl From<AddJointError> for AttachChildError {
 	}
 }
 
+impl From<PoisonError<RwLockReadGuard<'_, KinematicTreeData>>> for AttachChildError {
+	fn from(_value: PoisonError<RwLockReadGuard<'_, KinematicTreeData>>) -> Self {
+		Self::ReadTree //(value)
+	}
+}
+
+impl From<PoisonError<RwLockReadGuard<'_, HashMap<String, Weak<RwLock<Link>>>>>>
+	for AttachChildError
+{
+	fn from(_value: PoisonError<RwLockReadGuard<'_, HashMap<String, Weak<RwLock<Link>>>>>) -> Self {
+		Self::ReadLinkIndex //(value)
+	}
+}
+
+impl From<PoisonError<RwLockWriteGuard<'_, Link>>> for AttachChildError {
+	fn from(_value: PoisonError<RwLockWriteGuard<'_, Link>>) -> Self {
+		Self::WriteLink
+	}
+}
+
+impl From<PoisonError<RwLockWriteGuard<'_, KinematicTreeData>>> for AttachChildError {
+	fn from(_value: PoisonError<RwLockWriteGuard<'_, KinematicTreeData>>) -> Self {
+		Self::WriteTree
+	}
+}
+
 #[derive(Debug)]
 pub enum AddVisualError {
 	AddMaterial(AddMaterialError),
+	WriteKinemeticData,
 }
 
 impl fmt::Display for AddVisualError {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		match self {
 			Self::AddMaterial(err) => err.fmt(f),
+			Self::WriteKinemeticData => write!(f, "Write KinematicTreeData Error"),
 		}
 	}
 }
@@ -265,6 +308,7 @@ impl Error for AddVisualError {
 	fn source(&self) -> Option<&(dyn Error + 'static)> {
 		match self {
 			Self::AddMaterial(err) => Some(err),
+			Self::WriteKinemeticData => None,
 		}
 	}
 }
@@ -275,9 +319,15 @@ impl From<AddMaterialError> for AddVisualError {
 	}
 }
 
+impl From<PoisonError<RwLockWriteGuard<'_, KinematicTreeData>>> for AddVisualError {
+	fn from(_value: PoisonError<RwLockWriteGuard<'_, KinematicTreeData>>) -> Self {
+		Self::WriteKinemeticData
+	}
+}
+
 #[cfg(test)]
 mod tests {
-	use std::rc::Weak;
+	use std::sync::{Arc, Weak};
 
 	use super::Link;
 	use crate::{cluster_objects::KinematicInterface, link::LinkParent};
@@ -287,7 +337,7 @@ mod tests {
 		let tree = Link::new("Link-on-Park".into());
 
 		let binding = tree.get_root_link();
-		let root_link = binding.try_borrow().unwrap();
+		let root_link = binding.read().unwrap();
 		assert_eq!(root_link.name, "Link-on-Park".to_string());
 
 		assert!(root_link.direct_parent.is_some());
@@ -299,11 +349,11 @@ mod tests {
 		});
 
 		let newest_link = tree.get_newest_link();
-		assert_eq!(newest_link.borrow().name, root_link.name);
-		assert_eq!(newest_link.as_ptr(), binding.as_ptr());
+		assert_eq!(newest_link.read().unwrap().name, root_link.name);
+		assert!(Arc::ptr_eq(&newest_link, &binding));
 
-		assert_eq!(tree.get_links().try_borrow().unwrap().len(), 1);
-		assert_eq!(tree.get_joints().try_borrow().unwrap().len(), 0);
+		assert_eq!(tree.get_links().read().unwrap().len(), 1);
+		assert_eq!(tree.get_joints().read().unwrap().len(), 0);
 	}
 
 	#[test]
@@ -311,7 +361,7 @@ mod tests {
 		let tree = Link::new("base_link".into());
 
 		assert_eq!(
-			tree.get_newest_link().borrow_mut().try_attach_child(
+			tree.get_newest_link().write().unwrap().try_attach_child(
 				Link::new("child_link".into()).into(),
 				"steve".into(),
 				crate::joint::JointType::Fixed
@@ -319,35 +369,46 @@ mod tests {
 			Ok(())
 		);
 
-		assert_eq!(tree.get_root_link().borrow().get_name(), "base_link");
-		assert_eq!(tree.get_newest_link().borrow().get_name(), "child_link");
+		assert_eq!(tree.get_root_link().read().unwrap().get_name(), "base_link");
+		assert_eq!(
+			tree.get_newest_link().read().unwrap().get_name(),
+			"child_link"
+		);
 
-		assert!(tree.get_links().borrow().contains_key("base_link"));
-		assert!(tree.get_links().borrow().contains_key("child_link"));
-		assert!(tree.get_joints().borrow().contains_key("steve"));
+		assert!(tree.get_links().read().unwrap().contains_key("base_link"));
+		assert!(tree.get_links().read().unwrap().contains_key("child_link"));
+		assert!(tree.get_joints().read().unwrap().contains_key("steve"));
 
 		assert_eq!(
 			tree.get_joint("steve")
 				.unwrap()
-				.borrow()
+				.read()
+				.unwrap()
 				.get_parent_link()
-				.borrow()
+				.read()
+				.unwrap()
 				.get_name(),
 			"base_link"
 		);
 		assert_eq!(
 			tree.get_joint("steve")
 				.unwrap()
-				.borrow()
+				.read()
+				.unwrap()
 				.get_child_link()
-				.borrow()
+				.read()
+				.unwrap()
 				.get_name(),
 			"child_link"
 		);
 
-		let weak_joint = { Weak::clone(tree.get_joints().borrow().get("steve").unwrap()) };
+		let weak_joint = { Weak::clone(tree.get_joints().read().unwrap().get("steve").unwrap()) };
 		assert_eq!(
-			tree.get_link("child_link").unwrap().borrow().direct_parent,
+			tree.get_link("child_link")
+				.unwrap()
+				.read()
+				.unwrap()
+				.direct_parent,
 			Some(LinkParent::Joint(weak_joint))
 		);
 	}
@@ -360,7 +421,8 @@ mod tests {
 
 		other_tree
 			.get_newest_link()
-			.borrow_mut()
+			.write()
+			.unwrap()
 			.try_attach_child(
 				Link::new("other_child_link".into()).into(),
 				"other_joint".into(),
@@ -369,7 +431,8 @@ mod tests {
 			.unwrap();
 
 		tree.get_root_link()
-			.borrow_mut()
+			.write()
+			.unwrap()
 			.try_attach_child(
 				other_tree.into(),
 				"initial_joint".into(),
@@ -379,21 +442,22 @@ mod tests {
 
 		//TODO: What should be the defined behavior?
 		assert_eq!(
-			tree.get_newest_link().borrow().get_name(),
+			tree.get_newest_link().read().unwrap().get_name(),
 			"other_child_link"
 		);
 
 		tree.get_root_link()
-			.borrow_mut()
+			.write()
+			.unwrap()
 			.try_attach_child(tree_three.into(), "joint-3".into(), crate::JointType::Fixed)
 			.unwrap();
 
-		assert_eq!(tree.get_root_link().borrow().get_name(), "root");
-		assert_eq!(tree.get_newest_link().borrow().get_name(), "3");
+		assert_eq!(tree.get_root_link().write().unwrap().get_name(), "root");
+		assert_eq!(tree.get_newest_link().write().unwrap().get_name(), "3");
 
 		{
 			let binding = tree.get_links();
-			let links = binding.borrow();
+			let links = binding.read().unwrap();
 			assert_eq!(links.len(), 4);
 			assert!(links.contains_key("root"));
 			assert!(links.contains_key("other_root"));
@@ -403,7 +467,7 @@ mod tests {
 
 		{
 			let binding = tree.get_joints();
-			let joints = binding.borrow();
+			let joints = binding.read().unwrap();
 			assert_eq!(joints.len(), 3);
 			assert!(joints.contains_key("other_joint"));
 			assert!(joints.contains_key("initial_joint"));
@@ -411,80 +475,102 @@ mod tests {
 		}
 
 		let binding = tree.get_root_link();
-		let root_link = binding.borrow();
+		let root_link = binding.read().unwrap();
 		assert_eq!(
 			root_link.direct_parent,
 			Some(LinkParent::KinematicTree(Weak::clone(&root_link.tree)))
 		);
 		assert_eq!(root_link.child_joints.len(), 2);
-		assert_eq!(root_link.child_joints[0].borrow().name, "initial_joint");
+		assert_eq!(
+			root_link.child_joints[0].read().unwrap().name,
+			"initial_joint"
+		);
 		assert_eq!(
 			root_link.child_joints[0]
-				.borrow()
+				.read()
+				.unwrap()
 				.get_child_link()
-				.borrow()
+				.read()
+				.unwrap()
 				.name,
 			"other_root"
 		);
 		assert_eq!(
 			root_link.child_joints[0]
-				.borrow()
+				.read()
+				.unwrap()
 				.get_child_link()
-				.borrow()
+				.read()
+				.unwrap()
 				.get_joints()
 				.len(),
 			1
 		);
 		assert_eq!(
 			root_link.child_joints[0]
-				.borrow()
+				.read()
+				.unwrap()
 				.get_child_link()
-				.borrow()
+				.read()
+				.unwrap()
 				.get_joints()[0]
-				.borrow()
+				.read()
+				.unwrap()
 				.name,
 			"other_joint"
 		);
 		assert_eq!(
 			root_link.child_joints[0]
-				.borrow()
+				.read()
+				.unwrap()
 				.get_child_link()
-				.borrow()
+				.read()
+				.unwrap()
 				.get_joints()[0]
-				.borrow()
+				.read()
+				.unwrap()
 				.get_child_link()
-				.borrow()
+				.read()
+				.unwrap()
 				.name,
 			"other_child_link"
 		);
 		assert_eq!(
 			root_link.child_joints[0]
-				.borrow()
+				.read()
+				.unwrap()
 				.get_child_link()
-				.borrow()
+				.read()
+				.unwrap()
 				.get_joints()[0]
-				.borrow()
+				.read()
+				.unwrap()
 				.get_child_link()
-				.borrow()
+				.read()
+				.unwrap()
 				.get_joints()
 				.len(),
 			0
 		);
 
-		assert_eq!(root_link.child_joints[1].borrow().name, "joint-3");
+		assert_eq!(root_link.child_joints[1].read().unwrap().name, "joint-3");
 		assert_eq!(
 			root_link.child_joints[1]
-				.borrow()
+				.read()
+				.unwrap()
 				.get_child_link()
-				.borrow()
+				.read()
+				.unwrap()
 				.name,
 			"3"
 		);
 		assert_eq!(
 			root_link.child_joints[1]
-				.borrow()
+				.read()
+				.unwrap()
 				.get_child_link()
-				.borrow()
+				.read()
+				.unwrap()
 				.get_joints()
 				.len(),
 			0

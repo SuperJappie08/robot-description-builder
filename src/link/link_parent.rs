@@ -1,11 +1,11 @@
-use std::{cell::RefCell, rc::Weak};
+use std::sync::{RwLock, Weak};
 
 use crate::{cluster_objects::kinematic_tree_data::KinematicTreeData, joint::Joint};
 
 #[derive(Debug)]
 pub enum LinkParent {
-	Joint(Weak<RefCell<Joint>>),
-	KinematicTree(Weak<RefCell<KinematicTreeData>>),
+	Joint(Weak<RwLock<Joint>>),
+	KinematicTree(Weak<RwLock<KinematicTreeData>>),
 }
 
 impl Clone for LinkParent {
@@ -17,8 +17,8 @@ impl Clone for LinkParent {
 	}
 }
 
-impl From<Weak<RefCell<KinematicTreeData>>> for LinkParent {
-	fn from(value: Weak<RefCell<KinematicTreeData>>) -> Self {
+impl From<Weak<RwLock<KinematicTreeData>>> for LinkParent {
+	fn from(value: Weak<RwLock<KinematicTreeData>>) -> Self {
 		Self::KinematicTree(value)
 	}
 }

@@ -1,7 +1,6 @@
 use std::{
-	cell::RefCell,
 	collections::HashMap,
-	rc::{Rc, Weak},
+	sync::{Arc, RwLock, Weak},
 };
 
 use crate::{
@@ -41,7 +40,7 @@ pub trait KinematicInterface {
 	///
 	/// assert_eq!(tree.get_root_link().borrow().get_name(), "the root link")
 	/// ```
-	fn get_root_link(&self) -> Rc<RefCell<Link>>;
+	fn get_root_link(&self) -> Arc<RwLock<Link>>;
 
 	/// Returns the newest link of the Kinematic Tree
 	///
@@ -72,29 +71,29 @@ pub trait KinematicInterface {
 	///
 	/// assert_eq!(tree.get_newest_link().borrow().get_name(), "the latest child");
 	/// ```
-	fn get_newest_link(&self) -> Rc<RefCell<Link>>;
+	fn get_newest_link(&self) -> Arc<RwLock<Link>>;
 
 	#[deprecated]
 	/// Maybe deprecate?
-	fn get_kinematic_data(&self) -> Rc<RefCell<KinematicTreeData>>;
+	fn get_kinematic_data(&self) -> Arc<RwLock<KinematicTreeData>>;
 
 	// These do not have to be mutable
-	fn get_links(&self) -> Rc<RefCell<HashMap<String, Weak<RefCell<Link>>>>>;
-	fn get_joints(&self) -> Rc<RefCell<HashMap<String, Weak<RefCell<Joint>>>>>;
-	fn get_materials(&self) -> Rc<RefCell<HashMap<String, Rc<RefCell<Material>>>>>;
-	fn get_transmissions(&self) -> Rc<RefCell<HashMap<String, Rc<RefCell<Transmission>>>>>;
+	fn get_links(&self) -> Arc<RwLock<HashMap<String, Weak<RwLock<Link>>>>>;
+	fn get_joints(&self) -> Arc<RwLock<HashMap<String, Weak<RwLock<Joint>>>>>;
+	fn get_materials(&self) -> Arc<RwLock<HashMap<String, Arc<RwLock<Material>>>>>;
+	fn get_transmissions(&self) -> Arc<RwLock<HashMap<String, Arc<RwLock<Transmission>>>>>;
 
-	fn get_link(&self, name: &str) -> Option<Rc<RefCell<Link>>>;
-	fn get_joint(&self, name: &str) -> Option<Rc<RefCell<Joint>>>;
-	fn get_material(&self, name: &str) -> Option<Rc<RefCell<Material>>>;
-	fn get_transmission(&self, name: &str) -> Option<Rc<RefCell<Transmission>>>;
+	fn get_link(&self, name: &str) -> Option<Arc<RwLock<Link>>>;
+	fn get_joint(&self, name: &str) -> Option<Arc<RwLock<Joint>>>;
+	fn get_material(&self, name: &str) -> Option<Arc<RwLock<Material>>>;
+	fn get_transmission(&self, name: &str) -> Option<Arc<RwLock<Transmission>>>;
 
 	// TODO: ADD try_add_material()
 	/// TODO: NOT FINAL
 	/// TODO: Maybe remove rcrefcell from transmission parameter
 	fn try_add_transmission(
 		&self,
-		transmission: Rc<RefCell<Transmission>>,
+		transmission: Arc<RwLock<Transmission>>,
 	) -> Result<(), AddTransmissionError>;
 
 	// TODO: Expand

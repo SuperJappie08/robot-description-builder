@@ -1,7 +1,4 @@
-use std::{
-	cell::RefCell,
-	rc::{Rc, Weak},
-};
+use std::sync::{Arc, RwLock, Weak};
 
 use crate::{cluster_objects::kinematic_tree_data::KinematicTreeData, link::Link};
 
@@ -10,24 +7,29 @@ pub struct Joint {
 	/// The name of the `Joint`
 	pub name: String,
 	/// A Reference to the parent Kinematic Tree
-	pub(crate) tree: Weak<RefCell<KinematicTreeData>>,
+	pub(crate) tree: Weak<RwLock<KinematicTreeData>>,
 	/// A Reference to the parent `Link`
-	pub(crate) parent_link: Weak<RefCell<Link>>,
-	pub child_link: Rc<RefCell<Link>>, //temp pub TODO: THIS PROBABLY ISN'T THE NICEST WAY TO DO THIS.
+	pub(crate) parent_link: Weak<RwLock<Link>>,
+	pub child_link: Arc<RwLock<Link>>, //temp pub TODO: THIS PROBABLY ISN'T THE NICEST WAY TO DO THIS.
 	/// The information specific to the JointType: TODO: DECIDE IF THIS SHOULD BE PUBLIC
 	pub(crate) joint_type: JointType,
 }
 
 impl Joint {
 	/// Adds the `Joint` to a kinematic tree
-	pub(crate) fn add_to_tree(&mut self, new_parent_tree: &Rc<RefCell<KinematicTreeData>>) {
+	pub(crate) fn add_to_tree(&mut self, new_parent_tree: &Arc<RwLock<KinematicTreeData>>) {
 		{
-			let mut new_ptree = new_parent_tree.borrow_mut();
-			new_ptree.try_add_link(Rc::clone(&self.child_link)).unwrap();
+			let mut new_ptree = new_parent_tree.write().unwrap(); // FIXME: Probablly shouldn't unwrap
+			new_ptree
+				.try_add_link(Arc::clone(&self.child_link))
+				.unwrap();
 			// TODO: Add materials, and other stuff
 		}
-		self.child_link.borrow_mut().add_to_tree(new_parent_tree);
-		self.tree = Rc::downgrade(new_parent_tree);
+		self.child_link
+			.write()
+			.unwrap() // FIXME: Probablly shouldn't unwrap
+			.add_to_tree(new_parent_tree);
+		self.tree = Arc::downgrade(new_parent_tree);
 	}
 
 	/// Returns a reference to the parent `Link`
@@ -35,23 +37,23 @@ impl Joint {
 	/// TODO: ADD EXAMPLE
 	///
 	/// For now pub crate, this should maybe go to joint trait
-	pub fn get_parent_link(&self) -> Rc<RefCell<Link>> {
+	pub fn get_parent_link(&self) -> Arc<RwLock<Link>> {
 		// If this panics, the Joint is not initialized propperly.
 		self.parent_link.upgrade().unwrap()
 	}
 
 	/// For now pub crate, this should maybe go to joint trait
 	/// Is this even necessary?
-	pub fn get_child_link(&self) -> Rc<RefCell<Link>> {
-		Rc::clone(&self.child_link)
+	pub fn get_child_link(&self) -> Arc<RwLock<Link>> {
+		Arc::clone(&self.child_link)
 	}
 }
 
 impl PartialEq for Joint {
 	fn eq(&self, other: &Self) -> bool {
 		self.name == other.name
-			&& self.parent_link.upgrade() == other.parent_link.upgrade()
-			&& self.child_link == other.child_link
+			&& Weak::ptr_eq(&self.parent_link, &other.parent_link)
+			&& Arc::ptr_eq(&self.child_link, &other.child_link)
 			&& self.joint_type == other.joint_type
 	}
 }

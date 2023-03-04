@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::sync::{Arc, RwLock};
 
 use crate::material::Material;
 
@@ -13,7 +13,7 @@ pub struct Visual {
 	/// Figure out if this needs to be public or not
 	pub(crate) geometry: Box<dyn GeometryInterface>,
 	/// Not sure about refCell
-	pub material: Option<Rc<RefCell<Material>>>,
+	pub material: Option<Arc<RwLock<Material>>>,
 }
 
 impl Visual {
@@ -22,7 +22,7 @@ impl Visual {
 		name: Option<String>,
 		reference: Option<TMPLocationThing>,
 		geometry: Box<dyn GeometryInterface>,
-		material: Option<Rc<RefCell<Material>>>,
+		material: Option<Arc<RwLock<Material>>>,
 	) -> Self {
 		Self {
 			name,
@@ -38,7 +38,13 @@ impl PartialEq for Visual {
 		self.name == other.name
 			&& self.reference == other.reference
 			&& (&self.geometry == &other.geometry)
-			&& self.material == other.material
+			&& match (&self.material, &other.material) {
+				(None, None) => true,
+				(Some(own_material), Some(other_material)) => {
+					Arc::ptr_eq(&own_material, &other_material)
+				}
+				_ => false,
+			}
 	}
 }
 
