@@ -1,0 +1,22 @@
+[package]
+name = "rdf-builder-rs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# [lib]
+# crate-type = ["cdylib"]
+
+[dependencies]
+winit = { version = "0.27", optional = true }
+env_logger = {version = "0.10", optional = true }
+log = { version = "0.4", optional = true }
+wgpu = { version = "0.15.1", optional = true }
+pollster = { version = "0.3.0", optional = true }
+thiserror = "1.0.38"
+
+[features]
+default = []
+viewer = ["dep:winit", "dep:env_logger", "dep:log", "dep:wgpu", "dep:pollster"]
+logging = ["dep:log"]
