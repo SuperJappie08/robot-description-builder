@@ -11,10 +11,10 @@ pub use collision::Collision;
 pub use link_parent::LinkParent;
 pub use visual::Visual;
 
+use thiserror::Error;
+
 use std::{
 	collections::HashMap,
-	error::Error,
-	fmt,
 	sync::{Arc, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard, Weak},
 };
 
@@ -211,56 +211,20 @@ impl PartialEq for Link {
 	}
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Error)]
 pub enum AttachChildError {
-	AddLink(AddLinkError),
-	AddJoint(AddJointError),
-	ReadTree,      //(PoisonError<RwLockReadGuard<'a, KinematicTreeData>>),
+	#[error(transparent)]
+	AddLink(#[from] AddLinkError),
+	#[error(transparent)]
+	AddJoint(#[from] AddJointError),
+	#[error("Read Tree Error")]
+	ReadTree, //(PoisonError<RwLockReadGuard<'a, KinematicTreeData>>),
+	#[error("Read LinkIndex Error")]
 	ReadLinkIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, Weak<RwLock<Link>>>>>),
+	#[error("Write Link Error")]
 	WriteLink,
+	#[error("Write Tree Error")]
 	WriteTree,
-}
-
-impl fmt::Display for AttachChildError {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		match self {
-			Self::AddLink(err) => err.fmt(f),
-			Self::AddJoint(err) => err.fmt(f),
-			// Self::ReadTree(err) => err.fmt(f),
-			Self::ReadTree => write!(f, "Read Tree Error"),
-			// Self::ReadLinkIndex(err) => err.fmt(f),
-			Self::ReadLinkIndex => write!(f, "Read LinkIndex Error"),
-			Self::WriteLink => write!(f, "Write Link Error"),
-			Self::WriteTree => write!(f, "Write Tree Error"),
-		}
-	}
-}
-
-impl Error for AttachChildError {
-	fn source(&self) -> Option<&(dyn Error + 'static)> {
-		match self {
-			Self::AddLink(err) => Some(err),
-			Self::AddJoint(err) => Some(err),
-			// Self::ReadTree(err) => Some(err),
-			Self::ReadTree => None,
-			// Self::ReadLinkIndex(err) => Some(err),
-			Self::ReadLinkIndex => None,
-			Self::WriteLink => None,
-			Self::WriteTree => None,
-		}
-	}
-}
-
-impl From<AddLinkError> for AttachChildError {
-	fn from(value: AddLinkError) -> Self {
-		Self::AddLink(value)
-	}
-}
-
-impl From<AddJointError> for AttachChildError {
-	fn from(value: AddJointError) -> Self {
-		Self::AddJoint(value)
-	}
 }
 
 impl From<PoisonError<RwLockReadGuard<'_, KinematicTreeData>>> for AttachChildError {
@@ -289,34 +253,12 @@ impl From<PoisonError<RwLockWriteGuard<'_, KinematicTreeData>>> for AttachChildE
 	}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum AddVisualError {
-	AddMaterial(AddMaterialError),
+	#[error(transparent)]
+	AddMaterial(#[from] AddMaterialError),
+	#[error("Write KinematicTreeData Error")]
 	WriteKinemeticData,
-}
-
-impl fmt::Display for AddVisualError {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		match self {
-			Self::AddMaterial(err) => err.fmt(f),
-			Self::WriteKinemeticData => write!(f, "Write KinematicTreeData Error"),
-		}
-	}
-}
-
-impl Error for AddVisualError {
-	fn source(&self) -> Option<&(dyn Error + 'static)> {
-		match self {
-			Self::AddMaterial(err) => Some(err),
-			Self::WriteKinemeticData => None,
-		}
-	}
-}
-
-impl From<AddMaterialError> for AddVisualError {
-	fn from(value: AddMaterialError) -> Self {
-		Self::AddMaterial(value)
-	}
 }
 
 impl From<PoisonError<RwLockWriteGuard<'_, KinematicTreeData>>> for AddVisualError {

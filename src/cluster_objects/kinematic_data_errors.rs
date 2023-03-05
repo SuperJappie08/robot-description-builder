@@ -1,73 +1,32 @@
+use thiserror::Error;
+
 use std::{
 	cell::{BorrowError, BorrowMutError},
 	collections::HashMap,
-	error::Error,
-	fmt,
 	sync::{Arc, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard, Weak},
 };
 
 use crate::{material::Material, Joint, Link, Transmission};
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum AddMaterialError {
 	#[deprecated]
-	Borrow(BorrowError),
+	#[error(transparent)]
+	Borrow(#[from] BorrowError),
 	#[deprecated]
-	BorrowMut(BorrowMutError),
+	#[error(transparent)]
+	BorrowMut(#[from] BorrowMutError),
+	#[error("Read Material Error")]
 	ReadMaterial, //(PoisonError<RwLockReadGuard<'a, Material>>),
-	ReadIndex,    //(PoisonError<RwLockReadGuard<'a, HashMap<String, Arc<RwLock<Material>>>>>),
-	WriteIndex,   //(PoisonError<RwLockWriteGuard<'a, HashMap<String, Arc<RwLock<Material>>>>>),
+	#[error("Read MaterialIndex Error")]
+	ReadIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, Arc<RwLock<Material>>>>>),
+	#[error("Write MaterialIndex Error")]
+	WriteIndex, //(PoisonError<RwLockWriteGuard<'a, HashMap<String, Arc<RwLock<Material>>>>>),
+	#[error("Duplicate Material name '{0}'")]
 	Conflict(String),
 	/// To be returned when the material has no name to index by.
+	#[error("The material has no name, to be used as index.")]
 	NoName,
-}
-
-impl fmt::Display for AddMaterialError {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		match self {
-			Self::Borrow(err) => err.fmt(f),
-			Self::BorrowMut(err) => err.fmt(f),
-			// Self::ReadMaterial(err) => err.fmt(f),
-			Self::ReadMaterial => write!(f, "Read material error"),
-			// Self::ReadIndex(err) => err.fmt(f),
-			Self::ReadIndex => write!(f, "Read MateraialIndex error"),
-			// Self::WriteIndex(err) => err.fmt(f),
-			Self::WriteIndex => write!(f, "Write MaterialIndex error"),
-			Self::Conflict(name) => {
-				write!(f, "Duplicate material name '{}'", name)
-			}
-			Self::NoName => write!(f, "The material has no name, to be used as index."),
-		}
-	}
-}
-
-impl Error for AddMaterialError {
-	fn source(&self) -> Option<&(dyn Error + 'static)> {
-		match self {
-			Self::Borrow(err) => Some(err),
-			Self::BorrowMut(err) => Some(err),
-			// Self::ReadMaterial(err) => Some(err),
-			Self::ReadMaterial => None,
-			// Self::ReadIndex(err) => Some(err),
-			Self::ReadIndex => None,
-			// Self::WriteIndex(err) => Some(err),
-			Self::WriteIndex => None,
-			Self::Conflict(_) => None,
-			Self::NoName => None,
-		}
-	}
-}
-
-impl From<BorrowError> for AddMaterialError {
-	fn from(value: BorrowError) -> Self {
-		Self::Borrow(value)
-	}
-}
-
-impl From<BorrowMutError> for AddMaterialError {
-	fn from(value: BorrowMutError) -> Self {
-		Self::BorrowMut(value)
-	}
 }
 
 impl From<PoisonError<RwLockReadGuard<'_, Material>>> for AddMaterialError {
@@ -96,60 +55,22 @@ impl From<PoisonError<RwLockWriteGuard<'_, HashMap<String, Arc<RwLock<Material>>
 	}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum AddLinkError {
 	#[deprecated]
-	Borrow(BorrowError),
+	#[error(transparent)]
+	Borrow(#[from] BorrowError),
 	#[deprecated]
-	BorrowMut(BorrowMutError),
-	ReadLink,   //(PoisonError<RwLockReadGuard<'a, Link>>),
-	ReadIndex,  //(PoisonError<RwLockReadGuard<'a, HashMap<String, Weak<RwLock<Link>>>>>),
+	#[error(transparent)]
+	BorrowMut(#[from] BorrowMutError),
+	#[error("Read Link Error")]
+	ReadLink, //(PoisonError<RwLockReadGuard<'a, Link>>),
+	#[error("Read LinkIndex Error")]
+	ReadIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, Weak<RwLock<Link>>>>>),
+	#[error("Write LinkIndex Error")]
 	WriteIndex, //(PoisonError<RwLockWriteGuard<'a, HashMap<String, Weak<RwLock<Link>>>>>),
+	#[error("Duplicate Link name '{0}'")]
 	Conflict(String),
-}
-
-impl fmt::Display for AddLinkError {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		match self {
-			Self::Borrow(err) => err.fmt(f),
-			Self::BorrowMut(err) => err.fmt(f),
-			// Self::ReadLink(err) => err.fmt(f),
-			Self::ReadLink => write!(f, "Read Link error"),
-			// Self::ReadIndex(err) => err.fmt(f),
-			Self::ReadIndex => write!(f, "Read LinkIndex error"),
-			// Self::WriteIndex(err) => err.fmt(f),
-			Self::WriteIndex => write!(f, "Write LinkIndex error"),
-			Self::Conflict(name) => write!(f, "Duplicate Link name '{}'", name),
-		}
-	}
-}
-
-impl Error for AddLinkError {
-	fn source(&self) -> Option<&(dyn Error + 'static)> {
-		match self {
-			Self::Borrow(err) => Some(err),
-			Self::BorrowMut(err) => Some(err),
-			// Self::ReadLink(err) => Some(err),
-			Self::ReadLink => None,
-			// Self::ReadIndex(err) => Some(err),
-			Self::ReadIndex => None,
-			// Self::WriteIndex(err) => Some(err),
-			Self::WriteIndex => None,
-			Self::Conflict(_) => None,
-		}
-	}
-}
-
-impl From<BorrowError> for AddLinkError {
-	fn from(value: BorrowError) -> Self {
-		Self::Borrow(value)
-	}
-}
-
-impl From<BorrowMutError> for AddLinkError {
-	fn from(value: BorrowMutError) -> Self {
-		Self::BorrowMut(value)
-	}
 }
 
 impl From<PoisonError<RwLockReadGuard<'_, Link>>> for AddLinkError {
@@ -186,60 +107,22 @@ impl PartialEq for AddLinkError {
 	}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum AddJointError {
 	#[deprecated]
-	Borrow(BorrowError),
+	#[error(transparent)]
+	Borrow(#[from] BorrowError),
 	#[deprecated]
-	BorrowMut(BorrowMutError),
-	ReadJoint,  //(PoisonError<RwLockReadGuard<'a, Joint>>),
-	ReadIndex,  //(PoisonError<RwLockReadGuard<'a, HashMap<String, Weak<RwLock<Joint>>>>>),
+	#[error(transparent)]
+	BorrowMut(#[from] BorrowMutError),
+	#[error("Read Joint Error")]
+	ReadJoint, //(PoisonError<RwLockReadGuard<'a, Joint>>),
+	#[error("Read JointIndex Error")]
+	ReadIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, Weak<RwLock<Joint>>>>>),
+	#[error("Write JointIndex Error")]
 	WriteIndex, //(PoisonError<RwLockWriteGuard<'a, HashMap<String, Weak<RwLock<Joint>>>>>),
+	#[error("Duplicate Joint name '{0}'")]
 	Conflict(String),
-}
-
-impl fmt::Display for AddJointError {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		match self {
-			Self::Borrow(err) => err.fmt(f),
-			Self::BorrowMut(err) => err.fmt(f),
-			// Self::ReadJoint(err) => err.fmt(f),
-			Self::ReadJoint => write!(f, "Read Joint Error"),
-			// Self::ReadIndex(err) => err.fmt(f),
-			Self::ReadIndex => write!(f, "Read JointIndex Error"),
-			// Self::WriteIndex(err) => err.fmt(f),
-			Self::WriteIndex => write!(f, "Write JointIndex Error"),
-			Self::Conflict(name) => write!(f, "Duplicate Joint name '{}'", name),
-		}
-	}
-}
-
-impl Error for AddJointError {
-	fn source(&self) -> Option<&(dyn Error + 'static)> {
-		match self {
-			Self::Borrow(err) => Some(err),
-			Self::BorrowMut(err) => Some(err),
-			// Self::ReadJoint(err) => Some(err),
-			Self::ReadJoint => None,
-			// Self::ReadIndex(err) => Some(err),
-			Self::ReadIndex => None,
-			// Self::WriteIndex(err) => Some(err),
-			Self::WriteIndex => None,
-			Self::Conflict(_) => None,
-		}
-	}
-}
-
-impl From<BorrowError> for AddJointError {
-	fn from(value: BorrowError) -> Self {
-		Self::Borrow(value)
-	}
-}
-
-impl From<BorrowMutError> for AddJointError {
-	fn from(value: BorrowMutError) -> Self {
-		Self::BorrowMut(value)
-	}
 }
 
 impl From<PoisonError<RwLockReadGuard<'_, Joint>>> for AddJointError {
@@ -282,60 +165,22 @@ impl PartialEq for AddJointError {
 	}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum AddTransmissionError {
 	#[deprecated]
-	Borrow(BorrowError),
+	#[error(transparent)]
+	Borrow(#[from] BorrowError),
 	#[deprecated]
-	BorrowMut(BorrowMutError),
+	#[error(transparent)]
+	BorrowMut(#[from] BorrowMutError),
+	#[error("Read Transmission Error")]
 	ReadTransmission, //(PoisonError<RwLockReadGuard<'a, Transmission>>),
-	ReadIndex,        //(PoisonError<RwLockReadGuard<'a, HashMap<String, Arc<RwLock<Transmission>>>>>),
-	WriteIndex,       //(PoisonError<RwLockWriteGuard<'a, HashMap<String, Arc<RwLock<Transmission>>>>>),
+	#[error("Read TransmissionIndex Error")]
+	ReadIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, Arc<RwLock<Transmission>>>>>),
+	#[error("Write TransmissionIndex Error")]
+	WriteIndex, //(PoisonError<RwLockWriteGuard<'a, HashMap<String, Arc<RwLock<Transmission>>>>>),
+	#[error("Duplicate Transmission name '{0}'")]
 	Conflict(String),
-}
-
-impl fmt::Display for AddTransmissionError {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		match self {
-			Self::Borrow(err) => err.fmt(f),
-			Self::BorrowMut(err) => err.fmt(f),
-			// Self::ReadTransmission(err) => err.fmt(f),
-			Self::ReadTransmission => write!(f, "Read Transmission Error"),
-			// Self::ReadIndex(err) => err.fmt(f),
-			Self::ReadIndex => write!(f, "Read TransmissionIndex Error"),
-			// Self::WriteIndex(err) => err.fmt(f),
-			Self::WriteIndex => write!(f, "Write TransmissionIndex Error"),
-			Self::Conflict(name) => write!(f, "Duplicate Transmission name '{}'", name),
-		}
-	}
-}
-
-impl Error for AddTransmissionError {
-	fn source(&self) -> Option<&(dyn Error + 'static)> {
-		match self {
-			Self::Borrow(err) => Some(err),
-			Self::BorrowMut(err) => Some(err),
-			// Self::ReadTransmission(err) => Some(err),
-			Self::ReadTransmission => None,
-			// Self::ReadIndex(err) => Some(err),
-			Self::ReadIndex => None,
-			// Self::WriteIndex(err) => Some(err),
-			Self::WriteIndex => None,
-			Self::Conflict(_) => None,
-		}
-	}
-}
-
-impl From<BorrowError> for AddTransmissionError {
-	fn from(value: BorrowError) -> Self {
-		Self::Borrow(value)
-	}
-}
-
-impl From<BorrowMutError> for AddTransmissionError {
-	fn from(value: BorrowMutError) -> Self {
-		Self::BorrowMut(value)
-	}
 }
 
 impl From<PoisonError<RwLockReadGuard<'_, Transmission>>> for AddTransmissionError {
