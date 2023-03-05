@@ -1,4 +1,5 @@
 [workspace]
 members = [
-    "rdf-builder-rs"
+    "rdf-builder-rs",
+    "rdf-builder-py"
 ]

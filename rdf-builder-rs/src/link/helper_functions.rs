@@ -12,7 +12,7 @@ use super::geometry::{CylinderGeometry, SphereGeometry};
 /// TODO: Add material Specifierer
 /// TODO: Add Inertial data options
 /// TODO: ADD TEST?
-pub fn new_quick_link(link_name: String, geometry: Box<dyn GeometryInterface>) -> KinematicTree {
+pub fn new_quick_link(link_name: String, geometry: Box<dyn GeometryInterface + Sync + Send>) -> KinematicTree {
 	let tree = Link::new(link_name.clone());
 
 	let binding = tree.get_newest_link();

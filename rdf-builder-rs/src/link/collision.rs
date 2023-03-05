@@ -1,13 +1,13 @@
 use crate::link::{geometry::GeometryInterface, visual::TMPLocationThing};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Collision {
 	/// TODO: Figure out if I want to keep the name optional?.
 	pub name: Option<String>,
 	reference: Option<TMPLocationThing>,
 
 	/// Figure out if this needs to be public or not
-	pub(crate) geometry: Box<dyn GeometryInterface>,
+	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
 }
 
 impl Collision {
@@ -15,7 +15,7 @@ impl Collision {
 	pub fn new(
 		name: Option<String>,
 		reference: Option<TMPLocationThing>,
-		geometry: Box<dyn GeometryInterface>,
+		geometry: Box<dyn GeometryInterface + Sync + Send>,
 	) -> Self {
 		Self {
 			name,
@@ -31,4 +31,10 @@ impl PartialEq for Collision {
 			&& self.reference == other.reference
 			&& (&self.geometry == &other.geometry)
 	}
+}
+
+impl Clone for Collision {
+    fn clone(&self) -> Self {
+        Self { name: self.name.clone(), reference: self.reference.clone(), geometry: self.geometry.boxed_clone() }
+    }
 }

@@ -28,12 +28,12 @@ impl GeometryInterface for BoxGeometry {
 		2f32 * (self.side1 * self.side2 + self.side1 * self.side3 + self.side2 * self.side3)
 	}
 
-	fn boxed_clone(&self) -> Box<dyn GeometryInterface> {
+	fn boxed_clone(&self) -> Box<dyn GeometryInterface + Sync + Send> {
 		Box::new(self.clone())
 	}
 }
 
-impl From<BoxGeometry> for Box<dyn GeometryInterface> {
+impl From<BoxGeometry> for Box<dyn GeometryInterface + Sync + Send> {
 	fn from(value: BoxGeometry) -> Self {
 		Box::new(value)
 	}

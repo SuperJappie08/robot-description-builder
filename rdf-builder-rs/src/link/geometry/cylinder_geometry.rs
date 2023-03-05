@@ -23,12 +23,12 @@ impl GeometryInterface for CylinderGeometry {
 		2f32 * (self.radius * self.radius * PI) + self.length * self.radius * TAU
 	}
 
-	fn boxed_clone(&self) -> Box<dyn GeometryInterface> {
+	fn boxed_clone(&self) -> Box<dyn GeometryInterface + Sync + Send> {
 		Box::new(self.clone())
 	}
 }
 
-impl From<CylinderGeometry> for Box<dyn GeometryInterface> {
+impl From<CylinderGeometry> for Box<dyn GeometryInterface + Sync + Send> {
 	fn from(value: CylinderGeometry) -> Self {
 		Box::new(value)
 	}

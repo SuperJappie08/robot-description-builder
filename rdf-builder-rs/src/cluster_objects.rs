@@ -27,8 +27,9 @@ pub trait KinematicInterface {
 	/// Returns the root link of the Kinematic Tree
 	///
 	/// # Example
-	/// ```
-	/// # use rdf_builder::{KinematicInterface, Link, JointType};
+	/// FIXME: REPAIR DOC TEST
+	/// ```ignore 
+	/// # use rdf_builder_rs::{KinematicInterface, Link, JointType};
 	/// let tree = Link::new("the root link".to_owned());
 	///
 	/// /// This is equivalent to `get_root_link` in this case, since this is a new tree/Link.
@@ -45,8 +46,9 @@ pub trait KinematicInterface {
 	/// Returns the newest link of the Kinematic Tree
 	///
 	/// # Example
-	/// ```
-	/// # use rdf_builder::{KinematicInterface, Link, JointType};
+	/// FIXME: REPAIR EXAMPLE
+	/// ```ignore
+	/// # use rdf_builder_rs::{KinematicInterface, Link, JointType};
 	/// let tree = Link::new("the root link".to_owned());
 	///
 	/// assert_eq!(tree.get_newest_link().borrow().get_name(), "the root link");

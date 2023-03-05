@@ -22,12 +22,12 @@ impl GeometryInterface for SphereGeometry {
 		4f32 * PI * self.radius * self.radius
 	}
 
-	fn boxed_clone(&self) -> Box<dyn GeometryInterface> {
+	fn boxed_clone(&self) -> Box<dyn GeometryInterface + Sync + Send> {
 		Box::new(self.clone())
 	}
 }
 
-impl From<SphereGeometry> for Box<dyn GeometryInterface> {
+impl From<SphereGeometry> for Box<dyn GeometryInterface + Sync + Send> {
 	fn from(value: SphereGeometry) -> Self {
 		Box::new(value)
 	}

@@ -4,14 +4,14 @@ use crate::material::Material;
 
 use super::geometry::GeometryInterface;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Visual {
 	/// TODO: Figure out if I want to keep the name optional?.
 	pub name: Option<String>,
 	reference: Option<TMPLocationThing>,
 
 	/// Figure out if this needs to be public or not
-	pub(crate) geometry: Box<dyn GeometryInterface>,
+	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
 	/// Not sure about refCell
 	pub material: Option<Arc<RwLock<Material>>>,
 }
@@ -21,7 +21,7 @@ impl Visual {
 	pub fn new(
 		name: Option<String>,
 		reference: Option<TMPLocationThing>,
-		geometry: Box<dyn GeometryInterface>,
+		geometry: Box<dyn GeometryInterface + Sync + Send>,
 		material: Option<Arc<RwLock<Material>>>,
 	) -> Self {
 		Self {
@@ -46,6 +46,12 @@ impl PartialEq for Visual {
 				_ => false,
 			}
 	}
+}
+
+impl Clone for Visual {
+    fn clone(&self) -> Self {
+        Self { name: self.name.clone(), reference: self.reference.clone(), geometry: self.geometry.boxed_clone(), material: self.material.clone() }
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
