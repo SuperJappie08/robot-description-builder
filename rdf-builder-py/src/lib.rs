@@ -127,17 +127,17 @@ struct PyJoint {
 impl PyJoint {
 	#[getter]
 	fn name(&self) -> String {
-		self.inner.try_read().unwrap().name.clone() // TODO: Figure out if unwrap is Ok here?
+		self.inner.try_read().unwrap().get_name() // TODO: Figure out if unwrap is Ok here?
 	}
 
 	#[getter]
 	fn parent_link(&self) -> PyLink {
-		self.inner.read().unwrap().get_parent_link().into() // TODO: Figure out if unwrap is Ok here?
+		self.inner.try_read().unwrap().get_parent_link().into() // TODO: Figure out if unwrap is Ok here?
 	}
 
 	#[getter]
 	fn child_link(&self) -> PyLink {
-		self.inner.read().unwrap().get_child_link().into() // TODO: Figure out if unwrap is Ok here?
+		self.inner.try_read().unwrap().get_child_link().into() // TODO: Figure out if unwrap is Ok here?
 	}
 }
 

@@ -28,7 +28,7 @@ pub trait KinematicInterface {
 	///
 	/// # Example
 	/// FIXME: REPAIR DOC TEST
-	/// ```ignore 
+	/// ```ignore
 	/// # use rdf_builder_rs::{KinematicInterface, Link, JointType};
 	/// let tree = Link::new("the root link".to_owned());
 	///

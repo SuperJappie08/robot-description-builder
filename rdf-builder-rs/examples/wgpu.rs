@@ -220,7 +220,7 @@ use rdf_builder_rs::{JointType, KinematicInterface, Link};
 fn main() {
 	let link = Link::new("name".into());
 	link.get_newest_link()
-		.write()
+		.try_write()
 		.unwrap()
 		.try_attach_child(
 			Box::new(Link::new("name2".into())),

@@ -279,7 +279,7 @@ mod tests {
 		let tree = Link::new("Link-on-Park".into());
 
 		let binding = tree.get_root_link();
-		let root_link = binding.read().unwrap();
+		let root_link = binding.try_read().unwrap();
 		assert_eq!(root_link.name, "Link-on-Park".to_string());
 
 		assert!(root_link.direct_parent.is_some());
@@ -291,11 +291,14 @@ mod tests {
 		});
 
 		let newest_link = tree.get_newest_link();
-		assert_eq!(newest_link.read().unwrap().name, root_link.name);
+		assert_eq!(
+			newest_link.try_read().unwrap().get_name(),
+			root_link.get_name()
+		);
 		assert!(Arc::ptr_eq(&newest_link, &binding));
 
-		assert_eq!(tree.get_links().read().unwrap().len(), 1);
-		assert_eq!(tree.get_joints().read().unwrap().len(), 0);
+		assert_eq!(tree.get_links().try_read().unwrap().len(), 1);
+		assert_eq!(tree.get_joints().try_read().unwrap().len(), 0);
 	}
 
 	#[test]
@@ -303,31 +306,45 @@ mod tests {
 		let tree = Link::new("base_link".into());
 
 		assert_eq!(
-			tree.get_newest_link().write().unwrap().try_attach_child(
-				Link::new("child_link".into()).into(),
-				"steve".into(),
-				crate::joint::JointType::Fixed
-			),
+			tree.get_newest_link()
+				.try_write()
+				.unwrap()
+				.try_attach_child(
+					Link::new("child_link".into()).into(),
+					"steve".into(),
+					crate::joint::JointType::Fixed
+				),
 			Ok(())
 		);
 
-		assert_eq!(tree.get_root_link().read().unwrap().get_name(), "base_link");
 		assert_eq!(
-			tree.get_newest_link().read().unwrap().get_name(),
+			tree.get_root_link().try_read().unwrap().get_name(),
+			"base_link"
+		);
+		assert_eq!(
+			tree.get_newest_link().try_read().unwrap().get_name(),
 			"child_link"
 		);
 
-		assert!(tree.get_links().read().unwrap().contains_key("base_link"));
-		assert!(tree.get_links().read().unwrap().contains_key("child_link"));
-		assert!(tree.get_joints().read().unwrap().contains_key("steve"));
+		assert!(tree
+			.get_links()
+			.try_read()
+			.unwrap()
+			.contains_key("base_link"));
+		assert!(tree
+			.get_links()
+			.try_read()
+			.unwrap()
+			.contains_key("child_link"));
+		assert!(tree.get_joints().try_read().unwrap().contains_key("steve"));
 
 		assert_eq!(
 			tree.get_joint("steve")
 				.unwrap()
-				.read()
+				.try_read()
 				.unwrap()
 				.get_parent_link()
-				.read()
+				.try_read()
 				.unwrap()
 				.get_name(),
 			"base_link"
@@ -335,20 +352,21 @@ mod tests {
 		assert_eq!(
 			tree.get_joint("steve")
 				.unwrap()
-				.read()
+				.try_read()
 				.unwrap()
 				.get_child_link()
-				.read()
+				.try_read()
 				.unwrap()
 				.get_name(),
 			"child_link"
 		);
 
-		let weak_joint = { Weak::clone(tree.get_joints().read().unwrap().get("steve").unwrap()) };
+		let weak_joint =
+			{ Weak::clone(tree.get_joints().try_read().unwrap().get("steve").unwrap()) };
 		assert_eq!(
 			tree.get_link("child_link")
 				.unwrap()
-				.read()
+				.try_read()
 				.unwrap()
 				.direct_parent,
 			Some(LinkParent::Joint(weak_joint))
@@ -363,7 +381,7 @@ mod tests {
 
 		other_tree
 			.get_newest_link()
-			.write()
+			.try_write()
 			.unwrap()
 			.try_attach_child(
 				Link::new("other_child_link".into()).into(),
@@ -373,7 +391,7 @@ mod tests {
 			.unwrap();
 
 		tree.get_root_link()
-			.write()
+			.try_write()
 			.unwrap()
 			.try_attach_child(
 				other_tree.into(),
@@ -384,22 +402,22 @@ mod tests {
 
 		//TODO: What should be the defined behavior?
 		assert_eq!(
-			tree.get_newest_link().read().unwrap().get_name(),
+			tree.get_newest_link().try_read().unwrap().get_name(),
 			"other_child_link"
 		);
 
 		tree.get_root_link()
-			.write()
+			.try_write()
 			.unwrap()
 			.try_attach_child(tree_three.into(), "joint-3".into(), crate::JointType::Fixed)
 			.unwrap();
 
-		assert_eq!(tree.get_root_link().write().unwrap().get_name(), "root");
-		assert_eq!(tree.get_newest_link().write().unwrap().get_name(), "3");
+		assert_eq!(tree.get_root_link().try_read().unwrap().get_name(), "root");
+		assert_eq!(tree.get_newest_link().try_read().unwrap().get_name(), "3");
 
 		{
 			let binding = tree.get_links();
-			let links = binding.read().unwrap();
+			let links = binding.try_read().unwrap();
 			assert_eq!(links.len(), 4);
 			assert!(links.contains_key("root"));
 			assert!(links.contains_key("other_root"));
@@ -409,7 +427,7 @@ mod tests {
 
 		{
 			let binding = tree.get_joints();
-			let joints = binding.read().unwrap();
+			let joints = binding.try_read().unwrap();
 			assert_eq!(joints.len(), 3);
 			assert!(joints.contains_key("other_joint"));
 			assert!(joints.contains_key("initial_joint"));
@@ -417,32 +435,32 @@ mod tests {
 		}
 
 		let binding = tree.get_root_link();
-		let root_link = binding.read().unwrap();
+		let root_link = binding.try_read().unwrap();
 		assert_eq!(
 			root_link.direct_parent,
 			Some(LinkParent::KinematicTree(Weak::clone(&root_link.tree)))
 		);
 		assert_eq!(root_link.child_joints.len(), 2);
 		assert_eq!(
-			root_link.child_joints[0].read().unwrap().name,
+			root_link.child_joints[0].try_read().unwrap().get_name(),
 			"initial_joint"
 		);
 		assert_eq!(
 			root_link.child_joints[0]
-				.read()
+				.try_read()
 				.unwrap()
 				.get_child_link()
-				.read()
+				.try_read()
 				.unwrap()
-				.name,
+				.get_name(),
 			"other_root"
 		);
 		assert_eq!(
 			root_link.child_joints[0]
-				.read()
+				.try_read()
 				.unwrap()
 				.get_child_link()
-				.read()
+				.try_read()
 				.unwrap()
 				.get_joints()
 				.len(),
@@ -450,68 +468,71 @@ mod tests {
 		);
 		assert_eq!(
 			root_link.child_joints[0]
-				.read()
+				.try_read()
 				.unwrap()
 				.get_child_link()
-				.read()
+				.try_read()
 				.unwrap()
 				.get_joints()[0]
-				.read()
+				.try_read()
 				.unwrap()
-				.name,
+				.get_name(),
 			"other_joint"
 		);
 		assert_eq!(
 			root_link.child_joints[0]
-				.read()
+				.try_read()
 				.unwrap()
 				.get_child_link()
-				.read()
+				.try_read()
 				.unwrap()
 				.get_joints()[0]
-				.read()
+				.try_read()
 				.unwrap()
 				.get_child_link()
 				.read()
 				.unwrap()
-				.name,
+				.get_name(),
 			"other_child_link"
 		);
 		assert_eq!(
 			root_link.child_joints[0]
-				.read()
+				.try_read()
 				.unwrap()
 				.get_child_link()
-				.read()
+				.try_read()
 				.unwrap()
 				.get_joints()[0]
-				.read()
+				.try_read()
 				.unwrap()
 				.get_child_link()
-				.read()
+				.try_read()
 				.unwrap()
 				.get_joints()
 				.len(),
 			0
 		);
 
-		assert_eq!(root_link.child_joints[1].read().unwrap().name, "joint-3");
+		assert_eq!(
+			root_link.child_joints[1].try_read().unwrap().get_name(),
+			"joint-3"
+		);
 		assert_eq!(
 			root_link.child_joints[1]
-				.read()
+				.try_read()
 				.unwrap()
 				.get_child_link()
-				.read()
+				.try_read()
 				.unwrap()
-				.name,
+				.get_name(),
 			"3"
 		);
 		assert_eq!(
 			root_link.child_joints[1]
-				.read()
+				.try_read()
 				.unwrap()
 				.get_child_link()
-				.read()
+				.try_read()
 				.unwrap()
 				.get_joints()
 				.len(),

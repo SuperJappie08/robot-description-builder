@@ -64,7 +64,7 @@ impl KinematicTreeData {
 		&mut self,
 		material: Arc<RwLock<Material>>,
 	) -> Result<(), AddMaterialError> {
-		let name = material.read()?.name.clone();
+		let name = material.read()?.get_name();
 		if name.is_none() {
 			return Err(AddMaterialError::NoName);
 		}
@@ -87,7 +87,7 @@ impl KinematicTreeData {
 	}
 
 	pub(crate) fn try_add_link(&mut self, link: Arc<RwLock<Link>>) -> Result<(), AddLinkError> {
-		let name = link.read()?.name.clone();
+		let name = link.read()?.get_name();
 		let other = { self.links.read()?.get(&name) }.map(Weak::clone);
 		if let Some(preexisting_link) = other.and_then(|weak_link| weak_link.upgrade()) {
 			if Arc::ptr_eq(&preexisting_link, &link) {
@@ -107,7 +107,7 @@ impl KinematicTreeData {
 	}
 
 	pub(crate) fn try_add_joint(&mut self, joint: Arc<RwLock<Joint>>) -> Result<(), AddJointError> {
-		let name = joint.read()?.name.clone();
+		let name = joint.read()?.get_name();
 		let other = { self.joints.read()?.get(&name) }.map(Weak::clone);
 		if let Some(preexisting_joint) = other.and_then(|weak_joint| weak_joint.upgrade()) {
 			if Arc::ptr_eq(&preexisting_joint, &joint) {

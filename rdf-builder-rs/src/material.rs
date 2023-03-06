@@ -4,6 +4,13 @@ pub struct Material {
 	material: MaterialData,
 }
 
+impl Material {
+	/// TODO: FIGURE OUT IF I WANT THIS
+	pub fn get_name(&self) -> Option<String> {
+		self.name.clone()
+	}
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum MaterialData {
 	/// Color as RGBA

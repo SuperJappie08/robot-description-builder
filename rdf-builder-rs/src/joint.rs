@@ -16,6 +16,10 @@ pub struct Joint {
 }
 
 impl Joint {
+	pub fn get_name(&self) -> String {
+		self.name.clone()
+	}
+
 	/// Adds the `Joint` to a kinematic tree
 	pub(crate) fn add_to_tree(&mut self, new_parent_tree: &Arc<RwLock<KinematicTreeData>>) {
 		{

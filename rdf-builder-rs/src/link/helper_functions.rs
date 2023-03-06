@@ -12,11 +12,14 @@ use super::geometry::{CylinderGeometry, SphereGeometry};
 /// TODO: Add material Specifierer
 /// TODO: Add Inertial data options
 /// TODO: ADD TEST?
-pub fn new_quick_link(link_name: String, geometry: Box<dyn GeometryInterface + Sync + Send>) -> KinematicTree {
+pub fn new_quick_link(
+	link_name: String,
+	geometry: Box<dyn GeometryInterface + Sync + Send>,
+) -> KinematicTree {
 	let tree = Link::new(link_name.clone());
 
 	let binding = tree.get_newest_link();
-	let mut link = binding.write().unwrap(); // FIXME: Might not be ok to unwrap()
+	let mut link = binding.try_write().unwrap(); // FIXME: Might not be ok to unwrap()
 
 	let mut visual_name = link_name.clone();
 	visual_name.push_str("_visual");
@@ -77,39 +80,45 @@ mod tests {
 	fn test_new_box_link() {
 		let tree = new_box_link("Zelda".to_owned(), 2f32, 3f32, 5f32);
 
-		assert_eq!(tree.get_links().read().unwrap().len(), 1);
-		assert_eq!(tree.get_newest_link().read().unwrap().get_name(), "Zelda");
-		assert_eq!(tree.get_newest_link().read().unwrap().visuals.len(), 1);
+		assert_eq!(tree.get_links().try_read().unwrap().len(), 1);
 		assert_eq!(
-			tree.get_newest_link().read().unwrap().visuals[0].name,
+			tree.get_newest_link().try_read().unwrap().get_name(),
+			"Zelda"
+		);
+		assert_eq!(tree.get_newest_link().try_read().unwrap().visuals.len(), 1);
+		assert_eq!(
+			tree.get_newest_link().try_read().unwrap().visuals[0].name,
 			Some("Zelda_visual".into())
 		);
 		assert_eq!(
-			tree.get_newest_link().read().unwrap().visuals[0]
+			tree.get_newest_link().try_read().unwrap().visuals[0]
 				.geometry
 				.volume(),
 			30f32
 		);
 		assert_eq!(
-			tree.get_newest_link().read().unwrap().visuals[0]
+			tree.get_newest_link().try_read().unwrap().visuals[0]
 				.geometry
 				.surface_area(),
 			62f32
 		);
 
-		assert_eq!(tree.get_newest_link().read().unwrap().colliders.len(), 1);
 		assert_eq!(
-			tree.get_newest_link().read().unwrap().colliders[0].name,
+			tree.get_newest_link().try_read().unwrap().colliders.len(),
+			1
+		);
+		assert_eq!(
+			tree.get_newest_link().try_read().unwrap().colliders[0].name,
 			Some("Zelda_collision".into())
 		);
 		assert_eq!(
-			tree.get_newest_link().read().unwrap().colliders[0]
+			tree.get_newest_link().try_read().unwrap().colliders[0]
 				.geometry
 				.volume(),
 			30f32
 		);
 		assert_eq!(
-			tree.get_newest_link().read().unwrap().colliders[0]
+			tree.get_newest_link().try_read().unwrap().colliders[0]
 				.geometry
 				.surface_area(),
 			62f32

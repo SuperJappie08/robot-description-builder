@@ -49,9 +49,14 @@ impl PartialEq for Visual {
 }
 
 impl Clone for Visual {
-    fn clone(&self) -> Self {
-        Self { name: self.name.clone(), reference: self.reference.clone(), geometry: self.geometry.boxed_clone(), material: self.material.clone() }
-    }
+	fn clone(&self) -> Self {
+		Self {
+			name: self.name.clone(),
+			reference: self.reference.clone(),
+			geometry: self.geometry.boxed_clone(),
+			material: self.material.clone(),
+		}
+	}
 }
 
 #[derive(Debug, PartialEq, Clone)]

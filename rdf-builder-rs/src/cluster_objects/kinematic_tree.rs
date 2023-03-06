@@ -200,34 +200,34 @@ mod tests {
 		// Note: This may not be permanent behavior
 		println!(
 			"tree->..->root_link->name        | ptr: {:#?}",
-			&tree.get_root_link().read().unwrap().name.as_ptr()
+			&tree.get_root_link().try_read().unwrap().name.as_ptr()
 		);
 		println!(
 			"cloned_tree->..->root_link->name | ptr: {:#?}\n",
-			&cloned_tree.get_root_link().read().unwrap().name.as_ptr()
+			&cloned_tree.get_root_link().try_read().unwrap().name.as_ptr()
 		);
 		assert_eq!(
-			&tree.get_root_link().read().unwrap().get_name(),
-			&cloned_tree.get_root_link().read().unwrap().get_name()
+			&tree.get_root_link().try_read().unwrap().get_name(),
+			&cloned_tree.get_root_link().try_read().unwrap().get_name()
 		);
 
 		println!(
 			"tree->..->root_link->tree        | ptr: {:#?}",
-			Weak::as_ptr(&tree.get_root_link().read().unwrap().tree)
+			Weak::as_ptr(&tree.get_root_link().try_read().unwrap().tree)
 		);
 		println!(
 			"cloned_tree->..->root_link->tree | ptr: {:#?}\n",
-			Weak::as_ptr(&cloned_tree.get_root_link().read().unwrap().tree)
+			Weak::as_ptr(&cloned_tree.get_root_link().try_read().unwrap().tree)
 		);
 		assert!(!Weak::ptr_eq(
-			&tree.get_root_link().read().unwrap().tree,
-			&cloned_tree.get_root_link().read().unwrap().tree
+			&tree.get_root_link().try_read().unwrap().tree,
+			&cloned_tree.get_root_link().try_read().unwrap().tree
 		));
 
 		println!(
 			"tree->..->root_link->direct_parent->0        | ptr: {:#?}",
 			Weak::as_ptr(
-				match &tree.get_root_link().read().unwrap().get_parent().unwrap() {
+				match &tree.get_root_link().try_read().unwrap().get_parent().unwrap() {
 					LinkParent::KinematicTree(weak_tree) => weak_tree,
 					LinkParent::Joint(_) => panic!("This should not return a Joint Parent"),
 				}
@@ -238,7 +238,7 @@ mod tests {
 			Weak::as_ptr(
 				match &cloned_tree
 					.get_root_link()
-					.read()
+					.try_read()
 					.unwrap()
 					.get_parent()
 					.unwrap()
@@ -249,23 +249,23 @@ mod tests {
 			)
 		);
 		assert_ne!(
-			&tree.get_root_link().read().unwrap().get_parent(),
-			&cloned_tree.get_root_link().read().unwrap().get_parent()
+			&tree.get_root_link().try_read().unwrap().get_parent(),
+			&cloned_tree.get_root_link().try_read().unwrap().get_parent()
 		);
 
 		println!(
 			"tree->..->root_link->child_joints:        {:#?}",
-			&tree.get_root_link().read().unwrap().get_joints()
+			&tree.get_root_link().try_read().unwrap().get_joints()
 		);
 		println!(
 			"cloned_tree->..->root_link->child_joints: {:#?}\n",
-			&cloned_tree.get_root_link().read().unwrap().get_joints()
+			&cloned_tree.get_root_link().try_read().unwrap().get_joints()
 		);
 		assert_eq!(
-			tree.get_root_link().read().unwrap().get_joints().len(),
+			tree.get_root_link().try_read().unwrap().get_joints().len(),
 			cloned_tree
 				.get_root_link()
-				.read()
+				.try_read()
 				.unwrap()
 				.get_joints()
 				.len()
@@ -281,8 +281,8 @@ mod tests {
 		);
 		assert!(!Arc::ptr_eq(&tree.get_links(), &cloned_tree.get_links()));
 		assert_eq!(
-			tree.get_links().read().unwrap().len(),
-			cloned_tree.get_links().read().unwrap().len()
+			tree.get_links().try_read().unwrap().len(),
+			cloned_tree.get_links().try_read().unwrap().len()
 		);
 
 		println!(
@@ -290,7 +290,7 @@ mod tests {
 			Weak::as_ptr(
 				&tree
 					.get_links()
-					.read()
+					.try_read()
 					.unwrap()
 					.get("example-link")
 					.unwrap()
@@ -301,7 +301,7 @@ mod tests {
 			Weak::as_ptr(
 				&cloned_tree
 					.get_links()
-					.read()
+					.try_read()
 					.unwrap()
 					.get("example-link")
 					.unwrap()
@@ -310,13 +310,13 @@ mod tests {
 		assert!(!Weak::ptr_eq(
 			&tree
 				.get_links()
-				.read()
+				.try_read()
 				.unwrap()
 				.get("example-link")
 				.unwrap(),
 			&cloned_tree
 				.get_links()
-				.read()
+				.try_read()
 				.unwrap()
 				.get("example-link")
 				.unwrap()
@@ -324,17 +324,17 @@ mod tests {
 
 		println!(
 			"tree->..->root_link->child_joints:        {:#?}",
-			&tree.get_root_link().read().unwrap().get_joints()
+			&tree.get_root_link().try_read().unwrap().get_joints()
 		);
 		println!(
 			"cloned_tree->..->root_link->child_joints: {:#?}\n",
-			&cloned_tree.get_root_link().read().unwrap().get_joints()
+			&cloned_tree.get_root_link().try_read().unwrap().get_joints()
 		);
 		assert_eq!(
-			tree.get_root_link().read().unwrap().get_joints().len(),
+			tree.get_root_link().try_read().unwrap().get_joints().len(),
 			cloned_tree
 				.get_root_link()
-				.read()
+				.try_read()
 				.unwrap()
 				.get_joints()
 				.len()
@@ -350,8 +350,8 @@ mod tests {
 		);
 		assert!(!Arc::ptr_eq(&tree.get_joints(), &cloned_tree.get_joints()));
 		assert_eq!(
-			tree.get_joints().read().unwrap().len(),
-			cloned_tree.get_joints().read().unwrap().len()
+			tree.get_joints().try_read().unwrap().len(),
+			cloned_tree.get_joints().try_read().unwrap().len()
 		);
 
 		println!(
@@ -374,7 +374,7 @@ mod tests {
 		let other_tree = Link::new("other-link".into());
 		other_tree
 			.get_newest_link()
-			.write()
+			.try_write()
 			.unwrap()
 			.try_attach_child(
 				Link::new("other-child".into()).into(),
@@ -384,13 +384,13 @@ mod tests {
 			.unwrap();
 
 		tree.get_root_link()
-			.write()
+			.try_write()
 			.unwrap()
 			.try_attach_child(other_tree.into(), "other-joint".into(), JointType::Fixed)
 			.unwrap();
 
 		tree.get_root_link()
-			.write()
+			.try_write()
 			.unwrap()
 			.try_attach_child(
 				Link::new("3".into()).into(),
@@ -424,34 +424,34 @@ mod tests {
 		// Note: This may not be permanent behavior
 		println!(
 			"tree->..->root_link->name        | ptr: {:#?}",
-			&tree.get_root_link().read().unwrap().name.as_ptr()
+			&tree.get_root_link().try_read().unwrap().name.as_ptr()
 		);
 		println!(
 			"cloned_tree->..->root_link->name | ptr: {:#?}\n",
-			&cloned_tree.get_root_link().read().unwrap().name.as_ptr()
+			&cloned_tree.get_root_link().try_read().unwrap().name.as_ptr()
 		);
 		assert_eq!(
-			&tree.get_root_link().read().unwrap().get_name(),
-			&cloned_tree.get_root_link().read().unwrap().get_name()
+			&tree.get_root_link().try_read().unwrap().get_name(),
+			&cloned_tree.get_root_link().try_read().unwrap().get_name()
 		);
 
 		println!(
 			"tree->..->root_link->tree        | ptr: {:#?}",
-			Weak::as_ptr(&tree.get_root_link().read().unwrap().tree)
+			Weak::as_ptr(&tree.get_root_link().try_read().unwrap().tree)
 		);
 		println!(
 			"cloned_tree->..->root_link->tree | ptr: {:#?}\n",
-			Weak::as_ptr(&cloned_tree.get_root_link().read().unwrap().tree)
+			Weak::as_ptr(&cloned_tree.get_root_link().try_read().unwrap().tree)
 		);
 		assert!(!Weak::ptr_eq(
-			&tree.get_root_link().read().unwrap().tree,
-			&cloned_tree.get_root_link().read().unwrap().tree
+			&tree.get_root_link().try_read().unwrap().tree,
+			&cloned_tree.get_root_link().try_read().unwrap().tree
 		));
 
 		println!(
 			"tree->..->root_link->direct_parent->0        | ptr: {:#?}",
 			Weak::as_ptr(
-				match &tree.get_root_link().read().unwrap().get_parent().unwrap() {
+				match &tree.get_root_link().try_read().unwrap().get_parent().unwrap() {
 					LinkParent::KinematicTree(weak_tree) => weak_tree,
 					LinkParent::Joint(_) => panic!("This should not return a Joint Parent"),
 				}
@@ -462,7 +462,7 @@ mod tests {
 			Weak::as_ptr(
 				match &cloned_tree
 					.get_root_link()
-					.read()
+					.try_read()
 					.unwrap()
 					.get_parent()
 					.unwrap()
@@ -473,15 +473,15 @@ mod tests {
 			)
 		);
 		assert_ne!(
-			&tree.get_root_link().read().unwrap().get_parent(),
-			&cloned_tree.get_root_link().read().unwrap().get_parent()
+			&tree.get_root_link().try_read().unwrap().get_parent(),
+			&cloned_tree.get_root_link().try_read().unwrap().get_parent()
 		);
 
 		println!(
 			"tree->..->root_link->child_joints:        {:?}",
 			&tree
 				.get_root_link()
-				.read()
+				.try_read()
 				.unwrap()
 				.get_joints()
 				.iter()
@@ -492,7 +492,7 @@ mod tests {
 			"cloned_tree->..->root_link->child_joints: {:?}\n",
 			&cloned_tree
 				.get_root_link()
-				.read()
+				.try_read()
 				.unwrap()
 				.get_joints()
 				.iter()
@@ -503,7 +503,7 @@ mod tests {
 			tree.get_root_link().read().unwrap().get_joints().len(),
 			cloned_tree
 				.get_root_link()
-				.read()
+				.try_read()
 				.unwrap()
 				.get_joints()
 				.len()
@@ -514,7 +514,7 @@ mod tests {
 			Arc::as_ptr(&tree.get_links()),
 			&tree
 				.get_links()
-				.read()
+				.try_read()
 				.unwrap()
 				.keys()
 				.map(|key| key.clone())
@@ -525,7 +525,7 @@ mod tests {
 			Arc::as_ptr(&cloned_tree.get_links()),
 			&cloned_tree
 				.get_links()
-				.read()
+				.try_read()
 				.unwrap()
 				.keys()
 				.map(|key| key.clone())
@@ -533,8 +533,8 @@ mod tests {
 		);
 		assert!(!Arc::ptr_eq(&tree.get_links(), &cloned_tree.get_links()));
 		assert_eq!(
-			tree.get_links().read().unwrap().len(),
-			cloned_tree.get_links().read().unwrap().len()
+			tree.get_links().try_read().unwrap().len(),
+			cloned_tree.get_links().try_read().unwrap().len()
 		);
 
 		println!(
@@ -542,7 +542,7 @@ mod tests {
 			Weak::as_ptr(
 				&tree
 					.get_links()
-					.read()
+					.try_read()
 					.unwrap()
 					.get("example-link")
 					.unwrap()
@@ -553,7 +553,7 @@ mod tests {
 			Weak::as_ptr(
 				&cloned_tree
 					.get_links()
-					.read()
+					.try_read()
 					.unwrap()
 					.get("example-link")
 					.unwrap()
@@ -562,13 +562,13 @@ mod tests {
 		assert!(!Weak::ptr_eq(
 			&tree
 				.get_links()
-				.read()
+				.try_read()
 				.unwrap()
 				.get("example-link")
 				.unwrap(),
 			&cloned_tree
 				.get_links()
-				.read()
+				.try_read()
 				.unwrap()
 				.get("example-link")
 				.unwrap()
@@ -576,17 +576,17 @@ mod tests {
 
 		println!(
 			"tree->..->root_link->child_joints:        {:#?}",
-			&tree.get_root_link().read().unwrap().get_joints()
+			&tree.get_root_link().try_read().unwrap().get_joints()
 		);
 		println!(
 			"cloned_tree->..->root_link->child_joints: {:#?}\n",
-			&cloned_tree.get_root_link().read().unwrap().get_joints()
+			&cloned_tree.get_root_link().try_read().unwrap().get_joints()
 		);
 		assert_eq!(
-			tree.get_root_link().read().unwrap().get_joints().len(),
+			tree.get_root_link().try_read().unwrap().get_joints().len(),
 			cloned_tree
 				.get_root_link()
-				.read()
+				.try_read()
 				.unwrap()
 				.get_joints()
 				.len()
@@ -602,8 +602,8 @@ mod tests {
 		);
 		assert!(!Arc::ptr_eq(&tree.get_joints(), &cloned_tree.get_joints()));
 		assert_eq!(
-			tree.get_joints().read().unwrap().len(),
-			cloned_tree.get_joints().read().unwrap().len()
+			tree.get_joints().try_read().unwrap().len(),
+			cloned_tree.get_joints().try_read().unwrap().len()
 		);
 
 		println!(

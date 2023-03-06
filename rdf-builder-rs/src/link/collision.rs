@@ -34,7 +34,11 @@ impl PartialEq for Collision {
 }
 
 impl Clone for Collision {
-    fn clone(&self) -> Self {
-        Self { name: self.name.clone(), reference: self.reference.clone(), geometry: self.geometry.boxed_clone() }
-    }
+	fn clone(&self) -> Self {
+		Self {
+			name: self.name.clone(),
+			reference: self.reference.clone(),
+			geometry: self.geometry.boxed_clone(),
+		}
+	}
 }
