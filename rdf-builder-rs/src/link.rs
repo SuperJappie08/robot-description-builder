@@ -24,7 +24,7 @@ use crate::{
 		kinematic_tree_data::KinematicTreeData,
 		KinematicInterface, KinematicTree,
 	},
-	joint::{Joint, JointType},
+	joint::{Joint, JointBuilder},
 };
 
 // pub trait LinkTrait: Debug {
@@ -106,8 +106,7 @@ impl Link {
 	pub fn try_attach_child(
 		&mut self,
 		tree: Box<dyn KinematicInterface>,
-		joint_name: String,
-		joint_type: JointType,
+		joint_builder: JointBuilder,
 	) -> Result<(), AttachChildError> {
 		// Generics dont workt that well Rc<RefCell<T>>  where T: KinematicInterface
 		//Box<Rc<RefCell<dyn KinematicInterface>>>
@@ -123,13 +122,11 @@ impl Link {
 			.map(Weak::clone)
 			.unwrap();
 
-		let joint = Arc::new(RwLock::new(Joint {
-			name: joint_name,
-			tree: Weak::clone(&self.tree),
+		let joint = Arc::new(RwLock::new(joint_builder.build(
+			Weak::clone(&self.tree),
 			parent_link,
-			child_link: tree.get_root_link(),
-			joint_type,
-		}));
+			tree.get_root_link(),
+		)));
 
 		self.child_joints.push(Arc::clone(&joint));
 
@@ -272,7 +269,11 @@ mod tests {
 	use std::sync::{Arc, Weak};
 
 	use super::Link;
-	use crate::{cluster_objects::KinematicInterface, link::LinkParent};
+	use crate::{
+		cluster_objects::KinematicInterface,
+		joint::{Joint, JointType},
+		link::LinkParent,
+	};
 
 	#[test]
 	fn new() {
@@ -311,8 +312,7 @@ mod tests {
 				.unwrap()
 				.try_attach_child(
 					Link::new("child_link".into()).into(),
-					"steve".into(),
-					crate::joint::JointType::Fixed
+					Joint::new("steve".into(), JointType::Fixed)
 				),
 			Ok(())
 		);
@@ -385,8 +385,7 @@ mod tests {
 			.unwrap()
 			.try_attach_child(
 				Link::new("other_child_link".into()).into(),
-				"other_joint".into(),
-				crate::JointType::Fixed,
+				Joint::new("other_joint".into(), JointType::Fixed),
 			)
 			.unwrap();
 
@@ -395,8 +394,7 @@ mod tests {
 			.unwrap()
 			.try_attach_child(
 				other_tree.into(),
-				"initial_joint".into(),
-				crate::JointType::Fixed,
+				Joint::new("initial_joint".into(), JointType::Fixed),
 			)
 			.unwrap();
 
@@ -409,7 +407,10 @@ mod tests {
 		tree.get_root_link()
 			.try_write()
 			.unwrap()
-			.try_attach_child(tree_three.into(), "joint-3".into(), crate::JointType::Fixed)
+			.try_attach_child(
+				tree_three.into(),
+				Joint::new("joint-3".into(), JointType::Fixed),
+			)
 			.unwrap();
 
 		assert_eq!(tree.get_root_link().try_read().unwrap().get_name(), "root");

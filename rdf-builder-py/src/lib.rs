@@ -1,8 +1,11 @@
 use std::sync::{Arc, RwLock};
 
 use pyo3::prelude::*;
-use rdf_builder_rs::{Joint, JointType, KinematicInterface, KinematicTree, Link, Robot};
+use rdf_builder_rs::{
+	Joint, JointBuilder, JointType, KinematicInterface, KinematicTree, Link, Robot,
+};
 
+#[derive(Debug)]
 #[pyclass(name = "Robot")]
 struct PyRobot {
 	inner: Robot,
@@ -97,15 +100,14 @@ impl PyLink {
 	}
 
 	///TODO: Joint Type Selection
-	fn try_attach_child(&self, tree: PyKinematicTree, joint_name: String, joint_type: PyJointType) {
+	fn try_attach_child(&self, tree: PyKinematicTree, joint_builder: PyJointBuilder) {
 		// FIXME: Need to do somethign with error
 		self.inner
 			.try_write()
 			.unwrap() // TODO: Figure out if unwrap is Ok here?
 			.try_attach_child(
 				Into::<KinematicTree>::into(tree).into(),
-				joint_name,
-				joint_type.into(),
+				joint_builder.into(),
 			)
 			.unwrap() // TODO: Figure out if unwrap is Ok here?
 	}
@@ -144,6 +146,33 @@ impl PyJoint {
 impl From<Arc<RwLock<Joint>>> for PyJoint {
 	fn from(value: Arc<RwLock<Joint>>) -> Self {
 		Self { inner: value }
+	}
+}
+
+#[derive(Debug, Clone)]
+#[pyclass(name = "JointBuilder")]
+struct PyJointBuilder {
+	inner: JointBuilder,
+}
+
+#[pymethods]
+impl PyJointBuilder {
+	#[new]
+	fn new(name: String, joint_type: PyJointType) -> PyJointBuilder {
+		// ODDITY: use `Joint::new` because `JointBuilder::new` is private to the crate
+		Joint::new(name, joint_type.into()).into()
+	}
+}
+
+impl From<JointBuilder> for PyJointBuilder {
+	fn from(value: JointBuilder) -> Self {
+		Self { inner: value }
+	}
+}
+
+impl From<PyJointBuilder> for JointBuilder {
+	fn from(value: PyJointBuilder) -> Self {
+		value.inner
 	}
 }
 
@@ -199,6 +228,7 @@ fn rdf_builder_py(_py: Python, m: &PyModule) -> PyResult<()> {
 	m.add_class::<PyKinematicTree>()?;
 	m.add_class::<PyLink>()?;
 	m.add_class::<PyJoint>()?;
+	m.add_class::<PyJointBuilder>()?;
 	m.add_class::<PyJointType>()?;
 
 	Ok(())

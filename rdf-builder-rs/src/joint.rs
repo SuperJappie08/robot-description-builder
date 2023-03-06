@@ -1,6 +1,10 @@
+mod jointbuilder;
+
 use std::sync::{Arc, RwLock, Weak};
 
 use crate::{cluster_objects::kinematic_tree_data::KinematicTreeData, link::Link};
+
+pub use jointbuilder::JointBuilder;
 
 #[derive(Debug)]
 pub struct Joint {
@@ -16,6 +20,10 @@ pub struct Joint {
 }
 
 impl Joint {
+	pub fn new(name: String, joint_type: JointType) -> JointBuilder {
+		JointBuilder::new(name, joint_type)
+	}
+
 	pub fn get_name(&self) -> String {
 		self.name.clone()
 	}
@@ -51,6 +59,11 @@ impl Joint {
 	pub fn get_child_link(&self) -> Arc<RwLock<Link>> {
 		Arc::clone(&self.child_link)
 	}
+
+	/// Make a `JointBuilder` to build a 'Clone' of the `Joint`
+	pub fn rebuild(&self) -> JointBuilder {
+		JointBuilder::new(self.name.clone(), self.joint_type.clone())
+	}
 }
 
 impl PartialEq for Joint {
@@ -63,7 +76,7 @@ impl PartialEq for Joint {
 }
 
 /// TODO: Might add data of specif joint type to Struct Spaces.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum JointType {
 	Fixed, // — this is not really a joint because it cannot move. All degrees of freedom are locked. This type of joint does not require the <axis>, <calibration>, <dynamics>, <limits> or <safety_controller>.
 	Revolute, // — a hinge joint that rotates along the axis and has a limited range specified by the upper and lower limits.

@@ -27,51 +27,48 @@ pub trait KinematicInterface {
 	/// Returns the root link of the Kinematic Tree
 	///
 	/// # Example
-	/// FIXME: REPAIR DOC TEST
-	/// ```ignore
-	/// # use rdf_builder_rs::{KinematicInterface, Link, JointType};
+	/// ```
+	/// # use rdf_builder_rs::{KinematicInterface, Link, Joint, JointType};
 	/// let tree = Link::new("the root link".to_owned());
 	///
 	/// /// This is equivalent to `get_root_link` in this case, since this is a new tree/Link.
-	/// tree.get_newest_link().borrow_mut().try_attach_child(
+	/// tree.get_newest_link().try_write().unwrap().try_attach_child(
 	///     Link::new("his one and only child".to_owned()).into(),
-	///     "just a joint".to_owned(),
-	///     JointType::Fixed
+	///     Joint::new("just a joint".to_owned(), JointType::Fixed)
 	/// ).unwrap();
 	///
-	/// assert_eq!(tree.get_root_link().borrow().get_name(), "the root link")
+	/// assert_eq!(tree.get_root_link().try_read().unwrap().get_name(), "the root link")
 	/// ```
 	fn get_root_link(&self) -> Arc<RwLock<Link>>;
 
 	/// Returns the newest link of the Kinematic Tree
 	///
 	/// # Example
-	/// FIXME: REPAIR EXAMPLE
-	/// ```ignore
-	/// # use rdf_builder_rs::{KinematicInterface, Link, JointType};
+	/// ```
+	/// # use rdf_builder_rs::{KinematicInterface, Link, Joint, JointType};
 	/// let tree = Link::new("the root link".to_owned());
 	///
-	/// assert_eq!(tree.get_newest_link().borrow().get_name(), "the root link");
+	/// assert_eq!(tree.get_newest_link().try_read().unwrap().get_name(), "the root link");
 	///
-	/// tree.get_newest_link().borrow_mut().try_attach_child(
+	/// tree.get_newest_link().try_write().unwrap().try_attach_child(
 	///     Link::new("his one and only child".to_owned()).into(),
-	///     "just a joint".to_owned(), JointType::Fixed
+	///     Joint::new("just a joint".to_owned(), JointType::Fixed)
 	/// ).unwrap();
 	///
-	/// assert_eq!(tree.get_newest_link().borrow().get_name(), "his one and only child");
+	/// assert_eq!(tree.get_newest_link().try_read().unwrap().get_name(), "his one and only child");
 	///
 	/// let long_sub_tree = Link::new("the other child". to_owned());
 	///
-	/// long_sub_tree.get_newest_link().borrow_mut().try_attach_child(
+	/// long_sub_tree.get_newest_link().try_write().unwrap().try_attach_child(
 	///     Link::new("the latest child".to_owned()).into(),
-	///     "second joint".to_owned(), JointType::Fixed
+	///     Joint::new("second joint".to_owned(), JointType::Fixed)
 	/// ).unwrap();
 	///
-	/// tree.get_root_link().borrow_mut().try_attach_child(long_sub_tree.into(),
-	///     "third joint".to_owned(), JointType::Fixed
+	/// tree.get_root_link().try_write().unwrap().try_attach_child(long_sub_tree.into(),
+	///     Joint::new("third joint".to_owned(), JointType::Fixed)
 	/// ).unwrap();
 	///
-	/// assert_eq!(tree.get_newest_link().borrow().get_name(), "the latest child");
+	/// assert_eq!(tree.get_newest_link().try_read().unwrap().get_name(), "the latest child");
 	/// ```
 	fn get_newest_link(&self) -> Arc<RwLock<Link>>;
 

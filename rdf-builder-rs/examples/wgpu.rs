@@ -216,7 +216,7 @@
 // 	pollster::block_on(run());
 // }
 
-use rdf_builder_rs::{JointType, KinematicInterface, Link};
+use rdf_builder_rs::{Joint, JointType, KinematicInterface, Link};
 fn main() {
 	let link = Link::new("name".into());
 	link.get_newest_link()
@@ -224,8 +224,7 @@ fn main() {
 		.unwrap()
 		.try_attach_child(
 			Box::new(Link::new("name2".into())),
-			"dave".into(),
-			JointType::Fixed,
+			Joint::new("dave".into(), JointType::Fixed),
 		)
 		.unwrap();
 	todo!()

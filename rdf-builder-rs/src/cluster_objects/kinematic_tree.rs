@@ -143,8 +143,7 @@ impl Clone for KinematicTree {
 							.try_attach_child(
 								Link::new(joint.get_child_link().read().unwrap().name.clone())
 									.into(), // FIXME: Unwrapping might not be ok
-								joint.name.clone(),
-								joint.joint_type.clone(),
+								joint.rebuild(),
 							)
 							.unwrap()
 					}
@@ -169,7 +168,7 @@ mod tests {
 
 	use crate::{
 		link::{Link, LinkParent},
-		JointType, KinematicInterface,
+		Joint, JointType, KinematicInterface,
 	};
 
 	#[test]
@@ -204,7 +203,12 @@ mod tests {
 		);
 		println!(
 			"cloned_tree->..->root_link->name | ptr: {:#?}\n",
-			&cloned_tree.get_root_link().try_read().unwrap().name.as_ptr()
+			&cloned_tree
+				.get_root_link()
+				.try_read()
+				.unwrap()
+				.name
+				.as_ptr()
 		);
 		assert_eq!(
 			&tree.get_root_link().try_read().unwrap().get_name(),
@@ -227,7 +231,13 @@ mod tests {
 		println!(
 			"tree->..->root_link->direct_parent->0        | ptr: {:#?}",
 			Weak::as_ptr(
-				match &tree.get_root_link().try_read().unwrap().get_parent().unwrap() {
+				match &tree
+					.get_root_link()
+					.try_read()
+					.unwrap()
+					.get_parent()
+					.unwrap()
+				{
 					LinkParent::KinematicTree(weak_tree) => weak_tree,
 					LinkParent::Joint(_) => panic!("This should not return a Joint Parent"),
 				}
@@ -378,15 +388,17 @@ mod tests {
 			.unwrap()
 			.try_attach_child(
 				Link::new("other-child".into()).into(),
-				"other-child-joint".into(),
-				JointType::Fixed,
+				Joint::new("other-child-joint".into(), JointType::Fixed),
 			)
 			.unwrap();
 
 		tree.get_root_link()
 			.try_write()
 			.unwrap()
-			.try_attach_child(other_tree.into(), "other-joint".into(), JointType::Fixed)
+			.try_attach_child(
+				other_tree.into(),
+				Joint::new("other-joint".into(), JointType::Fixed),
+			)
 			.unwrap();
 
 		tree.get_root_link()
@@ -394,8 +406,7 @@ mod tests {
 			.unwrap()
 			.try_attach_child(
 				Link::new("3".into()).into(),
-				"three".into(),
-				JointType::Fixed,
+				Joint::new("three".into(), JointType::Fixed),
 			)
 			.unwrap();
 
@@ -428,7 +439,12 @@ mod tests {
 		);
 		println!(
 			"cloned_tree->..->root_link->name | ptr: {:#?}\n",
-			&cloned_tree.get_root_link().try_read().unwrap().name.as_ptr()
+			&cloned_tree
+				.get_root_link()
+				.try_read()
+				.unwrap()
+				.name
+				.as_ptr()
 		);
 		assert_eq!(
 			&tree.get_root_link().try_read().unwrap().get_name(),
@@ -451,7 +467,13 @@ mod tests {
 		println!(
 			"tree->..->root_link->direct_parent->0        | ptr: {:#?}",
 			Weak::as_ptr(
-				match &tree.get_root_link().try_read().unwrap().get_parent().unwrap() {
+				match &tree
+					.get_root_link()
+					.try_read()
+					.unwrap()
+					.get_parent()
+					.unwrap()
+				{
 					LinkParent::KinematicTree(weak_tree) => weak_tree,
 					LinkParent::Joint(_) => panic!("This should not return a Joint Parent"),
 				}

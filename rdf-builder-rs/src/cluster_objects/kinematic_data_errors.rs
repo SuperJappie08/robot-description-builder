@@ -1,7 +1,6 @@
 use thiserror::Error;
 
 use std::{
-	cell::{BorrowError, BorrowMutError},
 	collections::HashMap,
 	sync::{Arc, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard, Weak},
 };
@@ -10,12 +9,6 @@ use crate::{material::Material, Joint, Link, Transmission};
 
 #[derive(Debug, Error)]
 pub enum AddMaterialError {
-	#[deprecated]
-	#[error(transparent)]
-	Borrow(#[from] BorrowError),
-	#[deprecated]
-	#[error(transparent)]
-	BorrowMut(#[from] BorrowMutError),
 	#[error("Read Material Error")]
 	ReadMaterial, //(PoisonError<RwLockReadGuard<'a, Material>>),
 	#[error("Read MaterialIndex Error")]
@@ -57,12 +50,6 @@ impl From<PoisonError<RwLockWriteGuard<'_, HashMap<String, Arc<RwLock<Material>>
 
 #[derive(Debug, Error)]
 pub enum AddLinkError {
-	#[deprecated]
-	#[error(transparent)]
-	Borrow(#[from] BorrowError),
-	#[deprecated]
-	#[error(transparent)]
-	BorrowMut(#[from] BorrowMutError),
 	#[error("Read Link Error")]
 	ReadLink, //(PoisonError<RwLockReadGuard<'a, Link>>),
 	#[error("Read LinkIndex Error")]
@@ -96,8 +83,6 @@ impl From<PoisonError<RwLockWriteGuard<'_, HashMap<String, Weak<RwLock<Link>>>>>
 impl PartialEq for AddLinkError {
 	fn eq(&self, other: &Self) -> bool {
 		match (self, other) {
-			(Self::Borrow(_), Self::Borrow(_)) => true,
-			(Self::BorrowMut(_), Self::BorrowMut(_)) => true,
 			(Self::ReadLink, Self::ReadLink) => true,
 			(Self::ReadIndex, Self::ReadIndex) => true,
 			(Self::WriteIndex, Self::WriteIndex) => true,
@@ -109,12 +94,6 @@ impl PartialEq for AddLinkError {
 
 #[derive(Debug, Error)]
 pub enum AddJointError {
-	#[deprecated]
-	#[error(transparent)]
-	Borrow(#[from] BorrowError),
-	#[deprecated]
-	#[error(transparent)]
-	BorrowMut(#[from] BorrowMutError),
 	#[error("Read Joint Error")]
 	ReadJoint, //(PoisonError<RwLockReadGuard<'a, Joint>>),
 	#[error("Read JointIndex Error")]
@@ -154,8 +133,6 @@ impl From<PoisonError<RwLockWriteGuard<'_, HashMap<String, std::sync::Weak<RwLoc
 impl PartialEq for AddJointError {
 	fn eq(&self, other: &Self) -> bool {
 		match (self, other) {
-			(Self::Borrow(_), Self::Borrow(_)) => true,
-			(Self::BorrowMut(_), Self::BorrowMut(_)) => true,
 			(Self::ReadJoint, Self::ReadJoint) => true,
 			(Self::ReadIndex, Self::ReadIndex) => true,
 			(Self::WriteIndex, Self::WriteIndex) => true,
@@ -167,12 +144,6 @@ impl PartialEq for AddJointError {
 
 #[derive(Debug, Error)]
 pub enum AddTransmissionError {
-	#[deprecated]
-	#[error(transparent)]
-	Borrow(#[from] BorrowError),
-	#[deprecated]
-	#[error(transparent)]
-	BorrowMut(#[from] BorrowMutError),
 	#[error("Read Transmission Error")]
 	ReadTransmission, //(PoisonError<RwLockReadGuard<'a, Transmission>>),
 	#[error("Read TransmissionIndex Error")]
@@ -212,8 +183,6 @@ impl From<PoisonError<RwLockWriteGuard<'_, HashMap<String, Arc<RwLock<Transmissi
 impl PartialEq for AddTransmissionError {
 	fn eq(&self, other: &Self) -> bool {
 		match (self, other) {
-			(Self::Borrow(_), Self::Borrow(_)) => true,
-			(Self::BorrowMut(_), Self::BorrowMut(_)) => true,
 			(Self::ReadTransmission, Self::ReadTransmission) => true,
 			(Self::ReadIndex, Self::ReadIndex) => true,
 			(Self::WriteIndex, Self::WriteIndex) => true,

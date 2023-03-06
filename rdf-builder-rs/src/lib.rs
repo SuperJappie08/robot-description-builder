@@ -4,7 +4,7 @@ mod link;
 mod material;
 
 pub use cluster_objects::{KinematicInterface, KinematicTree, Robot};
-pub use joint::{Joint, JointType};
+pub use joint::{Joint, JointBuilder, JointType};
 pub use link::{helper_functions, Link};
 pub use material::{Material, MaterialData};
 
@@ -13,10 +13,6 @@ pub use material::{Material, MaterialData};
 pub struct Transmission {
 	pub name: String,
 }
-
-// pub fn add(left: usize, right: usize) -> usize {
-// 	left + right
-// }
 
 #[cfg(test)]
 mod tests {
