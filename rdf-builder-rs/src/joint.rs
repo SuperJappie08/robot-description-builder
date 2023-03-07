@@ -1,10 +1,24 @@
+mod fixedjoint;
 mod jointbuilder;
+mod smartjointbuilder;
 
 use std::sync::{Arc, RwLock, Weak};
 
 use crate::{cluster_objects::kinematic_tree_data::KinematicTreeData, link::Link};
 
 pub use jointbuilder::JointBuilder;
+pub use smartjointbuilder::{OffsetMode, SmartJointBuilder};
+
+pub trait JointInterface {
+	fn get_name(&self) -> String;
+
+	fn add_to_tree(&mut self, new_parent_tree: &Arc<RwLock<KinematicTreeData>>);
+
+	fn get_parent_link(&self) -> Arc<RwLock<Link>>;
+	fn get_child_link(&self) -> Arc<RwLock<Link>>;
+
+	fn rebuild(&self) -> JointBuilder;
+}
 
 #[derive(Debug)]
 pub struct Joint {
@@ -23,13 +37,15 @@ impl Joint {
 	pub fn new(name: String, joint_type: JointType) -> JointBuilder {
 		JointBuilder::new(name, joint_type)
 	}
+}
 
-	pub fn get_name(&self) -> String {
+impl JointInterface for Joint {
+	fn get_name(&self) -> String {
 		self.name.clone()
 	}
 
 	/// Adds the `Joint` to a kinematic tree
-	pub(crate) fn add_to_tree(&mut self, new_parent_tree: &Arc<RwLock<KinematicTreeData>>) {
+	fn add_to_tree(&mut self, new_parent_tree: &Arc<RwLock<KinematicTreeData>>) {
 		{
 			let mut new_ptree = new_parent_tree.write().unwrap(); // FIXME: Probablly shouldn't unwrap
 			new_ptree
@@ -49,19 +65,19 @@ impl Joint {
 	/// TODO: ADD EXAMPLE
 	///
 	/// For now pub crate, this should maybe go to joint trait
-	pub fn get_parent_link(&self) -> Arc<RwLock<Link>> {
+	fn get_parent_link(&self) -> Arc<RwLock<Link>> {
 		// If this panics, the Joint is not initialized propperly.
 		self.parent_link.upgrade().unwrap()
 	}
 
 	/// For now pub crate, this should maybe go to joint trait
 	/// Is this even necessary?
-	pub fn get_child_link(&self) -> Arc<RwLock<Link>> {
+	fn get_child_link(&self) -> Arc<RwLock<Link>> {
 		Arc::clone(&self.child_link)
 	}
 
 	/// Make a `JointBuilder` to build a 'Clone' of the `Joint`
-	pub fn rebuild(&self) -> JointBuilder {
+	fn rebuild(&self) -> JointBuilder {
 		JointBuilder::new(self.name.clone(), self.joint_type.clone())
 	}
 }

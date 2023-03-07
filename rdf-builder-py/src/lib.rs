@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use pyo3::prelude::*;
 use rdf_builder_rs::{
-	Joint, JointBuilder, JointType, KinematicInterface, KinematicTree, Link, Robot,
+	Joint, JointBuilder, JointInterface, JointType, KinematicInterface, KinematicTree, Link, Robot,
 };
 
 #[derive(Debug)]

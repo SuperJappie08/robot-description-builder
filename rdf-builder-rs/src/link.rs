@@ -24,7 +24,7 @@ use crate::{
 		kinematic_tree_data::KinematicTreeData,
 		KinematicInterface, KinematicTree,
 	},
-	joint::{Joint, JointBuilder},
+	joint::{Joint, JointBuilder, JointInterface},
 };
 
 // pub trait LinkTrait: Debug {
@@ -271,7 +271,7 @@ mod tests {
 	use super::Link;
 	use crate::{
 		cluster_objects::KinematicInterface,
-		joint::{Joint, JointType},
+		joint::{Joint, JointInterface, JointType},
 		link::LinkParent,
 	};
 

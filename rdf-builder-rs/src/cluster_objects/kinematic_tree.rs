@@ -4,8 +4,11 @@ use std::{
 };
 
 use crate::{
-	cluster_objects::kinematic_tree_data::KinematicTreeData, joint::Joint, link::Link,
-	material::Material, Transmission,
+	cluster_objects::kinematic_tree_data::KinematicTreeData,
+	joint::{Joint, JointInterface},
+	link::Link,
+	material::Material,
+	Transmission,
 };
 
 use super::{kinematic_data_errors::AddTransmissionError, KinematicInterface};

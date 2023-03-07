@@ -3,7 +3,12 @@ use std::{
 	sync::{Arc, PoisonError, RwLock, RwLockWriteGuard, Weak},
 };
 
-use crate::{joint::Joint, link::Link, material::Material, Transmission};
+use crate::{
+	joint::{Joint, JointInterface},
+	link::Link,
+	material::Material,
+	Transmission,
+};
 
 use crate::cluster_objects::kinematic_data_errors::*;
 
