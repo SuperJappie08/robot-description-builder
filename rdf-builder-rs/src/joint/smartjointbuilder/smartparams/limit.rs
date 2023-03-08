@@ -18,7 +18,6 @@ pub struct WithLimit {
 	velocity: f32,
 }
 
-
 impl<Type, Axis, Calibration, Dynamics, Mimic, SafetyController>
 	SmartJointBuilder<Type, Axis, Calibration, Dynamics, NoLimit, Mimic, SafetyController>
 where
@@ -51,6 +50,8 @@ where
 
 impl<Type, Axis, Calibration, Dynamics, Mimic, SafetyController>
 	SmartJointBuilder<Type, Axis, Calibration, Dynamics, WithLimit, Mimic, SafetyController>
+where
+	Type: LimitAllowed,
 {
 	pub fn set_effort(mut self, effort: f32) -> Self {
 		self.limit.effort = effort;

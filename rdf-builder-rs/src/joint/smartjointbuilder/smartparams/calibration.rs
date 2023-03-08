@@ -7,19 +7,45 @@ pub struct NoCalibration;
 
 #[derive(Debug, Default, Clone)]
 pub struct WithCalibration {
-	rising: String,
-	falling: String,
+	rising: Option<f32>,
+	falling: Option<f32>,
 }
 
-impl<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>
-	SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>
+impl<Type, Axis, Dynamics, Limit, Mimic, SafetyController>
+	SmartJointBuilder<Type, Axis, NoCalibration, Dynamics, Limit, Mimic, SafetyController>
 where
 	Type: CalibrationAllowed,
 {
-	pub fn set_calibration(
+	pub fn with_calibration(
 		self,
-		_calibration: String,
 	) -> SmartJointBuilder<Type, Axis, WithCalibration, Dynamics, Limit, Mimic, SafetyController> {
-		todo!()
+		SmartJointBuilder {
+			name: self.name,
+			joint_type: self.joint_type,
+			offset: self.offset,
+			rotation: self.rotation,
+			axis: self.axis,
+			calibration: WithCalibration::default(),
+			dynamics: self.dynamics,
+			limit: self.limit,
+			mimic: self.mimic,
+			safety_controller: self.safety_controller,
+		}
+	}
+}
+
+impl<Type, Axis, Dynamics, Limit, Mimic, SafetyController>
+	SmartJointBuilder<Type, Axis, WithCalibration, Dynamics, Limit, Mimic, SafetyController>
+where
+	Type: CalibrationAllowed,
+{
+	pub fn set_rising_calibration(mut self, rising: f32) -> Self {
+		self.calibration.rising = Some(rising);
+		self
+	}
+
+	pub fn set_falling_calibration(mut self, falling: f32) -> Self {
+		self.calibration.falling = Some(falling);
+		self
 	}
 }

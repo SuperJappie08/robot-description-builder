@@ -13,7 +13,7 @@ impl<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>
 where
 	Type: AxisAllowed,
 {
-	pub fn set_axis(
+	pub fn with_axis(
 		self,
 		axis: (f32, f32, f32),
 	) -> SmartJointBuilder<Type, WithAxis, Calibration, Dynamics, Limit, Mimic, SafetyController> {
@@ -30,5 +30,14 @@ where
 			mimic: self.mimic,
 			safety_controller: self.safety_controller,
 		}
+	}
+
+	// #[deprecated]
+	/// TODO: Maybe Deprecate
+	pub fn set_axis(
+		self,
+		axis: (f32, f32, f32),
+	) -> SmartJointBuilder<Type, WithAxis, Calibration, Dynamics, Limit, Mimic, SafetyController> {
+		self.with_axis(axis)
 	}
 }

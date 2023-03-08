@@ -16,9 +16,8 @@ impl<Type, Axis, Calibration, Limit, Mimic, SafetyController>
 where
 	Type: DynamicsAllowed,
 {
-	pub fn set_damping(
+	pub fn with_dynamics(
 		self,
-		damping: f32,
 	) -> SmartJointBuilder<Type, Axis, Calibration, WithDynamics, Limit, Mimic, SafetyController> {
 		SmartJointBuilder {
 			name: self.name,
@@ -27,31 +26,7 @@ where
 			rotation: self.rotation,
 			axis: self.axis,
 			calibration: self.calibration,
-			dynamics: WithDynamics {
-				damping: Some(damping),
-				friction: None,
-			},
-			limit: self.limit,
-			mimic: self.mimic,
-			safety_controller: self.safety_controller,
-		}
-	}
-
-	pub fn set_friction(
-		self,
-		friction: f32,
-	) -> SmartJointBuilder<Type, Axis, Calibration, WithDynamics, Limit, Mimic, SafetyController> {
-		SmartJointBuilder {
-			name: self.name,
-			joint_type: self.joint_type,
-			offset: self.offset,
-			rotation: self.rotation,
-			axis: self.axis,
-			calibration: self.calibration,
-			dynamics: WithDynamics {
-				damping: None,
-				friction: Some(friction),
-			},
+			dynamics: WithDynamics::default(),
 			limit: self.limit,
 			mimic: self.mimic,
 			safety_controller: self.safety_controller,

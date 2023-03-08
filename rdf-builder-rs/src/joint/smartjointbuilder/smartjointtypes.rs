@@ -1,17 +1,8 @@
-use super::smartparams::smart_joint_specification;
+mod fixed_joint_type;
+mod revolute_joint_type;
 
 #[derive(Debug, Default, Clone)]
 pub struct NoType;
 
-#[derive(Debug, Default, Clone)]
-pub struct FixedType;
-
-#[derive(Debug, Default, Clone)]
-pub struct RevoluteType;
-impl smart_joint_specification::AxisAllowed for RevoluteType {}
-impl smart_joint_specification::CalibrationAllowed for RevoluteType {}
-impl smart_joint_specification::DynamicsAllowed for RevoluteType {}
-impl smart_joint_specification::LimitAllowed for RevoluteType {}
-impl smart_joint_specification::MimicAllowed for RevoluteType {}
-impl smart_joint_specification::SafetyControllerAllowed for RevoluteType {}
-
+pub use fixed_joint_type::FixedType;
+pub use revolute_joint_type::RevoluteType;
