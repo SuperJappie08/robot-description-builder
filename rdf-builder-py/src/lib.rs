@@ -107,7 +107,7 @@ impl PyLink {
 			.unwrap() // TODO: Figure out if unwrap is Ok here?
 			.try_attach_child(
 				Into::<KinematicTree>::into(tree).into(),
-				joint_builder.into(),
+				joint_builder.inner,
 			)
 			.unwrap() // TODO: Figure out if unwrap is Ok here?
 	}

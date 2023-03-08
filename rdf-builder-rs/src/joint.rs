@@ -4,9 +4,12 @@ mod smartjointbuilder;
 
 use std::sync::{Arc, RwLock, Weak};
 
-use crate::{cluster_objects::kinematic_tree_data::KinematicTreeData, link::Link};
+use crate::{
+	cluster_objects::kinematic_tree_data::KinematicTreeData, link::Link,
+	transform_data::TransformData,
+};
 
-pub use jointbuilder::JointBuilder;
+pub use jointbuilder::{BuildJoint, JointBuilder};
 pub use smartjointbuilder::{OffsetMode, SmartJointBuilder};
 
 pub trait JointInterface {
@@ -16,6 +19,9 @@ pub trait JointInterface {
 
 	fn get_parent_link(&self) -> Arc<RwLock<Link>>;
 	fn get_child_link(&self) -> Arc<RwLock<Link>>;
+
+	/// TODO: Semi TMP
+	fn get_transform_data(&self) -> &TransformData;
 
 	fn rebuild(&self) -> JointBuilder;
 }
@@ -31,6 +37,7 @@ pub struct Joint {
 	pub child_link: Arc<RwLock<Link>>, //temp pub TODO: THIS PROBABLY ISN'T THE NICEST WAY TO DO THIS.
 	/// The information specific to the JointType: TODO: DECIDE IF THIS SHOULD BE PUBLIC
 	pub(crate) joint_type: JointType,
+	origin: TransformData,
 }
 
 impl Joint {
@@ -74,6 +81,10 @@ impl JointInterface for Joint {
 	/// Is this even necessary?
 	fn get_child_link(&self) -> Arc<RwLock<Link>> {
 		Arc::clone(&self.child_link)
+	}
+
+	fn get_transform_data(&self) -> &TransformData {
+		&self.origin
 	}
 
 	/// Make a `JointBuilder` to build a 'Clone' of the `Joint`

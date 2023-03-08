@@ -24,7 +24,7 @@ use crate::{
 		kinematic_tree_data::KinematicTreeData,
 		KinematicInterface, KinematicTree,
 	},
-	joint::{Joint, JointBuilder, JointInterface},
+	joint::{BuildJoint, Joint, JointBuilder, JointInterface},
 };
 
 // pub trait LinkTrait: Debug {
@@ -106,7 +106,7 @@ impl Link {
 	pub fn try_attach_child(
 		&mut self,
 		tree: Box<dyn KinematicInterface>,
-		joint_builder: JointBuilder,
+		joint_builder: impl BuildJoint,
 	) -> Result<(), AttachChildError> {
 		// Generics dont workt that well Rc<RefCell<T>>  where T: KinematicInterface
 		//Box<Rc<RefCell<dyn KinematicInterface>>>

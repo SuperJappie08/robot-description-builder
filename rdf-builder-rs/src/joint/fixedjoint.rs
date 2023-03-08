@@ -3,6 +3,7 @@ use std::sync::{Arc, RwLock, Weak};
 use crate::{
 	cluster_objects::kinematic_tree_data::KinematicTreeData,
 	joint::{JointBuilder, JointInterface},
+	transform_data::TransformData,
 	Link, SmartJointBuilder,
 };
 
@@ -12,6 +13,7 @@ pub struct FixedJoint {
 	tree: Weak<RwLock<KinematicTreeData>>,
 	parent_link: Weak<RwLock<Link>>,
 	child_link: Arc<RwLock<Link>>,
+	origin: TransformData,
 }
 
 impl JointInterface for FixedJoint {
@@ -29,6 +31,10 @@ impl JointInterface for FixedJoint {
 
 	fn get_child_link(&self) -> Arc<RwLock<Link>> {
 		Arc::clone(&self.child_link)
+	}
+
+	fn get_transform_data(&self) -> &TransformData {
+		&self.origin
 	}
 
 	fn rebuild(&self) -> JointBuilder {

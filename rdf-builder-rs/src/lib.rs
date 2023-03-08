@@ -2,6 +2,7 @@ mod cluster_objects;
 mod joint;
 mod link;
 mod material;
+mod transform_data;
 
 pub use cluster_objects::{KinematicInterface, KinematicTree, Robot};
 pub use joint::{Joint, JointBuilder, JointInterface, JointType, OffsetMode, SmartJointBuilder};
