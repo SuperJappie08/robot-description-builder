@@ -2,19 +2,21 @@ use thiserror::Error;
 
 use std::{
 	collections::HashMap,
-	sync::{Arc, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard, Weak},
+	sync::{PoisonError, RwLockReadGuard, RwLockWriteGuard},
 };
 
-use crate::{material::Material, Joint, Link, Transmission};
+use crate::{
+	joint::JointInterface, link::Link, material::Material, ArcLock, Transmission, WeakLock,
+};
 
 #[derive(Debug, Error)]
 pub enum AddMaterialError {
 	#[error("Read Material Error")]
 	ReadMaterial, //(PoisonError<RwLockReadGuard<'a, Material>>),
 	#[error("Read MaterialIndex Error")]
-	ReadIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, Arc<RwLock<Material>>>>>),
+	ReadIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, ArcLock<Material>>>>),
 	#[error("Write MaterialIndex Error")]
-	WriteIndex, //(PoisonError<RwLockWriteGuard<'a, HashMap<String, Arc<RwLock<Material>>>>>),
+	WriteIndex, //(PoisonError<RwLockWriteGuard<'a, HashMap<String, ArcLock<Material>>>>),
 	#[error("Duplicate Material name '{0}'")]
 	Conflict(String),
 	/// To be returned when the material has no name to index by.
@@ -28,22 +30,18 @@ impl From<PoisonError<RwLockReadGuard<'_, Material>>> for AddMaterialError {
 	}
 }
 
-impl From<PoisonError<RwLockReadGuard<'_, HashMap<String, Arc<RwLock<Material>>>>>>
+impl From<PoisonError<RwLockReadGuard<'_, HashMap<String, ArcLock<Material>>>>>
 	for AddMaterialError
 {
-	fn from(
-		_value: PoisonError<RwLockReadGuard<'_, HashMap<String, Arc<RwLock<Material>>>>>,
-	) -> Self {
+	fn from(_value: PoisonError<RwLockReadGuard<'_, HashMap<String, ArcLock<Material>>>>) -> Self {
 		Self::ReadIndex //(value)
 	}
 }
 
-impl From<PoisonError<RwLockWriteGuard<'_, HashMap<String, Arc<RwLock<Material>>>>>>
+impl From<PoisonError<RwLockWriteGuard<'_, HashMap<String, ArcLock<Material>>>>>
 	for AddMaterialError
 {
-	fn from(
-		_value: PoisonError<RwLockWriteGuard<'_, HashMap<String, Arc<RwLock<Material>>>>>,
-	) -> Self {
+	fn from(_value: PoisonError<RwLockWriteGuard<'_, HashMap<String, ArcLock<Material>>>>) -> Self {
 		Self::WriteIndex //(value)
 	}
 }
@@ -53,9 +51,9 @@ pub enum AddLinkError {
 	#[error("Read Link Error")]
 	ReadLink, //(PoisonError<RwLockReadGuard<'a, Link>>),
 	#[error("Read LinkIndex Error")]
-	ReadIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, Weak<RwLock<Link>>>>>),
+	ReadIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, WeakLock<Link>>>>),
 	#[error("Write LinkIndex Error")]
-	WriteIndex, //(PoisonError<RwLockWriteGuard<'a, HashMap<String, Weak<RwLock<Link>>>>>),
+	WriteIndex, //(PoisonError<RwLockWriteGuard<'a, HashMap<String, WeakLock<Link>>>>),
 	#[error("Duplicate Link name '{0}'")]
 	Conflict(String),
 }
@@ -66,16 +64,14 @@ impl From<PoisonError<RwLockReadGuard<'_, Link>>> for AddLinkError {
 	}
 }
 
-impl From<PoisonError<RwLockReadGuard<'_, HashMap<String, Weak<RwLock<Link>>>>>> for AddLinkError {
-	fn from(_value: PoisonError<RwLockReadGuard<'_, HashMap<String, Weak<RwLock<Link>>>>>) -> Self {
+impl From<PoisonError<RwLockReadGuard<'_, HashMap<String, WeakLock<Link>>>>> for AddLinkError {
+	fn from(_value: PoisonError<RwLockReadGuard<'_, HashMap<String, WeakLock<Link>>>>) -> Self {
 		Self::ReadIndex //(value)
 	}
 }
 
-impl From<PoisonError<RwLockWriteGuard<'_, HashMap<String, Weak<RwLock<Link>>>>>> for AddLinkError {
-	fn from(
-		_value: PoisonError<RwLockWriteGuard<'_, HashMap<String, Weak<RwLock<Link>>>>>,
-	) -> Self {
+impl From<PoisonError<RwLockWriteGuard<'_, HashMap<String, WeakLock<Link>>>>> for AddLinkError {
+	fn from(_value: PoisonError<RwLockWriteGuard<'_, HashMap<String, WeakLock<Link>>>>) -> Self {
 		Self::WriteIndex //(value)
 	}
 }
@@ -97,34 +93,50 @@ pub enum AddJointError {
 	#[error("Read Joint Error")]
 	ReadJoint, //(PoisonError<RwLockReadGuard<'a, Joint>>),
 	#[error("Read JointIndex Error")]
-	ReadIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, Weak<RwLock<Joint>>>>>),
+	ReadIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, WeakLock<Joint>>>>),
 	#[error("Write JointIndex Error")]
-	WriteIndex, //(PoisonError<RwLockWriteGuard<'a, HashMap<String, Weak<RwLock<Joint>>>>>),
+	WriteIndex, //(PoisonError<RwLockWriteGuard<'a, HashMap<String, WeakLock<Joint>>>>),
 	#[error("Duplicate Joint name '{0}'")]
 	Conflict(String),
 }
 
-impl From<PoisonError<RwLockReadGuard<'_, Joint>>> for AddJointError {
-	fn from(_value: PoisonError<RwLockReadGuard<'_, Joint>>) -> Self {
+impl From<PoisonError<RwLockReadGuard<'_, Box<dyn JointInterface + Sync + Send>>>>
+	for AddJointError
+{
+	fn from(
+		_value: PoisonError<RwLockReadGuard<'_, Box<dyn JointInterface + Sync + Send>>>,
+	) -> Self {
 		Self::ReadJoint //(value)
 	}
 }
 
-impl From<PoisonError<RwLockReadGuard<'_, HashMap<String, std::sync::Weak<RwLock<Joint>>>>>>
-	for AddJointError
+impl
+	From<
+		PoisonError<
+			RwLockReadGuard<'_, HashMap<String, WeakLock<Box<dyn JointInterface + Sync + Send>>>>,
+		>,
+	> for AddJointError
 {
 	fn from(
-		_value: PoisonError<RwLockReadGuard<'_, HashMap<String, std::sync::Weak<RwLock<Joint>>>>>,
+		_value: PoisonError<
+			RwLockReadGuard<'_, HashMap<String, WeakLock<Box<dyn JointInterface + Sync + Send>>>>,
+		>,
 	) -> Self {
 		Self::ReadIndex //(value)
 	}
 }
 
-impl From<PoisonError<RwLockWriteGuard<'_, HashMap<String, std::sync::Weak<RwLock<Joint>>>>>>
-	for AddJointError
+impl
+	From<
+		PoisonError<
+			RwLockWriteGuard<'_, HashMap<String, WeakLock<Box<dyn JointInterface + Sync + Send>>>>,
+		>,
+	> for AddJointError
 {
 	fn from(
-		_value: PoisonError<RwLockWriteGuard<'_, HashMap<String, std::sync::Weak<RwLock<Joint>>>>>,
+		_value: PoisonError<
+			RwLockWriteGuard<'_, HashMap<String, WeakLock<Box<dyn JointInterface + Sync + Send>>>>,
+		>,
 	) -> Self {
 		Self::WriteIndex //(value)
 	}
@@ -147,9 +159,9 @@ pub enum AddTransmissionError {
 	#[error("Read Transmission Error")]
 	ReadTransmission, //(PoisonError<RwLockReadGuard<'a, Transmission>>),
 	#[error("Read TransmissionIndex Error")]
-	ReadIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, Arc<RwLock<Transmission>>>>>),
+	ReadIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, ArcLock<Transmission>>>>),
 	#[error("Write TransmissionIndex Error")]
-	WriteIndex, //(PoisonError<RwLockWriteGuard<'a, HashMap<String, Arc<RwLock<Transmission>>>>>),
+	WriteIndex, //(PoisonError<RwLockWriteGuard<'a, HashMap<String, ArcLock<Transmission>>>>),
 	#[error("Duplicate Transmission name '{0}'")]
 	Conflict(String),
 }
@@ -160,21 +172,21 @@ impl From<PoisonError<RwLockReadGuard<'_, Transmission>>> for AddTransmissionErr
 	}
 }
 
-impl From<PoisonError<RwLockReadGuard<'_, HashMap<String, Arc<RwLock<Transmission>>>>>>
+impl From<PoisonError<RwLockReadGuard<'_, HashMap<String, ArcLock<Transmission>>>>>
 	for AddTransmissionError
 {
 	fn from(
-		_value: PoisonError<RwLockReadGuard<'_, HashMap<String, Arc<RwLock<Transmission>>>>>,
+		_value: PoisonError<RwLockReadGuard<'_, HashMap<String, ArcLock<Transmission>>>>,
 	) -> Self {
 		Self::ReadIndex //(value)
 	}
 }
 
-impl From<PoisonError<RwLockWriteGuard<'_, HashMap<String, Arc<RwLock<Transmission>>>>>>
+impl From<PoisonError<RwLockWriteGuard<'_, HashMap<String, ArcLock<Transmission>>>>>
 	for AddTransmissionError
 {
 	fn from(
-		_value: PoisonError<RwLockWriteGuard<'_, HashMap<String, Arc<RwLock<Transmission>>>>>,
+		_value: PoisonError<RwLockWriteGuard<'_, HashMap<String, ArcLock<Transmission>>>>,
 	) -> Self {
 		Self::WriteIndex //(value)
 	}

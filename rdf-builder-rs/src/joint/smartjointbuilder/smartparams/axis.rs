@@ -1,17 +1,27 @@
 use crate::joint::smartjointbuilder::SmartJointBuilder;
 
+use super::smart_joint_datatraits;
+
 pub trait AxisAllowed {}
 
 #[derive(Debug, Default, Clone)]
 pub struct NoAxis;
+impl smart_joint_datatraits::AxisDataType for NoAxis {}
 
 #[derive(Debug, Default, Clone)]
 pub struct WithAxis(f32, f32, f32);
+impl smart_joint_datatraits::AxisDataType for WithAxis {}
 
 impl<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>
 	SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>
 where
 	Type: AxisAllowed,
+	Axis: smart_joint_datatraits::AxisDataType,
+	Calibration: smart_joint_datatraits::CalibrationDataType,
+	Dynamics: smart_joint_datatraits::DynamicsDataType,
+	Limit: smart_joint_datatraits::LimitDataType,
+	Mimic: smart_joint_datatraits::MimicDataType,
+	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
 {
 	pub fn with_axis(
 		self,

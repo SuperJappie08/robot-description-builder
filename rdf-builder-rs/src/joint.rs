@@ -2,23 +2,43 @@ mod fixedjoint;
 mod jointbuilder;
 mod smartjointbuilder;
 
-use std::sync::{Arc, RwLock, Weak};
+use std::{
+	fmt::Debug,
+	sync::{Arc, Weak},
+};
 
 use crate::{
 	cluster_objects::kinematic_tree_data::KinematicTreeData, link::Link,
-	transform_data::TransformData,
+	transform_data::TransformData, ArcLock, WeakLock,
 };
 
 pub use jointbuilder::{BuildJoint, JointBuilder};
 pub use smartjointbuilder::{OffsetMode, SmartJointBuilder};
 
-pub trait JointInterface {
+pub use fixedjoint::FixedJoint;
+
+pub trait JointInterface: Debug {
 	fn get_name(&self) -> String;
 
-	fn add_to_tree(&mut self, new_parent_tree: &Arc<RwLock<KinematicTreeData>>);
+	/// Adds the `Joint` to a kinematic tree
+	fn add_to_tree(&mut self, new_parent_tree: &ArcLock<KinematicTreeData>) {
+		{
+			let mut new_ptree = new_parent_tree.write().unwrap(); // FIXME: Probablly shouldn't unwrap
+			new_ptree.try_add_link(self.get_child_link()).unwrap();
+			// TODO: Add materials, and other stuff
+		}
+		self.get_child_link()
+			.write()
+			.unwrap() // FIXME: Probablly shouldn't unwrap
+			.add_to_tree(new_parent_tree);
+		self.set_tree(Arc::downgrade(new_parent_tree));
+	}
 
-	fn get_parent_link(&self) -> Arc<RwLock<Link>>;
-	fn get_child_link(&self) -> Arc<RwLock<Link>>;
+	fn get_parent_link(&self) -> ArcLock<Link>;
+	fn get_child_link(&self) -> ArcLock<Link>;
+
+	/// Set the paren tree
+	fn set_tree(&mut self, tree: WeakLock<KinematicTreeData>);
 
 	/// TODO: Semi TMP
 	fn get_transform_data(&self) -> &TransformData;
@@ -31,10 +51,10 @@ pub struct Joint {
 	/// The name of the `Joint`
 	pub name: String,
 	/// A Reference to the parent Kinematic Tree
-	pub(crate) tree: Weak<RwLock<KinematicTreeData>>,
+	pub(crate) tree: WeakLock<KinematicTreeData>,
 	/// A Reference to the parent `Link`
-	pub(crate) parent_link: Weak<RwLock<Link>>,
-	pub child_link: Arc<RwLock<Link>>, //temp pub TODO: THIS PROBABLY ISN'T THE NICEST WAY TO DO THIS.
+	pub(crate) parent_link: WeakLock<Link>,
+	pub child_link: ArcLock<Link>, //temp pub TODO: THIS PROBABLY ISN'T THE NICEST WAY TO DO THIS.
 	/// The information specific to the JointType: TODO: DECIDE IF THIS SHOULD BE PUBLIC
 	pub(crate) joint_type: JointType,
 	origin: TransformData,
@@ -51,36 +71,24 @@ impl JointInterface for Joint {
 		self.name.clone()
 	}
 
-	/// Adds the `Joint` to a kinematic tree
-	fn add_to_tree(&mut self, new_parent_tree: &Arc<RwLock<KinematicTreeData>>) {
-		{
-			let mut new_ptree = new_parent_tree.write().unwrap(); // FIXME: Probablly shouldn't unwrap
-			new_ptree
-				.try_add_link(Arc::clone(&self.child_link))
-				.unwrap();
-			// TODO: Add materials, and other stuff
-		}
-		self.child_link
-			.write()
-			.unwrap() // FIXME: Probablly shouldn't unwrap
-			.add_to_tree(new_parent_tree);
-		self.tree = Arc::downgrade(new_parent_tree);
-	}
-
 	/// Returns a reference to the parent `Link`
 	///
 	/// TODO: ADD EXAMPLE
 	///
 	/// For now pub crate, this should maybe go to joint trait
-	fn get_parent_link(&self) -> Arc<RwLock<Link>> {
+	fn get_parent_link(&self) -> ArcLock<Link> {
 		// If this panics, the Joint is not initialized propperly.
 		self.parent_link.upgrade().unwrap()
 	}
 
 	/// For now pub crate, this should maybe go to joint trait
 	/// Is this even necessary?
-	fn get_child_link(&self) -> Arc<RwLock<Link>> {
+	fn get_child_link(&self) -> ArcLock<Link> {
 		Arc::clone(&self.child_link)
+	}
+
+	fn set_tree(&mut self, tree: WeakLock<KinematicTreeData>) {
+		self.tree = tree;
 	}
 
 	fn get_transform_data(&self) -> &TransformData {
@@ -103,8 +111,10 @@ impl PartialEq for Joint {
 }
 
 /// TODO: Might add data of specif joint type to Struct Spaces.
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub enum JointType {
+	/// TODO: TEMP DEFAULT
+	#[default]
 	Fixed, // — this is not really a joint because it cannot move. All degrees of freedom are locked. This type of joint does not require the <axis>, <calibration>, <dynamics>, <limits> or <safety_controller>.
 	Revolute, // — a hinge joint that rotates along the axis and has a limited range specified by the upper and lower limits.
 	Continuous, // — a continuous hinge joint that rotates around the axis and has no upper and lower limits.

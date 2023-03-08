@@ -122,7 +122,7 @@ impl From<Arc<RwLock<Link>>> for PyLink {
 #[derive(Debug)]
 #[pyclass(name = "Joint")]
 struct PyJoint {
-	inner: Arc<RwLock<Joint>>,
+	inner: Arc<RwLock<Box<dyn JointInterface + Sync + Send>>>,
 }
 
 #[pymethods]
@@ -143,8 +143,8 @@ impl PyJoint {
 	}
 }
 
-impl From<Arc<RwLock<Joint>>> for PyJoint {
-	fn from(value: Arc<RwLock<Joint>>) -> Self {
+impl From<Arc<RwLock<Box<dyn JointInterface + Sync + Send>>>> for PyJoint {
+	fn from(value: Arc<RwLock<Box<dyn JointInterface + Sync + Send>>>) -> Self {
 		Self { inner: value }
 	}
 }

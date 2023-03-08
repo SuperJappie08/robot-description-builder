@@ -4,6 +4,9 @@ mod link;
 mod material;
 mod transform_data;
 
+type ArcLock<T> = std::sync::Arc<std::sync::RwLock<T>>;
+type WeakLock<T> = std::sync::Weak<std::sync::RwLock<T>>;
+
 pub use cluster_objects::{KinematicInterface, KinematicTree, Robot};
 pub use joint::{Joint, JointBuilder, JointInterface, JointType, OffsetMode, SmartJointBuilder};
 pub use link::{helper_functions, Link};

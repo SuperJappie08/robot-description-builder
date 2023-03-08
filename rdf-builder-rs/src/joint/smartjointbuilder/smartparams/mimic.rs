@@ -1,9 +1,12 @@
 use crate::joint::smartjointbuilder::SmartJointBuilder;
 
+use super::smart_joint_datatraits;
+
 pub trait MimicAllowed {}
 
 #[derive(Debug, Default, Clone)]
 pub struct NoMimic;
+impl smart_joint_datatraits::MimicDataType for NoMimic {}
 
 ///  (optional) (New with ROS Groovy. See issue)
 ///
@@ -18,11 +21,17 @@ pub struct WithMimic {
 	/// Specifies the offset to add in the formula above. Defaults to 0 (radians for revolute joints, meters for prismatic joints)
 	offset: Option<f32>,
 }
+impl smart_joint_datatraits::MimicDataType for WithMimic {}
 
 impl<Type, Axis, Calibration, Dynamics, Limit, SafetyController>
 	SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, NoMimic, SafetyController>
 where
 	Type: MimicAllowed,
+	Axis: smart_joint_datatraits::AxisDataType,
+	Calibration: smart_joint_datatraits::CalibrationDataType,
+	Dynamics: smart_joint_datatraits::DynamicsDataType,
+	Limit: smart_joint_datatraits::LimitDataType,
+	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
 {
 	pub fn with_mimic(
 		self,
@@ -50,6 +59,11 @@ impl<Type, Axis, Calibration, Dynamics, Limit, SafetyController>
 	SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, WithMimic, SafetyController>
 where
 	Type: MimicAllowed,
+	Axis: smart_joint_datatraits::AxisDataType,
+	Calibration: smart_joint_datatraits::CalibrationDataType,
+	Dynamics: smart_joint_datatraits::DynamicsDataType,
+	Limit: smart_joint_datatraits::LimitDataType,
+	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
 {
 	pub fn set_mimiced_joint_name(mut self, mimiced_joint_name: String) -> Self {
 		self.mimic.joint_name = mimiced_joint_name;

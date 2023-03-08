@@ -1,6 +1,6 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
-use crate::material::Material;
+use crate::{material::Material, ArcLock};
 
 use super::geometry::GeometryInterface;
 
@@ -13,7 +13,7 @@ pub struct Visual {
 	/// Figure out if this needs to be public or not
 	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
 	/// Not sure about refCell
-	pub material: Option<Arc<RwLock<Material>>>,
+	pub material: Option<ArcLock<Material>>,
 }
 
 impl Visual {
@@ -22,7 +22,7 @@ impl Visual {
 		name: Option<String>,
 		reference: Option<TMPLocationThing>,
 		geometry: Box<dyn GeometryInterface + Sync + Send>,
-		material: Option<Arc<RwLock<Material>>>,
+		material: Option<ArcLock<Material>>,
 	) -> Self {
 		Self {
 			name,
@@ -41,7 +41,7 @@ impl PartialEq for Visual {
 			&& match (&self.material, &other.material) {
 				(None, None) => true,
 				(Some(own_material), Some(other_material)) => {
-					Arc::ptr_eq(&own_material, &other_material)
+					Arc::ptr_eq(own_material, other_material)
 				}
 				_ => false,
 			}

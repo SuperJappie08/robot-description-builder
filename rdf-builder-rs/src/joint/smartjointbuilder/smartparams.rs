@@ -20,3 +20,12 @@ pub mod smart_joint_specification {
 	pub use super::mimic::MimicAllowed;
 	pub use super::safety_controller::SafetyControllerAllowed;
 }
+
+pub(crate) mod smart_joint_datatraits {
+	pub trait AxisDataType {}
+	pub trait CalibrationDataType {}
+	pub trait DynamicsDataType {}
+	pub trait LimitDataType {}
+	pub trait MimicDataType {}
+	pub trait SafetyControllerDataType {}
+}

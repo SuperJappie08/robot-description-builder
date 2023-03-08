@@ -1,38 +1,52 @@
-use std::sync::{Arc, RwLock, Weak};
-
 use crate::{
 	cluster_objects::kinematic_tree_data::KinematicTreeData,
 	joint::{Joint, JointType},
 	link::Link,
 	transform_data::TransformData,
+	ArcLock, JointInterface, WeakLock,
 };
 
 pub trait BuildJoint {
 	fn build(
 		self,
-		tree: Weak<RwLock<KinematicTreeData>>,
-		parent_link: Weak<RwLock<Link>>,
-		child_link: Arc<RwLock<Link>>,
-	) -> Joint;
+		tree: WeakLock<KinematicTreeData>,
+		parent_link: WeakLock<Link>,
+		child_link: ArcLock<Link>,
+	) -> Box<dyn JointInterface + Sync + Send>;
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct JointBuilder {
 	name: String,
 	joint_type: JointType, // TODO: FINISH ME
+	origin: TransformData,
 }
 
 impl JointBuilder {
 	pub(crate) fn new(name: String, joint_type: JointType) -> Self {
-		Self { name, joint_type }
+		Self {
+			name,
+			joint_type,
+			..Default::default()
+		}
+	}
+
+	pub fn add_origin_offset(mut self, offset: (f32, f32, f32)) -> Self {
+		self.origin.translation = Some(offset);
+		self
+	}
+
+	pub fn add_origin_rotation(mut self, rotation: (f32, f32, f32)) -> Self {
+		self.origin.rotation = Some(rotation);
+		self
 	}
 
 	/// For now return a Specific Joint maybe go dyn JointInterface
-	pub fn build(
+	fn build(
 		self,
-		tree: Weak<RwLock<KinematicTreeData>>,
-		parent_link: Weak<RwLock<Link>>,
-		child_link: Arc<RwLock<Link>>,
+		tree: WeakLock<KinematicTreeData>,
+		parent_link: WeakLock<Link>,
+		child_link: ArcLock<Link>,
 	) -> Joint {
 		Joint {
 			name: self.name,
@@ -48,10 +62,10 @@ impl JointBuilder {
 impl BuildJoint for JointBuilder {
 	fn build(
 		self,
-		tree: Weak<RwLock<KinematicTreeData>>,
-		parent_link: Weak<RwLock<Link>>,
-		child_link: Arc<RwLock<Link>>,
-	) -> Joint {
-		self.build(tree, parent_link, child_link)
+		tree: WeakLock<KinematicTreeData>,
+		parent_link: WeakLock<Link>,
+		child_link: ArcLock<Link>,
+	) -> Box<dyn JointInterface + Sync + Send> {
+		Box::new(self.build(tree, parent_link, child_link))
 	}
 }

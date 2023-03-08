@@ -1,57 +1,53 @@
-use std::{
-	collections::HashMap,
-	sync::{Arc, RwLock, Weak},
-};
+use std::{collections::HashMap, sync::Arc};
 
 use crate::{
-	cluster_objects::kinematic_tree_data::KinematicTreeData,
-	joint::{Joint, JointInterface},
-	link::Link,
-	material::Material,
-	Transmission,
+	cluster_objects::kinematic_tree_data::KinematicTreeData, joint::JointInterface, link::Link,
+	material::Material, ArcLock, Transmission, WeakLock,
 };
 
 use super::{kinematic_data_errors::AddTransmissionError, KinematicInterface};
 
 #[derive(Debug)]
-pub struct KinematicTree(Arc<RwLock<KinematicTreeData>>);
+pub struct KinematicTree(ArcLock<KinematicTreeData>);
 
 impl KinematicTree {
-	pub fn new(data: Arc<RwLock<KinematicTreeData>>) -> KinematicTree {
+	pub fn new(data: ArcLock<KinematicTreeData>) -> KinematicTree {
 		KinematicTree(data)
 	}
 }
 
 impl KinematicInterface for KinematicTree {
-	fn get_root_link(&self) -> Arc<RwLock<Link>> {
+	fn get_root_link(&self) -> ArcLock<Link> {
 		Arc::clone(&self.0.read().unwrap().root_link) // FIXME: Unwrapping might not be ok
 	}
 
-	fn get_newest_link(&self) -> Arc<RwLock<Link>> {
+	fn get_newest_link(&self) -> ArcLock<Link> {
 		self.0.read().unwrap().newest_link.upgrade().unwrap() // FIXME: Unwrapping might not be ok
 	}
 
-	fn get_kinematic_data(&self) -> Arc<RwLock<KinematicTreeData>> {
+	fn get_kinematic_data(&self) -> ArcLock<KinematicTreeData> {
 		Arc::clone(&self.0)
 	}
 
-	fn get_links(&self) -> Arc<RwLock<HashMap<String, Weak<RwLock<Link>>>>> {
+	fn get_links(&self) -> ArcLock<HashMap<String, WeakLock<Link>>> {
 		Arc::clone(&self.0.read().unwrap().links) // FIXME: Unwrapping might not be ok
 	}
 
-	fn get_joints(&self) -> Arc<RwLock<HashMap<String, Weak<RwLock<Joint>>>>> {
+	fn get_joints(
+		&self,
+	) -> ArcLock<HashMap<String, WeakLock<Box<dyn JointInterface + Sync + Send>>>> {
 		Arc::clone(&self.0.read().unwrap().joints) // FIXME: Unwrapping might not be ok
 	}
 
-	fn get_materials(&self) -> Arc<RwLock<HashMap<String, Arc<RwLock<Material>>>>> {
+	fn get_materials(&self) -> ArcLock<HashMap<String, ArcLock<Material>>> {
 		Arc::clone(&self.0.read().unwrap().material_index) // FIXME: Unwrapping might not be ok
 	}
 
-	fn get_transmissions(&self) -> Arc<RwLock<HashMap<String, Arc<RwLock<Transmission>>>>> {
+	fn get_transmissions(&self) -> ArcLock<HashMap<String, ArcLock<Transmission>>> {
 		Arc::clone(&self.0.read().unwrap().transmissions) // FIXME: Unwrapping might not be ok
 	}
 
-	fn get_link(&self, name: &str) -> Option<Arc<RwLock<Link>>> {
+	fn get_link(&self, name: &str) -> Option<ArcLock<Link>> {
 		self.0
 			.read()
 			.unwrap() // FIXME: Unwrapping might not be ok
@@ -62,7 +58,7 @@ impl KinematicInterface for KinematicTree {
 			.and_then(|weak_link| weak_link.upgrade())
 	}
 
-	fn get_joint(&self, name: &str) -> Option<Arc<RwLock<Joint>>> {
+	fn get_joint(&self, name: &str) -> Option<ArcLock<Box<dyn JointInterface + Sync + Send>>> {
 		self.0
 			.read()
 			.unwrap() // FIXME: Unwrapping might not be ok
@@ -73,7 +69,7 @@ impl KinematicInterface for KinematicTree {
 			.and_then(|weak_joint| weak_joint.upgrade())
 	}
 
-	fn get_material(&self, name: &str) -> Option<Arc<RwLock<Material>>> {
+	fn get_material(&self, name: &str) -> Option<ArcLock<Material>> {
 		self.0
 			.read()
 			.unwrap() // FIXME: Unwrapping might not be ok
@@ -84,7 +80,7 @@ impl KinematicInterface for KinematicTree {
 			.map(Arc::clone)
 	}
 
-	fn get_transmission(&self, name: &str) -> Option<Arc<RwLock<Transmission>>> {
+	fn get_transmission(&self, name: &str) -> Option<ArcLock<Transmission>> {
 		self.0
 			.read()
 			.unwrap() // FIXME: Unwrapping might not be ok
@@ -97,7 +93,7 @@ impl KinematicInterface for KinematicTree {
 
 	fn try_add_transmission(
 		&self,
-		transmission: Arc<RwLock<Transmission>>,
+		transmission: ArcLock<Transmission>,
 	) -> Result<(), AddTransmissionError> {
 		self.0
 			.write()
@@ -510,7 +506,7 @@ mod tests {
 				.unwrap()
 				.get_joints()
 				.iter()
-				.map(|joint| joint.read().unwrap().name.clone())
+				.map(|joint| joint.read().unwrap().get_name().clone())
 				.collect::<Vec<String>>()
 		);
 		println!(
@@ -521,7 +517,7 @@ mod tests {
 				.unwrap()
 				.get_joints()
 				.iter()
-				.map(|joint| joint.read().unwrap().name.clone())
+				.map(|joint| joint.read().unwrap().get_name().clone())
 				.collect::<Vec<String>>()
 		);
 		assert_eq!(

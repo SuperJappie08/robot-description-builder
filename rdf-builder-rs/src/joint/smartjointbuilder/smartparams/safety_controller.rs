@@ -1,9 +1,12 @@
 use crate::joint::smartjointbuilder::SmartJointBuilder;
 
+use super::smart_joint_datatraits;
+
 pub trait SafetyControllerAllowed {}
 
 #[derive(Debug, Default, Clone)]
 pub struct NoSafetyController;
+impl smart_joint_datatraits::SafetyControllerDataType for NoSafetyController {}
 
 #[derive(Debug, Default, Clone)]
 pub struct WithSafetyController {
@@ -25,11 +28,17 @@ pub struct WithSafetyController {
 	/// An attribute specifying the relation between effort and velocity limits. See See safety limits for more details.
 	k_velocity: f32,
 }
+impl smart_joint_datatraits::SafetyControllerDataType for WithSafetyController {}
 
 impl<Type, Axis, Calibration, Dynamics, Limit, Mimic>
 	SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, Mimic, NoSafetyController>
 where
 	Type: SafetyControllerAllowed,
+	Axis: smart_joint_datatraits::AxisDataType,
+	Calibration: smart_joint_datatraits::CalibrationDataType,
+	Dynamics: smart_joint_datatraits::DynamicsDataType,
+	Limit: smart_joint_datatraits::LimitDataType,
+	Mimic: smart_joint_datatraits::MimicDataType,
 {
 	pub fn with_safety_controller(
 		self,
@@ -57,6 +66,11 @@ impl<Type, Axis, Calibration, Dynamics, Limit, Mimic>
 	SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, Mimic, WithSafetyController>
 where
 	Type: SafetyControllerAllowed,
+	Axis: smart_joint_datatraits::AxisDataType,
+	Calibration: smart_joint_datatraits::CalibrationDataType,
+	Dynamics: smart_joint_datatraits::DynamicsDataType,
+	Limit: smart_joint_datatraits::LimitDataType,
+	Mimic: smart_joint_datatraits::MimicDataType,
 {
 	/// TODO: Add check?
 	pub fn set_soft_lower_limit(mut self, soft_lower_limit: f32) -> Self {

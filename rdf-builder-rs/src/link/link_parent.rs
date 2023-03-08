@@ -1,11 +1,13 @@
-use std::sync::{RwLock, Weak};
+use std::sync::Weak;
 
-use crate::{cluster_objects::kinematic_tree_data::KinematicTreeData, joint::Joint};
+use crate::{
+	cluster_objects::kinematic_tree_data::KinematicTreeData, joint::JointInterface, WeakLock,
+};
 
 #[derive(Debug)]
 pub enum LinkParent {
-	Joint(Weak<RwLock<Joint>>),
-	KinematicTree(Weak<RwLock<KinematicTreeData>>),
+	Joint(WeakLock<Box<dyn JointInterface + Sync + Send>>),
+	KinematicTree(WeakLock<KinematicTreeData>),
 }
 
 impl Clone for LinkParent {
@@ -17,8 +19,8 @@ impl Clone for LinkParent {
 	}
 }
 
-impl From<Weak<RwLock<KinematicTreeData>>> for LinkParent {
-	fn from(value: Weak<RwLock<KinematicTreeData>>) -> Self {
+impl From<WeakLock<KinematicTreeData>> for LinkParent {
+	fn from(value: WeakLock<KinematicTreeData>) -> Self {
 		Self::KinematicTree(value)
 	}
 }

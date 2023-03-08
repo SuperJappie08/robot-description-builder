@@ -24,7 +24,8 @@ use crate::{
 		kinematic_tree_data::KinematicTreeData,
 		KinematicInterface, KinematicTree,
 	},
-	joint::{BuildJoint, Joint, JointBuilder, JointInterface},
+	joint::{BuildJoint, JointInterface},
+	ArcLock, WeakLock,
 };
 
 // pub trait LinkTrait: Debug {
@@ -53,9 +54,9 @@ use crate::{
 #[derive(Debug)]
 pub struct Link {
 	pub(crate) name: String,
-	pub(crate) tree: Weak<RwLock<KinematicTreeData>>,
+	pub(crate) tree: WeakLock<KinematicTreeData>,
 	direct_parent: Option<LinkParent>,
-	child_joints: Vec<Arc<RwLock<Joint>>>,
+	child_joints: Vec<ArcLock<Box<dyn JointInterface + Sync + Send>>>,
 	visuals: Vec<Visual>,
 	colliders: Vec<Collision>,
 }
@@ -96,7 +97,7 @@ impl Link {
 		self.name.clone()
 	}
 
-	pub fn get_joints(&self) -> Vec<Arc<RwLock<Joint>>> {
+	pub fn get_joints(&self) -> Vec<ArcLock<Box<dyn JointInterface + Sync + Send>>> {
 		self.child_joints.iter().map(Arc::clone).collect()
 	}
 
@@ -151,7 +152,7 @@ impl Link {
 		// Ok(self.tree.upgrade().unwrap())
 	}
 
-	pub(crate) fn add_to_tree(&mut self, new_parent_tree: &Arc<RwLock<KinematicTreeData>>) {
+	pub(crate) fn add_to_tree(&mut self, new_parent_tree: &ArcLock<KinematicTreeData>) {
 		{
 			let mut new_ptree = new_parent_tree.write().unwrap(); // FIXME: Probably shouldn't unwrap
 			self.child_joints
@@ -217,7 +218,7 @@ pub enum AttachChildError {
 	#[error("Read Tree Error")]
 	ReadTree, //(PoisonError<RwLockReadGuard<'a, KinematicTreeData>>),
 	#[error("Read LinkIndex Error")]
-	ReadLinkIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, Weak<RwLock<Link>>>>>),
+	ReadLinkIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, WeakLock<Link>>>>),
 	#[error("Write Link Error")]
 	WriteLink,
 	#[error("Write Tree Error")]
@@ -230,10 +231,8 @@ impl From<PoisonError<RwLockReadGuard<'_, KinematicTreeData>>> for AttachChildEr
 	}
 }
 
-impl From<PoisonError<RwLockReadGuard<'_, HashMap<String, Weak<RwLock<Link>>>>>>
-	for AttachChildError
-{
-	fn from(_value: PoisonError<RwLockReadGuard<'_, HashMap<String, Weak<RwLock<Link>>>>>) -> Self {
+impl From<PoisonError<RwLockReadGuard<'_, HashMap<String, WeakLock<Link>>>>> for AttachChildError {
+	fn from(_value: PoisonError<RwLockReadGuard<'_, HashMap<String, WeakLock<Link>>>>) -> Self {
 		Self::ReadLinkIndex //(value)
 	}
 }
@@ -271,7 +270,7 @@ mod tests {
 	use super::Link;
 	use crate::{
 		cluster_objects::KinematicInterface,
-		joint::{Joint, JointInterface, JointType},
+		joint::{Joint, JointType},
 		link::LinkParent,
 	};
 

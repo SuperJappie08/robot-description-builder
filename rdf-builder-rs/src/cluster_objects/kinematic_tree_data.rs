@@ -4,10 +4,7 @@ use std::{
 };
 
 use crate::{
-	joint::{Joint, JointInterface},
-	link::Link,
-	material::Material,
-	Transmission,
+	joint::JointInterface, link::Link, material::Material, ArcLock, Transmission, WeakLock,
 };
 
 use crate::cluster_objects::kinematic_data_errors::*;
@@ -16,19 +13,19 @@ use crate::cluster_objects::kinematic_data_errors::*;
 
 #[derive(Debug)]
 pub struct KinematicTreeData {
-	pub root_link: Arc<RwLock<Link>>,
+	pub root_link: ArcLock<Link>,
 	//TODO: In this implementation the Keys, are not linked to the objects and could be changed.
-	pub(crate) material_index: Arc<RwLock<HashMap<String, Arc<RwLock<Material>>>>>,
+	pub(crate) material_index: ArcLock<HashMap<String, ArcLock<Material>>>,
 	// TODO: Why is this an `Rc<RefCell<_>`?
-	pub(crate) links: Arc<RwLock<HashMap<String, Weak<RwLock<Link>>>>>,
-	pub(crate) joints: Arc<RwLock<HashMap<String, Weak<RwLock<Joint>>>>>,
-	pub(crate) transmissions: Arc<RwLock<HashMap<String, Arc<RwLock<Transmission>>>>>,
-	pub(crate) newest_link: Weak<RwLock<Link>>,
+	pub(crate) links: ArcLock<HashMap<String, WeakLock<Link>>>,
+	pub(crate) joints: ArcLock<HashMap<String, WeakLock<Box<dyn JointInterface + Sync + Send>>>>,
+	pub(crate) transmissions: ArcLock<HashMap<String, ArcLock<Transmission>>>,
+	pub(crate) newest_link: WeakLock<Link>,
 	// is_rigid: bool // ? For gazebo -> TO AdvancedSimulationData [ASD]
 }
 
 impl KinematicTreeData {
-	pub(crate) fn new_link(root_link: Link) -> Arc<RwLock<KinematicTreeData>> {
+	pub(crate) fn new_link(root_link: Link) -> ArcLock<KinematicTreeData> {
 		let root_link = Arc::new(RwLock::new(root_link));
 		let material_index = HashMap::new();
 		let mut links = HashMap::new();
@@ -67,7 +64,7 @@ impl KinematicTreeData {
 
 	pub(crate) fn try_add_material(
 		&mut self,
-		material: Arc<RwLock<Material>>,
+		material: ArcLock<Material>,
 	) -> Result<(), AddMaterialError> {
 		let name = material.read()?.get_name();
 		if name.is_none() {
@@ -91,7 +88,7 @@ impl KinematicTreeData {
 		}
 	}
 
-	pub(crate) fn try_add_link(&mut self, link: Arc<RwLock<Link>>) -> Result<(), AddLinkError> {
+	pub(crate) fn try_add_link(&mut self, link: ArcLock<Link>) -> Result<(), AddLinkError> {
 		let name = link.read()?.get_name();
 		let other = { self.links.read()?.get(&name) }.map(Weak::clone);
 		if let Some(preexisting_link) = other.and_then(|weak_link| weak_link.upgrade()) {
@@ -111,7 +108,10 @@ impl KinematicTreeData {
 		}
 	}
 
-	pub(crate) fn try_add_joint(&mut self, joint: Arc<RwLock<Joint>>) -> Result<(), AddJointError> {
+	pub(crate) fn try_add_joint(
+		&mut self,
+		joint: ArcLock<Box<dyn JointInterface + Sync + Send>>,
+	) -> Result<(), AddJointError> {
 		let name = joint.read()?.get_name();
 		let other = { self.joints.read()?.get(&name) }.map(Weak::clone);
 		if let Some(preexisting_joint) = other.and_then(|weak_joint| weak_joint.upgrade()) {
@@ -132,7 +132,7 @@ impl KinematicTreeData {
 
 	pub(crate) fn try_add_transmission(
 		&mut self,
-		transmission: Arc<RwLock<Transmission>>,
+		transmission: ArcLock<Transmission>,
 	) -> Result<(), AddTransmissionError> {
 		let name = transmission.read()?.name.clone();
 		let other_transmission = { self.transmissions.read()?.get(&name) }.map(Arc::clone);
@@ -157,7 +157,12 @@ impl KinematicTreeData {
 	/// TODO: Maybe make pub(crate), since you can not remove a `joint` normally from outside the crate. and cleanup should be done by the crate.
 	pub fn purge_joints(
 		&mut self,
-	) -> Result<(), PoisonError<RwLockWriteGuard<'_, HashMap<String, Weak<RwLock<Joint>>>>>> {
+	) -> Result<
+		(),
+		PoisonError<
+			RwLockWriteGuard<'_, HashMap<String, WeakLock<Box<dyn JointInterface + Sync + Send>>>>,
+		>,
+	> {
 		let mut joints = self.joints.write()?; // TODO: Not so nice -> So Error
 		joints.retain(|_, weak_joint| weak_joint.upgrade().is_some());
 		joints.shrink_to_fit();
@@ -169,7 +174,7 @@ impl KinematicTreeData {
 	/// TODO: Maybe make pub(crate), since you can not remove a `link` normally from outside the crate. and cleanup should be done by the crate.
 	pub fn purge_links(
 		&mut self,
-	) -> Result<(), PoisonError<RwLockWriteGuard<'_, HashMap<String, Weak<RwLock<Link>>>>>> {
+	) -> Result<(), PoisonError<RwLockWriteGuard<'_, HashMap<String, WeakLock<Link>>>>> {
 		let mut links = self.links.write()?;
 		links.retain(|_, weak_link| weak_link.upgrade().is_some());
 		links.shrink_to_fit();

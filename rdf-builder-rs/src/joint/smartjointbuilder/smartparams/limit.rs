@@ -1,10 +1,13 @@
 use crate::joint::smartjointbuilder::SmartJointBuilder;
 
+use super::smart_joint_datatraits;
+
 /// TODO: Maybe add a continous lockout thing
 pub trait LimitAllowed {}
 
 #[derive(Debug, Default, Clone)]
 pub struct NoLimit;
+impl smart_joint_datatraits::LimitDataType for NoLimit {}
 
 #[derive(Debug, Default, Clone)]
 pub struct WithLimit {
@@ -17,11 +20,17 @@ pub struct WithLimit {
 	/// An attribute for enforcing the maximum joint velocity (in radians per second [rad/s] for revolute joints, in metres per second [m/s] for prismatic joints).
 	velocity: f32,
 }
+impl smart_joint_datatraits::LimitDataType for WithLimit {}
 
 impl<Type, Axis, Calibration, Dynamics, Mimic, SafetyController>
 	SmartJointBuilder<Type, Axis, Calibration, Dynamics, NoLimit, Mimic, SafetyController>
 where
 	Type: LimitAllowed,
+	Axis: smart_joint_datatraits::AxisDataType,
+	Calibration: smart_joint_datatraits::CalibrationDataType,
+	Dynamics: smart_joint_datatraits::DynamicsDataType,
+	Mimic: smart_joint_datatraits::MimicDataType,
+	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
 {
 	pub fn with_limit(
 		self,
@@ -52,6 +61,11 @@ impl<Type, Axis, Calibration, Dynamics, Mimic, SafetyController>
 	SmartJointBuilder<Type, Axis, Calibration, Dynamics, WithLimit, Mimic, SafetyController>
 where
 	Type: LimitAllowed,
+	Axis: smart_joint_datatraits::AxisDataType,
+	Calibration: smart_joint_datatraits::CalibrationDataType,
+	Dynamics: smart_joint_datatraits::DynamicsDataType,
+	Mimic: smart_joint_datatraits::MimicDataType,
+	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
 {
 	pub fn set_effort(mut self, effort: f32) -> Self {
 		self.limit.effort = effort;

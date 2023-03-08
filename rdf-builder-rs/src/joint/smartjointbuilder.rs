@@ -1,10 +1,11 @@
 mod smartjointtypes;
 pub mod smartparams;
 
-use crate::JointBuilder;
 use smartparams::{NoAxis, NoCalibration, NoDynamics, NoLimit, NoMimic, NoSafetyController};
 
 pub use smartjointtypes::{FixedType, NoType, RevoluteType};
+
+use self::smartparams::smart_joint_datatraits;
 
 #[derive(Debug)]
 pub enum OffsetMode {
@@ -13,7 +14,15 @@ pub enum OffsetMode {
 }
 
 #[derive(Debug, Default)]
-pub struct SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController> {
+pub struct SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>
+where
+	Axis: smart_joint_datatraits::AxisDataType,
+	Calibration: smart_joint_datatraits::CalibrationDataType,
+	Dynamics: smart_joint_datatraits::DynamicsDataType,
+	Limit: smart_joint_datatraits::LimitDataType,
+	Mimic: smart_joint_datatraits::MimicDataType,
+	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
+{
 	name: String,
 	joint_type: Type,
 	offset: Option<OffsetMode>,
@@ -28,6 +37,13 @@ pub struct SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, Mimic, Sa
 
 impl<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>
 	SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>
+where
+	Axis: smart_joint_datatraits::AxisDataType,
+	Calibration: smart_joint_datatraits::CalibrationDataType,
+	Dynamics: smart_joint_datatraits::DynamicsDataType,
+	Limit: smart_joint_datatraits::LimitDataType,
+	Mimic: smart_joint_datatraits::MimicDataType,
+	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
 {
 	pub fn add_offset(mut self, offset_mode: OffsetMode) -> Self {
 		self.offset = Some(offset_mode);
@@ -109,34 +125,5 @@ impl
 			mimic: self.mimic,
 			safety_controller: self.safety_controller,
 		}
-	}
-}
-
-// TODO: Not sure if this is how i want it
-impl
-	From<
-		SmartJointBuilder<
-			FixedType,
-			NoAxis,
-			NoCalibration,
-			NoDynamics,
-			NoLimit,
-			NoMimic,
-			NoSafetyController,
-		>,
-	> for JointBuilder
-{
-	fn from(
-		value: SmartJointBuilder<
-			FixedType,
-			NoAxis,
-			NoCalibration,
-			NoDynamics,
-			NoLimit,
-			NoMimic,
-			NoSafetyController,
-		>,
-	) -> Self {
-		JointBuilder::new(value.name, crate::JointType::Fixed)
 	}
 }
