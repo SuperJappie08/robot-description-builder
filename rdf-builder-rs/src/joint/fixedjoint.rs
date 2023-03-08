@@ -1,14 +1,17 @@
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, Weak};
 
 use crate::{
 	cluster_objects::kinematic_tree_data::KinematicTreeData,
 	joint::{JointBuilder, JointInterface},
-	Link,
+	Link, SmartJointBuilder,
 };
 
 #[derive(Debug)]
 pub struct FixedJoint {
 	name: String,
+	tree: Weak<RwLock<KinematicTreeData>>,
+	parent_link: Weak<RwLock<Link>>,
+	child_link: Arc<RwLock<Link>>,
 }
 
 impl JointInterface for FixedJoint {
@@ -21,14 +24,15 @@ impl JointInterface for FixedJoint {
 	}
 
 	fn get_parent_link(&self) -> Arc<RwLock<Link>> {
-		todo!()
+		Weak::upgrade(&self.parent_link).unwrap()
 	}
 
 	fn get_child_link(&self) -> Arc<RwLock<Link>> {
-		todo!()
+		Arc::clone(&self.child_link)
 	}
 
 	fn rebuild(&self) -> JointBuilder {
+		// SmartJointBuilder::new(self.name.clone()).fixed().into();
 		todo!()
 	}
 }

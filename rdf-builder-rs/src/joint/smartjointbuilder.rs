@@ -1,41 +1,10 @@
-#[derive(Debug, Default, Clone)]
-pub struct NoType;
+mod smartjointtypes;
+pub mod smartparams;
 
-#[derive(Debug, Default, Clone)]
-pub struct FixedType;
+use crate::JointBuilder;
+use smartparams::{NoAxis, NoCalibration, NoDynamics, NoLimit, NoMimic, NoSafetyController};
 
-#[derive(Debug, Default, Clone)]
-pub struct RevoluteType;
-
-pub trait AxisAllowed {}
-impl AxisAllowed for RevoluteType {}
-pub trait CalibrationAllowed {}
-impl CalibrationAllowed for RevoluteType {}
-pub trait DynamicsAllowed {}
-impl DynamicsAllowed for RevoluteType {}
-
-#[derive(Debug, Default, Clone)]
-pub struct NoAxis;
-
-#[derive(Debug, Default, Clone)]
-pub struct WithAxis(f32, f32, f32);
-
-#[derive(Debug, Default, Clone)]
-pub struct NoCalibration;
-
-#[derive(Debug, Default, Clone)]
-pub struct NoDynamics;
-#[derive(Debug, Default, Clone)]
-pub struct WithDynamics {
-	damping: Option<f32>,
-	friction: Option<f32>,
-}
-
-#[derive(Debug, Default, Clone)]
-pub struct WithCalibration {
-	rising: String,
-	falling: String,
-}
+pub use smartjointtypes::{FixedType, NoType, RevoluteType};
 
 #[derive(Debug)]
 pub enum OffsetMode {
@@ -44,7 +13,7 @@ pub enum OffsetMode {
 }
 
 #[derive(Debug, Default)]
-pub struct SmartJointBuilder<Type, Axis, Calibration, Dynamics> {
+pub struct SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController> {
 	name: String,
 	joint_type: Type,
 	offset: Option<OffsetMode>,
@@ -52,9 +21,14 @@ pub struct SmartJointBuilder<Type, Axis, Calibration, Dynamics> {
 	axis: Axis,
 	calibration: Calibration,
 	dynamics: Dynamics,
+	limit: Limit,
+	mimic: Mimic,
+	safety_controller: SafetyController,
 }
 
-impl<Type, Axis, Calibration, Dynamics> SmartJointBuilder<Type, Axis, Calibration, Dynamics> {
+impl<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>
+	SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>
+{
 	pub fn add_offset(mut self, offset_mode: OffsetMode) -> Self {
 		self.offset = Some(offset_mode);
 		self
@@ -66,8 +40,20 @@ impl<Type, Axis, Calibration, Dynamics> SmartJointBuilder<Type, Axis, Calibratio
 	}
 }
 
-impl SmartJointBuilder<NoType, NoAxis, NoCalibration, NoDynamics> {
-	pub fn new(name: String) -> SmartJointBuilder<NoType, NoAxis, NoCalibration, NoDynamics> {
+impl
+	SmartJointBuilder<NoType, NoAxis, NoCalibration, NoDynamics, NoLimit, NoMimic, NoSafetyController>
+{
+	pub fn new(
+		name: String,
+	) -> SmartJointBuilder<
+		NoType,
+		NoAxis,
+		NoCalibration,
+		NoDynamics,
+		NoLimit,
+		NoMimic,
+		NoSafetyController,
+	> {
 		SmartJointBuilder {
 			name: name,
 			joint_type: NoType,
@@ -75,7 +61,17 @@ impl SmartJointBuilder<NoType, NoAxis, NoCalibration, NoDynamics> {
 		}
 	}
 
-	pub fn revolute(self) -> SmartJointBuilder<RevoluteType, NoAxis, NoCalibration, NoDynamics> {
+	pub fn revolute(
+		self,
+	) -> SmartJointBuilder<
+		RevoluteType,
+		NoAxis,
+		NoCalibration,
+		NoDynamics,
+		NoLimit,
+		NoMimic,
+		NoSafetyController,
+	> {
 		SmartJointBuilder {
 			name: self.name,
 			joint_type: RevoluteType,
@@ -84,10 +80,23 @@ impl SmartJointBuilder<NoType, NoAxis, NoCalibration, NoDynamics> {
 			axis: self.axis,
 			calibration: self.calibration,
 			dynamics: self.dynamics,
+			limit: self.limit,
+			mimic: self.mimic,
+			safety_controller: self.safety_controller,
 		}
 	}
 
-	pub fn fixed(self) -> SmartJointBuilder<FixedType, NoAxis, NoCalibration, NoDynamics> {
+	pub fn fixed(
+		self,
+	) -> SmartJointBuilder<
+		FixedType,
+		NoAxis,
+		NoCalibration,
+		NoDynamics,
+		NoLimit,
+		NoMimic,
+		NoSafetyController,
+	> {
 		SmartJointBuilder {
 			name: self.name,
 			joint_type: FixedType,
@@ -96,95 +105,38 @@ impl SmartJointBuilder<NoType, NoAxis, NoCalibration, NoDynamics> {
 			axis: self.axis,
 			calibration: self.calibration,
 			dynamics: self.dynamics,
+			limit: self.limit,
+			mimic: self.mimic,
+			safety_controller: self.safety_controller,
 		}
 	}
 }
 
-impl<Type, Axis, Calibration, Dynamics> SmartJointBuilder<Type, Axis, Calibration, Dynamics>
-where
-	Type: AxisAllowed,
+// TODO: Not sure if this is how i want it
+impl
+	From<
+		SmartJointBuilder<
+			FixedType,
+			NoAxis,
+			NoCalibration,
+			NoDynamics,
+			NoLimit,
+			NoMimic,
+			NoSafetyController,
+		>,
+	> for JointBuilder
 {
-	pub fn set_axis(
-		self,
-		axis: (f32, f32, f32),
-	) -> SmartJointBuilder<Type, WithAxis, Calibration, Dynamics> {
-		let length = f32::sqrt(axis.0 * axis.0 + axis.1 * axis.1 + axis.2 * axis.2);
-		SmartJointBuilder {
-			name: self.name,
-			joint_type: self.joint_type,
-			offset: self.offset,
-			rotation: self.rotation,
-			axis: WithAxis(axis.0 / length, axis.1 / length, axis.2 / length),
-			calibration: self.calibration,
-			dynamics: self.dynamics,
-		}
-	}
-}
-
-impl<Type, Axis, Calibration, Dynamics> SmartJointBuilder<Type, Axis, Calibration, Dynamics>
-where
-	Type: CalibrationAllowed,
-{
-	pub fn set_calibration(
-		self,
-		_calibration: String,
-	) -> SmartJointBuilder<Type, Axis, WithCalibration, Dynamics> {
-		todo!()
-	}
-}
-
-impl<Type, Axis, Calibration> SmartJointBuilder<Type, Axis, Calibration, NoDynamics>
-where
-	Type: DynamicsAllowed,
-{
-	pub fn set_damping(
-		self,
-		damping: f32,
-	) -> SmartJointBuilder<Type, Axis, Calibration, WithDynamics> {
-		SmartJointBuilder {
-			name: self.name,
-			joint_type: self.joint_type,
-			offset: self.offset,
-			rotation: self.rotation,
-			axis: self.axis,
-			calibration: self.calibration,
-			dynamics: WithDynamics {
-				damping: Some(damping),
-				friction: None,
-			},
-		}
-	}
-
-	pub fn set_friction(
-		self,
-		friction: f32,
-	) -> SmartJointBuilder<Type, Axis, Calibration, WithDynamics> {
-		SmartJointBuilder {
-			name: self.name,
-			joint_type: self.joint_type,
-			offset: self.offset,
-			rotation: self.rotation,
-			axis: self.axis,
-			calibration: self.calibration,
-			dynamics: WithDynamics {
-				damping: None,
-				friction: Some(friction),
-			},
-		}
-	}
-}
-
-impl<Type, Axis, Calibration> SmartJointBuilder<Type, Axis, Calibration, WithDynamics>
-where
-	Type: DynamicsAllowed,
-{
-	pub fn set_damping(mut self, damping: f32) -> Self {
-		self.dynamics.damping = Some(damping);
-		self
-	}
-
-	pub fn set_friction(mut self, friction: f32) -> Self {
-		self.dynamics.friction = Some(friction);
-		self
+	fn from(
+		value: SmartJointBuilder<
+			FixedType,
+			NoAxis,
+			NoCalibration,
+			NoDynamics,
+			NoLimit,
+			NoMimic,
+			NoSafetyController,
+		>,
+	) -> Self {
+		JointBuilder::new(value.name, crate::JointType::Fixed)
 	}
 }
