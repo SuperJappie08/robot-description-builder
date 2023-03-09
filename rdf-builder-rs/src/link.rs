@@ -269,9 +269,7 @@ mod tests {
 
 	use super::Link;
 	use crate::{
-		cluster_objects::KinematicInterface,
-		joint::{Joint, JointType},
-		link::LinkParent,
+		cluster_objects::KinematicInterface, joint::JointType, link::LinkParent, JointBuilder,
 	};
 
 	#[test]
@@ -311,7 +309,7 @@ mod tests {
 				.unwrap()
 				.try_attach_child(
 					Link::new("child_link".into()).into(),
-					Joint::new("steve".into(), JointType::Fixed)
+					JointBuilder::new("steve".into(), JointType::Fixed)
 				),
 			Ok(())
 		);
@@ -384,7 +382,7 @@ mod tests {
 			.unwrap()
 			.try_attach_child(
 				Link::new("other_child_link".into()).into(),
-				Joint::new("other_joint".into(), JointType::Fixed),
+				JointBuilder::new("other_joint".into(), JointType::Fixed),
 			)
 			.unwrap();
 
@@ -393,7 +391,7 @@ mod tests {
 			.unwrap()
 			.try_attach_child(
 				other_tree.into(),
-				Joint::new("initial_joint".into(), JointType::Fixed),
+				JointBuilder::new("initial_joint".into(), JointType::Fixed),
 			)
 			.unwrap();
 
@@ -408,7 +406,7 @@ mod tests {
 			.unwrap()
 			.try_attach_child(
 				tree_three.into(),
-				Joint::new("joint-3".into(), JointType::Fixed),
+				JointBuilder::new("joint-3".into(), JointType::Fixed),
 			)
 			.unwrap();
 

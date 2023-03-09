@@ -60,11 +60,11 @@ impl JointInterface for FixedJoint {
 		let mut builder = JointBuilder::new(self.name.clone(), crate::JointType::Fixed);
 		dbg!(self.get_transform_data());
 		if let Some(translation) = self.get_transform_data().translation {
-			builder = builder.add_origin_offset(translation);
+			builder.add_origin_offset(translation);
 		}
 
 		if let Some(rotation) = self.get_transform_data().rotation {
-			builder = builder.add_origin_rotation(rotation);
+			builder.add_origin_rotation(rotation);
 		}
 
 		builder
@@ -97,7 +97,7 @@ mod tests {
 			.rebuild();
 		assert_eq!(
 			rebuilder,
-			JointBuilder::new("Joint1".to_owned(), crate::JointType::Fixed)
+			*JointBuilder::new("Joint1".to_owned(), crate::JointType::Fixed)
 				.add_origin_offset((2.0, 3.0, 5.0))
 		)
 	}

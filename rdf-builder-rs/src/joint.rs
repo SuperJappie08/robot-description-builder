@@ -61,9 +61,9 @@ pub struct Joint {
 }
 
 impl Joint {
-	pub fn new(name: String, joint_type: JointType) -> JointBuilder {
-		JointBuilder::new(name, joint_type)
-	}
+	// pub fn new(name: String, joint_type: JointType) -> JointBuilder {
+	// JointBuilder::new(name, joint_type)
+	// }
 }
 
 impl JointInterface for Joint {

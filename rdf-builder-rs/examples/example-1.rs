@@ -1,7 +1,7 @@
 // run example with:
 //    cargo run --example example-1
 
-use rdf_builder_rs::{Joint, JointType, KinematicInterface, Link};
+use rdf_builder_rs::{JointBuilder, JointType, KinematicInterface, Link};
 
 fn main() {
 	let link = Link::new("name".into());
@@ -10,7 +10,7 @@ fn main() {
 		.unwrap()
 		.try_attach_child(
 			Box::new(Link::new("name2".into())),
-			Joint::new("dave".into(), JointType::Fixed),
+			JointBuilder::new("dave".into(), JointType::Fixed),
 		)
 		.unwrap();
 	todo!()

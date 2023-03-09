@@ -23,7 +23,7 @@ pub struct JointBuilder {
 }
 
 impl JointBuilder {
-	pub(crate) fn new(name: String, joint_type: JointType) -> Self {
+	pub fn new(name: String, joint_type: JointType) -> Self {
 		Self {
 			name,
 			joint_type,
@@ -31,12 +31,12 @@ impl JointBuilder {
 		}
 	}
 
-	pub fn add_origin_offset(mut self, offset: (f32, f32, f32)) -> Self {
+	pub fn add_origin_offset(&mut self, offset: (f32, f32, f32)) -> &mut Self {
 		self.origin.translation = Some(offset);
 		self
 	}
 
-	pub fn add_origin_rotation(mut self, rotation: (f32, f32, f32)) -> Self {
+	pub fn add_origin_rotation(&mut self, rotation: (f32, f32, f32)) -> &mut Self {
 		self.origin.rotation = Some(rotation);
 		self
 	}

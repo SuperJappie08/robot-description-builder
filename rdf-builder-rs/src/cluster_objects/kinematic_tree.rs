@@ -167,7 +167,7 @@ mod tests {
 
 	use crate::{
 		link::{Link, LinkParent},
-		Joint, JointType, KinematicInterface,
+		JointBuilder, JointType, KinematicInterface,
 	};
 
 	#[test]
@@ -387,7 +387,7 @@ mod tests {
 			.unwrap()
 			.try_attach_child(
 				Link::new("other-child".into()).into(),
-				Joint::new("other-child-joint".into(), JointType::Fixed),
+				JointBuilder::new("other-child-joint".into(), JointType::Fixed),
 			)
 			.unwrap();
 
@@ -396,7 +396,7 @@ mod tests {
 			.unwrap()
 			.try_attach_child(
 				other_tree.into(),
-				Joint::new("other-joint".into(), JointType::Fixed),
+				JointBuilder::new("other-joint".into(), JointType::Fixed),
 			)
 			.unwrap();
 
@@ -405,7 +405,7 @@ mod tests {
 			.unwrap()
 			.try_attach_child(
 				Link::new("3".into()).into(),
-				Joint::new("three".into(), JointType::Fixed),
+				JointBuilder::new("three".into(), JointType::Fixed),
 			)
 			.unwrap();
 

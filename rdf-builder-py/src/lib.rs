@@ -2,11 +2,12 @@ use std::sync::{Arc, RwLock};
 
 use pyo3::prelude::*;
 use rdf_builder_rs::{
-	Joint, JointBuilder, JointInterface, JointType, KinematicInterface, KinematicTree, Link, Robot,
+	JointBuilder, JointInterface, JointType, KinematicInterface, KinematicTree, Link, Robot,
 };
 
 #[derive(Debug)]
 #[pyclass(name = "Robot")]
+/// Testing
 struct PyRobot {
 	inner: Robot,
 }
@@ -160,7 +161,12 @@ impl PyJointBuilder {
 	#[new]
 	fn new(name: String, joint_type: PyJointType) -> PyJointBuilder {
 		// ODDITY: use `Joint::new` because `JointBuilder::new` is private to the crate
-		Joint::new(name, joint_type.into()).into()
+		JointBuilder::new(name, joint_type.into()).into()
+	}
+
+	/// TEMP implementation
+	fn add_origin_offset(&mut self, x: f32, y: f32, z: f32) {
+		self.inner.add_origin_offset((x, y, z));
 	}
 }
 
