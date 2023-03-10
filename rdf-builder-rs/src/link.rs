@@ -10,9 +10,9 @@ use log::{info, log_enabled, Level};
 use quick_xml::{events::attributes::Attribute, name::QName};
 
 pub mod link_data {
-	pub use super::collision::Collision;
-	pub use super::link_parent::LinkParent;
-	pub use super::visual::Visual;
+	pub use crate::link::collision::Collision;
+	pub use crate::link::link_parent::LinkParent;
+	pub use crate::link::visual::Visual;
 	pub mod geometry {
 		pub use crate::link::geometry::*;
 	}
@@ -320,9 +320,10 @@ impl From<PoisonError<RwLockWriteGuard<'_, KinematicTreeData>>> for AddVisualErr
 mod tests {
 	use std::sync::{Arc, Weak};
 
-	use super::Link;
 	use crate::{
-		cluster_objects::KinematicInterface, joint::JointType, link::LinkParent, JointBuilder,
+		cluster_objects::KinematicInterface,
+		joint::{JointBuilder, JointType},
+		link::{link_parent::LinkParent, Link},
 	};
 
 	#[test]

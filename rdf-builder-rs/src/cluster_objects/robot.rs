@@ -3,13 +3,18 @@ use std::{collections::HashMap, sync::Arc};
 use quick_xml::events::attributes::Attribute;
 use quick_xml::name::QName;
 
-use crate::to_rdf::to_urdf::{ToURDF, URDFConfig};
 use crate::{
-	cluster_objects::kinematic_tree_data::KinematicTreeData, joint::JointInterface, link::Link,
-	material::Material, ArcLock, Transmission, WeakLock,
+	cluster_objects::{
+		kinematic_data_errors::AddTransmissionError, kinematic_tree_data::KinematicTreeData,
+		KinematicInterface,
+	},
+	joint::JointInterface,
+	link::Link,
+	material::Material,
+	to_rdf::to_urdf::{ToURDF, URDFConfig},
+	transmission::Transmission,
+	ArcLock, WeakLock,
 };
-
-use crate::cluster_objects::{kinematic_data_errors::AddTransmissionError, KinematicInterface};
 
 #[derive(Debug)]
 pub struct Robot {

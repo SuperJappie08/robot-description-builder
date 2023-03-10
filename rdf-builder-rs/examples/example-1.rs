@@ -64,10 +64,10 @@ fn main() {
 		.add_collider(Collision::new(
 			Some("Leg_[R1]_l1_col".into()),
 			Some(TransformData {
-				translation: Some((1.0, 0., 0.)),
+				translation: Some((0.25, 0., 0.)),
 				..Default::default()
 			}),
-			BoxGeometry::new(0.5, 0.1, 0.1).into(),
+			BoxGeometry::new(0.25, 0.1, 0.1).into(),
 		));
 
 	let robot_root = Link::new("robot_root".into());

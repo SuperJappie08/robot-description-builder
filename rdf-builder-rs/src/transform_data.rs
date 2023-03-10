@@ -23,7 +23,7 @@ impl ToURDF for TransformData {
 		let mut element = writer.create_element("origin");
 		if let Some(translation) = self.translation.clone() {
 			element = element.with_attribute(Attribute {
-				key: QName(b"zyz"),
+				key: QName(b"xyz"),
 				value: format!("{} {} {}", translation.0, translation.1, translation.2)
 					.as_bytes()
 					.into(),
@@ -31,13 +31,15 @@ impl ToURDF for TransformData {
 		}
 
 		if let Some(rotation) = self.rotation.clone() {
-			element.with_attribute(Attribute {
+			element = element.with_attribute(Attribute {
 				key: QName(b"rpy"),
 				value: format!("{} {} {}", rotation.0, rotation.1, rotation.2)
 					.as_bytes()
 					.into(),
 			});
 		}
+
+		element.write_empty()?;
 		Ok(())
 	}
 }

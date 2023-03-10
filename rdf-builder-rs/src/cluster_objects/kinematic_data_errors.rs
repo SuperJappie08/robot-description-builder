@@ -6,7 +6,8 @@ use std::{
 };
 
 use crate::{
-	joint::JointInterface, link::Link, material::Material, ArcLock, Transmission, WeakLock,
+	joint::JointInterface, link::Link, material::Material, transmission::Transmission, ArcLock,
+	WeakLock,
 };
 
 #[derive(Debug, Error)]

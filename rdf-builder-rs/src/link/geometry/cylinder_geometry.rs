@@ -34,7 +34,8 @@ impl ToURDF for CylinderGeometry {
 				.with_attribute(Attribute {
 					key: QName(b"length"),
 					value: self.length.to_string().as_bytes().into(),
-				});
+				})
+				.write_empty()?;
 			Ok(())
 		})?;
 		Ok(())

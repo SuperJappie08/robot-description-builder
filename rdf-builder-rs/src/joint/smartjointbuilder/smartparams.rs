@@ -13,12 +13,10 @@ pub use mimic::{NoMimic, WithMimic};
 pub use safety_controller::{NoSafetyController, WithSafetyController};
 
 pub mod smart_joint_specification {
-	pub use super::axis::AxisAllowed;
-	pub use super::calibration::CalibrationAllowed;
-	pub use super::dynamics::DynamicsAllowed;
-	pub use super::limit::LimitAllowed;
-	pub use super::mimic::MimicAllowed;
-	pub use super::safety_controller::SafetyControllerAllowed;
+	pub use crate::joint::smartjointbuilder::smartparams::{
+		axis::AxisAllowed, calibration::CalibrationAllowed, dynamics::DynamicsAllowed,
+		limit::LimitAllowed, mimic::MimicAllowed, safety_controller::SafetyControllerAllowed,
+	};
 }
 
 pub(crate) mod smart_joint_datatraits {

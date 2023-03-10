@@ -3,13 +3,12 @@ use std::sync::Arc;
 use quick_xml::{events::attributes::Attribute, name::QName};
 
 use crate::{
+	link::geometry::GeometryInterface,
 	material::Material,
 	to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialMode, URDFMaterialReferences},
 	transform_data::TransformData,
 	ArcLock,
 };
-
-use super::geometry::GeometryInterface;
 
 #[derive(Debug)]
 pub struct Visual {

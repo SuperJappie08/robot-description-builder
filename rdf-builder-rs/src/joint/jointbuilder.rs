@@ -54,7 +54,7 @@ impl JointBuilder {
 			parent_link: parent_link,
 			child_link: child_link,
 			joint_type: self.joint_type,
-			origin: TransformData::default(), // FIXME: Mmmh Data Where?
+			origin: self.origin,
 		}
 	}
 }

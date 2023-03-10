@@ -10,7 +10,8 @@ use crate::{
 	link::Link,
 	material::Material,
 	to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialMode, URDFMaterialReferences},
-	ArcLock, Transmission, WeakLock,
+	transmission::Transmission,
+	ArcLock, WeakLock,
 };
 
 use crate::cluster_objects::kinematic_data_errors::*;

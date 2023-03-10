@@ -7,7 +7,8 @@ use crate::{
 	joint::JointInterface,
 	link::Link,
 	material::Material,
-	ArcLock, Transmission, WeakLock,
+	transmission::Transmission,
+	ArcLock, WeakLock,
 };
 
 pub mod kinematic_data_errors;

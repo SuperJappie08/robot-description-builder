@@ -1,11 +1,16 @@
 use std::{collections::HashMap, sync::Arc};
 
 use crate::{
-	cluster_objects::kinematic_tree_data::KinematicTreeData, cluster_objects::robot::Robot,
-	joint::JointInterface, link::Link, material::Material, ArcLock, Transmission, WeakLock,
+	cluster_objects::{
+		kinematic_data_errors::AddTransmissionError, kinematic_tree_data::KinematicTreeData,
+		robot::Robot, KinematicInterface,
+	},
+	joint::JointInterface,
+	link::Link,
+	material::Material,
+	transmission::Transmission,
+	ArcLock, WeakLock,
 };
-
-use super::{kinematic_data_errors::AddTransmissionError, KinematicInterface};
 
 #[derive(Debug)]
 pub struct KinematicTree(ArcLock<KinematicTreeData>);

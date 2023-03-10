@@ -1,6 +1,4 @@
-use crate::joint::smartjointbuilder::SmartJointBuilder;
-
-use super::smart_joint_datatraits;
+use crate::joint::smartjointbuilder::{smart_joint_datatraits, SmartJointBuilder};
 
 pub trait MimicAllowed {}
 

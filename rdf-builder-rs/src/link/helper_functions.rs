@@ -1,13 +1,12 @@
-use crate::{cluster_objects::KinematicTree, KinematicInterface};
-
-use crate::link::{
-	collision::Collision,
-	geometry::{BoxGeometry, GeometryInterface},
-	visual::Visual,
-	Link,
+use crate::{
+	cluster_objects::{KinematicInterface, KinematicTree},
+	link::{
+		collision::Collision,
+		geometry::{BoxGeometry, CylinderGeometry, GeometryInterface, SphereGeometry},
+		visual::Visual,
+		Link,
+	},
 };
-
-use super::geometry::{CylinderGeometry, SphereGeometry};
 
 /// TODO: Finalize, this is temp
 /// TODO: ADD NAMED CHOICE for Vis & Col
@@ -76,7 +75,7 @@ pub fn new_sphere_link(link_name: String, radius: f32) -> KinematicTree {
 
 #[cfg(test)]
 mod tests {
-	use super::*;
+	use crate::link::helper_functions::*;
 
 	#[test]
 	fn test_new_box_link() {
