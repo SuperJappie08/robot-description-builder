@@ -4,12 +4,19 @@ pub mod helper_functions;
 mod link_parent;
 mod visual;
 
+use itertools::process_results;
 #[cfg(feature = "logging")]
 use log::{info, log_enabled, Level};
+use quick_xml::{events::attributes::Attribute, name::QName};
 
-pub use collision::Collision;
-pub use link_parent::LinkParent;
-pub use visual::Visual;
+pub mod link_data {
+	pub use super::collision::Collision;
+	pub use super::link_parent::LinkParent;
+	pub use super::visual::Visual;
+	pub mod geometry {
+		pub use crate::link::geometry::*;
+	}
+}
 
 use thiserror::Error;
 
@@ -25,6 +32,10 @@ use crate::{
 		KinematicInterface, KinematicTree,
 	},
 	joint::{BuildJoint, JointInterface},
+	link::collision::Collision,
+	link::link_parent::LinkParent,
+	link::visual::Visual,
+	to_rdf::to_urdf::ToURDF,
 	ArcLock, WeakLock,
 };
 
@@ -55,10 +66,10 @@ use crate::{
 pub struct Link {
 	pub(crate) name: String,
 	pub(crate) tree: WeakLock<KinematicTreeData>,
-	direct_parent: Option<LinkParent>,
+	direct_parent: Option<link_data::LinkParent>,
 	child_joints: Vec<ArcLock<Box<dyn JointInterface + Sync + Send>>>,
-	visuals: Vec<Visual>,
-	colliders: Vec<Collision>,
+	visuals: Vec<link_data::Visual>,
+	colliders: Vec<link_data::Collision>,
 }
 
 impl Link {
@@ -197,6 +208,48 @@ impl Link {
 	pub fn add_collider(&mut self, collider: Collision) -> &mut Self {
 		self.colliders.push(collider);
 		self
+	}
+}
+
+impl ToURDF for Link {
+	fn to_urdf(
+		&self,
+		writer: &mut quick_xml::Writer<std::io::Cursor<Vec<u8>>>,
+		urdf_config: &crate::to_rdf::to_urdf::URDFConfig,
+	) -> Result<(), quick_xml::Error> {
+		let element = writer.create_element("link").with_attribute(Attribute {
+			key: QName(b"name"),
+			value: self.name.clone().as_bytes().into(),
+		});
+		element.write_inner_content(|writer| -> Result<(), quick_xml::Error> {
+			// TODO: Add Inertial Data
+
+			process_results(
+				self.visuals
+					.iter()
+					.map(|visual| visual.to_urdf(writer, urdf_config)),
+				|iter| iter.collect(),
+			)?;
+
+			process_results(
+				self.colliders
+					.iter()
+					.map(|collider| collider.to_urdf(writer, urdf_config)),
+				|iter| iter.collect(),
+			)?;
+
+			Ok(())
+		})?;
+
+		// Write joints
+		process_results(
+			self.get_joints()
+				.iter()
+				.map(|joint| joint.read().unwrap().to_urdf(writer, urdf_config)),
+			|iter| iter.collect(),
+		)?;
+
+		Ok(())
 	}
 }
 

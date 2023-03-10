@@ -1,11 +1,14 @@
-use crate::link::geometry::GeometryInterface;
+use quick_xml::{events::attributes::Attribute, name::QName};
+
+use crate::{link::geometry::GeometryInterface, to_rdf::to_urdf::ToURDF};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct BoxGeometry {
 	/// TODO: Figure out correct field names
-	side1: f32,
-	side2: f32,
-	side3: f32,
+	/// TODO: Figure out if pub necesary for ToRDF things
+	pub side1: f32,
+	pub side2: f32,
+	pub side3: f32,
 }
 
 impl BoxGeometry {
@@ -16,6 +19,29 @@ impl BoxGeometry {
 			side2,
 			side3,
 		}
+	}
+}
+
+impl ToURDF for BoxGeometry {
+	fn to_urdf(
+		&self,
+		writer: &mut quick_xml::Writer<std::io::Cursor<Vec<u8>>>,
+		_urdf_config: &crate::to_rdf::to_urdf::URDFConfig,
+	) -> Result<(), quick_xml::Error> {
+		let element = writer.create_element("geometry");
+		element.write_inner_content(|writer| {
+			writer
+				.create_element("box")
+				.with_attribute(Attribute {
+					key: QName(b"size"),
+					value: format!("{} {} {}", self.side1, self.side2, self.side3)
+						.as_bytes()
+						.into(),
+				})
+				.write_empty()?;
+			Ok(())
+		})?;
+		Ok(())
 	}
 }
 

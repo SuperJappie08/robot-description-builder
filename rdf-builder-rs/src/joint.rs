@@ -3,22 +3,25 @@ mod jointbuilder;
 mod smartjointbuilder;
 
 use std::{
+	borrow::Cow,
 	fmt::Debug,
 	sync::{Arc, Weak},
 };
 
 use crate::{
-	cluster_objects::kinematic_tree_data::KinematicTreeData, link::Link,
+	cluster_objects::kinematic_tree_data::KinematicTreeData, link::Link, to_rdf::to_urdf::ToURDF,
 	transform_data::TransformData, ArcLock, WeakLock,
 };
 
 pub use jointbuilder::{BuildJoint, JointBuilder};
+use quick_xml::{events::attributes::Attribute, name::QName};
 pub use smartjointbuilder::{OffsetMode, SmartJointBuilder};
 
 pub use fixedjoint::FixedJoint;
 
 pub trait JointInterface: Debug {
 	fn get_name(&self) -> String;
+	fn get_jointtype(&self) -> JointType;
 
 	/// Adds the `Joint` to a kinematic tree
 	fn add_to_tree(&mut self, new_parent_tree: &ArcLock<KinematicTreeData>) {
@@ -41,7 +44,7 @@ pub trait JointInterface: Debug {
 	fn set_tree(&mut self, tree: WeakLock<KinematicTreeData>);
 
 	/// TODO: Semi TMP
-	fn get_transform_data(&self) -> &TransformData;
+	fn get_origin(&self) -> &TransformData;
 
 	fn rebuild(&self) -> JointBuilder;
 }
@@ -66,9 +69,76 @@ impl Joint {
 	// }
 }
 
+impl ToURDF for Box<dyn JointInterface + Send + Sync> {
+	fn to_urdf(
+		&self,
+		writer: &mut quick_xml::Writer<std::io::Cursor<Vec<u8>>>,
+		urdf_config: &crate::to_rdf::to_urdf::URDFConfig,
+	) -> Result<(), quick_xml::Error> {
+		let element = writer
+			.create_element("joint")
+			.with_attribute(Attribute {
+				key: QName(b"name"),
+				value: self.get_name().as_bytes().into(),
+			})
+			.with_attribute(Attribute {
+				key: QName(b"type"),
+				value: self.get_jointtype().into(),
+			});
+
+		element.write_inner_content(|writer| {
+			let origin = self.get_origin();
+			if origin.contains_some() {
+				origin.to_urdf(writer, urdf_config)?;
+			}
+
+			writer
+				.create_element("parent")
+				.with_attribute(Attribute {
+					key: QName(b"link"),
+					value: self
+						.get_parent_link()
+						.read()
+						.unwrap()
+						.get_name()
+						.as_bytes()
+						.into(),
+				})
+				.write_empty()?;
+
+			writer
+				.create_element("child")
+				.with_attribute(Attribute {
+					key: QName(b"link"),
+					value: self
+						.get_child_link()
+						.read()
+						.unwrap()
+						.get_name()
+						.as_bytes()
+						.into(),
+				})
+				.write_empty()?;
+
+			//TODO: REST OF THE FIELDS
+			Ok(())
+		})?;
+
+		self.get_child_link()
+			.read()
+			.unwrap()
+			.to_urdf(writer, urdf_config)?;
+		Ok(())
+	}
+}
+
 impl JointInterface for Joint {
 	fn get_name(&self) -> String {
 		self.name.clone()
+	}
+
+	fn get_jointtype(&self) -> JointType {
+		self.joint_type.clone()
 	}
 
 	/// Returns a reference to the parent `Link`
@@ -91,7 +161,7 @@ impl JointInterface for Joint {
 		self.tree = tree;
 	}
 
-	fn get_transform_data(&self) -> &TransformData {
+	fn get_origin(&self) -> &TransformData {
 		&self.origin
 	}
 
@@ -121,4 +191,23 @@ pub enum JointType {
 	Prismatic, // — a sliding joint that slides along the axis, and has a limited range specified by the upper and lower limits.
 	Floating,  // — this joint allows motion for all 6 degrees of freedom.
 	Planar,    // — this joint allows motion in a plane perpendicular to the axis.
+}
+
+impl ToString for JointType {
+	fn to_string(&self) -> String {
+		match self {
+			JointType::Fixed => String::from("fixed"),
+			JointType::Revolute => String::from("revolute"),
+			JointType::Continuous => String::from("Continuous"),
+			JointType::Prismatic => String::from("prismatic"),
+			JointType::Floating => String::from("floating"),
+			JointType::Planar => String::from("planar"),
+		}
+	}
+}
+
+impl From<JointType> for Cow<'_, [u8]> {
+	fn from(value: JointType) -> Self {
+		value.to_string().into_bytes().into()
+	}
 }

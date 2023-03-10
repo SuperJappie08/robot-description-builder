@@ -1,8 +1,10 @@
 use crate::{cluster_objects::KinematicTree, KinematicInterface};
 
 use crate::link::{
+	collision::Collision,
 	geometry::{BoxGeometry, GeometryInterface},
-	Collision, Link, Visual,
+	visual::Visual,
+	Link,
 };
 
 use super::geometry::{CylinderGeometry, SphereGeometry};

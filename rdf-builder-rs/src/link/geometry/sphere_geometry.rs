@@ -1,6 +1,8 @@
 use std::f32::consts::{FRAC_PI_3, PI};
 
-use crate::link::geometry::GeometryInterface;
+use quick_xml::{events::attributes::Attribute, name::QName};
+
+use crate::{link::geometry::GeometryInterface, to_rdf::to_urdf::ToURDF};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct SphereGeometry {
@@ -10,6 +12,27 @@ pub struct SphereGeometry {
 impl SphereGeometry {
 	pub fn new(radius: f32) -> Self {
 		Self { radius }
+	}
+}
+
+impl ToURDF for SphereGeometry {
+	fn to_urdf(
+		&self,
+		writer: &mut quick_xml::Writer<std::io::Cursor<Vec<u8>>>,
+		_urdf_config: &crate::to_rdf::to_urdf::URDFConfig,
+	) -> Result<(), quick_xml::Error> {
+		let element = writer.create_element("geometry");
+		element.write_inner_content(|writer| {
+			writer
+				.create_element("sphere")
+				.with_attribute(Attribute {
+					key: QName(b"radius"),
+					value: self.radius.to_string().as_bytes().into(),
+				})
+				.write_empty()?;
+			Ok(())
+		})?;
+		Ok(())
 	}
 }
 

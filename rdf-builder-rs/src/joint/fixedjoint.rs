@@ -5,7 +5,7 @@ use crate::{
 	joint::{JointBuilder, JointInterface},
 	link::Link,
 	transform_data::TransformData,
-	ArcLock, WeakLock,
+	ArcLock, JointType, WeakLock,
 };
 
 #[derive(Debug)]
@@ -40,6 +40,10 @@ impl JointInterface for FixedJoint {
 		self.name.clone()
 	}
 
+	fn get_jointtype(&self) -> JointType {
+		JointType::Fixed
+	}
+
 	fn get_parent_link(&self) -> ArcLock<Link> {
 		Weak::upgrade(&self.parent_link).unwrap()
 	}
@@ -52,18 +56,18 @@ impl JointInterface for FixedJoint {
 		self.tree = tree;
 	}
 
-	fn get_transform_data(&self) -> &TransformData {
+	fn get_origin(&self) -> &TransformData {
 		&self.origin
 	}
 
 	fn rebuild(&self) -> JointBuilder {
-		let mut builder = JointBuilder::new(self.name.clone(), crate::JointType::Fixed);
-		dbg!(self.get_transform_data());
-		if let Some(translation) = self.get_transform_data().translation {
+		let mut builder = JointBuilder::new(self.name.clone(), JointType::Fixed);
+		dbg!(self.get_origin());
+		if let Some(translation) = self.get_origin().translation {
 			builder.add_origin_offset(translation);
 		}
 
-		if let Some(rotation) = self.get_transform_data().rotation {
+		if let Some(rotation) = self.get_origin().rotation {
 			builder.add_origin_rotation(rotation);
 		}
 

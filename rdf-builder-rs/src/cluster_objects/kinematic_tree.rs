@@ -1,8 +1,8 @@
 use std::{collections::HashMap, sync::Arc};
 
 use crate::{
-	cluster_objects::kinematic_tree_data::KinematicTreeData, joint::JointInterface, link::Link,
-	material::Material, ArcLock, Transmission, WeakLock,
+	cluster_objects::kinematic_tree_data::KinematicTreeData, cluster_objects::robot::Robot,
+	joint::JointInterface, link::Link, material::Material, ArcLock, Transmission, WeakLock,
 };
 
 use super::{kinematic_data_errors::AddTransmissionError, KinematicInterface};
@@ -13,6 +13,10 @@ pub struct KinematicTree(ArcLock<KinematicTreeData>);
 impl KinematicTree {
 	pub fn new(data: ArcLock<KinematicTreeData>) -> KinematicTree {
 		KinematicTree(data)
+	}
+
+	pub fn to_robot(self, name: String) -> Robot {
+		Robot::new(name, self.0)
 	}
 }
 
@@ -166,7 +170,7 @@ mod tests {
 	use std::sync::{Arc, Weak};
 
 	use crate::{
-		link::{Link, LinkParent},
+		link::{link_data::LinkParent, Link},
 		JointBuilder, JointType, KinematicInterface,
 	};
 

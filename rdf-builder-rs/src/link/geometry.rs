@@ -8,7 +8,9 @@ pub use sphere_geometry::SphereGeometry;
 
 use std::fmt::Debug;
 
-pub trait GeometryInterface: Debug {
+use crate::to_rdf::to_urdf::ToURDF;
+
+pub trait GeometryInterface: Debug + ToURDF {
 	fn volume(&self) -> f32;
 	fn surface_area(&self) -> f32;
 	fn boxed_clone(&self) -> Box<dyn GeometryInterface + Sync + Send>;

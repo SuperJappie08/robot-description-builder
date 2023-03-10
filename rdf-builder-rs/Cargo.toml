@@ -9,7 +9,9 @@ edition = "2021"
 # crate-type = ["cdylib"]
 
 [dependencies]
+itertools = "0.10.5"
 log = { version = "0.4", optional = true }
+quick-xml = "0.27.1"
 thiserror = "1.0.38"
 
 [features]

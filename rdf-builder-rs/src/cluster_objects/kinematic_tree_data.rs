@@ -3,8 +3,14 @@ use std::{
 	sync::{Arc, PoisonError, RwLock, RwLockWriteGuard, Weak},
 };
 
+use itertools::process_results;
+
 use crate::{
-	joint::JointInterface, link::Link, material::Material, ArcLock, Transmission, WeakLock,
+	joint::JointInterface,
+	link::Link,
+	material::Material,
+	to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialMode, URDFMaterialReferences},
+	ArcLock, Transmission, WeakLock,
 };
 
 use crate::cluster_objects::kinematic_data_errors::*;
@@ -190,6 +196,57 @@ impl KinematicTreeData {
 		self.purge_links().unwrap(); //FIXME: UNWRAP?
 
 		//TODO: UPDATE FOR MATERIALS
+	}
+}
+
+impl ToURDF for KinematicTreeData {
+	fn to_urdf(
+		&self,
+		writer: &mut quick_xml::Writer<std::io::Cursor<Vec<u8>>>,
+		urdf_config: &URDFConfig,
+	) -> Result<(), quick_xml::Error> {
+		// Write Materials if use > 2 depending on Config
+		// TODO: Config stuff
+		process_results(
+			self.material_index
+				.read()
+				.unwrap() // FIXME: Is unwrap ok here?
+				.values()
+				.filter(|material| {
+					match urdf_config.material_references {
+						URDFMaterialReferences::AllNamedMaterialOnTop => true,
+						URDFMaterialReferences::OnlyMultiUseMaterials => {
+							Arc::strong_count(material) > 2
+						} // Weak::strong_count(material_ref)
+					}
+				})
+				.map(|material| {
+					material.read().unwrap().to_urdf(
+						writer,
+						&URDFConfig {
+							direct_material_ref: URDFMaterialMode::FullMaterial,
+							..urdf_config.clone()
+						},
+					)
+				}),
+			|iter| iter.collect(),
+		)?;
+
+		self.root_link
+			.read()
+			.unwrap()
+			.to_urdf(writer, urdf_config)?; // FIXME: Is unwrap ok here?
+
+		process_results(
+			self.transmissions
+				.read()
+				.unwrap() // FIXME: Is unwrap ok here?
+				.values()
+				.map(|transmission| transmission.read().unwrap().to_urdf(writer, urdf_config)), // FIXME: Is unwrap ok here?
+			|iter| iter.collect(),
+		)?;
+
+		Ok(())
 	}
 }
 

@@ -1,5 +1,9 @@
 use std::{collections::HashMap, sync::Arc};
 
+use quick_xml::events::attributes::Attribute;
+use quick_xml::name::QName;
+
+use crate::to_rdf::to_urdf::{ToURDF, URDFConfig};
 use crate::{
 	cluster_objects::kinematic_tree_data::KinematicTreeData, joint::JointInterface, link::Link,
 	material::Material, ArcLock, Transmission, WeakLock,
@@ -12,6 +16,12 @@ pub struct Robot {
 	/// The name of the robot
 	pub name: String, //TODO: Temp Pub
 	data: ArcLock<KinematicTreeData>,
+}
+
+impl Robot {
+	pub(crate) fn new(name: String, data: ArcLock<KinematicTreeData>) -> Self {
+		Self { name, data }
+	}
 }
 
 impl KinematicInterface for Robot {
@@ -97,6 +107,24 @@ impl KinematicInterface for Robot {
 			.write()
 			.unwrap() // FIXME: Unwrapping might not be ok
 			.try_add_transmission(transmission)
+	}
+}
+
+impl ToURDF for Robot {
+	fn to_urdf(
+		&self,
+		writer: &mut quick_xml::Writer<std::io::Cursor<Vec<u8>>>,
+		urdf_config: &URDFConfig,
+	) -> Result<(), quick_xml::Error> {
+		let element = writer.create_element("robot").with_attribute(Attribute {
+			key: QName(b"name"),
+			value: self.name.as_bytes().into(),
+		});
+		let data = Arc::clone(&self.data);
+		element.write_inner_content(|writer| {
+			data.try_read().unwrap().to_urdf(writer, urdf_config) // FIXME: Is unwrapping OK?
+		})?;
+		Ok(())
 	}
 }
 

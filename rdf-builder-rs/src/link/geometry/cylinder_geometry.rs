@@ -1,16 +1,43 @@
 use std::f32::consts::{PI, TAU};
 
-use crate::link::geometry::GeometryInterface;
+use quick_xml::{events::attributes::Attribute, name::QName};
 
+use crate::{link::geometry::GeometryInterface, to_rdf::to_urdf::ToURDF};
+
+/// TODO: Figure out if things should be pub
 #[derive(Debug, PartialEq, Clone)]
 pub struct CylinderGeometry {
-	radius: f32,
-	length: f32,
+	pub radius: f32,
+	pub length: f32,
 }
 
 impl CylinderGeometry {
 	pub fn new(radius: f32, length: f32) -> Self {
 		Self { radius, length }
+	}
+}
+
+impl ToURDF for CylinderGeometry {
+	fn to_urdf(
+		&self,
+		writer: &mut quick_xml::Writer<std::io::Cursor<Vec<u8>>>,
+		_urdf_config: &crate::to_rdf::to_urdf::URDFConfig,
+	) -> Result<(), quick_xml::Error> {
+		let element = writer.create_element("geometry");
+		element.write_inner_content(|writer| {
+			writer
+				.create_element("cylinder")
+				.with_attribute(Attribute {
+					key: QName(b"radius"),
+					value: self.radius.to_string().as_bytes().into(),
+				})
+				.with_attribute(Attribute {
+					key: QName(b"length"),
+					value: self.length.to_string().as_bytes().into(),
+				});
+			Ok(())
+		})?;
+		Ok(())
 	}
 }
 
