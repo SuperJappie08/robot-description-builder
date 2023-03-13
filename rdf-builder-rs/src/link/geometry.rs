@@ -27,3 +27,13 @@ impl PartialEq for Box<dyn GeometryInterface + Sync + Send> {
 // 		self.boxed_clone()
 // 	}
 // }
+
+#[cfg(not(feature = "urdf"))]
+mod not_urdf {
+
+	use super::{BoxGeometry, CylinderGeometry, SphereGeometry, ToURDF};
+
+	impl ToURDF for BoxGeometry {}
+	impl ToURDF for CylinderGeometry {}
+	impl ToURDF for SphereGeometry {}
+}

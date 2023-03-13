@@ -2,22 +2,26 @@ mod fixedjoint;
 mod jointbuilder;
 mod smartjointbuilder;
 
+pub use fixedjoint::FixedJoint;
+pub use jointbuilder::{BuildJoint, JointBuilder};
+pub use smartjointbuilder::{OffsetMode, SmartJointBuilder};
+
+#[cfg(any(feature = "urdf", feature = "sdf"))]
+use std::borrow::Cow;
 use std::{
-	borrow::Cow,
 	fmt::Debug,
 	sync::{Arc, Weak},
 };
 
+#[cfg(feature = "urdf")]
+use crate::to_rdf::to_urdf::ToURDF;
 use crate::{
-	cluster_objects::kinematic_tree_data::KinematicTreeData, link::Link, to_rdf::to_urdf::ToURDF,
+	cluster_objects::kinematic_tree_data::KinematicTreeData, link::Link,
 	transform_data::TransformData, ArcLock, WeakLock,
 };
 
-pub use jointbuilder::{BuildJoint, JointBuilder};
+#[cfg(any(feature = "urdf", feature = "sdf"))]
 use quick_xml::{events::attributes::Attribute, name::QName};
-pub use smartjointbuilder::{OffsetMode, SmartJointBuilder};
-
-pub use fixedjoint::FixedJoint;
 
 pub trait JointInterface: Debug {
 	fn get_name(&self) -> String;
@@ -69,6 +73,7 @@ impl Joint {
 	// }
 }
 
+#[cfg(feature = "urdf")]
 impl ToURDF for Box<dyn JointInterface + Send + Sync> {
 	fn to_urdf(
 		&self,
@@ -206,6 +211,7 @@ impl ToString for JointType {
 	}
 }
 
+#[cfg(any(feature = "urdf", feature = "sdf"))]
 impl From<JointType> for Cow<'_, [u8]> {
 	fn from(value: JointType) -> Self {
 		value.to_string().into_bytes().into()

@@ -1,16 +1,17 @@
 // run example with:
-//    cargo run --example example-1
-
+//    cargo run --example example-1 --features urdf
+#[cfg(feature = "urdf")]
 use std::io::prelude::*;
 
+#[cfg(feature = "urdf")]
+use rdf_builder_rs::to_rdf::{
+	to_urdf::{to_urdf, URDFConfig},
+	XMLMode,
+};
 use rdf_builder_rs::{
 	link_data::{
 		geometry::{BoxGeometry, CylinderGeometry, SphereGeometry},
 		Collision, Visual,
-	},
-	to_rdf::{
-		to_urdf::{to_urdf, URDFConfig},
-		XMLMode,
 	},
 	JointBuilder, JointType, KinematicInterface, Link, TransformData,
 };
@@ -94,21 +95,25 @@ fn main() {
 				.to_owned(),
 		)
 		.unwrap();
+	#[cfg(feature = "urdf")]
+	{
+		let mut buffer = to_urdf(
+			robot,
+			URDFConfig {
+				xml_mode: XMLMode::Indent(' ', 4),
+				..Default::default()
+			},
+		)
+		.unwrap()
+		.inner()
+		.to_owned();
 
-	let mut buffer = to_urdf(
-		robot,
-		URDFConfig {
-			xml_mode: XMLMode::Indent(' ', 4),
-			..Default::default()
-		},
-	)
-	.unwrap()
-	.inner()
-	.to_owned();
+		let mut out = String::new();
+		buffer.rewind().unwrap();
+		buffer.read_to_string(&mut out).unwrap();
 
-	let mut out = String::new();
-	buffer.rewind().unwrap();
-	buffer.read_to_string(&mut out).unwrap();
-
-	println!("{}", out);
+		println!("{}", out);
+	}
+	#[cfg(not(feature = "urdf"))]
+	println!("{:?}", robot)
 }

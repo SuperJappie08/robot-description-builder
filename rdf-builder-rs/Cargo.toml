@@ -9,11 +9,13 @@ edition = "2021"
 # crate-type = ["cdylib"]
 
 [dependencies]
-itertools = "0.10.5"
+itertools = { version = "0.10.5", optional = true}
 log = { version = "0.4", optional = true }
-quick-xml = "0.27.1"
+quick-xml = {version = "0.27.1", optional = true}
 thiserror = "1.0.38"
 
 [features]
-default = []
+default = ["urdf"]
+urdf = ["dep:quick-xml", "dep:itertools"]
+sdf = ["dep:quick-xml", "dep:itertools"]
 logging = ["dep:log"]

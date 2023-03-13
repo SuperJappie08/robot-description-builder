@@ -3,15 +3,14 @@ use std::{
 	sync::{Arc, PoisonError, RwLock, RwLockWriteGuard, Weak},
 };
 
+#[cfg(any(feature = "urdf", feature = "sdf"))]
 use itertools::process_results;
 
+#[cfg(feature = "urdf")]
+use crate::to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialMode, URDFMaterialReferences};
 use crate::{
-	joint::JointInterface,
-	link::Link,
-	material::Material,
-	to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialMode, URDFMaterialReferences},
-	transmission::Transmission,
-	ArcLock, WeakLock,
+	joint::JointInterface, link::Link, material::Material, transmission::Transmission, ArcLock,
+	WeakLock,
 };
 
 use crate::cluster_objects::kinematic_data_errors::*;
@@ -200,6 +199,7 @@ impl KinematicTreeData {
 	}
 }
 
+#[cfg(feature = "urdf")]
 impl ToURDF for KinematicTreeData {
 	fn to_urdf(
 		&self,

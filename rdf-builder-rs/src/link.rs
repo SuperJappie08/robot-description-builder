@@ -4,9 +4,11 @@ pub mod helper_functions;
 mod link_parent;
 mod visual;
 
+#[cfg(any(feature = "urdf", feature = "sdf"))]
 use itertools::process_results;
 #[cfg(feature = "logging")]
 use log::{info, log_enabled, Level};
+#[cfg(any(feature = "urdf", feature = "sdf"))]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
 pub mod link_data {
@@ -25,6 +27,8 @@ use std::{
 	sync::{Arc, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard, Weak},
 };
 
+#[cfg(feature = "urdf")]
+use crate::to_rdf::to_urdf::ToURDF;
 use crate::{
 	cluster_objects::{
 		kinematic_data_errors::{AddJointError, AddLinkError, AddMaterialError},
@@ -35,7 +39,6 @@ use crate::{
 	link::collision::Collision,
 	link::link_parent::LinkParent,
 	link::visual::Visual,
-	to_rdf::to_urdf::ToURDF,
 	ArcLock, WeakLock,
 };
 
@@ -211,6 +214,7 @@ impl Link {
 	}
 }
 
+#[cfg(feature = "urdf")]
 impl ToURDF for Link {
 	fn to_urdf(
 		&self,

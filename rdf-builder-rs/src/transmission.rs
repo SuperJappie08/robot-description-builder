@@ -1,4 +1,6 @@
+#[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
+#[cfg(any(feature = "urdf", feature = "sdf"))]
 use quick_xml::{
 	events::{attributes::Attribute, BytesText},
 	name::QName,
@@ -10,6 +12,7 @@ pub struct Transmission {
 	pub name: String,
 }
 
+#[cfg(feature = "urdf")]
 impl ToURDF for Transmission {
 	fn to_urdf(
 		&self,

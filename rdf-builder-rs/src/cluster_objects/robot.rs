@@ -1,8 +1,10 @@
 use std::{collections::HashMap, sync::Arc};
 
-use quick_xml::events::attributes::Attribute;
-use quick_xml::name::QName;
+#[cfg(any(feature = "urdf", feature = "sdf"))]
+use quick_xml::{events::attributes::Attribute, name::QName};
 
+#[cfg(feature = "urdf")]
+use crate::to_rdf::to_urdf::{ToURDF, URDFConfig};
 use crate::{
 	cluster_objects::{
 		kinematic_data_errors::AddTransmissionError, kinematic_tree_data::KinematicTreeData,
@@ -11,7 +13,6 @@ use crate::{
 	joint::JointInterface,
 	link::Link,
 	material::Material,
-	to_rdf::to_urdf::{ToURDF, URDFConfig},
 	transmission::Transmission,
 	ArcLock, WeakLock,
 };
@@ -115,6 +116,7 @@ impl KinematicInterface for Robot {
 	}
 }
 
+#[cfg(feature = "urdf")]
 impl ToURDF for Robot {
 	fn to_urdf(
 		&self,

@@ -1,6 +1,9 @@
+#[cfg(any(feature = "urdf", feature = "sdf"))]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
-use crate::{link::geometry::GeometryInterface, to_rdf::to_urdf::ToURDF};
+use crate::link::geometry::GeometryInterface;
+#[cfg(feature = "urdf")]
+use crate::to_rdf::to_urdf::ToURDF;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct BoxGeometry {
@@ -22,6 +25,7 @@ impl BoxGeometry {
 	}
 }
 
+#[cfg(feature = "urdf")]
 impl ToURDF for BoxGeometry {
 	fn to_urdf(
 		&self,
@@ -62,5 +66,108 @@ impl GeometryInterface for BoxGeometry {
 impl From<BoxGeometry> for Box<dyn GeometryInterface + Sync + Send> {
 	fn from(value: BoxGeometry) -> Self {
 		Box::new(value)
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	#[cfg(feature = "urdf")]
+	use std::io::Seek;
+
+	use crate::link::geometry::{box_geometry::BoxGeometry, GeometryInterface};
+	#[cfg(feature = "urdf")]
+	use crate::to_rdf::to_urdf::{ToURDF, URDFConfig};
+
+	#[test]
+	fn volume() {
+		assert_eq!(BoxGeometry::new(1.0, 1.0, 1.0).volume(), 1.0);
+		assert_eq!(BoxGeometry::new(1.0, 2.0, 3.0).volume(), 6.0);
+		assert_eq!(BoxGeometry::new(9.0, 20.0, 100.0).volume(), 18000.0);
+		assert_eq!(BoxGeometry::new(4.5, 20.0, 100.0).volume(), 9000.0);
+	}
+
+	#[test]
+	fn surface_area() {
+		assert_eq!(BoxGeometry::new(1.0, 1.0, 1.0).surface_area(), 6.);
+		assert_eq!(BoxGeometry::new(1.0, 2.0, 3.0).surface_area(), 22.);
+		assert_eq!(BoxGeometry::new(9.0, 20.0, 100.0).surface_area(), 6160.);
+		assert_eq!(BoxGeometry::new(4.5, 20.0, 100.0).surface_area(), 5080.);
+	}
+
+	#[test]
+	fn boxed_clone() {
+		assert_eq!(
+			BoxGeometry::new(1.0, 1.0, 1.0).boxed_clone(),
+			BoxGeometry::new(1.0, 1.0, 1.0).into()
+		);
+		assert_eq!(
+			BoxGeometry::new(1.0, 2.0, 3.0).boxed_clone(),
+			BoxGeometry::new(1.0, 2.0, 3.0).into()
+		);
+		assert_eq!(
+			BoxGeometry::new(9.0, 20.0, 100.0).boxed_clone(),
+			BoxGeometry::new(9.0, 20.0, 100.0).into()
+		);
+		assert_eq!(
+			BoxGeometry::new(4.5, 20.0, 100.0).boxed_clone(),
+			BoxGeometry::new(4.5, 20.0, 100.0).into()
+		);
+	}
+
+	#[cfg(feature = "urdf")]
+	#[test]
+	fn to_urdf() {
+		{
+			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
+			assert!(BoxGeometry::new(1.0, 1.0, 1.0)
+				.to_urdf(&mut writer, &URDFConfig::default())
+				.is_ok());
+
+			writer.inner().rewind().unwrap();
+
+			assert_eq!(
+				std::io::read_to_string(writer.inner()).unwrap(),
+				String::from(r#"<geometry><box size="1 1 1"/></geometry>"#)
+			);
+		}
+		{
+			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
+			assert!(BoxGeometry::new(1.0, 2.0, 3.0)
+				.to_urdf(&mut writer, &URDFConfig::default())
+				.is_ok());
+
+			writer.inner().rewind().unwrap();
+
+			assert_eq!(
+				std::io::read_to_string(writer.inner()).unwrap(),
+				String::from(r#"<geometry><box size="1 2 3"/></geometry>"#)
+			);
+		}
+		{
+			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
+			assert!(BoxGeometry::new(9.0, 20.0, 100.0)
+				.to_urdf(&mut writer, &URDFConfig::default())
+				.is_ok());
+
+			writer.inner().rewind().unwrap();
+
+			assert_eq!(
+				std::io::read_to_string(writer.inner()).unwrap(),
+				String::from(r#"<geometry><box size="9 20 100"/></geometry>"#)
+			);
+		}
+		{
+			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
+			assert!(BoxGeometry::new(4.5, 20.0, 100.0)
+				.to_urdf(&mut writer, &URDFConfig::default())
+				.is_ok());
+
+			writer.inner().rewind().unwrap();
+
+			assert_eq!(
+				std::io::read_to_string(writer.inner()).unwrap(),
+				String::from(r#"<geometry><box size="4.5 20 100"/></geometry>"#)
+			);
+		}
 	}
 }

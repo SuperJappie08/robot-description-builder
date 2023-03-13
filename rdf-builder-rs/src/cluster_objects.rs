@@ -26,13 +26,13 @@ pub trait KinematicInterface {
 	///
 	/// # Example
 	/// ```
-	/// # use rdf_builder_rs::{KinematicInterface, Link, Joint, JointType};
+	/// # use rdf_builder_rs::{KinematicInterface, Link, JointBuilder, JointType};
 	/// let tree = Link::new("the root link".to_owned());
 	///
 	/// /// This is equivalent to `get_root_link` in this case, since this is a new tree/Link.
 	/// tree.get_newest_link().try_write().unwrap().try_attach_child(
 	///     Link::new("his one and only child".to_owned()).into(),
-	///     Joint::new("just a joint".to_owned(), JointType::Fixed)
+	///     JointBuilder::new("just a joint".to_owned(), JointType::Fixed)
 	/// ).unwrap();
 	///
 	/// assert_eq!(tree.get_root_link().try_read().unwrap().get_name(), "the root link")
@@ -43,14 +43,14 @@ pub trait KinematicInterface {
 	///
 	/// # Example
 	/// ```
-	/// # use rdf_builder_rs::{KinematicInterface, Link, Joint, JointType};
+	/// # use rdf_builder_rs::{KinematicInterface, Link, JointBuilder, JointType};
 	/// let tree = Link::new("the root link".to_owned());
 	///
 	/// assert_eq!(tree.get_newest_link().try_read().unwrap().get_name(), "the root link");
 	///
 	/// tree.get_newest_link().try_write().unwrap().try_attach_child(
 	///     Link::new("his one and only child".to_owned()).into(),
-	///     Joint::new("just a joint".to_owned(), JointType::Fixed)
+	///     JointBuilder::new("just a joint".to_owned(), JointType::Fixed)
 	/// ).unwrap();
 	///
 	/// assert_eq!(tree.get_newest_link().try_read().unwrap().get_name(), "his one and only child");
@@ -59,11 +59,11 @@ pub trait KinematicInterface {
 	///
 	/// long_sub_tree.get_newest_link().try_write().unwrap().try_attach_child(
 	///     Link::new("the latest child".to_owned()).into(),
-	///     Joint::new("second joint".to_owned(), JointType::Fixed)
+	///     JointBuilder::new("second joint".to_owned(), JointType::Fixed)
 	/// ).unwrap();
 	///
 	/// tree.get_root_link().try_write().unwrap().try_attach_child(long_sub_tree.into(),
-	///     Joint::new("third joint".to_owned(), JointType::Fixed)
+	///     JointBuilder::new("third joint".to_owned(), JointType::Fixed)
 	/// ).unwrap();
 	///
 	/// assert_eq!(tree.get_newest_link().try_read().unwrap().get_name(), "the latest child");

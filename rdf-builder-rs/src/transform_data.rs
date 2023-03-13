@@ -1,6 +1,7 @@
-use quick_xml::{events::attributes::Attribute, name::QName};
-
+#[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
+#[cfg(any(feature = "urdf", feature = "sdf"))]
+use quick_xml::{events::attributes::Attribute, name::QName};
 
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct TransformData {
@@ -14,6 +15,7 @@ impl TransformData {
 	}
 }
 
+#[cfg(feature = "urdf")]
 impl ToURDF for TransformData {
 	fn to_urdf(
 		&self,
@@ -41,5 +43,68 @@ impl ToURDF for TransformData {
 
 		element.write_empty()?;
 		Ok(())
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use crate::transform_data::TransformData;
+
+	#[cfg(feature = "urdf")]
+	mod to_urdf {
+		use super::*;
+		use crate::to_rdf::to_urdf::{ToURDF, URDFConfig};
+		use std::io::Seek;
+
+		#[test]
+		fn translation_only() {
+			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
+			assert!(TransformData {
+				translation: Some((1.2, 2.3, 3.4)),
+				..Default::default()
+			}
+			.to_urdf(&mut writer, &URDFConfig::default())
+			.is_ok());
+
+			writer.inner().rewind().unwrap();
+			assert_eq!(
+				std::io::read_to_string(writer.inner()).unwrap(),
+				String::from(r#"<origin xyz="1.2 2.3 3.4"/>"#)
+			)
+		}
+
+		#[test]
+		fn rotation_only() {
+			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
+			assert!(TransformData {
+				rotation: Some((1.2, 2.3, 3.4)),
+				..Default::default()
+			}
+			.to_urdf(&mut writer, &URDFConfig::default())
+			.is_ok());
+
+			writer.inner().rewind().unwrap();
+			assert_eq!(
+				std::io::read_to_string(writer.inner()).unwrap(),
+				String::from(r#"<origin rpy="1.2 2.3 3.4"/>"#)
+			)
+		}
+
+		#[test]
+		fn translation_rotatation() {
+			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
+			assert!(TransformData {
+				translation: Some((1.23, 2.34, 3.45)),
+				rotation: Some((4.56, 5.67, 6.78)),
+			}
+			.to_urdf(&mut writer, &URDFConfig::default())
+			.is_ok());
+
+			writer.inner().rewind().unwrap();
+			assert_eq!(
+				std::io::read_to_string(writer.inner()).unwrap(),
+				String::from(r#"<origin xyz="1.23 2.34 3.45" rpy="4.56 5.67 6.78"/>"#)
+			)
+		}
 	}
 }
