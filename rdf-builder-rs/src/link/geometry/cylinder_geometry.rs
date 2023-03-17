@@ -1,6 +1,6 @@
 use std::f32::consts::{PI, TAU};
 
-#[cfg(any(feature = "urdf", feature = "sdf"))]
+#[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
 use crate::link::geometry::GeometryInterface;
@@ -69,7 +69,7 @@ impl From<CylinderGeometry> for Box<dyn GeometryInterface + Sync + Send> {
 #[cfg(test)]
 mod tests {
 	use std::f32::consts::PI;
-	#[cfg(feature = "urdf")]
+	#[cfg(feature = "xml")]
 	use std::io::Seek;
 
 	use crate::link::geometry::{cylinder_geometry::CylinderGeometry, GeometryInterface};

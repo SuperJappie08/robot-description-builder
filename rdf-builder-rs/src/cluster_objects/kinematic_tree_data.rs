@@ -3,7 +3,7 @@ use std::{
 	sync::{Arc, PoisonError, RwLock, RwLockWriteGuard, Weak},
 };
 
-#[cfg(any(feature = "urdf", feature = "sdf"))]
+#[cfg(feature = "xml")]
 use itertools::process_results;
 
 #[cfg(feature = "urdf")]

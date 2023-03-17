@@ -1,6 +1,6 @@
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
-#[cfg(any(feature = "urdf", feature = "sdf"))]
+#[cfg(feature = "xml")]
 use quick_xml::{
 	events::{attributes::Attribute, BytesText},
 	name::QName,

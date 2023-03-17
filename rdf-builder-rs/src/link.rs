@@ -1,18 +1,20 @@
 mod collision;
 mod geometry;
 pub mod helper_functions;
+mod inertial;
 mod link_parent;
 mod visual;
 
-#[cfg(any(feature = "urdf", feature = "sdf"))]
+#[cfg(feature = "xml")]
 use itertools::process_results;
 #[cfg(feature = "logging")]
 use log::{info, log_enabled, Level};
-#[cfg(any(feature = "urdf", feature = "sdf"))]
+#[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
 pub mod link_data {
 	pub use crate::link::collision::Collision;
+	pub use crate::link::inertial::InertialData;
 	pub use crate::link::link_parent::LinkParent;
 	pub use crate::link::visual::Visual;
 	pub mod geometry {
@@ -37,6 +39,7 @@ use crate::{
 	},
 	joint::{BuildJoint, JointInterface},
 	link::collision::Collision,
+	link::inertial::InertialData,
 	link::link_parent::LinkParent,
 	link::visual::Visual,
 	ArcLock, WeakLock,
@@ -65,14 +68,26 @@ use crate::{
 // 	fn add_collider(&mut self, Collider: Collision) -> Self;
 // }
 
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum ConnectionPoint {
+	/// Point at Link connection point (Link Origin without translation)
+	Begin,
+	CenterOfVolume,
+	CenterOfMass,
+	End,
+}
+
 #[derive(Debug)]
 pub struct Link {
 	pub(crate) name: String,
 	pub(crate) tree: WeakLock<KinematicTreeData>,
 	direct_parent: Option<link_data::LinkParent>,
 	child_joints: Vec<ArcLock<Box<dyn JointInterface + Sync + Send>>>,
+	inertial: Option<InertialData>,
 	visuals: Vec<link_data::Visual>,
 	colliders: Vec<link_data::Collision>,
+	/// TODO: Maybe array, or thing
+	smart_connection_points: HashMap<ConnectionPoint, (f32, f32, f32)>,
 }
 
 impl Link {
@@ -86,8 +101,10 @@ impl Link {
 			tree: Weak::new(),
 			direct_parent: None,
 			child_joints: Vec::new(),
+			inertial: None,
 			visuals: Vec::new(),
 			colliders: Vec::new(),
+			smart_connection_points: HashMap::new(),
 		};
 
 		let tree = KinematicTreeData::new_link(link);
@@ -173,6 +190,7 @@ impl Link {
 				.iter()
 				.for_each(|joint| new_ptree.try_add_joint(Arc::clone(joint)).unwrap());
 			// TODO: Add materials, and other stuff
+			// The Material Copying might get complex, because I depend on the Ref_Count for determining how to display it.
 		}
 		self.child_joints.iter().for_each(|joint| {
 			joint.write().unwrap().add_to_tree(new_parent_tree); // FIXME: Probably shouldn't unwrap
@@ -212,6 +230,10 @@ impl Link {
 		self.colliders.push(collider);
 		self
 	}
+
+	pub fn get_inertial(&self) -> &Option<InertialData> {
+		&self.inertial
+	}
 }
 
 #[cfg(feature = "urdf")]
@@ -226,7 +248,9 @@ impl ToURDF for Link {
 			value: self.name.clone().as_bytes().into(),
 		});
 		element.write_inner_content(|writer| -> Result<(), quick_xml::Error> {
-			// TODO: Add Inertial Data
+			if let Some(inertial_data) = self.get_inertial() {
+				inertial_data.to_urdf(writer, urdf_config)?;
+			}
 
 			process_results(
 				self.visuals

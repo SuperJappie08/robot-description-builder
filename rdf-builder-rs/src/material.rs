@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-#[cfg(any(feature = "urdf", feature = "sdf"))]
+#[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
 #[cfg(feature = "urdf")]

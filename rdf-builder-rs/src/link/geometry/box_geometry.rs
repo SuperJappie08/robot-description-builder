@@ -1,4 +1,4 @@
-#[cfg(any(feature = "urdf", feature = "sdf"))]
+#[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
 use crate::link::geometry::GeometryInterface;
@@ -71,7 +71,7 @@ impl From<BoxGeometry> for Box<dyn GeometryInterface + Sync + Send> {
 
 #[cfg(test)]
 mod tests {
-	#[cfg(feature = "urdf")]
+	#[cfg(feature = "xml")]
 	use std::io::Seek;
 
 	use crate::link::geometry::{box_geometry::BoxGeometry, GeometryInterface};

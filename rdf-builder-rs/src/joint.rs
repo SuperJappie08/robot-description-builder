@@ -6,7 +6,7 @@ pub use fixedjoint::FixedJoint;
 pub use jointbuilder::{BuildJoint, JointBuilder};
 pub use smartjointbuilder::{OffsetMode, SmartJointBuilder};
 
-#[cfg(any(feature = "urdf", feature = "sdf"))]
+#[cfg(feature = "xml")]
 use std::borrow::Cow;
 use std::{
 	fmt::Debug,
@@ -20,7 +20,7 @@ use crate::{
 	transform_data::TransformData, ArcLock, WeakLock,
 };
 
-#[cfg(any(feature = "urdf", feature = "sdf"))]
+#[cfg(any(feature = "xml"))]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
 pub trait JointInterface: Debug {
@@ -211,7 +211,7 @@ impl ToString for JointType {
 	}
 }
 
-#[cfg(any(feature = "urdf", feature = "sdf"))]
+#[cfg(any(feature = "xml"))]
 impl From<JointType> for Cow<'_, [u8]> {
 	fn from(value: JointType) -> Self {
 		value.to_string().into_bytes().into()

@@ -16,6 +16,7 @@ thiserror = "1.0.38"
 
 [features]
 default = ["urdf"]
-urdf = ["dep:quick-xml", "dep:itertools"]
-sdf = ["dep:quick-xml", "dep:itertools"]
+xml = ["dep:quick-xml", "dep:itertools"]
+urdf = ["xml"]
+sdf = ["xml"]
 logging = ["dep:log"]

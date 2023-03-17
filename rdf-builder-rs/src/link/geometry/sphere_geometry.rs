@@ -1,6 +1,6 @@
 use std::f32::consts::{FRAC_PI_3, PI};
 
-#[cfg(any(feature = "urdf", feature = "sdf"))]
+#[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
 use crate::link::geometry::GeometryInterface;
@@ -63,7 +63,7 @@ impl From<SphereGeometry> for Box<dyn GeometryInterface + Sync + Send> {
 #[cfg(test)]
 mod tests {
 	use std::f32::consts::{FRAC_PI_3, PI};
-	#[cfg(feature = "urdf")]
+	#[cfg(feature = "xml")]
 	use std::io::Seek;
 
 	use crate::link::geometry::{sphere_geometry::SphereGeometry, GeometryInterface};
