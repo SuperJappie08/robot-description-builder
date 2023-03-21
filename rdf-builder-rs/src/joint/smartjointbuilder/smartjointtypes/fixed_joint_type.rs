@@ -1,3 +1,5 @@
+use std::sync::Weak;
+
 use crate::{
 	cluster_objects::kinematic_tree_data::KinematicTreeData,
 	joint::{
@@ -12,7 +14,7 @@ use crate::{
 	},
 	link::Link,
 	transform_data::TransformData,
-	ArcLock, JointInterface, WeakLock,
+	ArcLock, JointInterface, WeakLock, OffsetMode,
 };
 
 #[derive(Debug, Default, Clone)]
@@ -38,12 +40,13 @@ impl BuildJoint
 		Box::new(FixedJoint::new(
 			self.name,
 			tree,
-			parent_link,
+			Weak::clone(&parent_link),
 			child_link,
+			// FIXME: This is incoorect because it doesn't take rotations into account
 			TransformData {
 				translation: self.offset.and_then(|mode| match mode {
-					crate::OffsetMode::Offset(x, y, z) => Some((x, y, z)),
-					crate::OffsetMode::FigureItOut => todo!("Not implemented yet"),
+					OffsetMode::Offset(x, y, z) => Some((x, y, z)),
+					OffsetMode::FigureItOut(_) => parent_link.upgrade().unwrap().try_read().unwrap().get_end_point(),
 				}), // FIXME:
 				rotation: self.rotation,
 			},

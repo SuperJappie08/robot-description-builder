@@ -20,6 +20,16 @@ pub mod link_data {
 	pub mod geometry {
 		pub use crate::link::geometry::*;
 	}
+
+	#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum ConnectionPoint {
+	/// Point at Link connection point (Link Origin without translation)
+	Begin,
+	CenterOfVolume,
+	CenterOfMass,
+	End,
+}
+
 }
 
 use thiserror::Error;
@@ -68,14 +78,6 @@ use crate::{
 // 	fn add_collider(&mut self, Collider: Collision) -> Self;
 // }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub enum ConnectionPoint {
-	/// Point at Link connection point (Link Origin without translation)
-	Begin,
-	CenterOfVolume,
-	CenterOfMass,
-	End,
-}
 
 #[derive(Debug)]
 pub struct Link {
@@ -87,7 +89,7 @@ pub struct Link {
 	visuals: Vec<link_data::Visual>,
 	colliders: Vec<link_data::Collision>,
 	/// TODO: Maybe array, or thing
-	smart_connection_points: HashMap<ConnectionPoint, (f32, f32, f32)>,
+	end_point: Option<(f32, f32, f32)>,
 }
 
 impl Link {
@@ -104,7 +106,7 @@ impl Link {
 			inertial: None,
 			visuals: Vec::new(),
 			colliders: Vec::new(),
-			smart_connection_points: HashMap::new(),
+			end_point: None
 		};
 
 		let tree = KinematicTreeData::new_link(link);
@@ -233,6 +235,10 @@ impl Link {
 
 	pub fn get_inertial(&self) -> &Option<InertialData> {
 		&self.inertial
+	}
+
+	pub fn get_end_point(&self) -> Option<(f32, f32, f32)> {
+		self.end_point
 	}
 }
 

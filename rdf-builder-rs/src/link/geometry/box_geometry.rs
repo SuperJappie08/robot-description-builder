@@ -61,6 +61,14 @@ impl GeometryInterface for BoxGeometry {
 	fn boxed_clone(&self) -> Box<dyn GeometryInterface + Sync + Send> {
 		Box::new(self.clone())
 	}
+
+	// fn get_type(&self) -> GeometryType {
+	// 	GeometryType::Box
+	// }
+
+	// fn get_data(&self) -> GeometryData {
+	// 	GeometryData::Box(self.clone())
+	// }
 }
 
 impl From<BoxGeometry> for Box<dyn GeometryInterface + Sync + Send> {

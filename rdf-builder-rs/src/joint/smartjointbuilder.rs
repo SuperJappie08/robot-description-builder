@@ -5,12 +5,14 @@ use smartparams::{NoAxis, NoCalibration, NoDynamics, NoLimit, NoMimic, NoSafetyC
 
 pub use smartjointtypes::{FixedType, NoType, RevoluteType};
 
+use crate::link::link_data::ConnectionPoint;
+
 use self::smartparams::smart_joint_datatraits;
 
 #[derive(Debug)]
 pub enum OffsetMode {
 	Offset(f32, f32, f32),
-	FigureItOut,
+	FigureItOut(ConnectionPoint),
 }
 
 #[derive(Debug, Default)]

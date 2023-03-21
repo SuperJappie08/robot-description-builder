@@ -58,6 +58,14 @@ impl GeometryInterface for CylinderGeometry {
 	fn boxed_clone(&self) -> Box<dyn GeometryInterface + Sync + Send> {
 		Box::new(self.clone())
 	}
+
+	// fn get_type(&self) -> GeometryType {
+	// 	GeometryType::Cylinder
+	// }
+
+	// fn get_data(&self) -> GeometryData {
+	// 	GeometryData::Cylinder(self.clone())
+	// }
 }
 
 impl From<CylinderGeometry> for Box<dyn GeometryInterface + Sync + Send> {
