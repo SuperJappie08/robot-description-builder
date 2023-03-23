@@ -4,6 +4,7 @@ pub mod helper_functions;
 mod inertial;
 mod link_parent;
 mod visual;
+// mod linkbuilder;
 
 #[cfg(feature = "xml")]
 use itertools::process_results;
@@ -289,10 +290,29 @@ impl ToURDF for Link {
 
 impl PartialEq for Link {
 	fn eq(&self, other: &Self) -> bool {
-		self.name == other.name
+		Weak::ptr_eq(&self.me, &other.me)
+			&& self.name == other.name
 			&& self.direct_parent == other.direct_parent
-			// && self.child_joints == other.child_joints // FIXME: Fix this
 			&& self.tree.ptr_eq(&other.tree)
+			&& self.inertial == other.inertial
+			&& self.visuals.len() == other.visuals.len()
+			&& self.colliders.len() == other.colliders.len()
+			&& self.child_joints.len() == other.child_joints.len()
+			&& self
+				.visuals
+				.iter()
+				.zip(other.visuals.iter())
+				.all(|(own_visual, other_visual)| own_visual == other_visual)
+			&& self
+				.colliders
+				.iter()
+				.zip(other.colliders.iter())
+				.all(|(own_collider, other_collider)| own_collider == other_collider)
+			&& self
+				.child_joints
+				.iter()
+				.zip(other.child_joints.iter())
+				.all(|(own_joint, other_joint)| Arc::ptr_eq(own_joint, other_joint))
 	}
 }
 

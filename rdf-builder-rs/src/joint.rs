@@ -203,10 +203,13 @@ impl ToURDF for Joint {
 
 impl PartialEq for Joint {
 	fn eq(&self, other: &Self) -> bool {
-		self.name == other.name
+		Weak::ptr_eq(&self.me, &other.me)
+			&& self.name == other.name
+			&& Weak::ptr_eq(&self.tree, &other.tree)
 			&& Weak::ptr_eq(&self.parent_link, &other.parent_link)
 			&& Arc::ptr_eq(&self.child_link, &other.child_link)
 			&& self.joint_type == other.joint_type
+			&& self.origin == other.origin
 	}
 }
 
@@ -246,6 +249,7 @@ impl From<JointType> for Cow<'_, [u8]> {
 #[cfg(test)]
 mod tests {
 	use crate::{JointBuilder, KinematicInterface, Link, OffsetMode, SmartJointBuilder};
+	use test_log::test;
 
 	#[test]
 	fn rebuild() {

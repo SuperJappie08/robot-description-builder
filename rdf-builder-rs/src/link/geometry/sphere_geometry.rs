@@ -73,6 +73,7 @@ mod tests {
 	use std::f32::consts::{FRAC_PI_3, PI};
 	#[cfg(feature = "xml")]
 	use std::io::Seek;
+	use test_log::test;
 
 	use crate::link::geometry::{sphere_geometry::SphereGeometry, GeometryInterface};
 	#[cfg(feature = "urdf")]

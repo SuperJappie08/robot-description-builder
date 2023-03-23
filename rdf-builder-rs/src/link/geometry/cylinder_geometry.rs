@@ -79,6 +79,7 @@ mod tests {
 	use std::f32::consts::PI;
 	#[cfg(feature = "xml")]
 	use std::io::Seek;
+	use test_log::test;
 
 	use crate::link::geometry::{cylinder_geometry::CylinderGeometry, GeometryInterface};
 

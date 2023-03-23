@@ -72,6 +72,10 @@ impl KinematicTreeData {
 	) -> Result<(), AddMaterialError> {
 		let binding = material.read()?;
 		let name = binding.get_name();
+
+		#[cfg(any(feature = "logging", test))]
+		log::debug!(target: "KinematicTreeData","Trying to attach Material: {:?}", binding);
+
 		if name.is_none() {
 			return Err(AddMaterialError::NoName);
 		}
@@ -96,6 +100,10 @@ impl KinematicTreeData {
 	pub(crate) fn try_add_link(&mut self, link: ArcLock<Link>) -> Result<(), AddLinkError> {
 		let link_binding = link.read()?;
 		let name = link_binding.get_name();
+
+		#[cfg(any(feature = "logging", test))]
+		log::debug!(target: "KinematicTreeData","Trying to attach Link: {}", name);
+
 		let other = { self.links.read()?.get(name.into()) }.map(Weak::clone);
 		if let Some(preexisting_link) = other.and_then(|weak_link| weak_link.upgrade()) {
 			if Arc::ptr_eq(&preexisting_link, &link) {
@@ -115,10 +123,12 @@ impl KinematicTreeData {
 	}
 
 	pub(crate) fn try_add_joint(&mut self, joint: &ArcLock<Joint>) -> Result<(), AddJointError> {
-		#[cfg(any(feature = "logging", test))]
-		log::debug!(target: "KinematicTreeData","Trying to attach Joint: {}", joint.read().unwrap().get_name());
 		let joint_binding = joint.read()?;
 		let name = joint_binding.get_name();
+
+		#[cfg(any(feature = "logging", test))]
+		log::debug!(target: "KinematicTreeData","Trying to attach Joint: {}", name);
+
 		let other = { self.joints.read()?.get(name) }.map(Weak::clone);
 		if let Some(preexisting_joint) = other.and_then(|weak_joint| weak_joint.upgrade()) {
 			if Arc::ptr_eq(&preexisting_joint, &joint) {
@@ -140,7 +150,7 @@ impl KinematicTreeData {
 		&mut self,
 		transmission: ArcLock<Transmission>,
 	) -> Result<(), AddTransmissionError> {
-		let name = transmission.read()?.name.clone();
+		let name = transmission.read()?.get_name().clone();
 		let other_transmission = { self.transmissions.read()?.get(&name) }.map(Arc::clone);
 		if let Some(preexisting_transmission) = other_transmission {
 			if Arc::ptr_eq(&preexisting_transmission, &transmission) {
@@ -249,6 +259,8 @@ impl ToURDF for KinematicTreeData {
 impl PartialEq for KinematicTreeData {
 	fn eq(&self, other: &Self) -> bool {
 		Arc::ptr_eq(&self.root_link, &other.root_link)
+			&& Weak::ptr_eq(&self.newest_link, &other.newest_link)
+		// TODO: Check other things
 		// && self.material_index == other.material_index
 		// && self.transmissions == other.transmissions
 	}

@@ -12,6 +12,12 @@ pub struct Transmission {
 	pub name: String,
 }
 
+impl Transmission {
+	pub fn get_name(&self) -> &String {
+		&self.name
+	}
+}
+
 #[cfg(feature = "urdf")]
 impl ToURDF for Transmission {
 	fn to_urdf(
@@ -23,7 +29,7 @@ impl ToURDF for Transmission {
 			.create_element("transmission")
 			.with_attribute(Attribute {
 				key: QName(b"name"),
-				value: self.name.clone().as_bytes().into(),
+				value: self.get_name().as_bytes().into(),
 			})
 			.write_text_content(BytesText::new("<!-- TODO: TRANSMISSIONS -->"))?;
 		Ok(())

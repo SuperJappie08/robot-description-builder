@@ -76,11 +76,11 @@ impl ToURDF for Visual {
 
 			self.get_geometry().to_urdf(writer, urdf_config)?;
 			if let Some(material) = self.get_material() {
+				let has_name =  material.read().unwrap().get_name().is_some(); // FIXME: Check if unwrap is ok here?
 				let material_config = URDFConfig {
 					direct_material_ref: match urdf_config.material_references {
 						URDFMaterialReferences::AllNamedMaterialOnTop => {
-							if material.read().unwrap().get_name().is_some()
-							// FIXME: Check if unwrap is ok here?
+							if has_name
 							{
 								URDFMaterialMode::Referenced
 							} else {
@@ -88,8 +88,9 @@ impl ToURDF for Visual {
 							}
 						}
 						URDFMaterialReferences::OnlyMultiUseMaterials => {
-							println!("{}", Arc::strong_count(material));
-							if Arc::strong_count(&material) > 2 {
+							#[cfg(any(feature = "logging", test))]
+							log::info!(target: "ToURDF::Visual","The Material {} has a strong count of {}", material.read().unwrap().get_name().to_owned().unwrap(), Arc::strong_count(material));
+							if has_name && Arc::strong_count(&material) > 2 {
 								URDFMaterialMode::Referenced
 							} else {
 								URDFMaterialMode::FullMaterial
@@ -139,6 +140,7 @@ impl Clone for Visual {
 #[cfg(test)]
 mod tests {
 	use std::f32::consts::PI;
+	use test_log::test;
 
 	use crate::{
 		link::{
@@ -151,7 +153,7 @@ mod tests {
 
 	#[cfg(feature = "urdf")]
 	mod to_urdf {
-		use super::*;
+		use super::{test, *};
 		use crate::to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialReferences};
 		use std::io::Seek;
 

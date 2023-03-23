@@ -81,6 +81,7 @@ impl From<BoxGeometry> for Box<dyn GeometryInterface + Sync + Send> {
 mod tests {
 	#[cfg(feature = "xml")]
 	use std::io::Seek;
+	use test_log::test;
 
 	use crate::link::geometry::{box_geometry::BoxGeometry, GeometryInterface};
 	#[cfg(feature = "urdf")]
