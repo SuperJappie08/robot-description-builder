@@ -1,3 +1,4 @@
+/* DEPRECATED */
 use std::sync::{Arc, RwLock, Weak};
 
 use crate::{

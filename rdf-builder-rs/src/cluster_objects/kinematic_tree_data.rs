@@ -12,8 +12,7 @@ use itertools::process_results;
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialMode, URDFMaterialReferences};
 use crate::{
-	joint::JointInterface, link::Link, material::Material, transmission::Transmission, ArcLock,
-	WeakLock,
+	joint::Joint, link::Link, material::Material, transmission::Transmission, ArcLock, WeakLock,
 };
 
 use crate::cluster_objects::kinematic_data_errors::*;
@@ -27,7 +26,7 @@ pub struct KinematicTreeData {
 	pub(crate) material_index: ArcLock<HashMap<String, ArcLock<Material>>>,
 	// TODO: Why is this an `Rc<RefCell<_>`?
 	pub(crate) links: ArcLock<HashMap<String, WeakLock<Link>>>,
-	pub(crate) joints: ArcLock<HashMap<String, WeakLock<Box<dyn JointInterface + Sync + Send>>>>,
+	pub(crate) joints: ArcLock<HashMap<String, WeakLock<Joint>>>,
 	pub(crate) transmissions: ArcLock<HashMap<String, ArcLock<Transmission>>>,
 	pub(crate) newest_link: WeakLock<Link>,
 	// is_rigid: bool // ? For gazebo -> TO AdvancedSimulationData [ASD]
@@ -119,10 +118,7 @@ impl KinematicTreeData {
 		}
 	}
 
-	pub(crate) fn try_add_joint(
-		&mut self,
-		joint: &ArcLock<Box<dyn JointInterface + Sync + Send>>,
-	) -> Result<(), AddJointError> {
+	pub(crate) fn try_add_joint(&mut self, joint: &ArcLock<Joint>) -> Result<(), AddJointError> {
 		#[cfg(feature = "logging")]
 		debug!(target: "KinematicTreeData","Trying to attach Joint: {}", joint.read().unwrap().get_name());
 		let joint_binding = joint.read()?;
@@ -171,12 +167,7 @@ impl KinematicTreeData {
 	/// TODO: Maybe make pub(crate), since you can not remove a `joint` normally from outside the crate. and cleanup should be done by the crate.
 	pub fn purge_joints(
 		&mut self,
-	) -> Result<
-		(),
-		PoisonError<
-			RwLockWriteGuard<'_, HashMap<String, WeakLock<Box<dyn JointInterface + Sync + Send>>>>,
-		>,
-	> {
+	) -> Result<(), PoisonError<RwLockWriteGuard<'_, HashMap<String, WeakLock<Joint>>>>> {
 		let mut joints = self.joints.write()?; // TODO: Not so nice -> So Error
 		joints.retain(|_, weak_joint| weak_joint.upgrade().is_some());
 		joints.shrink_to_fit();

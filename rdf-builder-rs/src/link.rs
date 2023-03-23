@@ -46,7 +46,7 @@ use crate::{
 		kinematic_tree_data::KinematicTreeData,
 		KinematicInterface, KinematicTree,
 	},
-	joint::{BuildJoint, JointInterface},
+	joint::{BuildJoint, Joint},
 	link::collision::Collision,
 	link::inertial::InertialData,
 	link::link_parent::LinkParent,
@@ -82,7 +82,7 @@ pub struct Link {
 	pub(crate) name: String,
 	pub(crate) tree: WeakLock<KinematicTreeData>,
 	direct_parent: Option<link_data::LinkParent>,
-	child_joints: Vec<ArcLock<Box<dyn JointInterface + Sync + Send>>>,
+	child_joints: Vec<ArcLock<Joint>>,
 	inertial: Option<InertialData>,
 	visuals: Vec<link_data::Visual>,
 	colliders: Vec<link_data::Collision>,
@@ -131,7 +131,7 @@ impl Link {
 		&self.name
 	}
 
-	pub fn get_joints(&self) -> Vec<ArcLock<Box<dyn JointInterface + Sync + Send>>> {
+	pub fn get_joints(&self) -> Vec<ArcLock<Joint>> {
 		self.child_joints.iter().map(Arc::clone).collect()
 	}
 

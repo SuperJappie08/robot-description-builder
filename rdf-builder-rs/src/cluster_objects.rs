@@ -4,7 +4,7 @@ use crate::{
 	cluster_objects::{
 		kinematic_data_errors::AddTransmissionError, kinematic_tree_data::KinematicTreeData,
 	},
-	joint::JointInterface,
+	joint::Joint,
 	link::Link,
 	material::Material,
 	transmission::Transmission,
@@ -76,14 +76,12 @@ pub trait KinematicInterface {
 
 	// These do not have to be mutable
 	fn get_links(&self) -> ArcLock<HashMap<String, WeakLock<Link>>>;
-	fn get_joints(
-		&self,
-	) -> ArcLock<HashMap<String, WeakLock<Box<dyn JointInterface + Sync + Send>>>>;
+	fn get_joints(&self) -> ArcLock<HashMap<String, WeakLock<Joint>>>;
 	fn get_materials(&self) -> ArcLock<HashMap<String, ArcLock<Material>>>;
 	fn get_transmissions(&self) -> ArcLock<HashMap<String, ArcLock<Transmission>>>;
 
 	fn get_link(&self, name: &str) -> Option<ArcLock<Link>>;
-	fn get_joint(&self, name: &str) -> Option<ArcLock<Box<dyn JointInterface + Sync + Send>>>;
+	fn get_joint(&self, name: &str) -> Option<ArcLock<Joint>>;
 	fn get_material(&self, name: &str) -> Option<ArcLock<Material>>;
 	fn get_transmission(&self, name: &str) -> Option<ArcLock<Transmission>>;
 

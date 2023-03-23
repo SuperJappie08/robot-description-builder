@@ -5,7 +5,7 @@ use crate::{
 			smartparams::{smart_joint_datatraits, smart_joint_specification, WithLimit},
 			SmartJointBuilder,
 		},
-		BuildJoint, JointInterface,
+		BuildJoint, Joint,
 	},
 	link::Link,
 	ArcLock, WeakLock,
@@ -35,7 +35,7 @@ where
 		_tree: WeakLock<KinematicTreeData>,
 		_parent_link: WeakLock<Link>,
 		_child_link: ArcLock<Link>,
-	) -> ArcLock<Box<(dyn JointInterface + Send + Sync)>> {
+	) -> ArcLock<Joint> {
 		todo!("Create a `RevoluteJoint`")
 		// crate::Joint { name: , tree: (), parent_link: (), child_link: (), joint_type: () }
 	}

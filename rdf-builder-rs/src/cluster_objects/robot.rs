@@ -10,7 +10,7 @@ use crate::{
 		kinematic_data_errors::AddTransmissionError, kinematic_tree_data::KinematicTreeData,
 		KinematicInterface,
 	},
-	joint::JointInterface,
+	joint::Joint,
 	link::Link,
 	material::Material,
 	transmission::Transmission,
@@ -52,9 +52,7 @@ impl KinematicInterface for Robot {
 		Arc::clone(&self.data.read().unwrap().links) // FIXME: Unwrapping might not be ok
 	}
 
-	fn get_joints(
-		&self,
-	) -> ArcLock<HashMap<String, WeakLock<Box<dyn JointInterface + Sync + Send>>>> {
+	fn get_joints(&self) -> ArcLock<HashMap<String, WeakLock<Joint>>> {
 		Arc::clone(&self.data.read().unwrap().joints) // FIXME: Unwrapping might not be ok
 	}
 
@@ -77,7 +75,7 @@ impl KinematicInterface for Robot {
 			.and_then(|weak_link| weak_link.upgrade())
 	}
 
-	fn get_joint(&self, name: &str) -> Option<ArcLock<Box<dyn JointInterface + Sync + Send>>> {
+	fn get_joint(&self, name: &str) -> Option<ArcLock<Joint>> {
 		self.data
 			.read()
 			.unwrap() // FIXME: Unwrapping might not be ok

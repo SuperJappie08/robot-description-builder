@@ -10,14 +10,14 @@ classDiagram
     KinematicTreeData : ~ Weak~RwLock~Link~~ newest_link
     KinematicTreeData : ~ Arc~RwLock~HashMap~String，Arc~RwLock~Material~~~~~ material_index 
     KinematicTreeData : ~ Arc~RwLock~HashMap~String，Weak~RwLock~Link~~~~~ links
-    KinematicTreeData : ~ Arc~RwLock~HashMap~String，Weak~RwLock~Box~JointInterface+Sync+Send~~~~~~ joints
+    KinematicTreeData : ~ Arc~RwLock~HashMap~String，Weak~RwLock~Joint~~~~~ joints
     KinematicTreeData : ~ Arc~RwLock~HashMap~String，Arc~RwLock~Transmission~~~~~ transmissions
 
     KinematicTreeData : ~ new_link(Link root_link) Arc~RwLock~KinematicTreeData~~
     
     KinematicTreeData : ~ try_add_material(&mut self, Arc~RwLock~Material~~ material) Result~()，AddMaterialError~
     KinematicTreeData : ~ try_add_link(&mut self, Arc~RwLock~Link~~ link) Result~()，AddLinkError~
-    KinematicTreeData : ~ try_add_joint(&mut self, &Arc~RwLock~Box~JointInterface+Sync+Send~~~ joint) Result~()，AddJointError~
+    KinematicTreeData : ~ try_add_joint(&mut self, &Arc~RwLock~Joint~~~ joint) Result~()，AddJointError~
     KinematicTreeData : ~ try_add_transmission(&mut self, &Arc~RwLock~Transmission~~ transmission) Result~()，AddTransmissionError~
 
     
@@ -38,21 +38,8 @@ classDiagram
     }
 
 %% START JointInterface
-    class JointInterface
-    <<interface>> JointInterface         
-    %% Public+Internal API
-    JointInterface : + get_name(&self) &String
-    %% Public+Internal API
-    JointInterface : + get_jointtype(&self) JointType
-
-    %% Public+Internal API
-    JointInterface : + get_parent_link(&self) Arc~RwLock~Link~~
-    %% Public+Internal API
-    JointInterface : + get_child_link(&self) Arc~RwLock~Link~~
-
-    JointInterface : + rebuild(&self) JointBuilder
-
-    JointInterface : + get_selfref(&self) Weak~RwLock~Box~JointInterface+Sync+Send~~~
+    %% class JointInterface
+    %% <<interface>> JointInterface         
 %% END JointInterface
 
     class JointType {
@@ -65,10 +52,10 @@ classDiagram
         Planar
     }
 
-    JointType --* FixedJoint
-    JointInterface <|-- FixedJoint
+    %% JointType --* FixedJoint
+    %% JointInterface <|-- FixedJoint
 
-    JointType --* JointInterface
+    JointType --* Joint
 
     class Joint {
         - String name
@@ -77,7 +64,23 @@ classDiagram
         - Weak~RwLock~Link~~ parent_link
         - Arc~RwLock~Link~~ child_link
     }
-    JointInterface <|-- Joint
+
+        %% Public+Internal API
+    Joint : + get_name(&self) &String
+    %% Public+Internal API
+    Joint : + get_jointtype(&self) JointType
+
+    %% Public+Internal API
+    Joint : + get_parent_link(&self) Arc~RwLock~Link~~
+    %% Public+Internal API
+    Joint : + get_child_link(&self) Arc~RwLock~Link~~
+
+    Joint : + rebuild(&self) JointBuilder
+
+    Joint : + get_selfref(&self) Weak~RwLock~Joint~~
+
+
+    %% JointInterface <|-- Joint
 
 %% START Link
     class Link
@@ -85,7 +88,7 @@ classDiagram
     Link : ~ Weak~RwLock~KinematicTreeData~~ tree
     Link : - LinkParent direct_parent
 
-    Link : - Vec~Arc~RwLock~Box~JointInterface+Sync+Send~~~~ child_joints
+    Link : - Vec~Arc~RwLock~Joint~~~ child_joints
 
     Link : - Option~InertialData~ inertial
     Link : - Vec~Visual~ visuals
@@ -98,7 +101,7 @@ classDiagram
     Link : + get_name(&self) &String
     Link : + get_parent(&self) Option~LinkParent~
     Link : ~ set_parent(&mut self, LinkParent parent)
-    Link : + get_joints(&self) Vec~Arc~RwLock~JointInterface+Sync+Send~~~
+    Link : + get_joints(&self) Vec~Arc~RwLock~Joint~~
     Link : + try_attach_child(&mut self, Box~KinematicInterface~ tree, impl BuildJoint joint_builder) Result~()，TryAttachChildError~
     Link : ~ add_to_tree(&mut self, &Arc~RwLock~KinematicTreeData~~ new_parent)
 
@@ -112,7 +115,7 @@ classDiagram
 
     Link --> ToURDF
     Link --* "*" KinematicTreeData : links
-    Link "*" o--o "2" JointInterface : parent_link child_link
+    Link "*" o--o "2" Joint : parent_link child_link
 %% END Link
 
 %% START ToURDF
@@ -120,7 +123,7 @@ class ToURDF
 <<interface>> ToURDF
 ToURDF : + to_urdf(&self, &mut Writer~Cursor~Vec~u8~~~ writer, URDFConfig urdf_config) Result~()，quick_xml_Error~
 
-ToURDF <|-- JointInterface
+%% ToURDF <|-- JointInterface
 ToURDF <-- KinematicTreeData
 ToURDF <-- Joint
 %% END ToURDF
@@ -128,7 +131,7 @@ ToURDF <-- Joint
 %% START LinkParent
 class LinkParent{
     <<enumeration>>
-    Joint(Weak~RwLock~Box~JointInterface+Sync+Send~~~)
+    Joint(Weak~RwLock~Joint~~)
     KinematicTree(Weak~RwLock~KinematicTreeData~~~)
 }
 %% END LinkParent
@@ -243,6 +246,5 @@ Visual --o "*" Link : visuals
     Material --o "1" Visual
     Material --o "*" KinematicTreeData : material_index
 %% END Material
-
 
 ```

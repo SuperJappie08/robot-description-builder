@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use pyo3::prelude::*;
 use rdf_builder_rs::{
-	JointBuilder, JointInterface, JointType, KinematicInterface, KinematicTree, Link, Robot,
+	JointBuilder, Joint, JointType, KinematicInterface, KinematicTree, Link, Robot,
 };
 
 #[derive(Debug)]
@@ -123,7 +123,7 @@ impl From<Arc<RwLock<Link>>> for PyLink {
 #[derive(Debug)]
 #[pyclass(name = "Joint")]
 struct PyJoint {
-	inner: Arc<RwLock<Box<dyn JointInterface + Sync + Send>>>,
+	inner: Arc<RwLock<Joint>>,
 }
 
 #[pymethods]
@@ -144,8 +144,8 @@ impl PyJoint {
 	}
 }
 
-impl From<Arc<RwLock<Box<dyn JointInterface + Sync + Send>>>> for PyJoint {
-	fn from(value: Arc<RwLock<Box<dyn JointInterface + Sync + Send>>>) -> Self {
+impl From<Arc<RwLock<Joint>>> for PyJoint {
+	fn from(value: Arc<RwLock<Joint>>) -> Self {
 		Self { inner: value }
 	}
 }

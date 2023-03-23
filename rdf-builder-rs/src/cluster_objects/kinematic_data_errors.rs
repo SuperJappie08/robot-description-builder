@@ -6,8 +6,7 @@ use std::{
 };
 
 use crate::{
-	joint::JointInterface, link::Link, material::Material, transmission::Transmission, ArcLock,
-	WeakLock,
+	joint::Joint, link::Link, material::Material, transmission::Transmission, ArcLock, WeakLock,
 };
 
 #[derive(Debug, Error)]
@@ -101,44 +100,20 @@ pub enum AddJointError {
 	Conflict(String),
 }
 
-impl From<PoisonError<RwLockReadGuard<'_, Box<dyn JointInterface + Sync + Send>>>>
-	for AddJointError
-{
-	fn from(
-		_value: PoisonError<RwLockReadGuard<'_, Box<dyn JointInterface + Sync + Send>>>,
-	) -> Self {
+impl From<PoisonError<RwLockReadGuard<'_, Joint>>> for AddJointError {
+	fn from(_value: PoisonError<RwLockReadGuard<'_, Joint>>) -> Self {
 		Self::ReadJoint //(value)
 	}
 }
 
-impl
-	From<
-		PoisonError<
-			RwLockReadGuard<'_, HashMap<String, WeakLock<Box<dyn JointInterface + Sync + Send>>>>,
-		>,
-	> for AddJointError
-{
-	fn from(
-		_value: PoisonError<
-			RwLockReadGuard<'_, HashMap<String, WeakLock<Box<dyn JointInterface + Sync + Send>>>>,
-		>,
-	) -> Self {
+impl From<PoisonError<RwLockReadGuard<'_, HashMap<String, WeakLock<Joint>>>>> for AddJointError {
+	fn from(_value: PoisonError<RwLockReadGuard<'_, HashMap<String, WeakLock<Joint>>>>) -> Self {
 		Self::ReadIndex //(value)
 	}
 }
 
-impl
-	From<
-		PoisonError<
-			RwLockWriteGuard<'_, HashMap<String, WeakLock<Box<dyn JointInterface + Sync + Send>>>>,
-		>,
-	> for AddJointError
-{
-	fn from(
-		_value: PoisonError<
-			RwLockWriteGuard<'_, HashMap<String, WeakLock<Box<dyn JointInterface + Sync + Send>>>>,
-		>,
-	) -> Self {
+impl From<PoisonError<RwLockWriteGuard<'_, HashMap<String, WeakLock<Joint>>>>> for AddJointError {
+	fn from(_value: PoisonError<RwLockWriteGuard<'_, HashMap<String, WeakLock<Joint>>>>) -> Self {
 		Self::WriteIndex //(value)
 	}
 }

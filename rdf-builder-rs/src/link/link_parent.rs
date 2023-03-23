@@ -1,12 +1,10 @@
 use std::sync::Weak;
 
-use crate::{
-	cluster_objects::kinematic_tree_data::KinematicTreeData, joint::JointInterface, WeakLock,
-};
+use crate::{cluster_objects::kinematic_tree_data::KinematicTreeData, joint::Joint, WeakLock};
 
 #[derive(Debug)]
 pub enum LinkParent {
-	Joint(WeakLock<Box<dyn JointInterface + Sync + Send>>),
+	Joint(WeakLock<Joint>),
 	KinematicTree(WeakLock<KinematicTreeData>),
 }
 

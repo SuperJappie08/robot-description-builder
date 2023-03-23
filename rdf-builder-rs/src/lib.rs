@@ -10,7 +10,7 @@ type WeakLock<T> = std::sync::Weak<std::sync::RwLock<T>>;
 
 pub mod to_rdf;
 pub use cluster_objects::{KinematicInterface, KinematicTree, Robot};
-pub use joint::{Joint, JointBuilder, JointInterface, JointType, OffsetMode, SmartJointBuilder};
+pub use joint::{Joint, JointBuilder, JointType, OffsetMode, SmartJointBuilder};
 pub use link::{helper_functions, link_data, Link};
 pub use material::{Material, MaterialData};
 pub use transform_data::TransformData;

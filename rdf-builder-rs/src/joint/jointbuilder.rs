@@ -5,7 +5,7 @@ use crate::{
 	joint::{Joint, JointType},
 	link::Link,
 	transform_data::TransformData,
-	ArcLock, JointInterface, WeakLock,
+	ArcLock, WeakLock,
 };
 
 pub trait BuildJoint {
@@ -15,11 +15,11 @@ pub trait BuildJoint {
 		tree: WeakLock<KinematicTreeData>,
 		parent_link: WeakLock<Link>,
 		child_link: ArcLock<Link>,
-	) -> ArcLock<Box<dyn JointInterface + Sync + Send>>;
+	) -> ArcLock<Joint>;
 
 	fn register_to_tree(
 		tree: &WeakLock<KinematicTreeData>,
-		joint: &ArcLock<Box<dyn JointInterface + Sync + Send>>,
+		joint: &ArcLock<Joint>,
 	) -> Result<(), crate::cluster_objects::kinematic_data_errors::AddJointError> {
 		tree.upgrade()
 			.unwrap()
@@ -60,14 +60,15 @@ impl JointBuilder {
 	}
 
 	/// For now return a Specific Joint maybe go dyn JointInterface
+	#[deprecated]
 	fn build(
 		self,
 		tree: WeakLock<KinematicTreeData>,
 		parent_link: WeakLock<Link>,
 		child_link: ArcLock<Link>,
-	) -> ArcLock<Box<dyn JointInterface + Sync + Send>> {
-		Arc::new_cyclic(|me| -> RwLock<Box<dyn JointInterface + Sync + Send>> {
-			RwLock::new(Box::new(Joint {
+	) -> ArcLock<Joint> {
+		Arc::new_cyclic(|me| -> RwLock<Joint> {
+			RwLock::new(Joint {
 				name: self.name,
 				tree: tree,
 				parent_link: parent_link,
@@ -75,7 +76,7 @@ impl JointBuilder {
 				joint_type: self.joint_type,
 				origin: self.origin,
 				me: Weak::clone(me),
-			}))
+			})
 		})
 	}
 }
@@ -86,9 +87,9 @@ impl BuildJoint for JointBuilder {
 		tree: WeakLock<KinematicTreeData>,
 		parent_link: WeakLock<Link>,
 		child_link: ArcLock<Link>,
-	) -> ArcLock<Box<dyn JointInterface + Sync + Send>> {
-		let joint = Arc::new_cyclic(|me| -> RwLock<Box<dyn JointInterface + Sync + Send>> {
-			RwLock::new(Box::new(Joint {
+	) -> ArcLock<Joint> {
+		let joint = Arc::new_cyclic(|me| -> RwLock<Joint> {
+			RwLock::new(Joint {
 				name: self.name,
 				tree: Weak::clone(&tree),
 				parent_link: parent_link,
@@ -96,7 +97,7 @@ impl BuildJoint for JointBuilder {
 				joint_type: self.joint_type,
 				origin: self.origin,
 				me: Weak::clone(me),
-			}))
+			})
 		});
 
 		Self::register_to_tree(&tree, &joint).unwrap(); // FIX unwrap;
