@@ -1,8 +1,6 @@
-// mod fixedjoint;
 mod jointbuilder;
 mod smartjointbuilder;
 
-// pub use fixedjoint::FixedJoint;
 pub use jointbuilder::{BuildJoint, JointBuilder};
 pub use smartjointbuilder::{OffsetMode, SmartJointBuilder};
 
@@ -10,7 +8,7 @@ pub use smartjointbuilder::{OffsetMode, SmartJointBuilder};
 use std::borrow::Cow;
 use std::{
 	fmt::Debug,
-	sync::{Arc, RwLock, Weak},
+	sync::{Arc, Weak},
 };
 
 #[cfg(feature = "urdf")]
@@ -75,32 +73,6 @@ pub struct Joint {
 }
 
 impl Joint {
-	pub fn new(
-		name: String,
-		tree: WeakLock<KinematicTreeData>,
-		parent_link: WeakLock<Link>,
-		child_link: ArcLock<Link>,
-		joint_type: JointType,
-		origin: TransformData,
-	) -> Arc<RwLock<Self>> {
-		Arc::new_cyclic(|me| {
-			RwLock::new(Self {
-				name,
-				tree,
-				parent_link,
-				child_link,
-				joint_type,
-				origin,
-				me: Weak::clone(me),
-			})
-		})
-	}
-
-	// pub fn new(name: String, joint_type: JointType) -> JointBuilder {
-	// JointBuilder::new(name, joint_type)
-	// 	// }
-	// }
-
 	// impl JointInterface for Joint {
 	pub fn get_name(&self) -> &String {
 		&self.name

@@ -33,8 +33,7 @@ pub struct KinematicTreeData {
 }
 
 impl KinematicTreeData {
-	pub(crate) fn new_link(root_link: Link) -> ArcLock<KinematicTreeData> {
-		let root_link = Arc::new(RwLock::new(root_link));
+	pub(crate) fn new_link(root_link: ArcLock<Link>) -> ArcLock<KinematicTreeData> {
 		let material_index = HashMap::new();
 		let mut links = HashMap::new();
 		let joints = HashMap::new();

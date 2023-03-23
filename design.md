@@ -63,6 +63,8 @@ classDiagram
         - Weak~RwLock~KinematicTreeData~~ tree
         - Weak~RwLock~Link~~ parent_link
         - Arc~RwLock~Link~~ child_link
+
+        - Weak~RwLock~Joint~~ me
     }
 
         %% Public+Internal API
@@ -77,7 +79,7 @@ classDiagram
 
     Joint : + rebuild(&self) JointBuilder
 
-    Joint : + get_selfref(&self) Weak~RwLock~Joint~~
+    Joint : + get_self(&self) Arc~RwLock~Joint~~
 
 
     %% JointInterface <|-- Joint
@@ -95,8 +97,12 @@ classDiagram
     Link : - Vec~Collision~ colliders
 
     Link : - Option~float，float，float~ end_point
+    Link : - Weak~RwLock~Link~~ me
 
     Link : + new(String name) KinematicTree
+
+    Link : + get_self(&self) -> Arc~RwLock~Link~~
+    Link : + get_weak_self(&self) -> Weak~RwLock~Link~~
 
     Link : + get_name(&self) &String
     Link : + get_parent(&self) Option~LinkParent~
@@ -246,5 +252,16 @@ Visual --o "*" Link : visuals
     Material --o "1" Visual
     Material --o "*" KinematicTreeData : material_index
 %% END Material
+
+%% START BuildJoint 
+    class BuildJoint
+    <<interface>> BuildJoint
+    BuildJoint : + build(self, Weak~RwLock~KinematicDataTree~~ tree, Weak~RwLock~Link~~ parent_link, Arc~RwLock~Link~~ child_link) Arc~RwLock~Joint~~
+    BuildJoint : + register_to_tree(&Weak~RwLock~KinematicDataTree~~ tree, &Arc~RwLock~Joint~~ joint) Result~()，AddJointError~
+
+    BuildJoint <|-- JointBuilder
+    BuildJoint <|-- SmartJointBuilder
+    Joint -- BuildJoint
+%% END BuildJoint 
 
 ```

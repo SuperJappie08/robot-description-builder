@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use pyo3::prelude::*;
 use rdf_builder_rs::{
-	JointBuilder, Joint, JointType, KinematicInterface, KinematicTree, Link, Robot,
+	Joint, JointBuilder, JointType, KinematicInterface, KinematicTree, Link, Robot,
 };
 
 #[derive(Debug)]
@@ -16,7 +16,7 @@ struct PyRobot {
 impl PyRobot {
 	#[getter]
 	fn name(&self) -> String {
-		self.inner.name.clone()
+		self.inner.get_name().clone()
 	}
 }
 
@@ -97,7 +97,7 @@ impl PyLink {
 
 	#[getter]
 	fn name(&self) -> String {
-		self.inner.try_read().unwrap().get_name().to_string() // TODO: Figure out if unwrap is Ok here?
+		self.inner.try_read().unwrap().get_name().clone() // TODO: Figure out if unwrap is Ok here?
 	}
 
 	///TODO: Joint Type Selection

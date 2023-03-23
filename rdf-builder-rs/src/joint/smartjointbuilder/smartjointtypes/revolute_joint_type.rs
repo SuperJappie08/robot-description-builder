@@ -5,10 +5,10 @@ use crate::{
 			smartparams::{smart_joint_datatraits, smart_joint_specification, WithLimit},
 			SmartJointBuilder,
 		},
-		BuildJoint, Joint,
+		BuildJoint, Joint, JointBuilder,
 	},
 	link::Link,
-	ArcLock, WeakLock,
+	ArcLock, JointType, WeakLock,
 };
 
 #[derive(Debug, Default, Clone)]
@@ -36,6 +36,12 @@ where
 		_parent_link: WeakLock<Link>,
 		_child_link: ArcLock<Link>,
 	) -> ArcLock<Joint> {
+		let mut _joint_builder = JointBuilder::new(self.name, JointType::Revolute);
+
+		if let Some(_mode) = self.offset {
+			todo!("BUILD FUNCTIOn")
+		}
+
 		todo!("Create a `RevoluteJoint`")
 		// crate::Joint { name: , tree: (), parent_link: (), child_link: (), joint_type: () }
 	}

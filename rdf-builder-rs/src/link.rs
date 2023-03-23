@@ -35,7 +35,7 @@ use thiserror::Error;
 
 use std::{
 	collections::HashMap,
-	sync::{Arc, PoisonError, RwLockReadGuard, RwLockWriteGuard, Weak},
+	sync::{Arc, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard, Weak},
 };
 
 #[cfg(feature = "urdf")]
@@ -88,6 +88,7 @@ pub struct Link {
 	colliders: Vec<link_data::Collision>,
 	/// TODO: Maybe array, or thing
 	end_point: Option<(f32, f32, f32)>,
+	me: Weak<RwLock<Self>>,
 }
 
 impl Link {
@@ -96,20 +97,31 @@ impl Link {
 		#[cfg(feature = "logging")]
 		info!("Making a Link[name = \"{}\"", name);
 
-		let link = Link {
-			name,
-			tree: Weak::new(),
-			direct_parent: None,
-			child_joints: Vec::new(),
-			inertial: None,
-			visuals: Vec::new(),
-			colliders: Vec::new(),
-			end_point: None,
-		};
+		let link = Arc::new_cyclic(|me| {
+			RwLock::new(Link {
+				name,
+				tree: Weak::new(),
+				direct_parent: None,
+				child_joints: Vec::new(),
+				inertial: None,
+				visuals: Vec::new(),
+				colliders: Vec::new(),
+				end_point: None,
+				me: Weak::clone(me),
+			})
+		});
 
 		let tree = KinematicTreeData::new_link(link);
 
 		KinematicTree::new(tree)
+	}
+
+	pub fn get_self(&self) -> ArcLock<Link> {
+		Weak::upgrade(&self.me).unwrap()
+	}
+
+	pub fn get_weak_self(&self) -> WeakLock<Link> {
+		Weak::clone(&self.me)
 	}
 	// }
 	//
@@ -146,16 +158,7 @@ impl Link {
 		// Generics dont workt that well Rc<RefCell<T>>  where T: KinematicInterface
 		//Box<Rc<RefCell<dyn KinematicInterface>>>
 		// TODO: NEEDS TO DO SOMETHING WITH JOINT TYPE
-		let parent_link = self
-			.tree
-			.upgrade()
-			.unwrap()
-			.read()?
-			.links
-			.read()?
-			.get(self.name.as_str())
-			.map(Weak::clone)
-			.unwrap();
+		let parent_link = self.get_weak_self();
 
 		let joint = joint_builder.build(Weak::clone(&self.tree), parent_link, tree.get_root_link());
 

@@ -58,27 +58,6 @@ impl JointBuilder {
 		self.origin.rotation = Some(rotation);
 		self
 	}
-
-	/// For now return a Specific Joint maybe go dyn JointInterface
-	#[deprecated]
-	fn build(
-		self,
-		tree: WeakLock<KinematicTreeData>,
-		parent_link: WeakLock<Link>,
-		child_link: ArcLock<Link>,
-	) -> ArcLock<Joint> {
-		Arc::new_cyclic(|me| -> RwLock<Joint> {
-			RwLock::new(Joint {
-				name: self.name,
-				tree: tree,
-				parent_link: parent_link,
-				child_link: child_link,
-				joint_type: self.joint_type,
-				origin: self.origin,
-				me: Weak::clone(me),
-			})
-		})
-	}
 }
 
 impl BuildJoint for JointBuilder {
@@ -102,6 +81,5 @@ impl BuildJoint for JointBuilder {
 
 		Self::register_to_tree(&tree, &joint).unwrap(); // FIX unwrap;
 		joint
-		// Box::new(self.build(tree, parent_link, child_link))
 	}
 }
