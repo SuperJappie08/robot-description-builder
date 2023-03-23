@@ -3,9 +3,6 @@ use std::{
 	sync::{Arc, PoisonError, RwLock, RwLockWriteGuard, Weak},
 };
 
-#[cfg(feature = "logging")]
-use log::debug;
-
 #[cfg(feature = "xml")]
 use itertools::process_results;
 
@@ -118,8 +115,8 @@ impl KinematicTreeData {
 	}
 
 	pub(crate) fn try_add_joint(&mut self, joint: &ArcLock<Joint>) -> Result<(), AddJointError> {
-		#[cfg(feature = "logging")]
-		debug!(target: "KinematicTreeData","Trying to attach Joint: {}", joint.read().unwrap().get_name());
+		#[cfg(any(feature = "logging", test))]
+		log::debug!(target: "KinematicTreeData","Trying to attach Joint: {}", joint.read().unwrap().get_name());
 		let joint_binding = joint.read()?;
 		let name = joint_binding.get_name();
 		let other = { self.joints.read()?.get(name) }.map(Weak::clone);

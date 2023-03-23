@@ -80,6 +80,7 @@ classDiagram
     Joint : + rebuild(&self) JointBuilder
 
     Joint : + get_self(&self) Arc~RwLock~Joint~~
+    Joint : + get_weak_self(&self) Weak~RwLock~Joint~~
 
 
     %% JointInterface <|-- Joint

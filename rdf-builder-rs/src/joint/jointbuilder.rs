@@ -58,6 +58,11 @@ impl JointBuilder {
 		self.origin.rotation = Some(rotation);
 		self
 	}
+
+	pub(crate) fn with_origin(&mut self, origin: TransformData) -> &mut Self {
+		self.origin = origin;
+		self
+	}
 }
 
 impl BuildJoint for JointBuilder {

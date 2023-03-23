@@ -21,9 +21,6 @@ use crate::{
 #[cfg(any(feature = "xml"))]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
-// #[cfg(feature="logging")]
-// use log::info;
-
 // pub trait JointInterface: Debug {
 // 	fn get_name(&self) -> &String;
 // 	fn get_jointtype(&self) -> JointType;
@@ -125,10 +122,18 @@ impl Joint {
 		#[cfg(any(feature = "logging", test))]
 		log::info!(target: "JointBuilder","Rebuilding: {}", self.get_name());
 		JointBuilder::new(self.name.clone(), self.joint_type.clone())
+			.with_origin(self.origin.clone())
+			.to_owned()
 	}
 
+	/// Get a Strong Reference to this Joint
 	pub fn get_self(&self) -> ArcLock<Joint> {
 		Weak::upgrade(&self.me).unwrap()
+	}
+
+	/// Get a Weak Reference to this Joint
+	pub fn get_weak_self(&self) -> WeakLock<Joint> {
+		Weak::clone(&self.me)
 	}
 }
 
@@ -235,5 +240,37 @@ impl ToString for JointType {
 impl From<JointType> for Cow<'_, [u8]> {
 	fn from(value: JointType) -> Self {
 		value.to_string().into_bytes().into()
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use crate::{JointBuilder, KinematicInterface, Link, OffsetMode, SmartJointBuilder};
+
+	#[test]
+	fn rebuild() {
+		let tree = Link::new("root".to_owned());
+		tree.get_newest_link()
+			.try_write()
+			.unwrap()
+			.try_attach_child(
+				Link::new("child".to_owned()).into(),
+				SmartJointBuilder::new("Joint1".to_owned())
+					.fixed()
+					.add_offset(OffsetMode::Offset(2.0, 3.0, 5.0)),
+			)
+			.unwrap();
+
+		let rebuilder = tree
+			.get_joint("Joint1")
+			.unwrap()
+			.try_read()
+			.unwrap()
+			.rebuild();
+		assert_eq!(
+			rebuilder,
+			*JointBuilder::new("Joint1".to_owned(), crate::JointType::Fixed)
+				.add_origin_offset((2.0, 3.0, 5.0))
+		)
 	}
 }

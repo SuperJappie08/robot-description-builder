@@ -7,8 +7,7 @@ mod visual;
 
 #[cfg(feature = "xml")]
 use itertools::process_results;
-#[cfg(feature = "logging")]
-use log::{info, log_enabled, Level};
+
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
@@ -77,6 +76,7 @@ use crate::{
 // 	fn add_collider(&mut self, Collider: Collision) -> Self;
 // }
 
+/// TODO: Make Builder For Link
 #[derive(Debug)]
 pub struct Link {
 	pub(crate) name: String,
@@ -94,8 +94,8 @@ pub struct Link {
 impl Link {
 	/// NOTE: Maybe change name to `Impl Into<String>` or a `&str`, for ease of use?
 	pub fn new(name: String) -> KinematicTree {
-		#[cfg(feature = "logging")]
-		info!("Making a Link[name = \"{}\"", name);
+		#[cfg(any(feature = "logging", test))]
+		log::info!("Making a Link[name = \"{}\"", name);
 
 		let link = Arc::new_cyclic(|me| {
 			RwLock::new(Link {
@@ -213,9 +213,9 @@ impl Link {
 				match material_error {
 					AddMaterialError::NoName =>
 					{
-						#[cfg(feature = "logging")]
-						if log_enabled!(Level::Info) {
-							info!("An attempt was made to add a material, without a `name`. So Moving on!")
+						#[cfg(any(feature = "logging", test))]
+						if log::log_enabled!(log::Level::Info) {
+							log::info!("An attempt was made to add a material, without a `name`. So Moving on!")
 						}
 					}
 					_ => Err(material_error)?,
