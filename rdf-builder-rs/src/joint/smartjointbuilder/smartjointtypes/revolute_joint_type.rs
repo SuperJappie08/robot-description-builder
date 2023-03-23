@@ -35,7 +35,7 @@ where
 		_tree: WeakLock<KinematicTreeData>,
 		_parent_link: WeakLock<Link>,
 		_child_link: ArcLock<Link>,
-	) -> Box<dyn JointInterface + Sync + Send> {
+	) -> ArcLock<Box<(dyn JointInterface + Send + Sync)>> {
 		todo!("Create a `RevoluteJoint`")
 		// crate::Joint { name: , tree: (), parent_link: (), child_link: (), joint_type: () }
 	}

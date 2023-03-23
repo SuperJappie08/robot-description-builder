@@ -22,21 +22,20 @@ pub mod link_data {
 	}
 
 	#[derive(Debug, PartialEq, Eq, Clone)]
-pub enum ConnectionPoint {
-	/// Point at Link connection point (Link Origin without translation)
-	Begin,
-	CenterOfVolume,
-	CenterOfMass,
-	End,
-}
-
+	pub enum ConnectionPoint {
+		/// Point at Link connection point (Link Origin without translation)
+		Begin,
+		CenterOfVolume,
+		CenterOfMass,
+		End,
+	}
 }
 
 use thiserror::Error;
 
 use std::{
 	collections::HashMap,
-	sync::{Arc, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard, Weak},
+	sync::{Arc, PoisonError, RwLockReadGuard, RwLockWriteGuard, Weak},
 };
 
 #[cfg(feature = "urdf")]
@@ -78,7 +77,6 @@ use crate::{
 // 	fn add_collider(&mut self, Collider: Collision) -> Self;
 // }
 
-
 #[derive(Debug)]
 pub struct Link {
 	pub(crate) name: String,
@@ -106,7 +104,7 @@ impl Link {
 			inertial: None,
 			visuals: Vec::new(),
 			colliders: Vec::new(),
-			end_point: None
+			end_point: None,
 		};
 
 		let tree = KinematicTreeData::new_link(link);
@@ -116,18 +114,21 @@ impl Link {
 	// }
 	//
 	// impl LinkTrait for Link {
+	/// TODO: Make return reference
 	pub fn get_parent(&self) -> Option<LinkParent> {
 		self.direct_parent.clone()
 	}
 
+	/// TODO: Figure out if this should be replaced with get mut
 	pub(crate) fn set_parent(&mut self, parent: LinkParent) {
 		self.direct_parent = Some(parent);
 		// NO-FIXME: Add yourself to registry.
 		// Maybe that has already happend tho? -> You can't because of the Rc Pointer thing
 	}
 
-	pub fn get_name(&self) -> String {
-		self.name.clone()
+	/// Gets the reference to the name of the `Link`
+	pub fn get_name(&self) -> &String {
+		&self.name
 	}
 
 	pub fn get_joints(&self) -> Vec<ArcLock<Box<dyn JointInterface + Sync + Send>>> {
@@ -156,11 +157,7 @@ impl Link {
 			.map(Weak::clone)
 			.unwrap();
 
-		let joint = Arc::new(RwLock::new(joint_builder.build(
-			Weak::clone(&self.tree),
-			parent_link,
-			tree.get_root_link(),
-		)));
+		let joint = joint_builder.build(Weak::clone(&self.tree), parent_link, tree.get_root_link());
 
 		self.child_joints.push(Arc::clone(&joint));
 
@@ -175,14 +172,14 @@ impl Link {
 		{
 			let mut parent_tree = parent_tree.write()?; // FIXME: Probably shouldn't unwrap
 			parent_tree.try_add_link(tree.get_root_link())?;
-			parent_tree.try_add_joint(joint)?;
+			// Joint has already been added
+			// parent_tree.try_add_joint(joint)?;
 		}
 		{
 			tree.get_root_link().write()?.add_to_tree(&parent_tree);
 		}
 
 		Ok(())
-		// Ok(self.tree.upgrade().unwrap())
 	}
 
 	pub(crate) fn add_to_tree(&mut self, new_parent_tree: &ArcLock<KinematicTreeData>) {
@@ -190,7 +187,7 @@ impl Link {
 			let mut new_ptree = new_parent_tree.write().unwrap(); // FIXME: Probably shouldn't unwrap
 			self.child_joints
 				.iter()
-				.for_each(|joint| new_ptree.try_add_joint(Arc::clone(joint)).unwrap());
+				.for_each(|joint| new_ptree.try_add_joint(joint).unwrap());
 			// TODO: Add materials, and other stuff
 			// The Material Copying might get complex, because I depend on the Ref_Count for determining how to display it.
 		}
@@ -353,6 +350,7 @@ impl From<PoisonError<RwLockWriteGuard<'_, KinematicTreeData>>> for AddVisualErr
 #[cfg(test)]
 mod tests {
 	use std::sync::{Arc, Weak};
+	use test_log::test;
 
 	use crate::{
 		cluster_objects::KinematicInterface,

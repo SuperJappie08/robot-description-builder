@@ -3,6 +3,9 @@ use std::{
 	sync::{Arc, PoisonError, RwLock, RwLockWriteGuard, Weak},
 };
 
+#[cfg(feature = "logging")]
+use log::debug;
+
 #[cfg(feature = "xml")]
 use itertools::process_results;
 
@@ -19,7 +22,7 @@ use crate::cluster_objects::kinematic_data_errors::*;
 
 #[derive(Debug)]
 pub struct KinematicTreeData {
-	pub root_link: ArcLock<Link>,
+	pub(crate) root_link: ArcLock<Link>,
 	//TODO: In this implementation the Keys, are not linked to the objects and could be changed.
 	pub(crate) material_index: ArcLock<HashMap<String, ArcLock<Material>>>,
 	// TODO: Why is this an `Rc<RefCell<_>`?
@@ -39,7 +42,7 @@ impl KinematicTreeData {
 		let transmissions = HashMap::new();
 
 		links.insert(
-			root_link.read().unwrap().get_name(),
+			root_link.read().unwrap().get_name().into(),
 			Arc::downgrade(&root_link),
 		);
 
@@ -72,7 +75,8 @@ impl KinematicTreeData {
 		&mut self,
 		material: ArcLock<Material>,
 	) -> Result<(), AddMaterialError> {
-		let name = material.read()?.get_name();
+		let binding = material.read()?;
+		let name = binding.get_name();
 		if name.is_none() {
 			return Err(AddMaterialError::NoName);
 		}
@@ -80,7 +84,7 @@ impl KinematicTreeData {
 			{ self.material_index.read()?.get(name.as_ref().unwrap()) }.map(Arc::clone);
 		if let Some(preexisting_material) = other_material {
 			if Arc::ptr_eq(&preexisting_material, &material) {
-				Err(AddMaterialError::Conflict(name.unwrap()))
+				Err(AddMaterialError::Conflict(name.clone().unwrap()))
 			} else {
 				Ok(())
 			}
@@ -88,18 +92,19 @@ impl KinematicTreeData {
 			assert!(self
 				.material_index
 				.write()?
-				.insert(name.unwrap(), Arc::clone(&material))
+				.insert(name.clone().unwrap(), Arc::clone(&material))
 				.is_none());
 			Ok(())
 		}
 	}
 
 	pub(crate) fn try_add_link(&mut self, link: ArcLock<Link>) -> Result<(), AddLinkError> {
-		let name = link.read()?.get_name();
-		let other = { self.links.read()?.get(&name) }.map(Weak::clone);
+		let link_binding = link.read()?;
+		let name = link_binding.get_name();
+		let other = { self.links.read()?.get(name.into()) }.map(Weak::clone);
 		if let Some(preexisting_link) = other.and_then(|weak_link| weak_link.upgrade()) {
 			if Arc::ptr_eq(&preexisting_link, &link) {
-				Err(AddLinkError::Conflict(name))
+				Err(AddLinkError::Conflict(name.into()))
 			} else {
 				Ok(())
 			}
@@ -107,7 +112,7 @@ impl KinematicTreeData {
 			assert!(self
 				.links
 				.write()?
-				.insert(name, Arc::downgrade(&link))
+				.insert(name.into(), Arc::downgrade(&link))
 				.is_none());
 			self.newest_link = Arc::downgrade(&link);
 			Ok(())
@@ -116,13 +121,16 @@ impl KinematicTreeData {
 
 	pub(crate) fn try_add_joint(
 		&mut self,
-		joint: ArcLock<Box<dyn JointInterface + Sync + Send>>,
+		joint: &ArcLock<Box<dyn JointInterface + Sync + Send>>,
 	) -> Result<(), AddJointError> {
-		let name = joint.read()?.get_name();
-		let other = { self.joints.read()?.get(&name) }.map(Weak::clone);
+		#[cfg(feature = "logging")]
+		debug!(target: "KinematicTreeData","Trying to attach Joint: {}", joint.read().unwrap().get_name());
+		let joint_binding = joint.read()?;
+		let name = joint_binding.get_name();
+		let other = { self.joints.read()?.get(name) }.map(Weak::clone);
 		if let Some(preexisting_joint) = other.and_then(|weak_joint| weak_joint.upgrade()) {
 			if Arc::ptr_eq(&preexisting_joint, &joint) {
-				Err(AddJointError::Conflict(name))
+				Err(AddJointError::Conflict(name.into()))
 			} else {
 				Ok(())
 			}
@@ -130,7 +138,7 @@ impl KinematicTreeData {
 			assert!(self
 				.joints
 				.write()?
-				.insert(name, Arc::downgrade(&joint))
+				.insert(name.into(), Arc::downgrade(&joint))
 				.is_none());
 			Ok(())
 		}

@@ -23,8 +23,11 @@ use crate::{
 #[cfg(any(feature = "xml"))]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
+// #[cfg(feature="logging")]
+// use log::info;
+
 pub trait JointInterface: Debug {
-	fn get_name(&self) -> String;
+	fn get_name(&self) -> &String;
 	fn get_jointtype(&self) -> JointType;
 
 	/// Adds the `Joint` to a kinematic tree
@@ -51,6 +54,8 @@ pub trait JointInterface: Debug {
 	fn get_origin(&self) -> &TransformData;
 
 	fn rebuild(&self) -> JointBuilder;
+
+	fn get_self(&self) -> ArcLock<Box<dyn JointInterface + Sync + Send>>;
 }
 
 #[derive(Debug)]
@@ -65,6 +70,8 @@ pub struct Joint {
 	/// The information specific to the JointType: TODO: DECIDE IF THIS SHOULD BE PUBLIC
 	pub(crate) joint_type: JointType,
 	origin: TransformData,
+
+	me: WeakLock<Box<dyn JointInterface + Sync + Send>>,
 }
 
 impl Joint {
@@ -138,12 +145,12 @@ impl ToURDF for Box<dyn JointInterface + Send + Sync> {
 }
 
 impl JointInterface for Joint {
-	fn get_name(&self) -> String {
-		self.name.clone()
+	fn get_name(&self) -> &String {
+		&self.name
 	}
 
 	fn get_jointtype(&self) -> JointType {
-		self.joint_type.clone()
+		self.joint_type
 	}
 
 	/// Returns a reference to the parent `Link`
@@ -172,7 +179,13 @@ impl JointInterface for Joint {
 
 	/// Make a `JointBuilder` to build a 'Clone' of the `Joint`
 	fn rebuild(&self) -> JointBuilder {
+		#[cfg(any(feature = "logging", test))]
+		log::info!(target: "JointBuilder","Rebuilding: {}", self.get_name());
 		JointBuilder::new(self.name.clone(), self.joint_type.clone())
+	}
+
+	fn get_self(&self) -> ArcLock<Box<dyn JointInterface + Sync + Send>> {
+		Weak::upgrade(&self.me).unwrap()
 	}
 }
 
@@ -186,7 +199,7 @@ impl PartialEq for Joint {
 }
 
 /// TODO: Might add data of specif joint type to Struct Spaces.
-#[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub enum JointType {
 	/// TODO: TEMP DEFAULT
 	#[default]

@@ -34,9 +34,10 @@ impl Material {
 		}
 	}
 
-	/// TODO: FIGURE OUT IF I WANT THIS
-	pub fn get_name(&self) -> Option<String> {
-		self.name.clone()
+	/// Returns a Reference to the optional material name
+	/// TODO: Maybe Make the name a reference only
+	pub fn get_name(&self) -> &Option<String> {
+		&self.name
 	}
 
 	pub fn get_material_data(&self) -> &MaterialData {

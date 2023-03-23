@@ -29,11 +29,12 @@ impl Collision {
 		}
 	}
 
-	pub fn get_name(&self) -> Option<String> {
-		self.name.clone()
+	/// TODO: Maybe return Optional<&String>
+	pub fn get_name(&self) -> &Option<String> {
+		&self.name
 	}
 
-	/// TODO: Figure out if this should be reference or Clone
+	/// TODO: Maybe return Optional<&TransformData>
 	pub fn get_origin(&self) -> &Option<TransformData> {
 		&self.origin
 	}

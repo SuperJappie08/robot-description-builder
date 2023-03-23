@@ -97,7 +97,7 @@ impl PyLink {
 
 	#[getter]
 	fn name(&self) -> String {
-		self.inner.try_read().unwrap().get_name() // TODO: Figure out if unwrap is Ok here?
+		self.inner.try_read().unwrap().get_name().to_string() // TODO: Figure out if unwrap is Ok here?
 	}
 
 	///TODO: Joint Type Selection
@@ -130,7 +130,7 @@ struct PyJoint {
 impl PyJoint {
 	#[getter]
 	fn name(&self) -> String {
-		self.inner.try_read().unwrap().get_name() // TODO: Figure out if unwrap is Ok here?
+		self.inner.try_read().unwrap().get_name().clone() // TODO: Figure out if unwrap is Ok here?
 	}
 
 	#[getter]

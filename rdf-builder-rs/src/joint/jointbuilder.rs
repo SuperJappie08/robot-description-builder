@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock, Weak};
+
 use crate::{
 	cluster_objects::kinematic_tree_data::KinematicTreeData,
 	joint::{Joint, JointType},
@@ -7,12 +9,28 @@ use crate::{
 };
 
 pub trait BuildJoint {
+	/// Creates the joint ?? and subscribes it to the right right places
 	fn build(
 		self,
 		tree: WeakLock<KinematicTreeData>,
 		parent_link: WeakLock<Link>,
 		child_link: ArcLock<Link>,
-	) -> Box<dyn JointInterface + Sync + Send>;
+	) -> ArcLock<Box<dyn JointInterface + Sync + Send>>;
+
+	fn register_to_tree(
+		tree: &WeakLock<KinematicTreeData>,
+		joint: &ArcLock<Box<dyn JointInterface + Sync + Send>>,
+	) -> Result<(), crate::cluster_objects::kinematic_data_errors::AddJointError> {
+		tree.upgrade()
+			.unwrap()
+			.try_write()
+			.unwrap()
+			.try_add_joint(joint)
+	}
+
+	// fn register_to_link(parent_link: &WeakLock<Link>, joint: ArcLock<Box<dyn JointInterface + Sync + Send>>) {
+	// 	parent_link.upgrade().unwrap().try_write().unwrap()
+	// }
 }
 
 #[derive(Debug, PartialEq, Clone, Default)]
@@ -47,15 +65,18 @@ impl JointBuilder {
 		tree: WeakLock<KinematicTreeData>,
 		parent_link: WeakLock<Link>,
 		child_link: ArcLock<Link>,
-	) -> Joint {
-		Joint {
-			name: self.name,
-			tree: tree,
-			parent_link: parent_link,
-			child_link: child_link,
-			joint_type: self.joint_type,
-			origin: self.origin,
-		}
+	) -> ArcLock<Box<dyn JointInterface + Sync + Send>> {
+		Arc::new_cyclic(|me| -> RwLock<Box<dyn JointInterface + Sync + Send>> {
+			RwLock::new(Box::new(Joint {
+				name: self.name,
+				tree: tree,
+				parent_link: parent_link,
+				child_link: child_link,
+				joint_type: self.joint_type,
+				origin: self.origin,
+				me: Weak::clone(me),
+			}))
+		})
 	}
 }
 
@@ -65,7 +86,21 @@ impl BuildJoint for JointBuilder {
 		tree: WeakLock<KinematicTreeData>,
 		parent_link: WeakLock<Link>,
 		child_link: ArcLock<Link>,
-	) -> Box<dyn JointInterface + Sync + Send> {
-		Box::new(self.build(tree, parent_link, child_link))
+	) -> ArcLock<Box<dyn JointInterface + Sync + Send>> {
+		let joint = Arc::new_cyclic(|me| -> RwLock<Box<dyn JointInterface + Sync + Send>> {
+			RwLock::new(Box::new(Joint {
+				name: self.name,
+				tree: Weak::clone(&tree),
+				parent_link: parent_link,
+				child_link: child_link,
+				joint_type: self.joint_type,
+				origin: self.origin,
+				me: Weak::clone(me),
+			}))
+		});
+
+		Self::register_to_tree(&tree, &joint).unwrap(); // FIX unwrap;
+		joint
+		// Box::new(self.build(tree, parent_link, child_link))
 	}
 }

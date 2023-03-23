@@ -1,4 +1,4 @@
-use std::sync::{Arc, Weak};
+use std::sync::{Arc, RwLock, Weak};
 
 use crate::{
 	cluster_objects::kinematic_tree_data::KinematicTreeData,
@@ -15,6 +15,7 @@ pub struct FixedJoint {
 	parent_link: WeakLock<Link>,
 	child_link: ArcLock<Link>,
 	origin: TransformData,
+	me: WeakLock<Box<dyn JointInterface + Sync + Send>>,
 }
 
 impl FixedJoint {
@@ -24,20 +25,26 @@ impl FixedJoint {
 		parent_link: WeakLock<Link>,
 		child_link: ArcLock<Link>,
 		origin: TransformData,
-	) -> Self {
-		Self {
-			name,
-			tree,
-			parent_link,
-			child_link,
-			origin,
-		}
+	) -> ArcLock<Box<dyn JointInterface + Send + Sync>> {
+		Arc::new_cyclic(|me| {
+			RwLock::new(
+				Self {
+					name,
+					tree,
+					parent_link,
+					child_link,
+					origin,
+					me: Weak::clone(me),
+				}
+				.into(),
+			)
+		})
 	}
 }
 
 impl JointInterface for FixedJoint {
-	fn get_name(&self) -> String {
-		self.name.clone()
+	fn get_name(&self) -> &String {
+		&self.name
 	}
 
 	fn get_jointtype(&self) -> JointType {
@@ -72,6 +79,16 @@ impl JointInterface for FixedJoint {
 		}
 
 		builder
+	}
+
+	fn get_self(&self) -> ArcLock<Box<dyn JointInterface + Sync + Send>> {
+		self.me.upgrade().unwrap()
+	}
+}
+
+impl Into<Box<dyn JointInterface + Sync + Send>> for FixedJoint {
+	fn into(self) -> Box<dyn JointInterface + Sync + Send> {
+		Box::new(self)
 	}
 }
 

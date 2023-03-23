@@ -28,6 +28,11 @@ impl Robot {
 	pub(crate) fn new(name: String, data: ArcLock<KinematicTreeData>) -> Self {
 		Self { name, data }
 	}
+
+	/// Gets a refence to the name of the `Robot`
+	pub fn get_name(&self) -> &String {
+		&self.name
+	}
 }
 
 impl KinematicInterface for Robot {

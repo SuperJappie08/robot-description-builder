@@ -37,11 +37,11 @@ impl Visual {
 		}
 	}
 
-	pub fn get_name(&self) -> Option<String> {
-		self.name.clone()
+	pub fn get_name(&self) -> &Option<String> {
+		&self.name
 	}
 
-	/// TODO: Figure out if this should be reference or Clone
+	/// TODO: Maybe make optional reference?
 	pub fn get_origin(&self) -> &Option<TransformData> {
 		&self.origin
 	}

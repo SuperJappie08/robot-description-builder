@@ -54,11 +54,11 @@ impl GeometryInterface for SphereGeometry {
 	}
 
 	// fn get_type(&self) -> GeometryType {
-		// GeometryType::Sphere
+	// GeometryType::Sphere
 	// }
 
 	// fn get_data(&self) -> GeometryData {
-		// GeometryData::Sphere(self.clone())
+	// GeometryData::Sphere(self.clone())
 	// }
 }
 

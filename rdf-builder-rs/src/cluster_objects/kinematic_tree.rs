@@ -173,6 +173,7 @@ impl From<KinematicTree> for Box<dyn KinematicInterface> {
 #[cfg(test)]
 mod tests {
 	use std::sync::{Arc, Weak};
+	use test_log::test;
 
 	use crate::{
 		link::{link_data::LinkParent, Link},

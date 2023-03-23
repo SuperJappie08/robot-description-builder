@@ -1,9 +1,12 @@
 use rdf_builder_rs::{OffsetMode, SmartJointBuilder};
 
 fn main() {
-	let fixed_builder = SmartJointBuilder::new("fixed".into())
-		.fixed()
-		.add_offset(OffsetMode::FigureItOut(rdf_builder_rs::link_data::ConnectionPoint::End));
+	let fixed_builder =
+		SmartJointBuilder::new("fixed".into())
+			.fixed()
+			.add_offset(OffsetMode::FigureItOut(
+				rdf_builder_rs::link_data::ConnectionPoint::End,
+			));
 
 	println!("{:#?}", fixed_builder);
 

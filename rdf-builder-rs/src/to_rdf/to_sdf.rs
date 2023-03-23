@@ -1,17 +1,23 @@
 use std::io::Cursor;
 
-use quick_xml::{Writer, events::{Event, BytesDecl}};
+use quick_xml::{
+	events::{BytesDecl, Event},
+	Writer,
+};
 
-use crate::{to_rdf::XMLMode, cluster_objects::KinematicInterface};
-
+use crate::{cluster_objects::KinematicInterface, to_rdf::XMLMode};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct SDFConfig {
-    pub xml_mode: XMLMode,
+	pub xml_mode: XMLMode,
 }
 
 pub trait ToSDF {
-    fn to_sdf(&self, writer: &mut Writer<Cursor<Vec<u8>>>, sdf_config: &SDFConfig) -> Result<(), quick_xml::Error>;
+	fn to_sdf(
+		&self,
+		writer: &mut Writer<Cursor<Vec<u8>>>,
+		sdf_config: &SDFConfig,
+	) -> Result<(), quick_xml::Error>;
 }
 
 pub fn to_sdf(
