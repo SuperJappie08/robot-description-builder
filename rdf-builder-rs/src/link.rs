@@ -82,6 +82,7 @@ use crate::{
 pub struct Link {
 	pub(crate) name: String,
 	pub(crate) tree: WeakLock<KinematicTreeData>,
+	/// TODO: Use builder to remove optional
 	direct_parent: Option<link_data::LinkParent>,
 	child_joints: Vec<ArcLock<Joint>>,
 	inertial: Option<InertialData>,
@@ -96,7 +97,7 @@ impl Link {
 	/// NOTE: Maybe change name to `Impl Into<String>` or a `&str`, for ease of use?
 	pub fn new(name: String) -> KinematicTree {
 		#[cfg(any(feature = "logging", test))]
-		log::info!("Making a Link[name = \"{}\"", name);
+		log::info!("Making a Link[name = \"{}\"]", name);
 
 		let link = Arc::new_cyclic(|me| {
 			RwLock::new(Link {

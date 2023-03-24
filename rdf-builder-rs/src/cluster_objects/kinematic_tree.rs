@@ -16,7 +16,7 @@ use crate::{
 pub struct KinematicTree(ArcLock<KinematicTreeData>);
 
 impl KinematicTree {
-	pub fn new(data: ArcLock<KinematicTreeData>) -> KinematicTree {
+	pub(crate) fn new(data: ArcLock<KinematicTreeData>) -> KinematicTree {
 		KinematicTree(data)
 	}
 
@@ -170,6 +170,7 @@ impl From<KinematicTree> for Box<dyn KinematicInterface> {
 
 #[cfg(test)]
 mod tests {
+	use log::trace;
 	use std::sync::{Arc, Weak};
 	use test_log::test;
 
@@ -183,18 +184,25 @@ mod tests {
 		let tree = Link::new("example-link".into());
 		let cloned_tree = tree.clone();
 
-		println!("tree->data        | ptr: {:#?}", Arc::as_ptr(&tree.0));
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
+			"tree->data        | ptr: {:#?}",
+			Arc::as_ptr(&tree.0)
+		);
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"cloned_tree->data | ptr: {:#?}\n",
 			Arc::as_ptr(&cloned_tree.0)
 		);
 		assert!(!Arc::ptr_eq(&tree.0, &cloned_tree.0));
 
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"tree->..->root_link        | ptr: {:#?}",
 			Arc::as_ptr(&tree.get_root_link())
 		);
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"cloned_tree->..->root_link | ptr: {:#?}\n",
 			Arc::as_ptr(&cloned_tree.get_root_link())
 		);
@@ -204,11 +212,13 @@ mod tests {
 		));
 
 		// Note: This may not be permanent behavior
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"tree->..->root_link->name        | ptr: {:#?}",
 			&tree.get_root_link().try_read().unwrap().name.as_ptr()
 		);
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"cloned_tree->..->root_link->name | ptr: {:#?}\n",
 			&cloned_tree
 				.get_root_link()
@@ -222,11 +232,13 @@ mod tests {
 			&cloned_tree.get_root_link().try_read().unwrap().get_name()
 		);
 
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"tree->..->root_link->tree        | ptr: {:#?}",
 			Weak::as_ptr(&tree.get_root_link().try_read().unwrap().tree)
 		);
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"cloned_tree->..->root_link->tree | ptr: {:#?}\n",
 			Weak::as_ptr(&cloned_tree.get_root_link().try_read().unwrap().tree)
 		);
@@ -235,7 +247,8 @@ mod tests {
 			&cloned_tree.get_root_link().try_read().unwrap().tree
 		));
 
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"tree->..->root_link->direct_parent->0        | ptr: {:#?}",
 			Weak::as_ptr(
 				match &tree
@@ -250,7 +263,8 @@ mod tests {
 				}
 			)
 		);
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"cloned_tree->..->root_link->direct_parent->0 | ptr: {:#?}\n",
 			Weak::as_ptr(
 				match &cloned_tree
@@ -270,11 +284,13 @@ mod tests {
 			&cloned_tree.get_root_link().try_read().unwrap().get_parent()
 		);
 
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"tree->..->root_link->child_joints:        {:#?}",
 			&tree.get_root_link().try_read().unwrap().get_joints()
 		);
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"cloned_tree->..->root_link->child_joints: {:#?}\n",
 			&cloned_tree.get_root_link().try_read().unwrap().get_joints()
 		);
@@ -288,11 +304,13 @@ mod tests {
 				.len()
 		);
 
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"tree->..->links        | ptr: {:#?}",
 			Arc::as_ptr(&tree.get_links())
 		);
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"cloned_tree->..->links | ptr: {:#?}\n",
 			Arc::as_ptr(&cloned_tree.get_links())
 		);
@@ -302,7 +320,8 @@ mod tests {
 			cloned_tree.get_links().try_read().unwrap().len()
 		);
 
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"tree->..->links[\"example-link\"]        | ptr: {:#?}",
 			Weak::as_ptr(
 				&tree
@@ -313,14 +332,14 @@ mod tests {
 					.unwrap()
 			)
 		);
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"cloned_tree->..->links[\"example-link\"] | ptr: {:#?}\n",
 			Weak::as_ptr(
 				&cloned_tree
 					.get_links()
 					.try_read()
-					.unwrap()
-					.get("example-link")
+					.unwrap().get("example-link")
 					.unwrap()
 			)
 		);
@@ -339,11 +358,13 @@ mod tests {
 				.unwrap()
 		));
 
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"tree->..->root_link->child_joints:        {:#?}",
 			&tree.get_root_link().try_read().unwrap().get_joints()
 		);
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"cloned_tree->..->root_link->child_joints: {:#?}\n",
 			&cloned_tree.get_root_link().try_read().unwrap().get_joints()
 		);
@@ -357,11 +378,13 @@ mod tests {
 				.len()
 		);
 
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"tree->..->joints        | ptr: {:#?}",
 			Arc::as_ptr(&tree.get_joints())
 		);
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"cloned_tree->..->joints | ptr: {:#?}\n",
 			Arc::as_ptr(&cloned_tree.get_joints())
 		);
@@ -371,11 +394,13 @@ mod tests {
 			cloned_tree.get_joints().try_read().unwrap().len()
 		);
 
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"tree->..->newest_link        | ptr: {:#?}",
 			Arc::as_ptr(&tree.get_newest_link())
 		);
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"cloned_tree->..->newest_link | ptr: {:#?}\n",
 			Arc::as_ptr(&cloned_tree.get_newest_link())
 		);
@@ -419,18 +444,25 @@ mod tests {
 
 		let cloned_tree = tree.clone();
 
-		println!("tree->data        | ptr: {:#?}", Arc::as_ptr(&tree.0));
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
+			"tree->data        | ptr: {:#?}",
+			 Arc::as_ptr(&tree.0)
+		);
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"cloned_tree->data | ptr: {:#?}\n",
 			Arc::as_ptr(&cloned_tree.0)
 		);
 		assert!(!Arc::ptr_eq(&tree.0, &cloned_tree.0));
 
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"tree->..->root_link        | ptr: {:#?}",
 			Arc::as_ptr(&tree.get_root_link())
 		);
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"cloned_tree->..->root_link | ptr: {:#?}\n",
 			Arc::as_ptr(&cloned_tree.get_root_link())
 		);
@@ -440,11 +472,13 @@ mod tests {
 		));
 
 		// Note: This may not be permanent behavior
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"tree->..->root_link->name        | ptr: {:#?}",
 			&tree.get_root_link().try_read().unwrap().name.as_ptr()
 		);
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"cloned_tree->..->root_link->name | ptr: {:#?}\n",
 			&cloned_tree
 				.get_root_link()
@@ -458,11 +492,13 @@ mod tests {
 			&cloned_tree.get_root_link().try_read().unwrap().get_name()
 		);
 
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"tree->..->root_link->tree        | ptr: {:#?}",
 			Weak::as_ptr(&tree.get_root_link().try_read().unwrap().tree)
 		);
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"cloned_tree->..->root_link->tree | ptr: {:#?}\n",
 			Weak::as_ptr(&cloned_tree.get_root_link().try_read().unwrap().tree)
 		);
@@ -471,7 +507,8 @@ mod tests {
 			&cloned_tree.get_root_link().try_read().unwrap().tree
 		));
 
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"tree->..->root_link->direct_parent->0        | ptr: {:#?}",
 			Weak::as_ptr(
 				match &tree
@@ -486,7 +523,8 @@ mod tests {
 				}
 			)
 		);
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"cloned_tree->..->root_link->direct_parent->0 | ptr: {:#?}\n",
 			Weak::as_ptr(
 				match &cloned_tree
@@ -506,7 +544,8 @@ mod tests {
 			&cloned_tree.get_root_link().try_read().unwrap().get_parent()
 		);
 
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"tree->..->root_link->child_joints:        {:?}",
 			&tree
 				.get_root_link()
@@ -517,7 +556,8 @@ mod tests {
 				.map(|joint| joint.read().unwrap().get_name().clone())
 				.collect::<Vec<String>>()
 		);
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"cloned_tree->..->root_link->child_joints: {:?}\n",
 			&cloned_tree
 				.get_root_link()
@@ -538,7 +578,8 @@ mod tests {
 				.len()
 		);
 
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"tree->..->links        | ptr: {:#?} | keys: {:?}",
 			Arc::as_ptr(&tree.get_links()),
 			&tree
@@ -549,7 +590,8 @@ mod tests {
 				.map(|key| key.clone())
 				.collect::<Vec<String>>()
 		);
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"cloned_tree->..->links | ptr: {:#?} | keys: {:?}\n",
 			Arc::as_ptr(&cloned_tree.get_links()),
 			&cloned_tree
@@ -566,7 +608,8 @@ mod tests {
 			cloned_tree.get_links().try_read().unwrap().len()
 		);
 
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"tree->..->links[\"example-link\"]        | ptr: {:#?}",
 			Weak::as_ptr(
 				&tree
@@ -577,7 +620,8 @@ mod tests {
 					.unwrap()
 			)
 		);
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"cloned_tree->..->links[\"example-link\"] | ptr: {:#?}\n",
 			Weak::as_ptr(
 				&cloned_tree
@@ -603,11 +647,13 @@ mod tests {
 				.unwrap()
 		));
 
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"tree->..->root_link->child_joints:        {:#?}",
 			&tree.get_root_link().try_read().unwrap().get_joints()
 		);
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"cloned_tree->..->root_link->child_joints: {:#?}\n",
 			&cloned_tree.get_root_link().try_read().unwrap().get_joints()
 		);
@@ -621,11 +667,13 @@ mod tests {
 				.len()
 		);
 
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"tree->..->joints        | ptr: {:#?}",
 			Arc::as_ptr(&tree.get_joints())
 		);
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"cloned_tree->..->joints | ptr: {:#?}\n",
 			Arc::as_ptr(&cloned_tree.get_joints())
 		);
@@ -635,11 +683,13 @@ mod tests {
 			cloned_tree.get_joints().try_read().unwrap().len()
 		);
 
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"tree->..->newest_link        | ptr: {:#?}",
 			Arc::as_ptr(&tree.get_newest_link())
 		);
-		println!(
+		trace!(
+			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"cloned_tree->..->newest_link | ptr: {:#?}\n",
 			Arc::as_ptr(&cloned_tree.get_newest_link())
 		);

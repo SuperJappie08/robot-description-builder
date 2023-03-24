@@ -21,15 +21,18 @@ pub struct KinematicTreeData {
 	pub(crate) root_link: ArcLock<Link>,
 	//TODO: In this implementation the Keys, are not linked to the objects and could be changed.
 	pub(crate) material_index: ArcLock<HashMap<String, ArcLock<Material>>>,
-	// TODO: Why is this an `Rc<RefCell<_>`?
+	// TODO: Why is this an `Arc<RwLock<_>>`?
 	pub(crate) links: ArcLock<HashMap<String, WeakLock<Link>>>,
 	pub(crate) joints: ArcLock<HashMap<String, WeakLock<Joint>>>,
+	/// Do Transmission have to wrapped into ArcLock? Maybe we can get a way with raw stuff?
+	/// Don't now it would unpack on the Python side...
 	pub(crate) transmissions: ArcLock<HashMap<String, ArcLock<Transmission>>>,
 	pub(crate) newest_link: WeakLock<Link>,
 	// is_rigid: bool // ? For gazebo -> TO AdvancedSimulationData [ASD]
 }
 
 impl KinematicTreeData {
+	/// TODO: This should be updated to also work on Links that are being toring out
 	pub(crate) fn new_link(root_link: ArcLock<Link>) -> ArcLock<KinematicTreeData> {
 		let material_index = HashMap::new();
 		let mut links = HashMap::new();
@@ -151,6 +154,10 @@ impl KinematicTreeData {
 		transmission: ArcLock<Transmission>,
 	) -> Result<(), AddTransmissionError> {
 		let name = transmission.read()?.get_name().clone();
+
+		#[cfg(any(feature = "logging", test))]
+		log::debug!(target: "KinematicTreeData","Trying to attach Transmission: {}", name);
+
 		let other_transmission = { self.transmissions.read()?.get(&name) }.map(Arc::clone);
 		if let Some(preexisting_transmission) = other_transmission {
 			if Arc::ptr_eq(&preexisting_transmission, &transmission) {
@@ -190,6 +197,26 @@ impl KinematicTreeData {
 		links.retain(|_, weak_link| weak_link.upgrade().is_some());
 		links.shrink_to_fit();
 		Ok(())
+	}
+
+	/// Cleans up unused `Material` entries from `material_index` HashMap
+	///
+	/// TODO: Check if this works
+	/// FIXME: This doesn't work if you hace multiple robots using the same material.
+	pub fn purge_materials(
+		&mut self,
+	) -> Result<(), PoisonError<RwLockWriteGuard<'_, HashMap<String, ArcLock<Material>>>>> {
+		let mut materials = self.material_index.write()?;
+		materials.retain(|_, material| Arc::strong_count(material) > 1);
+		materials.shrink_to_fit();
+		Ok(())
+	}
+
+	pub fn purge_transmissions(
+		&mut self,
+	) -> Result<(), RwLockWriteGuard<'_, HashMap<String, ArcLock<Transmission>>>> {
+		// Ok(())
+		todo!("Not Implemnted yet! First Implement `Transmission`")
 	}
 
 	/// Cleans up broken `Joint` and `Link` entries from the `links` and `joints` HashMaps.
