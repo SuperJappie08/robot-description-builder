@@ -1,6 +1,7 @@
 mod jointbuilder;
 mod smartjointbuilder;
 
+pub(crate) use jointbuilder::BuildJointChain;
 pub use jointbuilder::{BuildJoint, JointBuilder};
 pub use smartjointbuilder::{OffsetMode, SmartJointBuilder};
 
@@ -121,9 +122,21 @@ impl Joint {
 	pub fn rebuild(&self) -> JointBuilder {
 		#[cfg(any(feature = "logging", test))]
 		log::info!(target: "JointBuilder","Rebuilding: {}", self.get_name());
-		JointBuilder::new(self.name.clone(), self.joint_type.clone())
-			.with_origin(self.origin.clone())
-			.to_owned()
+		JointBuilder {
+			name: self.name.clone(),
+			joint_type: self.joint_type.clone(),
+			origin: self.origin.clone(),
+			..Default::default()
+		}
+	}
+
+	pub fn rebuild_branch(&self) -> JointBuilder {
+		#[cfg(any(feature = "logging", test))]
+		log::info!(target: "JointBuilder","Rebuilding: {}", self.get_name());
+		JointBuilder {
+			child: Some(self.child_link.read().unwrap().rebuild_branch()), // FIXME: Figure out if unwrap is Ok here?
+			..self.rebuild()
+		}
 	}
 
 	/// Get a Strong Reference to this Joint

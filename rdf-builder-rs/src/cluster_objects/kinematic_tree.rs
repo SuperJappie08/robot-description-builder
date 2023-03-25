@@ -110,6 +110,7 @@ impl KinematicInterface for KinematicTree {
 }
 
 impl Clone for KinematicTree {
+	/// TODO: THIS DOESN'T WORK FOR MOST LINKDATA
 	fn clone(&self) -> Self {
 		// TODO: Maybe update identifier?
 		let tree = Link::new(self.get_root_link().read().unwrap().name.clone()); // FIXME: Unwrapping might not be ok

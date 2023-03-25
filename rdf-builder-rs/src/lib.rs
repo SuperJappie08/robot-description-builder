@@ -15,6 +15,11 @@ pub use link::{helper_functions, link_data, Link};
 pub use material::{Material, MaterialData};
 pub use transform_data::TransformData;
 
+pub mod linkbuilding {
+	use super::link;
+	pub use link::builder::*;
+}
+
 #[cfg(test)]
 mod tests {
 	// #[test]

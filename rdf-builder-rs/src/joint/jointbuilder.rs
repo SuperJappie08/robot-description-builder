@@ -4,6 +4,7 @@ use crate::{
 	cluster_objects::kinematic_tree_data::KinematicTreeData,
 	joint::{Joint, JointType},
 	link::Link,
+	linkbuilding::{BuildLink, LinkBuilder},
 	transform_data::TransformData,
 	ArcLock, WeakLock,
 };
@@ -33,11 +34,20 @@ pub trait BuildJoint {
 	// }
 }
 
+pub(crate) trait BuildJointChain: BuildJoint {
+	fn build_chain(
+		self,
+		tree: &WeakLock<KinematicTreeData>,
+		parent_link: &WeakLock<Link>,
+	) -> ArcLock<Joint>;
+}
+
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct JointBuilder {
-	name: String,
-	joint_type: JointType, // TODO: FINISH ME
-	origin: TransformData,
+	pub(crate) name: String,
+	pub(crate) joint_type: JointType, // TODO: FINISH ME
+	pub(crate) origin: TransformData,
+	pub(crate) child: Option<LinkBuilder>,
 }
 
 impl JointBuilder {
@@ -59,6 +69,7 @@ impl JointBuilder {
 		self
 	}
 
+	/// Nominated for Deprication
 	pub(crate) fn with_origin(&mut self, origin: TransformData) -> &mut Self {
 		self.origin = origin;
 		self
@@ -86,5 +97,28 @@ impl BuildJoint for JointBuilder {
 
 		Self::register_to_tree(&tree, &joint).unwrap(); // FIX unwrap;
 		joint
+	}
+}
+
+impl BuildJointChain for JointBuilder {
+	fn build_chain(
+		self,
+		tree: &WeakLock<KinematicTreeData>,
+		parent_link: &WeakLock<Link>,
+	) -> ArcLock<Joint> {
+		#[cfg(any(feature = "logging", test))]
+		log::trace!("Building a Joint[name ='{}']", self.name);
+
+		Arc::new_cyclic(|me| {
+			RwLock::new(Joint {
+				name: self.name,
+				tree: Weak::clone(tree),
+				parent_link: Weak::clone(parent_link),
+				child_link: self.child.unwrap().build_chain(tree, me),
+				joint_type: self.joint_type,
+				origin: self.origin,
+				me: Weak::clone(&me),
+			})
+		})
 	}
 }

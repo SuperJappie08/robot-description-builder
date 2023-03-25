@@ -1,3 +1,4 @@
+pub mod builder;
 mod collision;
 mod geometry;
 pub mod helper_functions;
@@ -54,28 +55,7 @@ use crate::{
 	ArcLock, WeakLock,
 };
 
-// pub trait LinkTrait: Debug {
-// 	/// Returns the parent of the `Link` wrapped in a optional.
-// 	fn get_parent(&self) -> Option<LinkParent>;
-// 	fn set_parent(&mut self, parent: LinkParent);
-
-// 	/// Returns the name of the `Link`
-// 	fn get_name(&self) -> String; // TODO: This might be temp because I want dynamic names.
-
-// 	fn get_joints(&self) -> Vec<Rc<RefCell<Joint>>>; // TODO: Not final?
-// 	fn try_attach_child(
-// 		&mut self,
-// 		tree: Box<dyn KinematicInterface>,
-// 		joint_name: String,
-// 		_joint_type: JointType,
-// 	) -> Result<(), String>;
-
-// 	// fn get_visual(&self) -> Vec<()>;
-// 	// fn get_colliders(&self) -> Vec<()>;
-
-// 	fn add_visual(&mut self, visual: Visual) -> Self;
-// 	fn add_collider(&mut self, Collider: Collision) -> Self;
-// }
+use self::builder::LinkBuilder;
 
 /// TODO: Make Builder For Link
 #[derive(Debug)]
@@ -145,8 +125,9 @@ impl Link {
 		&self.name
 	}
 
-	pub fn get_joints(&self) -> Vec<ArcLock<Joint>> {
-		self.child_joints.iter().map(Arc::clone).collect()
+	pub fn get_joints(&self) -> &Vec<ArcLock<Joint>> {
+		&self.child_joints
+		// self.child_joints.iter().map(Arc::clone).collect()
 	}
 
 	/// Maybe rename to try attach child
@@ -241,6 +222,38 @@ impl Link {
 
 	pub fn get_end_point(&self) -> Option<(f32, f32, f32)> {
 		self.end_point
+	}
+
+	pub fn get_visuals(&self) -> &Vec<Visual> {
+		&self.visuals
+	}
+
+	pub fn get_colliders(&self) -> &Vec<Collision> {
+		&self.colliders
+	}
+
+	/// TODO: EXPAND
+	pub fn rebuild(&self) -> LinkBuilder {
+		LinkBuilder {
+			name: self.name.clone(),
+			visuals: self.visuals.iter().cloned().collect(),
+			colliders: self.colliders.iter().cloned().collect(),
+			..Default::default()
+		}
+	}
+
+	/// Rebuilds everything below this aswell
+	///
+	/// TODO: FINISH
+	pub fn rebuild_branch(&self) -> LinkBuilder {
+		LinkBuilder {
+			joints: self
+				.child_joints
+				.iter()
+				.map(|joint| joint.read().unwrap().rebuild_branch()) // FIXME: Figure out if unwrap is Ok here?
+				.collect(),
+			..self.rebuild()
+		}
 	}
 }
 

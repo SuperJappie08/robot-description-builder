@@ -3,13 +3,13 @@ use std::{
 	sync::{Arc, PoisonError, RwLock, RwLockWriteGuard, Weak},
 };
 
-#[cfg(feature = "xml")]
-use itertools::process_results;
+use itertools::{process_results, Itertools};
 
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialMode, URDFMaterialReferences};
 use crate::{
-	joint::Joint, link::Link, material::Material, transmission::Transmission, ArcLock, WeakLock,
+	joint::Joint, link::Link, linkbuilding::BuildLink, material::Material,
+	transmission::Transmission, ArcLock, WeakLock,
 };
 
 use crate::cluster_objects::kinematic_data_errors::*;
@@ -20,8 +20,8 @@ use crate::cluster_objects::kinematic_data_errors::*;
 pub struct KinematicTreeData {
 	pub(crate) root_link: ArcLock<Link>,
 	//TODO: In this implementation the Keys, are not linked to the objects and could be changed.
+	// These index maps are ArcLock in order to be exposable to the outside world via the ref of this thing
 	pub(crate) material_index: ArcLock<HashMap<String, ArcLock<Material>>>,
-	// TODO: Why is this an `Arc<RwLock<_>>`?
 	pub(crate) links: ArcLock<HashMap<String, WeakLock<Link>>>,
 	pub(crate) joints: ArcLock<HashMap<String, WeakLock<Joint>>>,
 	/// Do Transmission have to wrapped into ArcLock? Maybe we can get a way with raw stuff?
@@ -32,6 +32,30 @@ pub struct KinematicTreeData {
 }
 
 impl KinematicTreeData {
+	pub(crate) fn newer_link(root_link_builder: impl BuildLink) -> ArcLock<Self> {
+		let data = Arc::new_cyclic(|tree| {
+			RwLock::new(Self {
+				root_link: root_link_builder.start_building_chain(tree),
+				material_index: Arc::new(RwLock::new(HashMap::new())),
+				links: Arc::new(RwLock::new(HashMap::new())),
+				joints: Arc::new(RwLock::new(HashMap::new())),
+				transmissions: Arc::new(RwLock::new(HashMap::new())),
+				newest_link: Weak::new(),
+			})
+		});
+
+		// let root_link = root_link_ref.read().unwrap();
+		{
+			#[cfg(any(feature = "logging", test))]
+			log::trace!("Attempting to register tree data to index");
+
+			let root_link = Arc::clone(&data.try_read().unwrap().root_link);
+
+			data.write().unwrap().try_add_link2(root_link).unwrap();
+		}
+		data
+	}
+
 	/// TODO: This should be updated to also work on Links that are being toring out
 	pub(crate) fn new_link(root_link: ArcLock<Link>) -> ArcLock<KinematicTreeData> {
 		let material_index = HashMap::new();
@@ -125,6 +149,56 @@ impl KinematicTreeData {
 		}
 	}
 
+	/// This might replace try_add_link at some point, when i figure out of this contual building works?
+	/// But it loops throug everything which could be a lot...
+	///
+	/// Never mind it only will loop over things down stream.
+	/// It might actually be worth doing it
+	pub(crate) fn try_add_link2(&mut self, link: ArcLock<Link>) -> Result<(), AddLinkError> {
+		let link_binding = link.read()?;
+		let name = link_binding.get_name();
+
+		#[cfg(any(feature = "logging", test))]
+		log::debug!(target: "KinematicTreeData","Trying to attach Link: {}", name);
+
+		let other = { self.links.read()?.get(name.into()) }.map(Weak::clone);
+		if let Some(preexisting_link) = other.and_then(|weak_link| weak_link.upgrade()) {
+			if Arc::ptr_eq(&preexisting_link, &link) {
+				return Err(AddLinkError::Conflict(name.into()));
+			}
+		} else {
+			assert!(self
+				.links
+				.write()?
+				.insert(name.into(), Arc::downgrade(&link))
+				.is_none());
+			self.newest_link = Arc::downgrade(&link);
+		}
+
+		process_results(
+			link.read()
+				.unwrap()
+				.get_visuals()
+				.iter()
+				.filter_map(|visual| visual.get_material().clone())
+				.map(|material| self.try_add_material(material)),
+			|iter| iter.collect_vec(),
+		)
+		.unwrap(); // FIXME: THIS IS TEMP
+
+		process_results(
+			link.read()
+				.unwrap()
+				.get_joints()
+				.iter()
+				.map(|joint| self.try_add_joint2(joint)),
+			|iter| iter.collect_vec(),
+		)
+		.unwrap(); // FIXME: THIS IS TEMP
+
+		Ok(())
+	}
+
 	pub(crate) fn try_add_joint(&mut self, joint: &ArcLock<Joint>) -> Result<(), AddJointError> {
 		let joint_binding = joint.read()?;
 		let name = joint_binding.get_name();
@@ -147,6 +221,31 @@ impl KinematicTreeData {
 				.is_none());
 			Ok(())
 		}
+	}
+
+	pub(crate) fn try_add_joint2(&mut self, joint: &ArcLock<Joint>) -> Result<(), AddJointError> {
+		let joint_binding = joint.read()?;
+		let name = joint_binding.get_name();
+
+		#[cfg(any(feature = "logging", test))]
+		log::debug!(target: "KinematicTreeData","Trying to attach Joint: {}", name);
+
+		let other = { self.joints.read()?.get(name) }.map(Weak::clone);
+		if let Some(preexisting_joint) = other.and_then(|weak_joint| weak_joint.upgrade()) {
+			if Arc::ptr_eq(&preexisting_joint, &joint) {
+				return Err(AddJointError::Conflict(name.into()));
+			}
+		} else {
+			assert!(self
+				.joints
+				.write()?
+				.insert(name.into(), Arc::downgrade(&joint))
+				.is_none());
+		}
+
+		self.try_add_link2(joint.read().unwrap().get_child_link())
+			.unwrap(); //FIXME: Unwrap is not OK here
+		Ok(())
 	}
 
 	pub(crate) fn try_add_transmission(
@@ -293,3 +392,341 @@ impl PartialEq for KinematicTreeData {
 	}
 }
 // impl KinematicTreeTrait for KinematicTreeData {}
+
+#[cfg(test)]
+mod tests {
+	use std::sync::{Arc, Weak};
+	use test_log::test;
+
+	use crate::{
+		cluster_objects::kinematic_tree_data::KinematicTreeData,
+		joint::{JointBuilder, JointType},
+		link_data::LinkParent,
+		linkbuilding::LinkBuilder,
+	};
+
+	// 	#[test]
+	// 	fn new_link() {
+	// 		let data_tree = KinematicTreeData::new_link(Link {name: "Linky".to_string(), ..Default::default()});
+	// 	}
+
+	#[test]
+	fn newer_link_singular_empty() {
+		let data_tree = KinematicTreeData::newer_link(LinkBuilder::new("Linky".into()));
+
+		let tree = data_tree.try_read().unwrap();
+
+		assert_eq!(tree.links.try_read().unwrap().len(), 1);
+		assert_eq!(tree.joints.try_read().unwrap().len(), 0);
+		assert_eq!(tree.material_index.try_read().unwrap().len(), 0);
+		assert_eq!(tree.transmissions.try_read().unwrap().len(), 0);
+
+		assert!(tree.links.try_read().unwrap().contains_key("Linky"));
+		assert_eq!(tree.root_link.try_read().unwrap().get_name(), "Linky");
+		assert_eq!(
+			tree.newest_link
+				.upgrade()
+				.unwrap()
+				.try_read()
+				.unwrap()
+				.get_name(),
+			"Linky"
+		);
+
+		assert!(Arc::ptr_eq(
+			&tree.root_link,
+			&tree.newest_link.upgrade().unwrap()
+		));
+		assert!(
+			match tree.root_link.try_read().unwrap().get_parent().unwrap() {
+				LinkParent::KinematicTree(_) => true,
+				_ => false,
+			}
+		);
+	}
+
+	#[test]
+	fn newer_link_multi_empty() {
+		let data_tree = KinematicTreeData::newer_link(LinkBuilder {
+			joints: vec![
+				JointBuilder {
+					child: Some(LinkBuilder {
+						joints: vec![JointBuilder {
+							child: Some(LinkBuilder::new("other-child".into())),
+							..JointBuilder::new("other-child-joint".into(), JointType::Fixed)
+						}],
+						..LinkBuilder::new("other-link".into())
+					}),
+					..JointBuilder::new("other-joint".into(), JointType::Fixed)
+				},
+				JointBuilder {
+					child: Some(LinkBuilder::new("3".into())),
+					..JointBuilder::new("three".into(), JointType::Fixed)
+				},
+			],
+			..LinkBuilder::new("example-link".into())
+		});
+
+		let tree = data_tree.try_read().unwrap();
+
+		assert_eq!(tree.links.try_read().unwrap().len(), 4);
+		assert_eq!(tree.joints.try_read().unwrap().len(), 3);
+		assert_eq!(tree.material_index.try_read().unwrap().len(), 0);
+		assert_eq!(tree.transmissions.try_read().unwrap().len(), 0);
+
+		let mut link_keys: Vec<String> = tree.links.try_read().unwrap().keys().cloned().collect();
+		link_keys.sort();
+		assert_eq!(
+			link_keys,
+			vec!["3", "example-link", "other-child", "other-link",]
+		);
+
+		let mut joint_keys: Vec<String> = tree.joints.try_read().unwrap().keys().cloned().collect();
+		joint_keys.sort();
+		assert_eq!(
+			joint_keys,
+			vec!["other-child-joint", "other-joint", "three",]
+		);
+
+		assert_eq!(
+			tree.root_link.try_read().unwrap().get_name(),
+			"example-link"
+		);
+		assert_eq!(
+			tree.newest_link
+				.upgrade()
+				.unwrap()
+				.try_read()
+				.unwrap()
+				.get_name(),
+			"3"
+		);
+
+		assert!(
+			match tree.root_link.try_read().unwrap().get_parent().unwrap() {
+				LinkParent::KinematicTree(_) => true,
+				_ => false,
+			}
+		);
+
+		assert_eq!(
+			tree.root_link
+				.try_read()
+				.unwrap()
+				.get_joints()
+				.iter()
+				.map(|joint| joint.try_read().unwrap().get_name().clone())
+				.collect::<Vec<String>>(),
+			vec!["other-joint", "three"]
+		);
+
+		// Start childs of 'example-link'
+
+		{
+			let joint = tree
+				.joints
+				.try_read()
+				.unwrap()
+				.get("other-joint")
+				.unwrap()
+				.upgrade()
+				.unwrap();
+
+			assert_eq!(joint.try_read().unwrap().get_name(), "other-joint");
+			assert!(joint.try_read().unwrap().tree.upgrade().is_some());
+
+			assert!(Arc::ptr_eq(
+				&joint.try_read().unwrap().get_parent_link(),
+				&tree.root_link
+			));
+			assert!(Arc::ptr_eq(
+				&joint.try_read().unwrap().get_child_link(),
+				&tree
+					.links
+					.try_read()
+					.unwrap()
+					.get("other-link")
+					.unwrap()
+					.upgrade()
+					.unwrap()
+			));
+		}
+
+		// Start childs of 'other-joint'
+
+		{
+			let link = tree
+				.links
+				.try_read()
+				.unwrap()
+				.get("other-link")
+				.unwrap()
+				.upgrade()
+				.unwrap();
+
+			assert_eq!(link.try_read().unwrap().get_name(), "other-link");
+			assert!(link.try_read().unwrap().tree.upgrade().is_some());
+
+			assert!(Weak::ptr_eq(
+				&(match link.try_read().unwrap().get_parent().unwrap() {
+					LinkParent::Joint(joint) => joint,
+					LinkParent::KinematicTree(_) => panic!("Not ok"),
+				}),
+				&tree.joints.try_read().unwrap().get("other-joint").unwrap()
+			));
+
+			assert_eq!(
+				link.try_read()
+					.unwrap()
+					.get_joints()
+					.iter()
+					.map(|joint| joint.try_read().unwrap().get_name().clone())
+					.collect::<Vec<String>>(),
+				vec!["other-child-joint"]
+			);
+		}
+
+		{
+			let joint = tree
+				.joints
+				.try_read()
+				.unwrap()
+				.get("other-child-joint")
+				.unwrap()
+				.upgrade()
+				.unwrap();
+
+			assert_eq!(joint.try_read().unwrap().get_name(), "other-child-joint");
+			assert!(joint.try_read().unwrap().tree.upgrade().is_some());
+
+			assert!(Weak::ptr_eq(
+				&joint.try_read().unwrap().parent_link,
+				&tree.links.try_read().unwrap().get("other-link").unwrap()
+			));
+
+			assert!(Arc::ptr_eq(
+				&joint.try_read().unwrap().get_child_link(),
+				&tree
+					.links
+					.try_read()
+					.unwrap()
+					.get("other-child")
+					.unwrap()
+					.upgrade()
+					.unwrap()
+			));
+		}
+
+		{
+			let link = tree
+				.links
+				.try_read()
+				.unwrap()
+				.get("other-child")
+				.unwrap()
+				.upgrade()
+				.unwrap();
+
+			assert_eq!(link.try_read().unwrap().get_name(), "other-child");
+			assert!(link.try_read().unwrap().tree.upgrade().is_some());
+
+			assert!(Weak::ptr_eq(
+				&(match link.try_read().unwrap().get_parent().unwrap() {
+					LinkParent::Joint(joint) => joint,
+					LinkParent::KinematicTree(_) => panic!("Not ok"),
+				}),
+				&tree
+					.joints
+					.try_read()
+					.unwrap()
+					.get("other-child-joint")
+					.unwrap()
+			));
+
+			assert_eq!(
+				link.try_read()
+					.unwrap()
+					.get_joints()
+					.iter()
+					.map(|joint| joint.try_read().unwrap().get_name().clone())
+					.collect::<Vec<String>>(),
+				Vec::<String>::new()
+			);
+		}
+
+		// Start child 2 of 'example-link'
+		{
+			let joint = tree
+				.joints
+				.try_read()
+				.unwrap()
+				.get("three")
+				.unwrap()
+				.upgrade()
+				.unwrap();
+
+			assert_eq!(joint.try_read().unwrap().get_name(), "three");
+			assert!(joint.try_read().unwrap().tree.upgrade().is_some());
+
+			assert!(Arc::ptr_eq(
+				&joint.try_read().unwrap().get_parent_link(),
+				&tree.root_link
+			));
+			assert!(Arc::ptr_eq(
+				&joint.try_read().unwrap().get_child_link(),
+				&tree
+					.links
+					.try_read()
+					.unwrap()
+					.get("3")
+					.unwrap()
+					.upgrade()
+					.unwrap()
+			));
+		}
+
+		{
+			let link = tree
+				.links
+				.try_read()
+				.unwrap()
+				.get("3")
+				.unwrap()
+				.upgrade()
+				.unwrap();
+
+			assert_eq!(link.try_read().unwrap().get_name(), "3");
+			assert!(link.try_read().unwrap().tree.upgrade().is_some());
+
+			assert!(Weak::ptr_eq(
+				&(match link.try_read().unwrap().get_parent().unwrap() {
+					LinkParent::Joint(joint) => joint,
+					LinkParent::KinematicTree(_) => panic!("Not ok"),
+				}),
+				&tree.joints.try_read().unwrap().get("three").unwrap()
+			));
+
+			assert_eq!(
+				link.try_read()
+					.unwrap()
+					.get_joints()
+					.iter()
+					.map(|joint| joint.try_read().unwrap().get_name().clone())
+					.collect::<Vec<String>>(),
+				Vec::<String>::new()
+			);
+		}
+	}
+
+	#[test]
+	#[ignore]
+	fn newer_link_singular_full() {
+		todo!()
+	}
+
+	#[test]
+	#[ignore]
+	fn newer_link_multi_full() {
+		todo!()
+	}
+}
