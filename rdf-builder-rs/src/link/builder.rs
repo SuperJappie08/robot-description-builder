@@ -11,7 +11,7 @@ pub trait BuildLink {
 	/// TODO: THE BUILDER IS ALLOWED TO BUILD JOINTS FOR THIS BEAST, Maybe not for end users but might be usefull for cloning;
 	fn build(self, tree: &WeakLock<KinematicTreeData>) -> ArcLock<Link>;
 
-	fn as_root_link(self) -> KinematicTree
+	fn build_tree(self) -> KinematicTree
 	where
 		Self: Sized,
 	{

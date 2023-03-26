@@ -22,38 +22,6 @@ use crate::{
 #[cfg(any(feature = "xml"))]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
-// pub trait JointInterface: Debug {
-// 	fn get_name(&self) -> &String;
-// 	fn get_jointtype(&self) -> JointType;
-
-// 	/// Adds the `Joint` to a kinematic tree
-// 	fn add_to_tree(&mut self, new_parent_tree: &ArcLock<KinematicTreeData>) {
-// 		{
-// 			let mut new_ptree = new_parent_tree.write().unwrap(); // FIXME: Probablly shouldn't unwrap
-// 			new_ptree.try_add_link(self.get_child_link()).unwrap();
-// 			// TODO: Add materials, and other stuff
-// 		}
-// 		self.get_child_link()
-// 			.write()
-// 			.unwrap() // FIXME: Probablly shouldn't unwrap
-// 			.add_to_tree(new_parent_tree);
-// 		self.set_tree(Arc::downgrade(new_parent_tree));
-// 	}
-
-// 	fn get_parent_link(&self) -> ArcLock<Link>;
-// 	fn get_child_link(&self) -> ArcLock<Link>;
-
-// 	/// Set the paren tree
-// 	fn set_tree(&mut self, tree: WeakLock<KinematicTreeData>);
-
-// 	/// TODO: Semi TMP
-// 	fn get_origin(&self) -> &TransformData;
-
-// 	fn rebuild(&self) -> JointBuilder;
-
-// 	fn get_self(&self) -> ArcLock<Box<dyn JointInterface + Sync + Send>>;
-// }
-
 #[derive(Debug)]
 pub struct Joint {
 	/// The name of the `Joint`
@@ -101,7 +69,9 @@ impl Joint {
 	/// For now pub crate, this should maybe go to joint trait
 	pub fn get_parent_link(&self) -> ArcLock<Link> {
 		// If this panics, the Joint is not initialized propperly.
-		self.parent_link.upgrade().unwrap()
+		self.parent_link
+			.upgrade()
+			.expect("Joint's parent link should be set")
 	}
 
 	/// For now pub crate, this should maybe go to joint trait

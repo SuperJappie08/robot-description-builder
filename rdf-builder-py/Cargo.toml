@@ -9,5 +9,6 @@ name = "rdf_builder_py"
 crate-type = ["cdylib"]
 
 [dependencies]
+itertools = "0.10.5"
 pyo3 = "0.18.1"
-rdf-builder-rs = { version = "0.1.0", path = "../rdf-builder-rs" }
+rdf-builder-rs = { path = "../rdf-builder-rs" }

@@ -12,8 +12,11 @@ use crate::{
 pub struct LinkBuilder {
 	// All fields are pub(crate) so I can struct initialize in rebuild
 	pub(crate) name: String,
+	/// TODO: Figure out if we make this immutable on a `Link` and only allow editting throug the builder.
 	pub(crate) visuals: Vec<link_data::Visual>,
 	pub(crate) colliders: Vec<link_data::Collision>,
+	// TODO: Calulate InertialData?
+	// pub(crate) intertial: Option<link_data::InertialData>,
 	pub(crate) joints: Vec<JointBuilder>,
 }
 
@@ -25,7 +28,38 @@ impl LinkBuilder {
 		}
 	}
 
-	// /// MAybe
+	pub fn add_visual(&mut self, visual: link_data::Visual) -> &mut Self {
+		self.visuals.push(visual);
+		self
+	}
+
+	pub fn add_collider(&mut self, collider: link_data::Collision) -> &mut Self {
+		self.colliders.push(collider);
+		self
+	}
+
+	// ===== NON BUILDER METHODS =====
+
+	pub fn get_visuals(&self) -> &Vec<link_data::Visual> {
+		&self.visuals
+	}
+
+	pub fn get_visuals_mut(&mut self) -> &mut Vec<link_data::Visual> {
+		&mut self.visuals
+	}
+
+	pub fn get_colliders(&self) -> &Vec<link_data::Collision> {
+		&self.colliders
+	}
+
+	pub fn get_colliders_mut(&mut self) -> &mut Vec<link_data::Collision> {
+		&mut self.colliders
+	}
+
+	pub fn get_joints(&self) -> &Vec<JointBuilder> {
+		&self.joints
+	}
+
 	// pub(crate) fn build(self, tree: ArcLock<KinematicTreeData>) -> ArcLock<Link> {
 	//     // Not sure How i wanna do this yet,
 	//     // Maybe with colliders and visuals, stacking and calculating the always calculating the endpoint or not?

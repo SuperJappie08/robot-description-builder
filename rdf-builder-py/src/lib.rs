@@ -1,8 +1,19 @@
+mod joint;
+mod material;
+mod visual;
+
+use joint::*;
+use material::*;
+use visual::*;
+
 use std::sync::{Arc, RwLock};
 
+use itertools::Itertools;
 use pyo3::prelude::*;
+
 use rdf_builder_rs::{
-	Joint, JointBuilder, JointType, KinematicInterface, KinematicTree, Link, Robot,
+	linkbuilding::{BuildLink, LinkBuilder},
+	JointBuilder, KinematicInterface, KinematicTree, Link, Robot,
 };
 
 #[derive(Debug)]
@@ -68,6 +79,13 @@ impl PyKinematicTree {
 	fn get_joint(&self, name: String) -> Option<PyJoint> {
 		self.inner.get_joint(&name).map(Into::into)
 	}
+
+	pub fn __repr__(&self) -> String {
+		format!(
+			"KinematicTree(root_link = {}, ...)",
+			self.root_link().__repr__()
+		)
+	}
 }
 
 impl From<KinematicTree> for PyKinematicTree {
@@ -91,8 +109,27 @@ struct PyLink {
 #[pymethods]
 impl PyLink {
 	#[staticmethod]
-	fn new(name: String) -> PyKinematicTree {
-		Link::new(name).into()
+	/// TODO: EXPAND
+	fn new(
+		name: String,
+		visuals: Option<Vec<PyVisual>>,
+		colliders: Option<Vec<PyVisual>>,
+	) -> PyKinematicTree {
+		// Link::new(name).into()
+		let mut builder = LinkBuilder::new(name);
+		builder.get_visuals_mut().append(
+			&mut visuals
+				.unwrap_or_default()
+				.iter()
+				.map(|visual| visual.clone().into())
+				.collect(),
+		);
+
+		if colliders.is_some() {
+			panic!("Not IMPLEMENTED YET")
+		}
+
+		builder.build_tree().into()
 	}
 
 	#[getter]
@@ -108,9 +145,32 @@ impl PyLink {
 			.unwrap() // TODO: Figure out if unwrap is Ok here?
 			.try_attach_child(
 				Into::<KinematicTree>::into(tree).into(),
-				joint_builder.inner,
+				Into::<JointBuilder>::into(joint_builder),
 			)
 			.unwrap() // TODO: Figure out if unwrap is Ok here?
+	}
+
+	fn __repr__(&self) -> String {
+		let link = self.inner.read().unwrap(); // FIXME: Unwrap ok?
+		let mut repr = format!("Link('{}'", link.get_name());
+
+		{
+			let visuals = link.get_visuals();
+			if visuals.len() > 0 {
+				repr += ", visuals = [";
+				// repr += &visuals.iter().map(|visual| PyVisual::from(visual.clone()).__repr__()).collect::<Vec<String>>().join(", ");
+				repr += visuals
+					.iter()
+					.map(|visual| PyVisual::from(visual.clone()).__repr__())
+					.join(", ")
+					.as_str();
+				repr += "]";
+			}
+		}
+		// TODO: EXPAND
+
+		repr += ", ...)";
+		repr
 	}
 }
 
@@ -121,101 +181,28 @@ impl From<Arc<RwLock<Link>>> for PyLink {
 }
 
 #[derive(Debug)]
-#[pyclass(name = "Joint")]
-struct PyJoint {
-	inner: Arc<RwLock<Joint>>,
+#[pyclass(name = "LinkBuilder")]
+struct PyLinkBuilder {
+	inner: LinkBuilder,
 }
 
 #[pymethods]
-impl PyJoint {
-	#[getter]
-	fn name(&self) -> String {
-		self.inner.try_read().unwrap().get_name().clone() // TODO: Figure out if unwrap is Ok here?
-	}
-
-	#[getter]
-	fn parent_link(&self) -> PyLink {
-		self.inner.try_read().unwrap().get_parent_link().into() // TODO: Figure out if unwrap is Ok here?
-	}
-
-	#[getter]
-	fn child_link(&self) -> PyLink {
-		self.inner.try_read().unwrap().get_child_link().into() // TODO: Figure out if unwrap is Ok here?
-	}
-}
-
-impl From<Arc<RwLock<Joint>>> for PyJoint {
-	fn from(value: Arc<RwLock<Joint>>) -> Self {
-		Self { inner: value }
-	}
-}
-
-#[derive(Debug, Clone)]
-#[pyclass(name = "JointBuilder")]
-struct PyJointBuilder {
-	inner: JointBuilder,
-}
-
-#[pymethods]
-impl PyJointBuilder {
+impl PyLinkBuilder {
 	#[new]
-	fn new(name: String, joint_type: PyJointType) -> PyJointBuilder {
-		// ODDITY: use `Joint::new` because `JointBuilder::new` is private to the crate
-		JointBuilder::new(name, joint_type.into()).into()
+	fn new(name: String) -> Self {
+		LinkBuilder::new(name).into()
 	}
 
-	/// TEMP implementation
-	fn add_origin_offset(&mut self, x: f32, y: f32, z: f32) {
-		self.inner.add_origin_offset((x, y, z));
+	/// Maybe direct construction
+	fn build(&self) -> PyKinematicTree {
+		// FIXME: NOT OK
+		self.inner.clone().build_tree().into()
 	}
 }
 
-impl From<JointBuilder> for PyJointBuilder {
-	fn from(value: JointBuilder) -> Self {
+impl From<LinkBuilder> for PyLinkBuilder {
+	fn from(value: LinkBuilder) -> Self {
 		Self { inner: value }
-	}
-}
-
-impl From<PyJointBuilder> for JointBuilder {
-	fn from(value: PyJointBuilder) -> Self {
-		value.inner
-	}
-}
-
-#[derive(Debug, PartialEq, Eq, Clone)]
-#[pyclass(name = "JointType")]
-enum PyJointType {
-	Fixed,
-	Revolute,
-	Continuous,
-	Prismatic,
-	Floating,
-	Planar,
-}
-
-impl From<JointType> for PyJointType {
-	fn from(value: JointType) -> Self {
-		match value {
-			JointType::Fixed => Self::Fixed,
-			JointType::Revolute => Self::Revolute,
-			JointType::Continuous => Self::Continuous,
-			JointType::Prismatic => Self::Prismatic,
-			JointType::Floating => Self::Floating,
-			JointType::Planar => Self::Planar,
-		}
-	}
-}
-
-impl From<PyJointType> for JointType {
-	fn from(value: PyJointType) -> Self {
-		match value {
-			PyJointType::Fixed => Self::Fixed,
-			PyJointType::Revolute => Self::Revolute,
-			PyJointType::Continuous => Self::Continuous,
-			PyJointType::Prismatic => Self::Prismatic,
-			PyJointType::Floating => Self::Floating,
-			PyJointType::Planar => Self::Planar,
-		}
 	}
 }
 
@@ -230,9 +217,16 @@ fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
 fn rdf_builder_py(_py: Python, m: &PyModule) -> PyResult<()> {
 	m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
 
+	// INTERRESTING IDEA, DICT Constructors...
 	m.add_class::<PyRobot>()?;
 	m.add_class::<PyKinematicTree>()?;
+
 	m.add_class::<PyLink>()?;
+	m.add_class::<PyLinkBuilder>()?;
+
+	m.add_class::<PyVisual>()?;
+	m.add_class::<PyMaterial>()?;
+
 	m.add_class::<PyJoint>()?;
 	m.add_class::<PyJointBuilder>()?;
 	m.add_class::<PyJointType>()?;

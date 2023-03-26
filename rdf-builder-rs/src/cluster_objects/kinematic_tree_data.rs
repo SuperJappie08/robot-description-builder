@@ -21,6 +21,7 @@ pub struct KinematicTreeData {
 	pub(crate) root_link: ArcLock<Link>,
 	//TODO: In this implementation the Keys, are not linked to the objects and could be changed.
 	// These index maps are ArcLock in order to be exposable to the outside world via the ref of this thing
+	/// TODO:? Maybe make materials immutable after creation.
 	pub(crate) material_index: ArcLock<HashMap<String, ArcLock<Material>>>,
 	pub(crate) links: ArcLock<HashMap<String, WeakLock<Link>>>,
 	pub(crate) joints: ArcLock<HashMap<String, WeakLock<Joint>>>,
