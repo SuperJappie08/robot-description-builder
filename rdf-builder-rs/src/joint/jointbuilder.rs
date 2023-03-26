@@ -87,8 +87,8 @@ impl BuildJoint for JointBuilder {
 			RwLock::new(Joint {
 				name: self.name,
 				tree: Weak::clone(&tree),
-				parent_link: parent_link,
-				child_link: child_link,
+				parent_link,
+				child_link,
 				joint_type: self.joint_type,
 				origin: self.origin,
 				me: Weak::clone(me),
@@ -117,7 +117,7 @@ impl BuildJointChain for JointBuilder {
 				child_link: self.child.unwrap().build_chain(tree, me),
 				joint_type: self.joint_type,
 				origin: self.origin,
-				me: Weak::clone(&me),
+				me: Weak::clone(me),
 			})
 		})
 	}

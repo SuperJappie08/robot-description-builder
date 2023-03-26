@@ -124,7 +124,7 @@ impl Joint {
 		log::info!(target: "JointBuilder","Rebuilding: {}", self.get_name());
 		JointBuilder {
 			name: self.name.clone(),
-			joint_type: self.joint_type.clone(),
+			joint_type: self.joint_type,
 			origin: self.origin.clone(),
 			..Default::default()
 		}

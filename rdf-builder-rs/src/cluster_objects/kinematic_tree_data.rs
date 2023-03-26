@@ -131,7 +131,7 @@ impl KinematicTreeData {
 		#[cfg(any(feature = "logging", test))]
 		log::debug!(target: "KinematicTreeData","Trying to attach Link: {}", name);
 
-		let other = { self.links.read()?.get(name.into()) }.map(Weak::clone);
+		let other = { self.links.read()?.get(name) }.map(Weak::clone);
 		if let Some(preexisting_link) = other.and_then(|weak_link| weak_link.upgrade()) {
 			if Arc::ptr_eq(&preexisting_link, &link) {
 				Err(AddLinkError::Conflict(name.into()))
@@ -161,7 +161,7 @@ impl KinematicTreeData {
 		#[cfg(any(feature = "logging", test))]
 		log::debug!(target: "KinematicTreeData","Trying to attach Link: {}", name);
 
-		let other = { self.links.read()?.get(name.into()) }.map(Weak::clone);
+		let other = { self.links.read()?.get(name) }.map(Weak::clone);
 		if let Some(preexisting_link) = other.and_then(|weak_link| weak_link.upgrade()) {
 			if Arc::ptr_eq(&preexisting_link, &link) {
 				return Err(AddLinkError::Conflict(name.into()));

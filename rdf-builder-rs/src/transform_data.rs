@@ -23,7 +23,7 @@ impl ToURDF for TransformData {
 		_urdf_config: &crate::to_rdf::to_urdf::URDFConfig,
 	) -> Result<(), quick_xml::Error> {
 		let mut element = writer.create_element("origin");
-		if let Some(translation) = self.translation.clone() {
+		if let Some(translation) = self.translation {
 			element = element.with_attribute(Attribute {
 				key: QName(b"xyz"),
 				value: format!("{} {} {}", translation.0, translation.1, translation.2)
@@ -32,7 +32,7 @@ impl ToURDF for TransformData {
 			})
 		}
 
-		if let Some(rotation) = self.rotation.clone() {
+		if let Some(rotation) = self.rotation {
 			element = element.with_attribute(Attribute {
 				key: QName(b"rpy"),
 				value: format!("{} {} {}", rotation.0, rotation.1, rotation.2)

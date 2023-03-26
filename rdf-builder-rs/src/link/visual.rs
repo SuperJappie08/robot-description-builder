@@ -80,6 +80,7 @@ impl ToURDF for Visual {
 				let material_config = URDFConfig {
 					direct_material_ref: match urdf_config.material_references {
 						URDFMaterialReferences::AllNamedMaterialOnTop => {
+							// TODO: Figure out if this check is useless (for name)
 							if has_name
 							{
 								URDFMaterialMode::Referenced
@@ -90,7 +91,8 @@ impl ToURDF for Visual {
 						URDFMaterialReferences::OnlyMultiUseMaterials => {
 							#[cfg(any(feature = "logging", test))]
 							log::info!(target: "ToURDF::Visual","The Material {} has a strong count of {}", material.read().unwrap().get_name().to_owned().unwrap(), Arc::strong_count(material));
-							if has_name && Arc::strong_count(&material) > 2 {
+							// TODO: Figure out if this check is useless (for name)
+							if has_name && Arc::strong_count(material) > 2 {
 								URDFMaterialMode::Referenced
 							} else {
 								URDFMaterialMode::FullMaterial

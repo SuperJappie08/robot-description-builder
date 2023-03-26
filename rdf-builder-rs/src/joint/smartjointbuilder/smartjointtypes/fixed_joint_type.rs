@@ -56,8 +56,6 @@ impl BuildJoint
 			joint_builder.add_origin_rotation(rotation);
 		}
 
-		let joint = joint_builder.build(Weak::clone(&tree), parent_link, child_link);
-
-		joint
+		joint_builder.build(Weak::clone(&tree), parent_link, child_link)
 	}
 }
