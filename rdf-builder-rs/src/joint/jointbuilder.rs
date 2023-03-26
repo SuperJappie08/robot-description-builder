@@ -51,9 +51,9 @@ pub struct JointBuilder {
 }
 
 impl JointBuilder {
-	pub fn new(name: String, joint_type: JointType) -> Self {
+	pub fn new<Name: Into<String>>(name: Name, joint_type: JointType) -> Self {
 		Self {
-			name,
+			name: name.into(),
 			joint_type,
 			..Default::default()
 		}

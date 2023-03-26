@@ -20,7 +20,7 @@ impl KinematicTree {
 		KinematicTree(data)
 	}
 
-	pub fn to_robot(self, name: String) -> Robot {
+	pub fn to_robot<Name: Into<String>>(self, name: Name) -> Robot {
 		Robot::new(name, self.0)
 	}
 }
@@ -182,7 +182,7 @@ mod tests {
 
 	#[test]
 	fn clone_single() {
-		let tree = Link::new("example-link".into());
+		let tree = Link::new("example-link");
 		let cloned_tree = tree.clone();
 
 		trace!(
@@ -413,15 +413,15 @@ mod tests {
 
 	#[test]
 	fn clone_multi() {
-		let tree = Link::new("example-link".into());
-		let other_tree = Link::new("other-link".into());
+		let tree = Link::new("example-link");
+		let other_tree = Link::new("other-link");
 		other_tree
 			.get_newest_link()
 			.try_write()
 			.unwrap()
 			.try_attach_child(
-				Link::new("other-child".into()).into(),
-				JointBuilder::new("other-child-joint".into(), JointType::Fixed),
+				Link::new("other-child").into(),
+				JointBuilder::new("other-child-joint", JointType::Fixed),
 			)
 			.unwrap();
 
@@ -430,7 +430,7 @@ mod tests {
 			.unwrap()
 			.try_attach_child(
 				other_tree.into(),
-				JointBuilder::new("other-joint".into(), JointType::Fixed),
+				JointBuilder::new("other-joint", JointType::Fixed),
 			)
 			.unwrap();
 
@@ -438,8 +438,8 @@ mod tests {
 			.try_write()
 			.unwrap()
 			.try_attach_child(
-				Link::new("3".into()).into(),
-				JointBuilder::new("three".into(), JointType::Fixed),
+				Link::new("3").into(),
+				JointBuilder::new("three", JointType::Fixed),
 			)
 			.unwrap();
 

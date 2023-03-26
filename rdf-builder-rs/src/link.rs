@@ -75,7 +75,8 @@ pub struct Link {
 
 impl Link {
 	/// NOTE: Maybe change name to `Impl Into<String>` or a `&str`, for ease of use?
-	pub fn new(name: String) -> KinematicTree {
+	pub fn new<Name: Into<String>>(name: Name) -> KinematicTree {
+		let name = name.into();
 		#[cfg(any(feature = "logging", test))]
 		log::info!("Making a Link[name = \"{}\"]", name);
 
@@ -397,7 +398,7 @@ mod tests {
 
 	#[test]
 	fn new() {
-		let tree = Link::new("Link-on-Park".into());
+		let tree = Link::new("Link-on-Park");
 
 		let binding = tree.get_root_link();
 		let root_link = binding.try_read().unwrap();
@@ -424,15 +425,15 @@ mod tests {
 
 	#[test]
 	fn try_attach_single_child() {
-		let tree = Link::new("base_link".into());
+		let tree = Link::new("base_link");
 
 		assert_eq!(
 			tree.get_newest_link()
 				.try_write()
 				.unwrap()
 				.try_attach_child(
-					Link::new("child_link".into()).into(),
-					JointBuilder::new("steve".into(), JointType::Fixed)
+					Link::new("child_link").into(),
+					JointBuilder::new("steve", JointType::Fixed)
 				),
 			Ok(())
 		);
@@ -495,17 +496,17 @@ mod tests {
 
 	#[test]
 	fn try_attach_multi_child() {
-		let tree = Link::new("root".into());
-		let other_tree = Link::new("other_root".into());
-		let tree_three = Link::new("3".into());
+		let tree = Link::new("root");
+		let other_tree = Link::new("other_root");
+		let tree_three = Link::new("3");
 
 		other_tree
 			.get_newest_link()
 			.try_write()
 			.unwrap()
 			.try_attach_child(
-				Link::new("other_child_link".into()).into(),
-				JointBuilder::new("other_joint".into(), JointType::Fixed),
+				Link::new("other_child_link").into(),
+				JointBuilder::new("other_joint", JointType::Fixed),
 			)
 			.unwrap();
 
@@ -514,7 +515,7 @@ mod tests {
 			.unwrap()
 			.try_attach_child(
 				other_tree.into(),
-				JointBuilder::new("initial_joint".into(), JointType::Fixed),
+				JointBuilder::new("initial_joint", JointType::Fixed),
 			)
 			.unwrap();
 
@@ -529,7 +530,7 @@ mod tests {
 			.unwrap()
 			.try_attach_child(
 				tree_three.into(),
-				JointBuilder::new("joint-3".into(), JointType::Fixed),
+				JointBuilder::new("joint-3", JointType::Fixed),
 			)
 			.unwrap();
 

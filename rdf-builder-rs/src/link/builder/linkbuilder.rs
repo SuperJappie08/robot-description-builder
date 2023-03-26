@@ -18,9 +18,9 @@ pub struct LinkBuilder {
 }
 
 impl LinkBuilder {
-	pub fn new(name: String) -> LinkBuilder {
+	pub fn new<Name: Into<String>>(name: Name) -> LinkBuilder {
 		Self {
-			name,
+			name: name.into(),
 			..Default::default()
 		}
 	}

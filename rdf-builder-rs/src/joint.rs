@@ -266,13 +266,13 @@ mod tests {
 
 	#[test]
 	fn rebuild() {
-		let tree = Link::new("root".to_owned());
+		let tree = Link::new("root");
 		tree.get_newest_link()
 			.try_write()
 			.unwrap()
 			.try_attach_child(
-				Link::new("child".to_owned()).into(),
-				SmartJointBuilder::new("Joint1".to_owned())
+				Link::new("child").into(),
+				SmartJointBuilder::new("Joint1")
 					.fixed()
 					.add_offset(OffsetMode::Offset(2.0, 3.0, 5.0)),
 			)
@@ -286,7 +286,7 @@ mod tests {
 			.rebuild();
 		assert_eq!(
 			rebuilder,
-			*JointBuilder::new("Joint1".to_owned(), crate::JointType::Fixed)
+			*JointBuilder::new("Joint1", crate::JointType::Fixed)
 				.add_origin_offset((2.0, 3.0, 5.0))
 		)
 	}

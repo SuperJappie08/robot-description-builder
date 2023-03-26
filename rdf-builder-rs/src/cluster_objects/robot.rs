@@ -25,8 +25,11 @@ pub struct Robot {
 }
 
 impl Robot {
-	pub(crate) fn new(name: String, data: ArcLock<KinematicTreeData>) -> Self {
-		Self { name, data }
+	pub(crate) fn new<Name: Into<String>>(name: Name, data: ArcLock<KinematicTreeData>) -> Self {
+		Self {
+			name: name.into(),
+			data,
+		}
 	}
 
 	/// Gets a refence to the name of the `Robot`

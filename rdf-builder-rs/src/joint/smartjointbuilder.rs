@@ -61,8 +61,8 @@ where
 impl
 	SmartJointBuilder<NoType, NoAxis, NoCalibration, NoDynamics, NoLimit, NoMimic, NoSafetyController>
 {
-	pub fn new(
-		name: String,
+	pub fn new<Name: Into<String>>(
+		name: Name,
 	) -> SmartJointBuilder<
 		NoType,
 		NoAxis,
@@ -73,7 +73,7 @@ impl
 		NoSafetyController,
 	> {
 		SmartJointBuilder {
-			name: name,
+			name: name.into(),
 			joint_type: NoType,
 			..SmartJointBuilder::default()
 		}

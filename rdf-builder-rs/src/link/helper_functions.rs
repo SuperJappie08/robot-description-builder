@@ -13,10 +13,11 @@ use crate::{
 /// TODO: Add material Specifierer
 /// TODO: Add Inertial data options
 /// TODO: ADD TEST?
-pub fn new_quick_link(
-	link_name: String,
+pub fn new_quick_link<Name: Into<String>>(
+	link_name: Name,
 	geometry: Box<dyn GeometryInterface + Sync + Send>,
 ) -> KinematicTree {
+	let link_name = link_name.into();
 	let tree = Link::new(link_name.clone());
 
 	let binding = tree.get_newest_link();
@@ -44,7 +45,12 @@ pub fn new_quick_link(
 /// TODO: Add material Specifierer
 /// TODO: Add Inertial data options
 /// TODO: ADD TEST?
-pub fn new_box_link(link_name: String, side1: f32, side2: f32, side3: f32) -> KinematicTree {
+pub fn new_box_link<Name: Into<String>>(
+	link_name: Name,
+	side1: f32,
+	side2: f32,
+	side3: f32,
+) -> KinematicTree {
 	let geometry = BoxGeometry::new(side1, side2, side3);
 
 	new_quick_link(link_name, geometry.into())
@@ -56,7 +62,11 @@ pub fn new_box_link(link_name: String, side1: f32, side2: f32, side3: f32) -> Ki
 /// TODO: Add Inertial data options
 /// TODO: ADD TEST?
 /// TODO: Orientation??
-pub fn new_cylinder_link(link_name: String, radius: f32, length: f32) -> KinematicTree {
+pub fn new_cylinder_link<Name: Into<String>>(
+	link_name: Name,
+	radius: f32,
+	length: f32,
+) -> KinematicTree {
 	let geometry = CylinderGeometry::new(radius, length);
 
 	new_quick_link(link_name, geometry.into())
@@ -67,7 +77,7 @@ pub fn new_cylinder_link(link_name: String, radius: f32, length: f32) -> Kinemat
 /// TODO: Add material Specifierer
 /// TODO: Add Inertial data options
 /// TODO: ADD TEST?
-pub fn new_sphere_link(link_name: String, radius: f32) -> KinematicTree {
+pub fn new_sphere_link<Name: Into<String>>(link_name: Name, radius: f32) -> KinematicTree {
 	let geometry = SphereGeometry::new(radius);
 
 	new_quick_link(link_name, geometry.into())
@@ -79,7 +89,7 @@ mod tests {
 
 	#[test]
 	fn test_new_box_link() {
-		let tree = new_box_link("Zelda".to_owned(), 2f32, 3f32, 5f32);
+		let tree = new_box_link("Zelda", 2f32, 3f32, 5f32);
 
 		assert_eq!(tree.get_links().try_read().unwrap().len(), 1);
 		assert_eq!(

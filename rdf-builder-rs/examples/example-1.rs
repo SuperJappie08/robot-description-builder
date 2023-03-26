@@ -17,7 +17,7 @@ use rdf_builder_rs::{
 };
 
 fn main() {
-	let link = Link::new("Leg_[R1]_l0".into());
+	let link = Link::new("Leg_[R1]_l0");
 	link.get_root_link()
 		.write()
 		.unwrap()
@@ -43,8 +43,8 @@ fn main() {
 		.try_write()
 		.unwrap()
 		.try_attach_child(
-			Box::new(Link::new("Leg_[R1]_l1".into())),
-			JointBuilder::new("Leg_[R1]_j1".into(), JointType::Fixed)
+			Box::new(Link::new("Leg_[R1]_l1")),
+			JointBuilder::new("Leg_[R1]_j1", JointType::Fixed)
 				.add_origin_offset((2.0, 0., 0.))
 				.to_owned(),
 		)
@@ -71,8 +71,8 @@ fn main() {
 			BoxGeometry::new(0.25, 0.1, 0.1).into(),
 		));
 
-	let robot_root = Link::new("robot_root".into());
-	let robot = robot_root.to_robot("my_robot".into());
+	let robot_root = Link::new("robot_root");
+	let robot = robot_root.to_robot("my_robot");
 	robot
 		.get_root_link()
 		.write()
@@ -90,7 +90,7 @@ fn main() {
 		))
 		.try_attach_child(
 			link.into(),
-			JointBuilder::new("Leg_[R1]_j0".into(), JointType::Fixed)
+			JointBuilder::new("Leg_[R1]_j0", JointType::Fixed)
 				.add_origin_offset((0.4, 0., 0.))
 				.to_owned(),
 		)

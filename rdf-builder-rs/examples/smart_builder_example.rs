@@ -2,7 +2,7 @@ use rdf_builder_rs::{OffsetMode, SmartJointBuilder};
 
 fn main() {
 	let fixed_builder =
-		SmartJointBuilder::new("fixed".into())
+		SmartJointBuilder::new("fixed")
 			.fixed()
 			.add_offset(OffsetMode::FigureItOut(
 				rdf_builder_rs::link_data::ConnectionPoint::End,
@@ -10,7 +10,7 @@ fn main() {
 
 	println!("{:#?}", fixed_builder);
 
-	let revolute_builder = SmartJointBuilder::new("rev".into())
+	let revolute_builder = SmartJointBuilder::new("rev")
 		.revolute()
 		.set_axis((3., 2., 4.))
 		.with_dynamics()

@@ -407,12 +407,12 @@ mod tests {
 
 	// 	#[test]
 	// 	fn new_link() {
-	// 		let data_tree = KinematicTreeData::new_link(Link {name: "Linky".to_string(), ..Default::default()});
+	// 		let data_tree = KinematicTreeData::new_link(Link {name: "Linky", ..Default::default()});
 	// 	}
 
 	#[test]
 	fn newer_link_singular_empty() {
-		let data_tree = KinematicTreeData::newer_link(LinkBuilder::new("Linky".into()));
+		let data_tree = KinematicTreeData::newer_link(LinkBuilder::new("Linky"));
 
 		let tree = data_tree.try_read().unwrap();
 
@@ -452,19 +452,19 @@ mod tests {
 				JointBuilder {
 					child: Some(LinkBuilder {
 						joints: vec![JointBuilder {
-							child: Some(LinkBuilder::new("other-child".into())),
-							..JointBuilder::new("other-child-joint".into(), JointType::Fixed)
+							child: Some(LinkBuilder::new("other-child")),
+							..JointBuilder::new("other-child-joint", JointType::Fixed)
 						}],
-						..LinkBuilder::new("other-link".into())
+						..LinkBuilder::new("other-link")
 					}),
-					..JointBuilder::new("other-joint".into(), JointType::Fixed)
+					..JointBuilder::new("other-joint", JointType::Fixed)
 				},
 				JointBuilder {
-					child: Some(LinkBuilder::new("3".into())),
-					..JointBuilder::new("three".into(), JointType::Fixed)
+					child: Some(LinkBuilder::new("3")),
+					..JointBuilder::new("three", JointType::Fixed)
 				},
 			],
-			..LinkBuilder::new("example-link".into())
+			..LinkBuilder::new("example-link")
 		});
 
 		let tree = data_tree.try_read().unwrap();
