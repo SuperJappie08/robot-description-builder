@@ -257,7 +257,6 @@ mod tests {
 					.try_read()
 					.unwrap()
 					.get_parent()
-					.unwrap()
 				{
 					LinkParent::KinematicTree(weak_tree) => weak_tree,
 					LinkParent::Joint(_) => panic!("This should not return a Joint Parent"),
@@ -273,7 +272,6 @@ mod tests {
 					.try_read()
 					.unwrap()
 					.get_parent()
-					.unwrap()
 				{
 					LinkParent::KinematicTree(weak_tree) => weak_tree,
 					LinkParent::Joint(_) => panic!("This should not return a Joint Parent"),
@@ -517,7 +515,6 @@ mod tests {
 					.try_read()
 					.unwrap()
 					.get_parent()
-					.unwrap()
 				{
 					LinkParent::KinematicTree(weak_tree) => weak_tree,
 					LinkParent::Joint(_) => panic!("This should not return a Joint Parent"),
@@ -533,7 +530,6 @@ mod tests {
 					.try_read()
 					.unwrap()
 					.get_parent()
-					.unwrap()
 				{
 					LinkParent::KinematicTree(weak_tree) => weak_tree,
 					LinkParent::Joint(_) => panic!("This should not return a Joint Parent"),

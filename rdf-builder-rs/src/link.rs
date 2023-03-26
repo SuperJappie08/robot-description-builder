@@ -63,7 +63,7 @@ pub struct Link {
 	pub(crate) name: String,
 	pub(crate) tree: WeakLock<KinematicTreeData>,
 	/// TODO: Use builder to remove optional
-	direct_parent: Option<link_data::LinkParent>,
+	direct_parent: link_data::LinkParent,
 	child_joints: Vec<ArcLock<Joint>>,
 	inertial: Option<InertialData>,
 	visuals: Vec<link_data::Visual>,
@@ -84,7 +84,7 @@ impl Link {
 			RwLock::new(Link {
 				name,
 				tree: Weak::new(),
-				direct_parent: None,
+				direct_parent: LinkParent::KinematicTree(Weak::new()),
 				child_joints: Vec::new(),
 				inertial: None,
 				visuals: Vec::new(),
@@ -109,14 +109,13 @@ impl Link {
 	// }
 	//
 	// impl LinkTrait for Link {
-	/// TODO: Make return reference
-	pub fn get_parent(&self) -> Option<LinkParent> {
-		self.direct_parent.clone()
+	pub fn get_parent(&self) -> &LinkParent {
+		&self.direct_parent
 	}
 
 	/// TODO: Figure out if this should be replaced with get mut
 	pub(crate) fn set_parent(&mut self, parent: LinkParent) {
-		self.direct_parent = Some(parent);
+		self.direct_parent = parent;
 		// NO-FIXME: Add yourself to registry.
 		// Maybe that has already happend tho? -> You can't because of the Rc Pointer thing
 	}
@@ -149,8 +148,7 @@ impl Link {
 		self.child_joints.push(Arc::clone(&joint));
 
 		{
-			tree.get_root_link().write()?.direct_parent =
-				Some(LinkParent::Joint(Arc::downgrade(&joint)))
+			tree.get_root_link().write()?.direct_parent = LinkParent::Joint(Arc::downgrade(&joint))
 		}
 
 		// Maybe I can just go down the tree and add everything by hand for now? It sounds like a terrible Idea, let's do it!
@@ -237,8 +235,8 @@ impl Link {
 	pub fn rebuild(&self) -> LinkBuilder {
 		LinkBuilder {
 			name: self.name.clone(),
-			visuals: self.visuals.iter().cloned().collect(),
-			colliders: self.colliders.iter().cloned().collect(),
+			visuals: self.visuals.to_vec(),
+			colliders: self.colliders.to_vec(),
 			..Default::default()
 		}
 	}
@@ -404,10 +402,10 @@ mod tests {
 		let root_link = binding.try_read().unwrap();
 		assert_eq!(root_link.name, "Link-on-Park".to_string());
 
-		assert!(root_link.direct_parent.is_some());
+		assert!(root_link.direct_parent.is_valid_reference());
 		assert!({
 			match root_link.direct_parent {
-				Some(LinkParent::KinematicTree(_)) => true,
+				LinkParent::KinematicTree(_) => true,
 				_ => false,
 			}
 		});
@@ -490,7 +488,7 @@ mod tests {
 				.try_read()
 				.unwrap()
 				.direct_parent,
-			Some(LinkParent::Joint(weak_joint))
+			LinkParent::Joint(weak_joint)
 		);
 	}
 
@@ -560,7 +558,7 @@ mod tests {
 		let root_link = binding.try_read().unwrap();
 		assert_eq!(
 			root_link.direct_parent,
-			Some(LinkParent::KinematicTree(Weak::clone(&root_link.tree)))
+			LinkParent::KinematicTree(Weak::clone(&root_link.tree))
 		);
 		assert_eq!(root_link.child_joints.len(), 2);
 		assert_eq!(

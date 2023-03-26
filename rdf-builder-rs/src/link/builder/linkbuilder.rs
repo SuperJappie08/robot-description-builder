@@ -41,7 +41,7 @@ impl BuildLink for LinkBuilder {
 			RwLock::new(Link {
 				name: self.name,
 				tree: Weak::clone(tree),
-				direct_parent: Some(LinkParent::KinematicTree(Weak::clone(tree))),
+				direct_parent: LinkParent::KinematicTree(Weak::clone(tree)),
 				child_joints: Vec::new(),
 				inertial: None, //TODO:
 				visuals: self.visuals,
@@ -71,7 +71,7 @@ impl BuildLink for LinkBuilder {
 			RwLock::new(Link {
 				name: self.name,
 				tree: Weak::clone(tree),
-				direct_parent: Some(LinkParent::Joint(Weak::clone(parent_joint))),
+				direct_parent: LinkParent::Joint(Weak::clone(parent_joint)),
 				child_joints: self
 					.joints
 					.into_iter()

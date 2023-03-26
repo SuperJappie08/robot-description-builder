@@ -437,12 +437,16 @@ mod tests {
 			&tree.root_link,
 			&tree.newest_link.upgrade().unwrap()
 		));
-		assert!(
-			match tree.root_link.try_read().unwrap().get_parent().unwrap() {
-				LinkParent::KinematicTree(_) => true,
-				_ => false,
-			}
-		);
+		assert!(tree
+			.root_link
+			.try_read()
+			.unwrap()
+			.get_parent()
+			.is_valid_reference());
+		assert!(match tree.root_link.try_read().unwrap().get_parent() {
+			LinkParent::KinematicTree(_) => true,
+			_ => false,
+		});
 	}
 
 	#[test]
@@ -502,12 +506,16 @@ mod tests {
 			"3"
 		);
 
-		assert!(
-			match tree.root_link.try_read().unwrap().get_parent().unwrap() {
-				LinkParent::KinematicTree(_) => true,
-				_ => false,
-			}
-		);
+		assert!(tree
+			.root_link
+			.try_read()
+			.unwrap()
+			.get_parent()
+			.is_valid_reference());
+		assert!(match tree.root_link.try_read().unwrap().get_parent() {
+			LinkParent::KinematicTree(_) => true,
+			_ => false,
+		});
 
 		assert_eq!(
 			tree.root_link
@@ -567,11 +575,12 @@ mod tests {
 			assert_eq!(link.try_read().unwrap().get_name(), "other-link");
 			assert!(link.try_read().unwrap().tree.upgrade().is_some());
 
+			assert!(link.try_read().unwrap().get_parent().is_valid_reference());
 			assert!(Weak::ptr_eq(
-				&(match link.try_read().unwrap().get_parent().unwrap() {
+				match link.try_read().unwrap().get_parent() {
 					LinkParent::Joint(joint) => joint,
 					LinkParent::KinematicTree(_) => panic!("Not ok"),
-				}),
+				},
 				&tree.joints.try_read().unwrap().get("other-joint").unwrap()
 			));
 
@@ -630,11 +639,12 @@ mod tests {
 			assert_eq!(link.try_read().unwrap().get_name(), "other-child");
 			assert!(link.try_read().unwrap().tree.upgrade().is_some());
 
+			assert!(link.try_read().unwrap().get_parent().is_valid_reference());
 			assert!(Weak::ptr_eq(
-				&(match link.try_read().unwrap().get_parent().unwrap() {
+				match link.try_read().unwrap().get_parent() {
 					LinkParent::Joint(joint) => joint,
 					LinkParent::KinematicTree(_) => panic!("Not ok"),
-				}),
+				},
 				&tree
 					.joints
 					.try_read()
@@ -698,11 +708,12 @@ mod tests {
 			assert_eq!(link.try_read().unwrap().get_name(), "3");
 			assert!(link.try_read().unwrap().tree.upgrade().is_some());
 
+			assert!(link.try_read().unwrap().get_parent().is_valid_reference());
 			assert!(Weak::ptr_eq(
-				&(match link.try_read().unwrap().get_parent().unwrap() {
+				match link.try_read().unwrap().get_parent() {
 					LinkParent::Joint(joint) => joint,
 					LinkParent::KinematicTree(_) => panic!("Not ok"),
-				}),
+				},
 				&tree.joints.try_read().unwrap().get("three").unwrap()
 			));
 

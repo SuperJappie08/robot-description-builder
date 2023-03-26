@@ -8,6 +8,15 @@ pub enum LinkParent {
 	KinematicTree(WeakLock<KinematicTreeData>),
 }
 
+impl LinkParent {
+	pub fn is_valid_reference(&self) -> bool {
+		match self {
+			LinkParent::Joint(joint) => joint.upgrade().is_some(),
+			LinkParent::KinematicTree(tree) => tree.upgrade().is_some(),
+		}
+	}
+}
+
 impl Clone for LinkParent {
 	fn clone(&self) -> Self {
 		match self {
