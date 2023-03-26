@@ -29,14 +29,12 @@ impl Collision {
 		}
 	}
 
-	/// TODO: Maybe return Optional<&String>
-	pub fn get_name(&self) -> &Option<String> {
-		&self.name
+	pub fn get_name(&self) -> Option<&String> {
+		self.name.as_ref()
 	}
 
-	/// TODO: Maybe return Optional<&TransformData>
-	pub fn get_origin(&self) -> &Option<TransformData> {
-		&self.origin
+	pub fn get_origin(&self) -> Option<&TransformData> {
+		self.origin.as_ref()
 	}
 
 	pub fn get_geometry(&self) -> &Box<dyn GeometryInterface + Sync + Send> {

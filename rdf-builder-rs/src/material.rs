@@ -27,17 +27,20 @@ impl Material {
 		}
 	}
 
-	pub fn new_texture(name: Option<String>, texture_path: String) -> Material {
+	pub fn new_texture<TexturePath: Into<String>>(
+		name: Option<String>,
+		texture_path: TexturePath,
+	) -> Material {
 		Material {
 			name,
-			material: MaterialData::Texture(texture_path),
+			material: MaterialData::Texture(texture_path.into()),
 		}
 	}
 
 	/// Returns a Reference to the optional material name
 	/// TODO: Maybe Make the name a reference only
-	pub fn get_name(&self) -> &Option<String> {
-		&self.name
+	pub fn get_name(&self) -> Option<&String> {
+		self.name.as_ref()
 	}
 
 	pub fn get_material_data(&self) -> &MaterialData {
@@ -198,7 +201,7 @@ mod tests {
 		fn texture_no_name_full() {
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
 			assert!(
-				Material::new_texture(None, "package://robot_description/...".into())
+				Material::new_texture(None, "package://robot_description/...")
 					.to_urdf(&mut writer, &URDFConfig::default())
 					.is_ok()
 			);
@@ -218,7 +221,7 @@ mod tests {
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
 			assert!(Material::new_texture(
 				Some("texture_material".into()),
-				"package://robot_description/...".into()
+				"package://robot_description/..."
 			)
 			.to_urdf(&mut writer, &URDFConfig::default())
 			.is_ok());
@@ -238,7 +241,7 @@ mod tests {
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
 			assert!(Material::new_texture(
 				Some("texture_material".into()),
-				"package://robot_description/...".into()
+				"package://robot_description/..."
 			)
 			.to_urdf(
 				&mut writer,

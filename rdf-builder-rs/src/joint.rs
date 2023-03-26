@@ -141,6 +141,7 @@ impl Joint {
 
 	/// Get a Strong Reference to this Joint
 	pub fn get_self(&self) -> ArcLock<Joint> {
+		// Unwrapping is Ok here, because if the Joint exists, its self refence should exist.
 		Weak::upgrade(&self.me).unwrap()
 	}
 

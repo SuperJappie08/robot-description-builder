@@ -23,9 +23,9 @@ pub trait BuildJoint {
 		joint: &ArcLock<Joint>,
 	) -> Result<(), crate::cluster_objects::kinematic_data_errors::AddJointError> {
 		tree.upgrade()
-			.unwrap()
+			.unwrap() // FIXME: Figure out if unwrap is Ok?
 			.try_write()
-			.unwrap()
+			.unwrap() // FIXME: Figure out if unwrap is Ok?
 			.try_add_joint(joint)
 	}
 
@@ -95,7 +95,7 @@ impl BuildJoint for JointBuilder {
 			})
 		});
 
-		Self::register_to_tree(&tree, &joint).unwrap(); // FIX unwrap;
+		Self::register_to_tree(&tree, &joint).unwrap(); // FIXME: Figure out if Unwrap is Ok here?
 		joint
 	}
 }
@@ -114,7 +114,8 @@ impl BuildJointChain for JointBuilder {
 				name: self.name,
 				tree: Weak::clone(tree),
 				parent_link: Weak::clone(parent_link),
-				child_link: self.child.unwrap().build_chain(tree, me),
+				// This is Ok, since the Joint can only be attached with specific functions.
+				child_link: self.child.expect("When Building Kinematic Branches Joints should have a child link, since a Joint only makes sense when attachted to a Parent and a Child").build_chain(tree, me),
 				joint_type: self.joint_type,
 				origin: self.origin,
 				me: Weak::clone(me),

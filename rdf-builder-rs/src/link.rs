@@ -62,7 +62,6 @@ use self::builder::LinkBuilder;
 pub struct Link {
 	pub(crate) name: String,
 	pub(crate) tree: WeakLock<KinematicTreeData>,
-	/// TODO: Use builder to remove optional
 	direct_parent: link_data::LinkParent,
 	child_joints: Vec<ArcLock<Joint>>,
 	inertial: Option<InertialData>,
@@ -74,7 +73,6 @@ pub struct Link {
 }
 
 impl Link {
-	/// NOTE: Maybe change name to `Impl Into<String>` or a `&str`, for ease of use?
 	pub fn new<Name: Into<String>>(name: Name) -> KinematicTree {
 		let name = name.into();
 		#[cfg(any(feature = "logging", test))]
@@ -100,6 +98,7 @@ impl Link {
 	}
 
 	pub fn get_self(&self) -> ArcLock<Link> {
+		// Unwrapping is Ok here, because if the Link exists, its self refence should exist.
 		Weak::upgrade(&self.me).unwrap()
 	}
 
@@ -153,9 +152,10 @@ impl Link {
 
 		// Maybe I can just go down the tree and add everything by hand for now? It sounds like a terrible Idea, let's do it!
 
+		// The parent tree exists so unwrapping is Ok
 		let parent_tree = self.tree.upgrade().unwrap();
 		{
-			let mut parent_tree = parent_tree.write()?; // FIXME: Probably shouldn't unwrap
+			let mut parent_tree = parent_tree.write()?;
 			parent_tree.try_add_link(tree.get_root_link())?;
 			// Joint has already been added
 			// parent_tree.try_add_joint(joint)?;
@@ -190,7 +190,7 @@ impl Link {
 		if visual.material.is_some() {
 			let binding = self.tree.upgrade().unwrap();
 			let mut tree = binding.write()?;
-			let result = tree.try_add_material(Arc::clone(visual.material.as_ref().unwrap()));
+			let result = tree.try_add_material(visual.get_material().unwrap());
 			if let Err(material_error) = result {
 				match material_error {
 					AddMaterialError::NoName =>
@@ -215,8 +215,8 @@ impl Link {
 		self
 	}
 
-	pub fn get_inertial(&self) -> &Option<InertialData> {
-		&self.inertial
+	pub fn get_inertial(&self) -> Option<&InertialData> {
+		self.inertial.as_ref()
 	}
 
 	pub fn get_end_point(&self) -> Option<(f32, f32, f32)> {

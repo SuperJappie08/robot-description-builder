@@ -55,6 +55,7 @@ impl BuildLink for LinkBuilder {
 	fn start_building_chain(self, tree: &WeakLock<KinematicTreeData>) -> ArcLock<Link> {
 		let joint_builders = self.joints.clone();
 		let root = self.build(tree);
+		// This unwrap is Ok since the Link has just been build
 		root.write().unwrap().child_joints = joint_builders
 			.into_iter()
 			.map(|joint_builder| joint_builder.build_chain(tree, &Arc::downgrade(&root)))

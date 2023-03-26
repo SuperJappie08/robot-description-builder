@@ -21,7 +21,8 @@ pub fn new_quick_link<Name: Into<String>>(
 	let tree = Link::new(link_name.clone());
 
 	let binding = tree.get_newest_link();
-	let mut link = binding.try_write().unwrap(); // FIXME: Might not be ok to unwrap()
+	// Unwrap is Ok here, since we just craeted the tree
+	let mut link = binding.try_write().unwrap();
 
 	let mut visual_name = link_name.clone();
 	visual_name.push_str("_visual");
@@ -31,7 +32,7 @@ pub fn new_quick_link<Name: Into<String>>(
 		geometry.boxed_clone(),
 		None, // TODO: TEMP
 	))
-	.unwrap();
+	.unwrap(); // FIXME: Ok?
 
 	let mut collision_name = link_name;
 	collision_name.push_str("_collision");

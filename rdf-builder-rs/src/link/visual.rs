@@ -37,21 +37,21 @@ impl Visual {
 		}
 	}
 
-	pub fn get_name(&self) -> &Option<String> {
-		&self.name
+	pub fn get_name(&self) -> Option<&String> {
+		self.name.as_ref()
 	}
 
 	/// TODO: Maybe make optional reference?
-	pub fn get_origin(&self) -> &Option<TransformData> {
-		&self.origin
+	pub fn get_origin(&self) -> Option<&TransformData> {
+		self.origin.as_ref()
 	}
 
 	pub fn get_geometry(&self) -> &Box<dyn GeometryInterface + Sync + Send> {
 		&self.geometry
 	}
 
-	pub fn get_material(&self) -> &Option<ArcLock<Material>> {
-		&self.material
+	pub fn get_material(&self) -> Option<&ArcLock<Material>> {
+		self.material.as_ref()
 	}
 }
 
@@ -90,7 +90,7 @@ impl ToURDF for Visual {
 						}
 						URDFMaterialReferences::OnlyMultiUseMaterials => {
 							#[cfg(any(feature = "logging", test))]
-							log::info!(target: "ToURDF::Visual","The Material {} has a strong count of {}", material.read().unwrap().get_name().to_owned().unwrap(), Arc::strong_count(material));
+							log::info!(target: "ToURDF::Visual","The Material {} has a strong count of {}", material.read().unwrap().get_name().unwrap(), Arc::strong_count(material));
 							// TODO: Figure out if this check is useless (for name)
 							if has_name && Arc::strong_count(material) > 2 {
 								URDFMaterialMode::Referenced

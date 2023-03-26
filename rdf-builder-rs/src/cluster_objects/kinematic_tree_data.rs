@@ -44,14 +44,15 @@ impl KinematicTreeData {
 			})
 		});
 
-		// let root_link = root_link_ref.read().unwrap();
 		{
 			#[cfg(any(feature = "logging", test))]
 			log::trace!("Attempting to register tree data to index");
 
+			// Unwrapping is Ok here, since we just made the KinematicDataTree
 			let root_link = Arc::clone(&data.try_read().unwrap().root_link);
 
-			data.write().unwrap().try_add_link2(root_link).unwrap();
+			// 1st Unwrapping is Ok here, since we just made the KinematicDataTree
+			data.write().unwrap().try_add_link2(root_link).unwrap(); //FIXME: 2nd Unwrap Ok?
 		}
 		data
 	}
@@ -64,6 +65,7 @@ impl KinematicTreeData {
 		let transmissions = HashMap::new();
 
 		links.insert(
+			// Unwrap is Ok here, since the root_link just got made and therefor have the only reference to it.
 			root_link.read().unwrap().get_name().into(),
 			Arc::downgrade(&root_link),
 		);
@@ -80,14 +82,14 @@ impl KinematicTreeData {
 		}));
 
 		{
-			tree.read()
-				.unwrap()
-				.root_link
-				.write()
-				.unwrap()
-				.set_parent(Arc::downgrade(&tree).into());
+			// Unwraps Ok here, because `New` tree
+			let cloned_root_link = Arc::clone(&tree.read().unwrap().root_link);
+			// Unwraps Ok here, because `New` Link
+			let mut root_link = cloned_root_link.write().unwrap();
 
-			tree.read().unwrap().root_link.write().unwrap().tree = Arc::downgrade(&tree);
+			root_link.set_parent(Arc::downgrade(&tree).into());
+
+			root_link.tree = Arc::downgrade(&tree);
 		}
 
 		tree
@@ -95,7 +97,7 @@ impl KinematicTreeData {
 
 	pub(crate) fn try_add_material(
 		&mut self,
-		material: ArcLock<Material>,
+		material: &ArcLock<Material>,
 	) -> Result<(), AddMaterialError> {
 		let binding = material.read()?;
 		let name = binding.get_name();
@@ -106,11 +108,14 @@ impl KinematicTreeData {
 		if name.is_none() {
 			return Err(AddMaterialError::NoName);
 		}
-		let other_material =
-			{ self.material_index.read()?.get(name.as_ref().unwrap()) }.map(Arc::clone);
+
+		// Unwrap is Ok, since we checked above.
+		let name = name.unwrap();
+
+		let other_material = { self.material_index.read()?.get(name) }.map(Arc::clone);
 		if let Some(preexisting_material) = other_material {
 			if Arc::ptr_eq(&preexisting_material, &material) {
-				Err(AddMaterialError::Conflict(name.clone().unwrap()))
+				Err(AddMaterialError::Conflict(name.into()))
 			} else {
 				Ok(())
 			}
@@ -118,7 +123,7 @@ impl KinematicTreeData {
 			assert!(self
 				.material_index
 				.write()?
-				.insert(name.clone().unwrap(), Arc::clone(&material))
+				.insert(name.into(), Arc::clone(&material))
 				.is_none());
 			Ok(())
 		}
@@ -177,10 +182,10 @@ impl KinematicTreeData {
 
 		process_results(
 			link.read()
-				.unwrap()
+				.unwrap() // FIXME: Figure out if unwrap Ok?
 				.get_visuals()
 				.iter()
-				.filter_map(|visual| visual.get_material().clone())
+				.filter_map(|visual| visual.get_material())
 				.map(|material| self.try_add_material(material)),
 			|iter| iter.collect_vec(),
 		)
@@ -188,7 +193,7 @@ impl KinematicTreeData {
 
 		process_results(
 			link.read()
-				.unwrap()
+				.unwrap() // FIXME: Figureout if unwrap Ok?
 				.get_joints()
 				.iter()
 				.map(|joint| self.try_add_joint2(joint)),
@@ -659,8 +664,8 @@ mod tests {
 					.get_joints()
 					.iter()
 					.map(|joint| joint.try_read().unwrap().get_name().clone())
-					.collect::<Vec<String>>(),
-				Vec::<String>::new()
+					.count(),
+				0
 			);
 		}
 
@@ -723,8 +728,8 @@ mod tests {
 					.get_joints()
 					.iter()
 					.map(|joint| joint.try_read().unwrap().get_name().clone())
-					.collect::<Vec<String>>(),
-				Vec::<String>::new()
+					.count(),
+				0
 			);
 		}
 	}
