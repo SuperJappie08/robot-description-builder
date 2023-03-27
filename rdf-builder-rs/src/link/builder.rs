@@ -1,3 +1,5 @@
+use std::sync::Weak;
+
 use crate::{
 	cluster_objects::kinematic_tree_data::KinematicTreeData, link::Link, ArcLock, Joint,
 	KinematicTree, WeakLock,
@@ -9,7 +11,7 @@ pub use linkbuilder::LinkBuilder;
 
 pub trait BuildLink {
 	/// TODO: THE BUILDER IS ALLOWED TO BUILD JOINTS FOR THIS BEAST, Maybe not for end users but might be usefull for cloning;
-	fn build(self, tree: &WeakLock<KinematicTreeData>) -> ArcLock<Link>;
+	fn build(self, tree: &Weak<KinematicTreeData>) -> ArcLock<Link>;
 
 	fn build_tree(self) -> KinematicTree
 	where
@@ -19,10 +21,10 @@ pub trait BuildLink {
 		KinematicTree::new(data)
 	}
 
-	fn start_building_chain(self, tree: &WeakLock<KinematicTreeData>) -> ArcLock<Link>;
+	fn start_building_chain(self, tree: &Weak<KinematicTreeData>) -> ArcLock<Link>;
 	fn build_chain(
 		self,
-		tree: &WeakLock<KinematicTreeData>,
+		tree: &Weak<KinematicTreeData>,
 		parent_joint: &WeakLock<Joint>,
 	) -> ArcLock<Link>;
 }

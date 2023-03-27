@@ -5,7 +5,7 @@ use crate::{cluster_objects::kinematic_tree_data::KinematicTreeData, joint::Join
 #[derive(Debug)]
 pub enum LinkParent {
 	Joint(WeakLock<Joint>),
-	KinematicTree(WeakLock<KinematicTreeData>),
+	KinematicTree(Weak<KinematicTreeData>),
 }
 
 impl LinkParent {
@@ -26,8 +26,8 @@ impl Clone for LinkParent {
 	}
 }
 
-impl From<WeakLock<KinematicTreeData>> for LinkParent {
-	fn from(value: WeakLock<KinematicTreeData>) -> Self {
+impl From<Weak<KinematicTreeData>> for LinkParent {
+	fn from(value: Weak<KinematicTreeData>) -> Self {
 		Self::KinematicTree(value)
 	}
 }

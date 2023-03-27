@@ -27,7 +27,7 @@ pub struct Joint {
 	/// The name of the `Joint`
 	pub name: String,
 	/// A Reference to the parent Kinematic Tree
-	pub(crate) tree: WeakLock<KinematicTreeData>,
+	pub(crate) tree: Weak<KinematicTreeData>,
 	/// A Reference to the parent `Link`
 	pub(crate) parent_link: WeakLock<Link>,
 	pub child_link: ArcLock<Link>, //temp pub TODO: THIS PROBABLY ISN'T THE NICEST WAY TO DO THIS.
@@ -49,17 +49,16 @@ impl Joint {
 	}
 
 	/// TODO: Deprecate, please
-	pub(crate) fn add_to_tree(&mut self, new_parent_tree: &ArcLock<KinematicTreeData>) {
+	pub(crate) fn add_to_tree(&mut self, new_parent_tree: &Arc<KinematicTreeData>) {
 		{
-			let mut new_ptree = new_parent_tree.write().unwrap(); // FIXME: Probablly shouldn't unwrap
-			new_ptree.try_add_link(self.get_child_link()).unwrap();
-			// TODO: Add materials, and other stuff
+			new_parent_tree.try_add_link(self.get_child_link()).unwrap(); // FIXME: Probablly shouldn't unwrap
+			                                                  // TODO: Add materials, and other stuff
 		}
 		self.get_child_link()
 			.write()
 			.unwrap() // FIXME: Probablly shouldn't unwrap
 			.add_to_tree(new_parent_tree);
-		self.set_tree(Arc::downgrade(new_parent_tree));
+		self.tree = Arc::downgrade(new_parent_tree);
 	}
 
 	/// Returns a reference to the parent `Link`
@@ -78,10 +77,6 @@ impl Joint {
 	/// Is this even necessary?
 	pub fn get_child_link(&self) -> ArcLock<Link> {
 		Arc::clone(&self.child_link)
-	}
-
-	pub fn set_tree(&mut self, tree: WeakLock<KinematicTreeData>) {
-		self.tree = tree;
 	}
 
 	pub fn get_origin(&self) -> &TransformData {
@@ -152,7 +147,7 @@ impl ToURDF for Joint {
 					value: self
 						.get_parent_link()
 						.read()
-						.unwrap()
+						.unwrap() // FIXME: Is unwrap Ok HEre?
 						.get_name()
 						.as_bytes()
 						.into(),
@@ -166,7 +161,7 @@ impl ToURDF for Joint {
 					value: self
 						.get_child_link()
 						.read()
-						.unwrap()
+						.unwrap() // FIXME: Is unwrap Ok HEre?
 						.get_name()
 						.as_bytes()
 						.into(),
@@ -179,7 +174,7 @@ impl ToURDF for Joint {
 
 		self.get_child_link()
 			.read()
-			.unwrap()
+			.unwrap() // FIXME: Is unwrap Ok HEre?
 			.to_urdf(writer, urdf_config)?;
 		Ok(())
 	}

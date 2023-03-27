@@ -14,10 +14,10 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct KinematicTree(ArcLock<KinematicTreeData>);
+pub struct KinematicTree(Arc<KinematicTreeData>);
 
 impl KinematicTree {
-	pub(crate) fn new(data: ArcLock<KinematicTreeData>) -> KinematicTree {
+	pub(crate) fn new(data: Arc<KinematicTreeData>) -> KinematicTree {
 		KinematicTree(data)
 	}
 
@@ -28,37 +28,35 @@ impl KinematicTree {
 
 impl KinematicInterface for KinematicTree {
 	fn get_root_link(&self) -> ArcLock<Link> {
-		Arc::clone(&self.0.read().unwrap().root_link) // FIXME: Unwrapping might not be ok
+		Arc::clone(&self.0.root_link)
 	}
 
 	fn get_newest_link(&self) -> ArcLock<Link> {
-		self.0.read().unwrap().newest_link.read().unwrap().upgrade().unwrap() // FIXME: Unwrapping might not be ok
+		self.0.newest_link.read().unwrap().upgrade().unwrap() // FIXME: Unwrapping might not be ok
 	}
 
-	fn get_kinematic_data(&self) -> ArcLock<KinematicTreeData> {
+	fn get_kinematic_data(&self) -> Arc<KinematicTreeData> {
 		Arc::clone(&self.0)
 	}
 
 	fn get_links(&self) -> ArcLock<HashMap<String, WeakLock<Link>>> {
-		Arc::clone(&self.0.read().unwrap().links) // FIXME: Unwrapping might not be ok
+		Arc::clone(&self.0.links)
 	}
 
 	fn get_joints(&self) -> ArcLock<HashMap<String, WeakLock<Joint>>> {
-		Arc::clone(&self.0.read().unwrap().joints) // FIXME: Unwrapping might not be ok
+		Arc::clone(&self.0.joints)
 	}
 
 	fn get_materials(&self) -> ArcLock<HashMap<String, ArcLock<Material>>> {
-		Arc::clone(&self.0.read().unwrap().material_index) // FIXME: Unwrapping might not be ok
+		Arc::clone(&self.0.material_index)
 	}
 
 	fn get_transmissions(&self) -> ArcLock<HashMap<String, ArcLock<Transmission>>> {
-		Arc::clone(&self.0.read().unwrap().transmissions) // FIXME: Unwrapping might not be ok
+		Arc::clone(&self.0.transmissions)
 	}
 
 	fn get_link(&self, name: &str) -> Option<ArcLock<Link>> {
 		self.0
-			.read()
-			.unwrap() // FIXME: Unwrapping might not be ok
 			.links
 			.read()
 			.unwrap() // FIXME: Unwrapping might not be ok
@@ -68,8 +66,6 @@ impl KinematicInterface for KinematicTree {
 
 	fn get_joint(&self, name: &str) -> Option<ArcLock<Joint>> {
 		self.0
-			.read()
-			.unwrap() // FIXME: Unwrapping might not be ok
 			.joints
 			.read()
 			.unwrap() // FIXME: Unwrapping might not be ok
@@ -79,8 +75,6 @@ impl KinematicInterface for KinematicTree {
 
 	fn get_material(&self, name: &str) -> Option<ArcLock<Material>> {
 		self.0
-			.read()
-			.unwrap() // FIXME: Unwrapping might not be ok
 			.material_index
 			.read()
 			.unwrap() // FIXME: Unwrapping might not be ok
@@ -90,8 +84,6 @@ impl KinematicInterface for KinematicTree {
 
 	fn get_transmission(&self, name: &str) -> Option<ArcLock<Transmission>> {
 		self.0
-			.read()
-			.unwrap() // FIXME: Unwrapping might not be ok
 			.transmissions
 			.read()
 			.unwrap() // FIXME: Unwrapping might not be ok
@@ -103,10 +95,7 @@ impl KinematicInterface for KinematicTree {
 		&self,
 		transmission: ArcLock<Transmission>,
 	) -> Result<(), AddTransmissionError> {
-		self.0
-			.write()
-			.unwrap() // FIXME: Unwrapping might not be ok
-			.try_add_transmission(transmission)
+		self.0.try_add_transmission(transmission)
 	}
 }
 

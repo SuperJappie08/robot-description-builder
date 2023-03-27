@@ -61,7 +61,7 @@ use self::builder::LinkBuilder;
 #[derive(Debug)]
 pub struct Link {
 	pub(crate) name: String,
-	pub(crate) tree: WeakLock<KinematicTreeData>,
+	pub(crate) tree: Weak<KinematicTreeData>,
 	direct_parent: link_data::LinkParent,
 	child_joints: Vec<ArcLock<Joint>>,
 	inertial: Option<InertialData>,
@@ -155,7 +155,6 @@ impl Link {
 		// The parent tree exists so unwrapping is Ok
 		let parent_tree = self.tree.upgrade().unwrap();
 		{
-			let mut parent_tree = parent_tree.write()?;
 			parent_tree.try_add_link(tree.get_root_link())?;
 			// Joint has already been added
 			// parent_tree.try_add_joint(joint)?;
@@ -167,12 +166,11 @@ impl Link {
 		Ok(())
 	}
 
-	pub(crate) fn add_to_tree(&mut self, new_parent_tree: &ArcLock<KinematicTreeData>) {
+	pub(crate) fn add_to_tree(&mut self, new_parent_tree: &Arc<KinematicTreeData>) {
 		{
-			let mut new_ptree = new_parent_tree.write().unwrap(); // FIXME: Probably shouldn't unwrap
 			self.child_joints
 				.iter()
-				.for_each(|joint| new_ptree.try_add_joint(joint).unwrap());
+				.for_each(|joint| new_parent_tree.try_add_joint(joint).unwrap());
 			// TODO: Add materials, and other stuff
 			// The Material Copying might get complex, because I depend on the Ref_Count for determining how to display it.
 		}
@@ -189,8 +187,7 @@ impl Link {
 	pub fn try_add_visual(&mut self, visual: Visual) -> Result<&mut Self, AddVisualError> {
 		if visual.material.is_some() {
 			let binding = self.tree.upgrade().unwrap();
-			let mut tree = binding.write()?;
-			let result = tree.try_add_material(visual.get_material().unwrap());
+			let result = binding.try_add_material(visual.get_material().unwrap()); // FIXME: UNWRAP?
 			if let Err(material_error) = result {
 				match material_error {
 					AddMaterialError::NoName =>
@@ -265,7 +262,7 @@ impl ToURDF for Link {
 	) -> Result<(), quick_xml::Error> {
 		let element = writer.create_element("link").with_attribute(Attribute {
 			key: QName(b"name"),
-			value: self.name.clone().as_bytes().into(),
+			value: self.get_name().as_bytes().into(),
 		});
 		element.write_inner_content(|writer| -> Result<(), quick_xml::Error> {
 			if let Some(inertial_data) = self.get_inertial() {

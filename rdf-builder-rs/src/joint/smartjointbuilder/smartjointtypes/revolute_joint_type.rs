@@ -1,3 +1,5 @@
+use std::sync::Weak;
+
 use crate::{
 	cluster_objects::kinematic_tree_data::KinematicTreeData,
 	joint::{
@@ -32,7 +34,7 @@ where
 {
 	fn build(
 		self,
-		_tree: WeakLock<KinematicTreeData>,
+		_tree: Weak<KinematicTreeData>,
 		_parent_link: WeakLock<Link>,
 		_child_link: ArcLock<Link>,
 	) -> ArcLock<Joint> {

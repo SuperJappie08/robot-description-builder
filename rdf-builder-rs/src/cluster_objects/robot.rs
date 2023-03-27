@@ -21,11 +21,11 @@ use crate::{
 pub struct Robot {
 	/// The name of the robot
 	pub name: String, //TODO: Temp Pub
-	data: ArcLock<KinematicTreeData>,
+	data: Arc<KinematicTreeData>,
 }
 
 impl Robot {
-	pub(crate) fn new<Name: Into<String>>(name: Name, data: ArcLock<KinematicTreeData>) -> Self {
+	pub(crate) fn new<Name: Into<String>>(name: Name, data: Arc<KinematicTreeData>) -> Self {
 		Self {
 			name: name.into(),
 			data,
@@ -40,37 +40,35 @@ impl Robot {
 
 impl KinematicInterface for Robot {
 	fn get_root_link(&self) -> ArcLock<Link> {
-		Arc::clone(&self.data.read().unwrap().root_link) // FIXME: Unwrapping might not be ok
+		Arc::clone(&self.data.root_link)
 	}
 
 	fn get_newest_link(&self) -> ArcLock<Link> {
-		self.data.read().unwrap().newest_link.read().unwrap().upgrade().unwrap() // FIXME: Unwrapping might not be ok
+		self.data.newest_link.read().unwrap().upgrade().unwrap()
 	}
 
-	fn get_kinematic_data(&self) -> ArcLock<KinematicTreeData> {
+	fn get_kinematic_data(&self) -> Arc<KinematicTreeData> {
 		Arc::clone(&self.data)
 	}
 
 	fn get_links(&self) -> ArcLock<HashMap<String, WeakLock<Link>>> {
-		Arc::clone(&self.data.read().unwrap().links) // FIXME: Unwrapping might not be ok
+		Arc::clone(&self.data.links)
 	}
 
 	fn get_joints(&self) -> ArcLock<HashMap<String, WeakLock<Joint>>> {
-		Arc::clone(&self.data.read().unwrap().joints) // FIXME: Unwrapping might not be ok
+		Arc::clone(&self.data.joints)
 	}
 
 	fn get_materials(&self) -> ArcLock<HashMap<String, ArcLock<Material>>> {
-		Arc::clone(&self.data.read().unwrap().material_index) // FIXME: Unwrapping might not be ok
+		Arc::clone(&self.data.material_index)
 	}
 
 	fn get_transmissions(&self) -> ArcLock<HashMap<String, ArcLock<Transmission>>> {
-		Arc::clone(&self.data.read().unwrap().transmissions) // FIXME: Unwrapping might not be ok
+		Arc::clone(&self.data.transmissions)
 	}
 
 	fn get_link(&self, name: &str) -> Option<ArcLock<Link>> {
 		self.data
-			.read()
-			.unwrap() // FIXME: Unwrapping might not be ok
 			.links
 			.read()
 			.unwrap() // FIXME: Unwrapping might not be ok
@@ -80,8 +78,6 @@ impl KinematicInterface for Robot {
 
 	fn get_joint(&self, name: &str) -> Option<ArcLock<Joint>> {
 		self.data
-			.read()
-			.unwrap() // FIXME: Unwrapping might not be ok
 			.joints
 			.read()
 			.unwrap() // FIXME: Unwrapping might not be ok
@@ -91,8 +87,6 @@ impl KinematicInterface for Robot {
 
 	fn get_material(&self, name: &str) -> Option<ArcLock<Material>> {
 		self.data
-			.read()
-			.unwrap() // FIXME: Unwrapping might not be ok
 			.material_index
 			.read()
 			.unwrap() // FIXME: Unwrapping might not be ok
@@ -102,8 +96,6 @@ impl KinematicInterface for Robot {
 
 	fn get_transmission(&self, name: &str) -> Option<ArcLock<Transmission>> {
 		self.data
-			.read()
-			.unwrap() // FIXME: Unwrapping might not be ok
 			.transmissions
 			.read()
 			.unwrap() // FIXME: Unwrapping might not be ok
@@ -115,10 +107,7 @@ impl KinematicInterface for Robot {
 		&self,
 		transmission: ArcLock<Transmission>,
 	) -> Result<(), AddTransmissionError> {
-		self.data
-			.write()
-			.unwrap() // FIXME: Unwrapping might not be ok
-			.try_add_transmission(transmission)
+		self.data.try_add_transmission(transmission)
 	}
 }
 
@@ -133,10 +122,7 @@ impl ToURDF for Robot {
 			key: QName(b"name"),
 			value: self.name.as_bytes().into(),
 		});
-		let data = Arc::clone(&self.data);
-		element.write_inner_content(|writer| {
-			data.try_read().unwrap().to_urdf(writer, urdf_config) // FIXME: Is unwrapping OK?
-		})?;
+		element.write_inner_content(|writer| self.data.to_urdf(writer, urdf_config))?;
 		Ok(())
 	}
 }

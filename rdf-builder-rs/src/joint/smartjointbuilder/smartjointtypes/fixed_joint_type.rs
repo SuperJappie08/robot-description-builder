@@ -32,7 +32,7 @@ impl BuildJoint
 {
 	fn build(
 		self,
-		tree: WeakLock<KinematicTreeData>,
+		tree: Weak<KinematicTreeData>,
 		parent_link: WeakLock<Link>,
 		child_link: ArcLock<Link>,
 	) -> ArcLock<Joint> {

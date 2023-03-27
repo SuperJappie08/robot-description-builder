@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::{
 	cluster_objects::{
@@ -72,7 +72,7 @@ pub trait KinematicInterface {
 
 	#[deprecated]
 	/// Maybe deprecate?
-	fn get_kinematic_data(&self) -> ArcLock<KinematicTreeData>;
+	fn get_kinematic_data(&self) -> Arc<KinematicTreeData>;
 
 	// These do not have to be mutable
 	fn get_links(&self) -> ArcLock<HashMap<String, WeakLock<Link>>>;

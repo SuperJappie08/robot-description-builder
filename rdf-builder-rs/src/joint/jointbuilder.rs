@@ -13,18 +13,16 @@ pub trait BuildJoint {
 	/// Creates the joint ?? and subscribes it to the right right places
 	fn build(
 		self,
-		tree: WeakLock<KinematicTreeData>,
+		tree: Weak<KinematicTreeData>,
 		parent_link: WeakLock<Link>,
 		child_link: ArcLock<Link>,
 	) -> ArcLock<Joint>;
 
 	fn register_to_tree(
-		tree: &WeakLock<KinematicTreeData>,
+		tree: &Weak<KinematicTreeData>,
 		joint: &ArcLock<Joint>,
 	) -> Result<(), crate::cluster_objects::kinematic_data_errors::AddJointError> {
 		tree.upgrade()
-			.unwrap() // FIXME: Figure out if unwrap is Ok?
-			.try_write()
 			.unwrap() // FIXME: Figure out if unwrap is Ok?
 			.try_add_joint(joint)
 	}
@@ -37,7 +35,7 @@ pub trait BuildJoint {
 pub(crate) trait BuildJointChain: BuildJoint {
 	fn build_chain(
 		self,
-		tree: &WeakLock<KinematicTreeData>,
+		tree: &Weak<KinematicTreeData>,
 		parent_link: &WeakLock<Link>,
 	) -> ArcLock<Joint>;
 }
@@ -79,7 +77,7 @@ impl JointBuilder {
 impl BuildJoint for JointBuilder {
 	fn build(
 		self,
-		tree: WeakLock<KinematicTreeData>,
+		tree: Weak<KinematicTreeData>,
 		parent_link: WeakLock<Link>,
 		child_link: ArcLock<Link>,
 	) -> ArcLock<Joint> {
@@ -103,7 +101,7 @@ impl BuildJoint for JointBuilder {
 impl BuildJointChain for JointBuilder {
 	fn build_chain(
 		self,
-		tree: &WeakLock<KinematicTreeData>,
+		tree: &Weak<KinematicTreeData>,
 		parent_link: &WeakLock<Link>,
 	) -> ArcLock<Joint> {
 		#[cfg(any(feature = "logging", test))]

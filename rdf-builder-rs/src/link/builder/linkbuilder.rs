@@ -67,7 +67,7 @@ impl LinkBuilder {
 }
 
 impl BuildLink for LinkBuilder {
-	fn build(self, tree: &WeakLock<KinematicTreeData>) -> ArcLock<Link> {
+	fn build(self, tree: &Weak<KinematicTreeData>) -> ArcLock<Link> {
 		#[cfg(any(feature = "logging", test))]
 		log::info!("Making a Link[name = \"{}\"]", self.name);
 
@@ -86,7 +86,7 @@ impl BuildLink for LinkBuilder {
 		})
 	}
 
-	fn start_building_chain(self, tree: &WeakLock<KinematicTreeData>) -> ArcLock<Link> {
+	fn start_building_chain(self, tree: &Weak<KinematicTreeData>) -> ArcLock<Link> {
 		let joint_builders = self.joints.clone();
 		let root = self.build(tree);
 		// This unwrap is Ok since the Link has just been build
@@ -99,7 +99,7 @@ impl BuildLink for LinkBuilder {
 
 	fn build_chain(
 		self,
-		tree: &WeakLock<KinematicTreeData>,
+		tree: &Weak<KinematicTreeData>,
 		parent_joint: &WeakLock<Joint>,
 	) -> ArcLock<Link> {
 		Arc::new_cyclic(|me| {

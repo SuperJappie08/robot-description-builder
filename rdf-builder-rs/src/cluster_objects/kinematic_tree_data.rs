@@ -33,16 +33,14 @@ pub struct KinematicTreeData {
 }
 
 impl KinematicTreeData {
-	pub(crate) fn newer_link(root_link_builder: impl BuildLink) -> ArcLock<Self> {
-		let data = Arc::new_cyclic(|tree| {
-			RwLock::new(Self {
-				root_link: root_link_builder.start_building_chain(tree),
-				material_index: Arc::new(RwLock::new(HashMap::new())),
-				links: Arc::new(RwLock::new(HashMap::new())),
-				joints: Arc::new(RwLock::new(HashMap::new())),
-				transmissions: Arc::new(RwLock::new(HashMap::new())),
-				newest_link: RwLock::new(Weak::new()),
-			})
+	pub(crate) fn newer_link(root_link_builder: impl BuildLink) -> Arc<Self> {
+		let data = Arc::new_cyclic(|tree| Self {
+			root_link: root_link_builder.start_building_chain(tree),
+			material_index: Arc::new(RwLock::new(HashMap::new())),
+			links: Arc::new(RwLock::new(HashMap::new())),
+			joints: Arc::new(RwLock::new(HashMap::new())),
+			transmissions: Arc::new(RwLock::new(HashMap::new())),
+			newest_link: RwLock::new(Weak::new()),
 		});
 
 		{
@@ -50,16 +48,16 @@ impl KinematicTreeData {
 			log::trace!("Attempting to register tree data to index");
 
 			// Unwrapping is Ok here, since we just made the KinematicDataTree
-			let root_link = Arc::clone(&data.try_read().unwrap().root_link);
+			let root_link = Arc::clone(&data.root_link);
 
 			// 1st Unwrapping is Ok here, since we just made the KinematicDataTree
-			data.write().unwrap().try_add_link2(root_link).unwrap(); //FIXME: 2nd Unwrap Ok?
+			data.try_add_link2(root_link).unwrap(); //FIXME: 2nd Unwrap Ok?
 		}
 		data
 	}
 
 	/// TODO: This should be updated to also work on Links that are being toring out
-	pub(crate) fn new_link(root_link: ArcLock<Link>) -> ArcLock<KinematicTreeData> {
+	pub(crate) fn new_link(root_link: ArcLock<Link>) -> Arc<KinematicTreeData> {
 		let material_index = HashMap::new();
 		let mut links = HashMap::new();
 		let joints = HashMap::new();
@@ -73,18 +71,18 @@ impl KinematicTreeData {
 
 		// There exist no child links, because a new link is being made.
 
-		let tree = Arc::new(RwLock::new(Self {
+		let tree = Arc::new(Self {
 			newest_link: RwLock::new(Arc::downgrade(&root_link)),
 			root_link,
 			material_index: Arc::new(RwLock::new(material_index)),
 			links: Arc::new(RwLock::new(links)),
 			joints: Arc::new(RwLock::new(joints)),
 			transmissions: Arc::new(RwLock::new(transmissions)),
-		}));
+		});
 
 		{
 			// Unwraps Ok here, because `New` tree
-			let cloned_root_link = Arc::clone(&tree.read().unwrap().root_link);
+			let cloned_root_link = Arc::clone(&tree.root_link);
 			// Unwraps Ok here, because `New` Link
 			let mut root_link = cloned_root_link.write().unwrap();
 
@@ -130,7 +128,7 @@ impl KinematicTreeData {
 		}
 	}
 
-	pub(crate) fn try_add_link(&mut self, link: ArcLock<Link>) -> Result<(), AddLinkError> {
+	pub(crate) fn try_add_link(&self, link: ArcLock<Link>) -> Result<(), AddLinkError> {
 		let link_binding = link.read()?;
 		let name = link_binding.get_name();
 
@@ -205,7 +203,7 @@ impl KinematicTreeData {
 		Ok(())
 	}
 
-	pub(crate) fn try_add_joint(&mut self, joint: &ArcLock<Joint>) -> Result<(), AddJointError> {
+	pub(crate) fn try_add_joint(&self, joint: &ArcLock<Joint>) -> Result<(), AddJointError> {
 		let joint_binding = joint.read()?;
 		let name = joint_binding.get_name();
 
@@ -255,7 +253,7 @@ impl KinematicTreeData {
 	}
 
 	pub(crate) fn try_add_transmission(
-		&mut self,
+		&self,
 		transmission: ArcLock<Transmission>,
 	) -> Result<(), AddTransmissionError> {
 		let name = transmission.read()?.get_name().clone();
@@ -391,7 +389,10 @@ impl ToURDF for KinematicTreeData {
 impl PartialEq for KinematicTreeData {
 	fn eq(&self, other: &Self) -> bool {
 		Arc::ptr_eq(&self.root_link, &other.root_link)
-			&& Weak::ptr_eq(&self.newest_link.read().unwrap(), &other.newest_link.read().unwrap())
+			&& Weak::ptr_eq(
+				&self.newest_link.read().unwrap(),
+				&other.newest_link.read().unwrap(),
+			)
 		// TODO: Check other things
 		// && self.material_index == other.material_index
 		// && self.transmissions == other.transmissions
@@ -418,9 +419,7 @@ mod tests {
 
 	#[test]
 	fn newer_link_singular_empty() {
-		let data_tree = KinematicTreeData::newer_link(LinkBuilder::new("Linky"));
-
-		let tree = data_tree.try_read().unwrap();
+		let tree = KinematicTreeData::newer_link(LinkBuilder::new("Linky"));
 
 		assert_eq!(tree.links.try_read().unwrap().len(), 1);
 		assert_eq!(tree.joints.try_read().unwrap().len(), 0);
@@ -430,7 +429,9 @@ mod tests {
 		assert!(tree.links.try_read().unwrap().contains_key("Linky"));
 		assert_eq!(tree.root_link.try_read().unwrap().get_name(), "Linky");
 		assert_eq!(
-			tree.newest_link.read().unwrap()
+			tree.newest_link
+				.read()
+				.unwrap()
 				.upgrade()
 				.unwrap()
 				.try_read()
@@ -457,7 +458,7 @@ mod tests {
 
 	#[test]
 	fn newer_link_multi_empty() {
-		let data_tree = KinematicTreeData::newer_link(LinkBuilder {
+		let tree = KinematicTreeData::newer_link(LinkBuilder {
 			joints: vec![
 				JointBuilder {
 					child: Some(LinkBuilder {
@@ -476,8 +477,6 @@ mod tests {
 			],
 			..LinkBuilder::new("example-link")
 		});
-
-		let tree = data_tree.try_read().unwrap();
 
 		assert_eq!(tree.links.try_read().unwrap().len(), 4);
 		assert_eq!(tree.joints.try_read().unwrap().len(), 3);
@@ -503,7 +502,9 @@ mod tests {
 			"example-link"
 		);
 		assert_eq!(
-			tree.newest_link.read().unwrap()
+			tree.newest_link
+				.read()
+				.unwrap()
 				.upgrade()
 				.unwrap()
 				.try_read()
