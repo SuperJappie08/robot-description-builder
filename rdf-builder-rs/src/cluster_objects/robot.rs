@@ -44,7 +44,7 @@ impl KinematicInterface for Robot {
 	}
 
 	fn get_newest_link(&self) -> ArcLock<Link> {
-		self.data.read().unwrap().newest_link.upgrade().unwrap() // FIXME: Unwrapping might not be ok
+		self.data.read().unwrap().newest_link.read().unwrap().upgrade().unwrap() // FIXME: Unwrapping might not be ok
 	}
 
 	fn get_kinematic_data(&self) -> ArcLock<KinematicTreeData> {

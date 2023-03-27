@@ -28,7 +28,7 @@ pub struct KinematicTreeData {
 	/// Do Transmission have to wrapped into ArcLock? Maybe we can get a way with raw stuff?
 	/// Don't now it would unpack on the Python side...
 	pub(crate) transmissions: ArcLock<HashMap<String, ArcLock<Transmission>>>,
-	pub(crate) newest_link: WeakLock<Link>,
+	pub(crate) newest_link: RwLock<WeakLock<Link>>,
 	// is_rigid: bool // ? For gazebo -> TO AdvancedSimulationData [ASD]
 }
 
@@ -41,7 +41,7 @@ impl KinematicTreeData {
 				links: Arc::new(RwLock::new(HashMap::new())),
 				joints: Arc::new(RwLock::new(HashMap::new())),
 				transmissions: Arc::new(RwLock::new(HashMap::new())),
-				newest_link: Weak::new(),
+				newest_link: RwLock::new(Weak::new()),
 			})
 		});
 
@@ -74,7 +74,7 @@ impl KinematicTreeData {
 		// There exist no child links, because a new link is being made.
 
 		let tree = Arc::new(RwLock::new(Self {
-			newest_link: Arc::downgrade(&root_link),
+			newest_link: RwLock::new(Arc::downgrade(&root_link)),
 			root_link,
 			material_index: Arc::new(RwLock::new(material_index)),
 			links: Arc::new(RwLock::new(links)),
@@ -97,7 +97,7 @@ impl KinematicTreeData {
 	}
 
 	pub(crate) fn try_add_material(
-		&mut self,
+		&self,
 		material: &ArcLock<Material>,
 	) -> Result<(), AddMaterialError> {
 		let binding = material.read()?;
@@ -150,7 +150,7 @@ impl KinematicTreeData {
 				.write()?
 				.insert(name.into(), Arc::downgrade(&link))
 				.is_none());
-			self.newest_link = Arc::downgrade(&link);
+			*self.newest_link.write().unwrap() = Arc::downgrade(&link); // Is unwrap Ok?
 			Ok(())
 		}
 	}
@@ -160,7 +160,7 @@ impl KinematicTreeData {
 	///
 	/// Never mind it only will loop over things down stream.
 	/// It might actually be worth doing it
-	pub(crate) fn try_add_link2(&mut self, link: ArcLock<Link>) -> Result<(), AddLinkError> {
+	pub(crate) fn try_add_link2(&self, link: ArcLock<Link>) -> Result<(), AddLinkError> {
 		let link_binding = link.read()?;
 		let name = link_binding.get_name();
 
@@ -178,7 +178,7 @@ impl KinematicTreeData {
 				.write()?
 				.insert(name.into(), Arc::downgrade(&link))
 				.is_none());
-			self.newest_link = Arc::downgrade(&link);
+			*self.newest_link.write().unwrap() = Arc::downgrade(&link); //FIXME: Unwrap Ok?
 		}
 
 		process_results(
@@ -229,7 +229,7 @@ impl KinematicTreeData {
 		}
 	}
 
-	pub(crate) fn try_add_joint2(&mut self, joint: &ArcLock<Joint>) -> Result<(), AddJointError> {
+	pub(crate) fn try_add_joint2(&self, joint: &ArcLock<Joint>) -> Result<(), AddJointError> {
 		let joint_binding = joint.read()?;
 		let name = joint_binding.get_name();
 
@@ -391,7 +391,7 @@ impl ToURDF for KinematicTreeData {
 impl PartialEq for KinematicTreeData {
 	fn eq(&self, other: &Self) -> bool {
 		Arc::ptr_eq(&self.root_link, &other.root_link)
-			&& Weak::ptr_eq(&self.newest_link, &other.newest_link)
+			&& Weak::ptr_eq(&self.newest_link.read().unwrap(), &other.newest_link.read().unwrap())
 		// TODO: Check other things
 		// && self.material_index == other.material_index
 		// && self.transmissions == other.transmissions
@@ -430,7 +430,7 @@ mod tests {
 		assert!(tree.links.try_read().unwrap().contains_key("Linky"));
 		assert_eq!(tree.root_link.try_read().unwrap().get_name(), "Linky");
 		assert_eq!(
-			tree.newest_link
+			tree.newest_link.read().unwrap()
 				.upgrade()
 				.unwrap()
 				.try_read()
@@ -441,7 +441,7 @@ mod tests {
 
 		assert!(Arc::ptr_eq(
 			&tree.root_link,
-			&tree.newest_link.upgrade().unwrap()
+			&tree.newest_link.read().unwrap().upgrade().unwrap()
 		));
 		assert!(tree
 			.root_link
@@ -503,7 +503,7 @@ mod tests {
 			"example-link"
 		);
 		assert_eq!(
-			tree.newest_link
+			tree.newest_link.read().unwrap()
 				.upgrade()
 				.unwrap()
 				.try_read()

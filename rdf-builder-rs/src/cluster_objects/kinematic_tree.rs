@@ -7,6 +7,7 @@ use crate::{
 	},
 	joint::Joint,
 	link::Link,
+	linkbuilding::BuildLink,
 	material::Material,
 	transmission::Transmission,
 	ArcLock, WeakLock,
@@ -31,7 +32,7 @@ impl KinematicInterface for KinematicTree {
 	}
 
 	fn get_newest_link(&self) -> ArcLock<Link> {
-		self.0.read().unwrap().newest_link.upgrade().unwrap() // FIXME: Unwrapping might not be ok
+		self.0.read().unwrap().newest_link.read().unwrap().upgrade().unwrap() // FIXME: Unwrapping might not be ok
 	}
 
 	fn get_kinematic_data(&self) -> ArcLock<KinematicTreeData> {
@@ -110,56 +111,62 @@ impl KinematicInterface for KinematicTree {
 }
 
 impl Clone for KinematicTree {
-	/// TODO: THIS DOESN'T WORK FOR MOST LINKDATA
+	// /// TODO: THIS DOESN'T WORK FOR MOST LINKDATA
+	// fn clone(&self) -> Self {
+	// 	// TODO: Maybe update identifier?
+	// 	let tree = Link::new(self.get_root_link().read().unwrap().name.clone()); // FIXME: Unwrapping might not be ok
+
+	// 	let mut change = true;
+	// 	while change {
+	// 		let keys: Vec<String> = tree.get_links().read().unwrap().keys().cloned().collect(); // FIXME: Unwrapping might not be ok
+	// 		let key_count = keys.len();
+
+	// 		for key in keys {
+	// 			let binding = tree.get_link(&key).unwrap();
+	// 			let mut current_link = binding.write().unwrap(); // FIXME: Unwrapping might not be ok
+	// 			if current_link.get_joints().len()
+	// 				== self
+	// 					.get_link(&key)
+	// 					.unwrap()
+	// 					.read()
+	// 					.unwrap()
+	// 					.get_joints()
+	// 					.len()
+	// 			// FIXME: Unwrapping might not be ok
+	// 			{
+	// 				// FIXME: Clone other internal data
+	// 				continue;
+	// 			} else {
+	// 				for joint in self
+	// 					.get_link(&key)
+	// 					.unwrap()
+	// 					.read()
+	// 					.unwrap() // FIXME: Unwrapping might not be ok
+	// 					.get_joints()
+	// 					.iter()
+	// 					.map(|joint| joint.read().unwrap())
+	// 				// FIXME: Unwrapping might not be ok
+	// 				{
+	// 					current_link
+	// 						.try_attach_child(
+	// 							Link::new(joint.get_child_link().read().unwrap().name.clone())
+	// 								.into(), // FIXME: Unwrapping might not be ok
+	// 							joint.rebuild(),
+	// 						)
+	// 						.unwrap()
+	// 				}
+	// 			}
+	// 		}
+
+	// 		change = key_count != tree.get_links().read().unwrap().len(); // FIXME: Unwrapping might not be ok
+	// 	}
+	// 	tree
+	// }
+
 	fn clone(&self) -> Self {
-		// TODO: Maybe update identifier?
-		let tree = Link::new(self.get_root_link().read().unwrap().name.clone()); // FIXME: Unwrapping might not be ok
+		let root_link = self.get_root_link().read().unwrap().rebuild_branch(); // FIXME: UNWRAP MIGHTN NOT BE OK HERE
 
-		let mut change = true;
-		while change {
-			let keys: Vec<String> = tree.get_links().read().unwrap().keys().cloned().collect(); // FIXME: Unwrapping might not be ok
-			let key_count = keys.len();
-
-			for key in keys {
-				let binding = tree.get_link(&key).unwrap();
-				let mut current_link = binding.write().unwrap(); // FIXME: Unwrapping might not be ok
-				if current_link.get_joints().len()
-					== self
-						.get_link(&key)
-						.unwrap()
-						.read()
-						.unwrap()
-						.get_joints()
-						.len()
-				// FIXME: Unwrapping might not be ok
-				{
-					// FIXME: Clone other internal data
-					continue;
-				} else {
-					for joint in self
-						.get_link(&key)
-						.unwrap()
-						.read()
-						.unwrap() // FIXME: Unwrapping might not be ok
-						.get_joints()
-						.iter()
-						.map(|joint| joint.read().unwrap())
-					// FIXME: Unwrapping might not be ok
-					{
-						current_link
-							.try_attach_child(
-								Link::new(joint.get_child_link().read().unwrap().name.clone())
-									.into(), // FIXME: Unwrapping might not be ok
-								joint.rebuild(),
-							)
-							.unwrap()
-					}
-				}
-			}
-
-			change = key_count != tree.get_links().read().unwrap().len(); // FIXME: Unwrapping might not be ok
-		}
-		tree
+		root_link.build_tree()
 	}
 }
 
