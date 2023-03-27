@@ -120,7 +120,7 @@ pub trait KinematicInterface {
 	fn yank_link(&self, name: &str) -> Option<LinkBuilder> {
 		let builder = self
 			.get_link(name)
-			.and_then(|link| Some(link.try_read().unwrap().yank())); // FIXME: Is unwrap ok here?
+			.map(|link| link.try_read().unwrap().yank()); // FIXME: Is unwrap ok here?
 		self.purge_joints().unwrap(); // FIXME: Is unwrap ok here?
 		self.purge_links().unwrap(); // FIXME: Is unwrap ok here?
 		builder
@@ -129,7 +129,7 @@ pub trait KinematicInterface {
 	fn yank_joint(&self, name: &str) -> Option<JointBuilder> {
 		let builder = self
 			.get_joint(name)
-			.and_then(|joint| Some(joint.try_read().unwrap().yank())); // FIXME: Is unwrap ok here?
+			.map(|joint| joint.try_read().unwrap().yank()); // FIXME: Is unwrap ok here?
 		self.purge_joints().unwrap(); // FIXME: Is unwrap ok here?
 		self.purge_links().unwrap(); // FIXME: Is unwrap ok here?
 		builder

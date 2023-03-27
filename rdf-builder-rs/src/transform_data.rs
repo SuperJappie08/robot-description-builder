@@ -18,22 +18,22 @@ impl TransformData {
 	/// ```rust
 	/// # use rdf_builder_rs::TransformData;
 	/// assert!(TransformData {
-	/// 	translation: Some((1., 2., 3.)),
-	/// 	rotation: Some((4., 5., 6.))
-	///	}
+	///     translation: Some((1., 2., 3.)),
+	///     rotation: Some((4., 5., 6.))
+	/// }
 	/// .contains_some());
 	///
 	/// assert!(TransformData {
-	///		translation: Some((1., 2., 3.)),
-	///		..Default::default()
-	///	}
-	///	.contains_some());
+	///     translation: Some((1., 2., 3.)),
+	///     ..Default::default()
+	/// }
+	/// .contains_some());
 	///
 	/// assert!(TransformData {
-	///		rotation: Some((4., 5., 6.)),
-	///		..Default::default()
-	///	}
-	///	.contains_some());
+	///     rotation: Some((4., 5., 6.)),
+	///     ..Default::default()
+	/// }
+	/// .contains_some());
 	///
 	/// assert!(!TransformData::default().contains_some())
 	/// ```

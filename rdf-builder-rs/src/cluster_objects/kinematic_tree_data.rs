@@ -113,7 +113,7 @@ impl KinematicTreeData {
 
 		let other_material = { self.material_index.read()?.get(name) }.map(Arc::clone);
 		if let Some(preexisting_material) = other_material {
-			if Arc::ptr_eq(&preexisting_material, &material) {
+			if Arc::ptr_eq(&preexisting_material, material) {
 				Err(AddMaterialError::Conflict(name.into()))
 			} else {
 				Ok(())
@@ -122,7 +122,7 @@ impl KinematicTreeData {
 			assert!(self
 				.material_index
 				.write()?
-				.insert(name.into(), Arc::clone(&material))
+				.insert(name.into(), Arc::clone(material))
 				.is_none());
 			Ok(())
 		}
@@ -212,7 +212,7 @@ impl KinematicTreeData {
 
 		let other = { self.joints.read()?.get(name) }.map(Weak::clone);
 		if let Some(preexisting_joint) = other.and_then(|weak_joint| weak_joint.upgrade()) {
-			if Arc::ptr_eq(&preexisting_joint, &joint) {
+			if Arc::ptr_eq(&preexisting_joint, joint) {
 				Err(AddJointError::Conflict(name.into()))
 			} else {
 				Ok(())
@@ -221,7 +221,7 @@ impl KinematicTreeData {
 			assert!(self
 				.joints
 				.write()?
-				.insert(name.into(), Arc::downgrade(&joint))
+				.insert(name.into(), Arc::downgrade(joint))
 				.is_none());
 			Ok(())
 		}
@@ -236,14 +236,14 @@ impl KinematicTreeData {
 
 		let other = { self.joints.read()?.get(name) }.map(Weak::clone);
 		if let Some(preexisting_joint) = other.and_then(|weak_joint| weak_joint.upgrade()) {
-			if Arc::ptr_eq(&preexisting_joint, &joint) {
+			if Arc::ptr_eq(&preexisting_joint, joint) {
 				return Err(AddJointError::Conflict(name.into()));
 			}
 		} else {
 			assert!(self
 				.joints
 				.write()?
-				.insert(name.into(), Arc::downgrade(&joint))
+				.insert(name.into(), Arc::downgrade(joint))
 				.is_none());
 		}
 

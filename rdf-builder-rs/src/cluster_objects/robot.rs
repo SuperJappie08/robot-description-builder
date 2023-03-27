@@ -41,8 +41,8 @@ impl Robot {
 	/// ```rust
 	/// # use rdf_builder_rs::{Robot, KinematicInterface, linkbuilding::{LinkBuilder, BuildLink}};
 	/// let robot: Robot = LinkBuilder::new("my-link")
-	/// 	.build_tree()
-	/// 	.to_robot("my-robot-called-rob");
+	///     .build_tree()
+	///     .to_robot("my-robot-called-rob");
 	///
 	/// assert_eq!(robot.get_name(), "my-robot-called-rob")
 	/// ```

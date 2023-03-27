@@ -156,7 +156,7 @@ impl PyLink {
 
 		{
 			let visuals = link.get_visuals();
-			if visuals.len() > 0 {
+			if !visuals.is_empty() {
 				repr += ", visuals = [";
 				// repr += &visuals.iter().map(|visual| PyVisual::from(visual.clone()).__repr__()).collect::<Vec<String>>().join(", ");
 				repr += visuals

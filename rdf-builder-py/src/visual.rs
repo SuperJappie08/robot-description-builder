@@ -21,10 +21,10 @@ impl PyVisual {
 	}
 
 	pub fn __repr__(&self) -> String {
-		let mut repr = format!("Visual(name = ");
+		let mut repr = String::from("Visual(name = ");
 
 		if let Some(name) = self.inner.get_name() {
-			repr += format!("'{}'", name).as_str().clone();
+			repr += format!("'{}'", name).as_str();
 		} else {
 			repr += "None"
 		}

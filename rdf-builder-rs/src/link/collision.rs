@@ -58,7 +58,7 @@ impl ToURDF for Collision {
 		}
 
 		element.write_inner_content(|writer| {
-			if let Some(origin) = self.get_origin().clone() {
+			if let Some(origin) = self.get_origin() {
 				origin.to_urdf(writer, urdf_config)?
 			}
 
