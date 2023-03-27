@@ -1,4 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+	collections::HashMap,
+	sync::{Arc, PoisonError, RwLockWriteGuard},
+};
 
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
@@ -33,6 +36,16 @@ impl Robot {
 	}
 
 	/// Gets a refence to the name of the `Robot`
+	///
+	/// # Example
+	/// ```rust
+	/// # use rdf_builder_rs::{Robot, KinematicInterface, linkbuilding::{LinkBuilder, BuildLink}};
+	/// let robot: Robot = LinkBuilder::new("my-link")
+	/// 	.build_tree()
+	/// 	.to_robot("my-robot-called-rob");
+	///
+	/// assert_eq!(robot.get_name(), "my-robot-called-rob")
+	/// ```
 	pub fn get_name(&self) -> &String {
 		&self.name
 	}
@@ -45,10 +58,6 @@ impl KinematicInterface for Robot {
 
 	fn get_newest_link(&self) -> ArcLock<Link> {
 		self.data.newest_link.read().unwrap().upgrade().unwrap()
-	}
-
-	fn get_kinematic_data(&self) -> Arc<KinematicTreeData> {
-		Arc::clone(&self.data)
 	}
 
 	fn get_links(&self) -> ArcLock<HashMap<String, WeakLock<Link>>> {
@@ -108,6 +117,30 @@ impl KinematicInterface for Robot {
 		transmission: ArcLock<Transmission>,
 	) -> Result<(), AddTransmissionError> {
 		self.data.try_add_transmission(transmission)
+	}
+
+	fn purge_links(
+		&self,
+	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, WeakLock<Link>>>>> {
+		self.data.purge_links()
+	}
+
+	fn purge_joints(
+		&self,
+	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, WeakLock<Joint>>>>> {
+		self.data.purge_joints()
+	}
+
+	fn purge_materials(
+		&self,
+	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, ArcLock<Material>>>>> {
+		self.data.purge_materials()
+	}
+
+	fn purge_transmissions(
+		&self,
+	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, ArcLock<Transmission>>>>> {
+		self.data.purge_transmissions()
 	}
 }
 

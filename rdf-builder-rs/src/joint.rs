@@ -25,12 +25,12 @@ use quick_xml::{events::attributes::Attribute, name::QName};
 #[derive(Debug)]
 pub struct Joint {
 	/// The name of the `Joint`
-	pub name: String,
+	pub(crate) name: String,
 	/// A Reference to the parent Kinematic Tree
 	pub(crate) tree: Weak<KinematicTreeData>,
 	/// A Reference to the parent `Link`
 	pub(crate) parent_link: WeakLock<Link>,
-	pub child_link: ArcLock<Link>, //temp pub TODO: THIS PROBABLY ISN'T THE NICEST WAY TO DO THIS.
+	pub(crate) child_link: ArcLock<Link>, //temp pub TODO: THIS PROBABLY ISN'T THE NICEST WAY TO DO THIS.
 	/// The information specific to the JointType: TODO: DECIDE IF THIS SHOULD BE PUBLIC
 	pub(crate) joint_type: JointType,
 	origin: TransformData,
@@ -104,13 +104,34 @@ impl Joint {
 		}
 	}
 
-	/// Get a Strong Reference to this Joint
+	/// TODO:Find a way to make these builders special?
+	/// - Fix Documentation
+	///
+	/// Still need to purge
+	///
+	/// NOTE: you must get the link from the rep by cloning.
+	pub(crate) fn yank(&self) -> JointBuilder {
+		let builder = self.rebuild_branch();
+
+		#[cfg(any(feature = "logging", test))]
+		log::info!("Yanked Joint \"{}\"", self.get_name());
+
+		self.get_parent_link()
+			.try_write()
+			.unwrap() // UNWRAP NOT OK
+			.get_joints_mut()
+			.retain(|joint| !Arc::ptr_eq(&self.get_self(), joint));
+
+		builder
+	}
+
+	/// Gets a (strong) refence to the current `Joint`. (An `Arc<RwLock<Joint>>`)
 	pub fn get_self(&self) -> ArcLock<Joint> {
 		// Unwrapping is Ok here, because if the Joint exists, its self refence should exist.
 		Weak::upgrade(&self.me).unwrap()
 	}
 
-	/// Get a Weak Reference to this Joint
+	/// Gets a weak refence to the current `Joint`. (An `Weak<RwLock<Joint>>`)
 	pub fn get_weak_self(&self) -> WeakLock<Joint> {
 		Weak::clone(&self.me)
 	}
@@ -227,7 +248,17 @@ impl From<JointType> for Cow<'_, [u8]> {
 
 #[cfg(test)]
 mod tests {
-	use crate::{JointBuilder, KinematicInterface, Link, OffsetMode, SmartJointBuilder};
+	use std::sync::{Arc, RwLock};
+
+	use crate::{
+		link_data::{
+			geometry::{BoxGeometry, SphereGeometry},
+			Collision, Visual,
+		},
+		linkbuilding::{BuildLink, LinkBuilder},
+		JointBuilder, KinematicInterface, Link, Material, OffsetMode, SmartJointBuilder,
+		TransformData,
+	};
 	use test_log::test;
 
 	#[test]
@@ -252,8 +283,80 @@ mod tests {
 			.rebuild();
 		assert_eq!(
 			rebuilder,
-			*JointBuilder::new("Joint1", crate::JointType::Fixed)
-				.add_origin_offset((2.0, 3.0, 5.0))
+			JointBuilder::new("Joint1", crate::JointType::Fixed).add_origin_offset((2.0, 3.0, 5.0))
 		)
+	}
+
+	#[test]
+	fn yank_simple() {
+		let material_red = Arc::new(RwLock::new(Material::new_color(
+			Some("Red".into()),
+			1.,
+			0.,
+			0.,
+			1.,
+		)));
+
+		let tree = LinkBuilder::new("link-0")
+			.add_collider(Collision::new(None, None, BoxGeometry::new(1.0, 2.0, 3.0)))
+			.add_visual(Visual::new(
+				None,
+				None,
+				BoxGeometry::new(1.0, 2.0, 3.0),
+				Some(Arc::clone(&material_red)),
+			))
+			.build_tree();
+
+		tree.get_root_link()
+			.try_write()
+			.unwrap()
+			.try_attach_child(
+				LinkBuilder::new("link-1")
+					.add_collider(Collision::new(
+						None,
+						TransformData {
+							translation: Some((2., 0., 0.)),
+							..Default::default()
+						}
+						.into(),
+						SphereGeometry::new(4.),
+					))
+					.add_visual(Visual::new(
+						None,
+						TransformData {
+							translation: Some((2., 0., 0.)),
+							..Default::default()
+						}
+						.into(),
+						SphereGeometry::new(4.),
+						Some(Arc::clone(&material_red)),
+					))
+					.build_tree()
+					.into(),
+				SmartJointBuilder::new("joint-0")
+					.add_offset(OffsetMode::Offset(1.0, 0., 0.))
+					.fixed(),
+			)
+			.unwrap();
+
+		assert_eq!(tree.get_links().try_read().unwrap().len(), 2);
+		assert_eq!(tree.get_joints().try_read().unwrap().len(), 1);
+		assert_eq!(tree.get_materials().try_read().unwrap().len(), 1);
+
+		// let joint =Arc::clone(tree.get_root_link().try_read().unwrap().get_joints().last().unwrap());
+		// let builder = joint.try_read().unwrap().yank();
+
+		// let builder = tree
+		// 	.get_joint("joint-0")
+		// 	.unwrap()
+		// 	.try_read()
+		// 	.unwrap()
+		// 	.yank();
+		let builder = tree.yank_joint("joint-0").unwrap();
+
+		assert_eq!(tree.get_links().try_read().unwrap().len(), 1);
+		assert_eq!(tree.get_joints().try_read().unwrap().len(), 0);
+
+		todo!("FINISH TEST 'lib::joint::test::yank_simple'")
 	}
 }

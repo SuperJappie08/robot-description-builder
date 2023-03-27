@@ -28,12 +28,13 @@ impl LinkBuilder {
 		}
 	}
 
-	pub fn add_visual(&mut self, visual: link_data::Visual) -> &mut Self {
+	pub fn add_visual(mut self, visual: link_data::Visual) -> Self {
 		self.visuals.push(visual);
 		self
 	}
 
-	pub fn add_collider(&mut self, collider: link_data::Collision) -> &mut Self {
+	/// TODO: Not really sure if this is the way... but it is how clap does it.
+	pub fn add_collider(mut self, collider: link_data::Collision) -> Self {
 		self.colliders.push(collider);
 		self
 	}

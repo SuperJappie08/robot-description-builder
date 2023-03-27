@@ -59,7 +59,7 @@ impl PyJointBuilder {
 
 	/// TEMP implementation
 	fn add_origin_offset(&mut self, x: f32, y: f32, z: f32) {
-		self.inner.add_origin_offset((x, y, z));
+		self.inner = self.inner.clone().add_origin_offset((x, y, z));
 	}
 }
 

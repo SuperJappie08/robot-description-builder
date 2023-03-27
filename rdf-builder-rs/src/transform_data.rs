@@ -10,9 +10,59 @@ pub struct TransformData {
 }
 
 impl TransformData {
+	/// A function to check if any of the fields are set.
+	///
+	/// It doesn't check if the some fields have the default value, since it can be format depended.
+	///
+	/// # Example
+	/// ```rust
+	/// # use rdf_builder_rs::TransformData;
+	/// assert!(TransformData {
+	/// 	translation: Some((1., 2., 3.)),
+	/// 	rotation: Some((4., 5., 6.))
+	///	}
+	/// .contains_some());
+	///
+	/// assert!(TransformData {
+	///		translation: Some((1., 2., 3.)),
+	///		..Default::default()
+	///	}
+	///	.contains_some());
+	///
+	/// assert!(TransformData {
+	///		rotation: Some((4., 5., 6.)),
+	///		..Default::default()
+	///	}
+	///	.contains_some());
+	///
+	/// assert!(!TransformData::default().contains_some())
+	/// ```
 	pub fn contains_some(&self) -> bool {
 		self.translation.is_some() || self.rotation.is_some()
 	}
+
+	/// TODO: There are multiple ways to mirror. Pick one that works and makes sense, or options
+	///  - Mirror full thing and thereby invert joint axis
+	///  - Mirror Only first joint
+	pub fn mirrored(&self, axis: MirrorAxis) -> Self {
+		// I doubt this check makes sense
+		if self.contains_some() {
+			match axis {
+				MirrorAxis::X => todo!(),
+				MirrorAxis::Y => todo!(),
+				MirrorAxis::Z => todo!(),
+			}
+		} else {
+			self.clone()
+		}
+	}
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum MirrorAxis {
+	X,
+	Y,
+	Z,
 }
 
 #[cfg(feature = "urdf")]

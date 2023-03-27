@@ -17,15 +17,15 @@ pub struct Collision {
 
 impl Collision {
 	/// Maybe temp
-	pub fn new(
+	pub fn new<Geometry: Into<Box<dyn GeometryInterface + Sync + Send>>>(
 		name: Option<String>,
 		origin: Option<TransformData>,
-		geometry: Box<dyn GeometryInterface + Sync + Send>,
+		geometry: Geometry,
 	) -> Self {
 		Self {
 			name,
 			origin,
-			geometry,
+			geometry: geometry.into(),
 		}
 	}
 
@@ -109,11 +109,9 @@ mod tests {
 		#[test]
 		fn no_name_no_origin() {
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(
-				Collision::new(None, None, BoxGeometry::new(1.0, 2.0, 3.0).into())
-					.to_urdf(&mut writer, &URDFConfig::default())
-					.is_ok()
-			);
+			assert!(Collision::new(None, None, BoxGeometry::new(1.0, 2.0, 3.0))
+				.to_urdf(&mut writer, &URDFConfig::default())
+				.is_ok());
 
 			writer.inner().rewind().unwrap();
 
@@ -129,7 +127,7 @@ mod tests {
 			assert!(Collision::new(
 				Some("myLink_col".to_owned()),
 				None,
-				CylinderGeometry::new(9., 6.258).into()
+				CylinderGeometry::new(9., 6.258)
 			)
 			.to_urdf(&mut writer, &URDFConfig::default())
 			.is_ok());
@@ -153,7 +151,7 @@ mod tests {
 					translation: Some((4., 6.78, 1.)),
 					rotation: Some((PI, 2. * PI, 0.))
 				}),
-				SphereGeometry::new(3.).into()
+				SphereGeometry::new(3.)
 			)
 			.to_urdf(&mut writer, &URDFConfig::default())
 			.is_ok());
@@ -177,7 +175,7 @@ mod tests {
 					translation: Some((5.4, 9.1, 7.8)),
 					..Default::default()
 				}),
-				CylinderGeometry::new(4.5, 75.35).into()
+				CylinderGeometry::new(4.5, 75.35)
 			)
 			.to_urdf(&mut writer, &URDFConfig::default())
 			.is_ok());

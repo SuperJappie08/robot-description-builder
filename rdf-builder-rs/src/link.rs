@@ -97,21 +97,23 @@ impl Link {
 		KinematicTree::new(tree)
 	}
 
+	/// Gets a (strong) refence to the current `Link`. (An `Arc<RwLock<Link>>`)
 	pub fn get_self(&self) -> ArcLock<Link> {
 		// Unwrapping is Ok here, because if the Link exists, its self refence should exist.
 		Weak::upgrade(&self.me).unwrap()
 	}
 
+	/// Gets a weak refence to the current `Link`. (An `Weak<RwLock<Link>>`)
 	pub fn get_weak_self(&self) -> WeakLock<Link> {
 		Weak::clone(&self.me)
 	}
-	// }
-	//
-	// impl LinkTrait for Link {
+
 	pub fn get_parent(&self) -> &LinkParent {
 		&self.direct_parent
 	}
 
+	/// NOMINATED FOR DEPRICATION
+	///
 	/// TODO: Figure out if this should be replaced with get mut
 	pub(crate) fn set_parent(&mut self, parent: LinkParent) {
 		self.direct_parent = parent;
@@ -120,6 +122,14 @@ impl Link {
 	}
 
 	/// Gets the reference to the name of the `Link`
+	///
+	/// # Example
+	/// ```rust
+	/// # use rdf_builder_rs::{KinematicInterface, linkbuilding::{LinkBuilder, BuildLink}};
+	/// let tree = LinkBuilder::new("my-link").build_tree();
+	///
+	/// assert_eq!(tree.get_root_link().try_read().unwrap().get_name(), "my-link")
+	/// ```
 	pub fn get_name(&self) -> &String {
 		&self.name
 	}
@@ -127,6 +137,10 @@ impl Link {
 	pub fn get_joints(&self) -> &Vec<ArcLock<Joint>> {
 		&self.child_joints
 		// self.child_joints.iter().map(Arc::clone).collect()
+	}
+
+	pub(crate) fn get_joints_mut(&mut self) -> &mut Vec<ArcLock<Joint>> {
+		&mut self.child_joints
 	}
 
 	/// Maybe rename to try attach child
@@ -250,6 +264,29 @@ impl Link {
 				.collect(),
 			..self.rebuild()
 		}
+	}
+
+	/// TODO: DOCS:
+	/// TODO: TEST
+	pub(crate) fn yank(&self) -> LinkBuilder {
+		let builder = self.rebuild_branch();
+
+		match self.get_parent() {
+			LinkParent::Joint(joint) => {
+				let joint = joint.upgrade().unwrap();
+				joint
+					.try_read()
+					.unwrap() // FIXME: Is unwrap Ok here?
+					.get_parent_link()
+					.try_write()
+					.unwrap() //FIXME: Is unwrap Ok here?
+					.get_joints_mut()
+					.retain(|other_joint| Arc::ptr_eq(&joint, other_joint));
+			}
+			LinkParent::KinematicTree(_) => todo!("The tree should be dropped, but how?"),
+		}
+
+		builder
 	}
 }
 

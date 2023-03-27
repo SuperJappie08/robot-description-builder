@@ -1,4 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+	collections::HashMap,
+	sync::{Arc, PoisonError, RwLockWriteGuard},
+};
 
 use crate::{
 	cluster_objects::{
@@ -33,10 +36,6 @@ impl KinematicInterface for KinematicTree {
 
 	fn get_newest_link(&self) -> ArcLock<Link> {
 		self.0.newest_link.read().unwrap().upgrade().unwrap() // FIXME: Unwrapping might not be ok
-	}
-
-	fn get_kinematic_data(&self) -> Arc<KinematicTreeData> {
-		Arc::clone(&self.0)
 	}
 
 	fn get_links(&self) -> ArcLock<HashMap<String, WeakLock<Link>>> {
@@ -96,6 +95,30 @@ impl KinematicInterface for KinematicTree {
 		transmission: ArcLock<Transmission>,
 	) -> Result<(), AddTransmissionError> {
 		self.0.try_add_transmission(transmission)
+	}
+
+	fn purge_links(
+		&self,
+	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, WeakLock<Link>>>>> {
+		self.0.purge_links()
+	}
+
+	fn purge_joints(
+		&self,
+	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, WeakLock<Joint>>>>> {
+		self.0.purge_joints()
+	}
+
+	fn purge_materials(
+		&self,
+	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, ArcLock<Material>>>>> {
+		self.0.purge_materials()
+	}
+
+	fn purge_transmissions(
+		&self,
+	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, ArcLock<Transmission>>>>> {
+		self.0.purge_transmissions()
 	}
 }
 

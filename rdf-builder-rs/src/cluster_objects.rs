@@ -1,14 +1,12 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+	collections::HashMap,
+	sync::{PoisonError, RwLockWriteGuard},
+};
 
 use crate::{
-	cluster_objects::{
-		kinematic_data_errors::AddTransmissionError, kinematic_tree_data::KinematicTreeData,
-	},
-	joint::Joint,
-	link::Link,
-	material::Material,
-	transmission::Transmission,
-	ArcLock, WeakLock,
+	cluster_objects::kinematic_data_errors::AddTransmissionError, joint::Joint, link::Link,
+	linkbuilding::LinkBuilder, material::Material, transmission::Transmission, ArcLock,
+	JointBuilder, WeakLock,
 };
 
 pub mod kinematic_data_errors;
@@ -70,10 +68,6 @@ pub trait KinematicInterface {
 	/// ```
 	fn get_newest_link(&self) -> ArcLock<Link>;
 
-	#[deprecated]
-	/// Maybe deprecate?
-	fn get_kinematic_data(&self) -> Arc<KinematicTreeData>;
-
 	// These do not have to be mutable
 	fn get_links(&self) -> ArcLock<HashMap<String, WeakLock<Link>>>;
 	fn get_joints(&self) -> ArcLock<HashMap<String, WeakLock<Joint>>>;
@@ -94,4 +88,50 @@ pub trait KinematicInterface {
 	) -> Result<(), AddTransmissionError>;
 
 	// TODO: Expand
+
+	/// Cleans up orphaned/broken `Link` entries from the `links` HashMap.
+	///
+	/// This mostly happens automatically, but is exposed for use in other methods.
+	///
+	/// TODO: DOCTEST/EXAMPLE
+	fn purge_links(
+		&self,
+	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, WeakLock<Link>>>>>;
+
+	/// Cleans up orphaned/broken `Joint` entries from the `joints` HashMap.
+	///
+	/// This mostly happens automatically, but is exposed for use in other methods.
+	///
+	/// TODO: DOCTEST/EXAMPLE
+	fn purge_joints(
+		&self,
+	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, WeakLock<Joint>>>>>;
+
+	/// Cleans up orphaned/unused `Material` entries from `material_index` HashMap
+	fn purge_materials(
+		&self,
+	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, ArcLock<Material>>>>>;
+
+	/// Cleans up orphaned/broken `Transmission` entries from the `transmissions` HashMap
+	fn purge_transmissions(
+		&self,
+	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, ArcLock<Transmission>>>>>;
+
+	fn yank_link(&self, name: &str) -> Option<LinkBuilder> {
+		let builder = self
+			.get_link(name)
+			.and_then(|link| Some(link.try_read().unwrap().yank())); // FIXME: Is unwrap ok here?
+		self.purge_joints().unwrap(); // FIXME: Is unwrap ok here?
+		self.purge_links().unwrap(); // FIXME: Is unwrap ok here?
+		builder
+	}
+
+	fn yank_joint(&self, name: &str) -> Option<JointBuilder> {
+		let builder = self
+			.get_joint(name)
+			.and_then(|joint| Some(joint.try_read().unwrap().yank())); // FIXME: Is unwrap ok here?
+		self.purge_joints().unwrap(); // FIXME: Is unwrap ok here?
+		self.purge_links().unwrap(); // FIXME: Is unwrap ok here?
+		builder
+	}
 }

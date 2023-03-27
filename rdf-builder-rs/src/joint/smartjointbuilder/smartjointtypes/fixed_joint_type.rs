@@ -36,9 +36,9 @@ impl BuildJoint
 		parent_link: WeakLock<Link>,
 		child_link: ArcLock<Link>,
 	) -> ArcLock<Joint> {
-		let mut joint_builder = JointBuilder::new(self.name, JointType::Fixed);
+		let joint_builder = JointBuilder::new(self.name, JointType::Fixed);
 
-		if let Some(mode) = self.offset {
+		let joint_builder = if let Some(mode) = self.offset {
 			joint_builder.add_origin_offset(match mode {
 				OffsetMode::Offset(x, y, z) => (x, y, z),
 				// FIXME: This is incoorect because it doesn't take rotations into account
@@ -49,12 +49,16 @@ impl BuildJoint
 					.unwrap()
 					.get_end_point()
 					.expect("No ENDPOINT"), //TODO: FIX this
-			});
-		}
+			})
+		} else {
+			joint_builder
+		};
 
-		if let Some(rotation) = self.rotation {
-			joint_builder.add_origin_rotation(rotation);
-		}
+		let joint_builder = if let Some(rotation) = self.rotation {
+			joint_builder.add_origin_rotation(rotation)
+		} else {
+			joint_builder
+		};
 
 		joint_builder.build(Weak::clone(&tree), parent_link, child_link)
 	}

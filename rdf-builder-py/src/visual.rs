@@ -17,7 +17,7 @@ pub struct PyVisual {
 impl PyVisual {
 	#[new]
 	fn new(name: Option<String>, _origin: Option<(f32, f32, f32)>) -> Self {
-		link_data::Visual::new(name, None, BoxGeometry::new(4., 5., 6.).into(), None).into()
+		link_data::Visual::new(name, None, BoxGeometry::new(4., 5., 6.), None).into()
 	}
 
 	pub fn __repr__(&self) -> String {

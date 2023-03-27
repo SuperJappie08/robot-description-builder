@@ -28,3 +28,9 @@ pub trait BuildLink {
 		parent_joint: &WeakLock<Joint>,
 	) -> ArcLock<Link>;
 }
+
+impl<T: BuildLink> From<T> for KinematicTree {
+	fn from(value: T) -> Self {
+		value.build_tree()
+	}
+}

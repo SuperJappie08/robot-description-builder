@@ -278,23 +278,19 @@ impl KinematicTreeData {
 		}
 	}
 
-	/// Cleans up broken `Joint` entries from the `joints` HashMap.
-	///
-	/// TODO: Maybe make pub(crate), since you can not remove a `joint` normally from outside the crate. and cleanup should be done by the crate.
-	pub fn purge_joints(
-		&mut self,
+	/// Cleans up orphaned/broken `Joint` entries from the `joints` HashMap.
+	pub(crate) fn purge_joints(
+		&self,
 	) -> Result<(), PoisonError<RwLockWriteGuard<'_, HashMap<String, WeakLock<Joint>>>>> {
-		let mut joints = self.joints.write()?; // TODO: Not so nice -> So Error
+		let mut joints = self.joints.write()?;
 		joints.retain(|_, weak_joint| weak_joint.upgrade().is_some());
 		joints.shrink_to_fit();
 		Ok(())
 	}
 
-	/// Cleans up broken `Link` entries from the `links` HashMap.
-	///
-	/// TODO: Maybe make pub(crate), since you can not remove a `link` normally from outside the crate. and cleanup should be done by the crate.
-	pub fn purge_links(
-		&mut self,
+	/// Cleans up orphaned/broken `Link` entries from the `links` HashMap.
+	pub(crate) fn purge_links(
+		&self,
 	) -> Result<(), PoisonError<RwLockWriteGuard<'_, HashMap<String, WeakLock<Link>>>>> {
 		let mut links = self.links.write()?;
 		links.retain(|_, weak_link| weak_link.upgrade().is_some());
@@ -302,12 +298,12 @@ impl KinematicTreeData {
 		Ok(())
 	}
 
-	/// Cleans up unused `Material` entries from `material_index` HashMap
+	/// Cleans up orphaned/unused `Material` entries from `material_index` HashMap
 	///
 	/// TODO: Check if this works
 	/// FIXME: This doesn't work if you hace multiple robots using the same material.
-	pub fn purge_materials(
-		&mut self,
+	pub(crate) fn purge_materials(
+		&self,
 	) -> Result<(), PoisonError<RwLockWriteGuard<'_, HashMap<String, ArcLock<Material>>>>> {
 		let mut materials = self.material_index.write()?;
 		materials.retain(|_, material| Arc::strong_count(material) > 1);
@@ -315,17 +311,19 @@ impl KinematicTreeData {
 		Ok(())
 	}
 
-	pub fn purge_transmissions(
-		&mut self,
-	) -> Result<(), RwLockWriteGuard<'_, HashMap<String, ArcLock<Transmission>>>> {
+	/// Cleans up orphaned/broken `Transmission` entries from the `transmissions` HashMap
+	pub(crate) fn purge_transmissions(
+		&self,
+	) -> Result<(), PoisonError<RwLockWriteGuard<'_, HashMap<String, ArcLock<Transmission>>>>> {
 		// Ok(())
 		todo!("Not Implemnted yet! First Implement `Transmission`")
 	}
 
+	/// TODO: DECIDE IF DEPRECATE?
 	/// Cleans up broken `Joint` and `Link` entries from the `links` and `joints` HashMaps.
 	///
 	/// TODO: Rewrite DOC
-	pub fn purge(&mut self) {
+	pub(crate) fn purge(&self) {
 		self.purge_joints().unwrap(); //FIXME: UNWRAP?
 
 		self.purge_links().unwrap(); //FIXME: UNWRAP?

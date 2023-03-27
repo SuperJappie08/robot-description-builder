@@ -5,7 +5,7 @@ use crate::{
 	joint::{Joint, JointType},
 	link::Link,
 	linkbuilding::{BuildLink, LinkBuilder},
-	transform_data::TransformData,
+	transform_data::{MirrorAxis, TransformData},
 	ArcLock, WeakLock,
 };
 
@@ -57,20 +57,28 @@ impl JointBuilder {
 		}
 	}
 
-	pub fn add_origin_offset(&mut self, offset: (f32, f32, f32)) -> &mut Self {
+	pub fn add_origin_offset(mut self, offset: (f32, f32, f32)) -> Self {
 		self.origin.translation = Some(offset);
 		self
 	}
 
-	pub fn add_origin_rotation(&mut self, rotation: (f32, f32, f32)) -> &mut Self {
+	pub fn add_origin_rotation(mut self, rotation: (f32, f32, f32)) -> Self {
 		self.origin.rotation = Some(rotation);
 		self
 	}
 
 	/// Nominated for Deprication
-	pub(crate) fn with_origin(&mut self, origin: TransformData) -> &mut Self {
+	pub(crate) fn with_origin(mut self, origin: TransformData) -> Self {
 		self.origin = origin;
 		self
+	}
+
+	/// TODO: WIP SEE TransfromData::mirrored()
+	pub fn mirrored(&self, axis: MirrorAxis) -> Self {
+		JointBuilder {
+			origin: self.origin.mirrored(axis),
+			..self.clone()
+		}
 	}
 }
 

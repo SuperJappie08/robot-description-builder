@@ -23,16 +23,16 @@ pub struct Visual {
 
 impl Visual {
 	/// Maybe temp
-	pub fn new(
+	pub fn new<Geometry: Into<Box<dyn GeometryInterface + Sync + Send>>>(
 		name: Option<String>,
 		origin: Option<TransformData>,
-		geometry: Box<dyn GeometryInterface + Sync + Send>,
+		geometry: Geometry,
 		material: Option<ArcLock<Material>>,
 	) -> Self {
 		Self {
 			name,
 			origin,
-			geometry,
+			geometry: geometry.into(),
 			material,
 		}
 	}
@@ -163,7 +163,7 @@ mod tests {
 		fn no_name_no_origin_no_material() {
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
 			assert!(
-				Visual::new(None, None, BoxGeometry::new(1.0, 2.0, 3.0).into(), None)
+				Visual::new(None, None, BoxGeometry::new(1.0, 2.0, 3.0), None)
 					.to_urdf(&mut writer, &URDFConfig::default())
 					.is_ok()
 			);
@@ -182,7 +182,7 @@ mod tests {
 			assert!(Visual::new(
 				Some("myLink_vis".to_owned()),
 				None,
-				CylinderGeometry::new(9., 6.258).into(),
+				CylinderGeometry::new(9., 6.258),
 				None
 			)
 			.to_urdf(&mut writer, &URDFConfig::default())
@@ -207,7 +207,7 @@ mod tests {
 					translation: Some((4., 6.78, 1.)),
 					rotation: Some((PI, 2. * PI, 0.))
 				}),
-				SphereGeometry::new(3.).into(),
+				SphereGeometry::new(3.),
 				None
 			)
 			.to_urdf(&mut writer, &URDFConfig::default())
@@ -229,7 +229,7 @@ mod tests {
 			assert!(Visual::new(
 				None,
 				None,
-				CylinderGeometry::new(4.5, 75.35).into(),
+				CylinderGeometry::new(4.5, 75.35),
 				Some(
 					Material::new_color(Some("material_name".to_owned()), 0.5, 0.55, 0.6, 1.)
 						.into()
@@ -263,7 +263,7 @@ mod tests {
 					translation: Some((5.4, 9.1, 7.8)),
 					..Default::default()
 				}),
-				CylinderGeometry::new(4.5, 75.35).into(),
+				CylinderGeometry::new(4.5, 75.35),
 				Some(Material::new_color(None, 0.75, 0.5, 1., 1.).into())
 			)
 			.to_urdf(&mut writer, &URDFConfig::default())

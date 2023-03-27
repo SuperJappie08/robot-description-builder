@@ -27,7 +27,7 @@ fn main() {
 				translation: Some((1.0, 0.0, 0.0)),
 				..Default::default()
 			}),
-			BoxGeometry::new(2.0, 0.5, 0.5).into(),
+			BoxGeometry::new(2.0, 0.5, 0.5),
 			None,
 		))
 		.add_collider(Collision::new(
@@ -36,7 +36,7 @@ fn main() {
 				translation: Some((1.0, 0.0, 0.0)),
 				..Default::default()
 			}),
-			CylinderGeometry::new(0.24, 2.0).into(),
+			CylinderGeometry::new(0.24, 2.0),
 		));
 
 	link.get_newest_link()
@@ -59,7 +59,7 @@ fn main() {
 				translation: Some((1.0, 0., 0.)),
 				..Default::default()
 			}),
-			BoxGeometry::new(0.5, 0.1, 0.1).into(),
+			BoxGeometry::new(0.5, 0.1, 0.1),
 			None,
 		))
 		.add_collider(Collision::new(
@@ -68,7 +68,7 @@ fn main() {
 				translation: Some((0.25, 0., 0.)),
 				..Default::default()
 			}),
-			BoxGeometry::new(0.25, 0.1, 0.1).into(),
+			BoxGeometry::new(0.25, 0.1, 0.1),
 		));
 
 	let robot_root = Link::new("robot_root");
@@ -80,13 +80,13 @@ fn main() {
 		.add_visual(Visual::new(
 			Some("robot_root_vis".into()),
 			None,
-			SphereGeometry::new(0.3).into(),
+			SphereGeometry::new(0.3),
 			None,
 		))
 		.add_collider(Collision::new(
 			Some("robot_root_col".into()),
 			None,
-			SphereGeometry::new(0.35).into(),
+			SphereGeometry::new(0.35),
 		))
 		.try_attach_child(
 			link.into(),
