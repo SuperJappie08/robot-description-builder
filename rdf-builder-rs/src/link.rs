@@ -44,7 +44,7 @@ use crate::to_rdf::to_urdf::ToURDF;
 use crate::{
 	cluster_objects::{
 		kinematic_data_errors::{AddJointError, AddLinkError, AddMaterialError},
-		kinematic_tree_data::KinematicTreeData,
+		kinematic_data_tree::KinematicDataTree,
 		KinematicInterface, KinematicTree,
 	},
 	joint::{BuildJoint, Joint},
@@ -61,7 +61,7 @@ use self::builder::LinkBuilder;
 #[derive(Debug)]
 pub struct Link {
 	pub(crate) name: String,
-	pub(crate) tree: Weak<KinematicTreeData>,
+	pub(crate) tree: Weak<KinematicDataTree>,
 	direct_parent: link_data::LinkParent,
 	child_joints: Vec<ArcLock<Joint>>,
 	inertial: Option<InertialData>,
@@ -92,7 +92,7 @@ impl Link {
 			})
 		});
 
-		let tree = KinematicTreeData::new_link(link);
+		let tree = KinematicDataTree::new_link(link);
 
 		KinematicTree::new(tree)
 	}
@@ -169,30 +169,30 @@ impl Link {
 		// The parent tree exists so unwrapping is Ok
 		let parent_tree = self.tree.upgrade().unwrap();
 		{
-			parent_tree.try_add_link(tree.get_root_link())?;
+			parent_tree.try_add_link2(tree.get_root_link())?;
 			// Joint has already been added
 			// parent_tree.try_add_joint(joint)?;
 		}
-		{
-			tree.get_root_link().write()?.add_to_tree(&parent_tree);
-		}
+		// {
+		// 	tree.get_root_link().write()?.add_to_tree(&parent_tree);
+		// }
 
 		Ok(())
 	}
 
-	pub(crate) fn add_to_tree(&mut self, new_parent_tree: &Arc<KinematicTreeData>) {
-		{
-			self.child_joints
-				.iter()
-				.for_each(|joint| new_parent_tree.try_add_joint(joint).unwrap());
-			// TODO: Add materials, and other stuff
-			// The Material Copying might get complex, because I depend on the Ref_Count for determining how to display it.
-		}
-		self.child_joints.iter().for_each(|joint| {
-			joint.write().unwrap().add_to_tree(new_parent_tree); // FIXME: Probably shouldn't unwrap
-		});
-		self.tree = Arc::downgrade(new_parent_tree);
-	}
+	// pub(crate) fn add_to_tree(&mut self, new_parent_tree: &Arc<KinematicTreeData>) {
+	// 	{
+	// 		self.child_joints
+	// 			.iter()
+	// 			.for_each(|joint| new_parent_tree.try_add_joint(joint).unwrap());
+	// 		// TODO: Add materials, and other stuff
+	// 		// The Material Copying might get complex, because I depend on the Ref_Count for determining how to display it.
+	// 	}
+	// 	self.child_joints.iter().for_each(|joint| {
+	// 		joint.write().unwrap().add_to_tree(new_parent_tree); // FIXME: Probably shouldn't unwrap
+	// 	});
+	// 	self.tree = Arc::downgrade(new_parent_tree);
+	// }
 
 	pub fn add_visual(&mut self, visual: Visual) -> &mut Self {
 		self.try_add_visual(visual).unwrap()
@@ -246,6 +246,7 @@ impl Link {
 	pub fn rebuild(&self) -> LinkBuilder {
 		LinkBuilder {
 			name: self.name.clone(),
+			// visual_builders: self.visuals.iter().map(|visual| visual.rebuild()).collect(),
 			visuals: self.visuals.to_vec(),
 			colliders: self.colliders.to_vec(),
 			..Default::default()
@@ -379,8 +380,8 @@ pub enum AttachChildError {
 	WriteTree,
 }
 
-impl From<PoisonError<RwLockReadGuard<'_, KinematicTreeData>>> for AttachChildError {
-	fn from(_value: PoisonError<RwLockReadGuard<'_, KinematicTreeData>>) -> Self {
+impl From<PoisonError<RwLockReadGuard<'_, KinematicDataTree>>> for AttachChildError {
+	fn from(_value: PoisonError<RwLockReadGuard<'_, KinematicDataTree>>) -> Self {
 		Self::ReadTree //(value)
 	}
 }
@@ -397,8 +398,8 @@ impl From<PoisonError<RwLockWriteGuard<'_, Link>>> for AttachChildError {
 	}
 }
 
-impl From<PoisonError<RwLockWriteGuard<'_, KinematicTreeData>>> for AttachChildError {
-	fn from(_value: PoisonError<RwLockWriteGuard<'_, KinematicTreeData>>) -> Self {
+impl From<PoisonError<RwLockWriteGuard<'_, KinematicDataTree>>> for AttachChildError {
+	fn from(_value: PoisonError<RwLockWriteGuard<'_, KinematicDataTree>>) -> Self {
 		Self::WriteTree
 	}
 }
@@ -411,8 +412,8 @@ pub enum AddVisualError {
 	WriteKinemeticData,
 }
 
-impl From<PoisonError<RwLockWriteGuard<'_, KinematicTreeData>>> for AddVisualError {
-	fn from(_value: PoisonError<RwLockWriteGuard<'_, KinematicTreeData>>) -> Self {
+impl From<PoisonError<RwLockWriteGuard<'_, KinematicDataTree>>> for AddVisualError {
+	fn from(_value: PoisonError<RwLockWriteGuard<'_, KinematicDataTree>>) -> Self {
 		Self::WriteKinemeticData
 	}
 }

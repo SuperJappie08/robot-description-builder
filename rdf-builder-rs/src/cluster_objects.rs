@@ -10,8 +10,8 @@ use crate::{
 };
 
 pub mod kinematic_data_errors;
+pub(crate) mod kinematic_data_tree;
 mod kinematic_tree;
-pub(crate) mod kinematic_tree_data;
 mod robot;
 
 pub use kinematic_tree::KinematicTree;

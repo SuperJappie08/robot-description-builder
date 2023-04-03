@@ -19,11 +19,29 @@ pub mod smart_joint_specification {
 	};
 }
 
+#[allow(unused_variables)]
 pub(crate) mod smart_joint_datatraits {
-	pub trait AxisDataType {}
-	pub trait CalibrationDataType {}
-	pub trait DynamicsDataType {}
-	pub trait LimitDataType {}
-	pub trait MimicDataType {}
-	pub trait SafetyControllerDataType {}
+	pub trait AxisDataType {
+		fn simplify(&self, joint_builder: &mut crate::joint::jointbuilder::JointBuilder) {}
+	}
+	pub trait CalibrationDataType {
+		fn simplify(&self, joint_builder: &mut crate::joint::jointbuilder::JointBuilder) {}
+	}
+	pub trait DynamicsDataType {
+		fn simplify(&self, joint_builder: &mut crate::joint::jointbuilder::JointBuilder) {}
+	}
+	pub trait LimitDataType {
+		fn simplify(
+			&self,
+			joint_builder: &mut crate::joint::jointbuilder::JointBuilder,
+			is_continous: bool,
+		) {
+		}
+	}
+	pub trait MimicDataType {
+		fn simplify(&self, joint_builder: &mut crate::joint::jointbuilder::JointBuilder) {}
+	}
+	pub trait SafetyControllerDataType {
+		fn simplify(&self, joint_builder: &mut crate::joint::jointbuilder::JointBuilder) {}
+	}
 }

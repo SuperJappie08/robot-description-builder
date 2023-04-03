@@ -12,7 +12,7 @@ fn main() {
 
 	let revolute_builder = SmartJointBuilder::new("rev")
 		.revolute()
-		.set_axis((3., 2., 4.))
+		.with_axis((3., 2., 4.))
 		.with_dynamics()
 		.set_friction(400.);
 

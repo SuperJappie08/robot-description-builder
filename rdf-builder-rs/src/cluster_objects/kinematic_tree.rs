@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
 	cluster_objects::{
-		kinematic_data_errors::AddTransmissionError, kinematic_tree_data::KinematicTreeData,
+		kinematic_data_errors::AddTransmissionError, kinematic_data_tree::KinematicDataTree,
 		robot::Robot, KinematicInterface,
 	},
 	joint::Joint,
@@ -17,10 +17,10 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct KinematicTree(Arc<KinematicTreeData>);
+pub struct KinematicTree(Arc<KinematicDataTree>);
 
 impl KinematicTree {
-	pub(crate) fn new(data: Arc<KinematicTreeData>) -> KinematicTree {
+	pub(crate) fn new(data: Arc<KinematicDataTree>) -> KinematicTree {
 		KinematicTree(data)
 	}
 

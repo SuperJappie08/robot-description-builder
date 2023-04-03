@@ -8,12 +8,14 @@ use crate::to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialMode, URDFMaterialR
 use crate::{
 	link::geometry::GeometryInterface, material::Material, transform_data::TransformData, ArcLock,
 };
+// use crate::material::MaterialDescriptor;
+// use crate::linkbuilding::VisualBuilder;
 
 #[derive(Debug)]
 pub struct Visual {
 	/// TODO: Figure out if I want to keep the name optional?.
 	pub name: Option<String>,
-	origin: Option<TransformData>,
+	pub(crate) origin: Option<TransformData>,
 
 	/// Figure out if this needs to be public or not
 	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
@@ -22,6 +24,16 @@ pub struct Visual {
 }
 
 impl Visual {
+	// #[deprecated]
+	// pub fn builder<Geometry: Into<Box<dyn GeometryInterface + Sync + Send>>>(
+	// 	name: Option<String>,
+	// 	origin: Option<TransformData>,
+	// 	geometry: Geometry,
+	// 	material_description: Option<MaterialDescriptor>,
+	// ) -> VisualBuilder {
+	// 	VisualBuilder::new(name, origin, geometry, material_description)
+	// }
+
 	/// Maybe temp
 	pub fn new<Geometry: Into<Box<dyn GeometryInterface + Sync + Send>>>(
 		name: Option<String>,
@@ -53,6 +65,19 @@ impl Visual {
 	pub fn get_material(&self) -> Option<&ArcLock<Material>> {
 		self.material.as_ref()
 	}
+
+	// #[deprecated]
+	// pub fn rebuild(&self) -> VisualBuilder {
+	// 	VisualBuilder {
+	// 		name: self.name.clone(),
+	// 		origin: self.origin,
+	// 		geometry: self.geometry.boxed_clone(),
+	// 		material_description: self
+	// 			.material
+	// 			.as_ref()
+	// 			.map(|material| material.read().unwrap().describe()), // UNWRAP???
+	// 	}
+	// }
 }
 
 #[cfg(feature = "urdf")]
@@ -121,7 +146,14 @@ impl PartialEq for Visual {
 			&& match (&self.material, &other.material) {
 				(None, None) => true,
 				(Some(own_material), Some(other_material)) => {
+					// FIXME: The Or is for testing pursposes, It might need to be incorparted into the Lib, but then we need a differnt way
+					// Needed for unnamed materials, which do not share a reference.
+					// TODO: Redo materials
 					Arc::ptr_eq(own_material, other_material)
+						|| own_material
+							.read()
+							.unwrap()
+							.eq(&other_material.read().unwrap())
 				}
 				_ => false,
 			}
@@ -132,7 +164,7 @@ impl Clone for Visual {
 	fn clone(&self) -> Self {
 		Self {
 			name: self.name.clone(),
-			origin: self.origin.clone(),
+			origin: self.origin,
 			geometry: self.geometry.boxed_clone(),
 			material: self.material.clone(),
 		}

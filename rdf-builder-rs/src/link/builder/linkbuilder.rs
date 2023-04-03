@@ -1,10 +1,11 @@
 use std::sync::{Arc, RwLock, Weak};
 
+// use itertools::process_results;
+
 use crate::{
-	cluster_objects::kinematic_tree_data::KinematicTreeData,
+	cluster_objects::kinematic_data_tree::KinematicDataTree,
 	joint::{BuildJointChain, Joint, JointBuilder},
-	link::{builder::BuildLink, Link},
-	link_data::{self, LinkParent},
+	link::{builder::BuildLink, link_data, Link, LinkParent},
 	ArcLock, WeakLock,
 };
 
@@ -21,6 +22,7 @@ pub struct LinkBuilder {
 }
 
 impl LinkBuilder {
+	/// TODO: depreaction Planned
 	pub fn new<Name: Into<String>>(name: Name) -> LinkBuilder {
 		Self {
 			name: name.into(),
@@ -68,7 +70,7 @@ impl LinkBuilder {
 }
 
 impl BuildLink for LinkBuilder {
-	fn build(self, tree: &Weak<KinematicTreeData>) -> ArcLock<Link> {
+	fn build(self, tree: &Weak<KinematicDataTree>) -> ArcLock<Link> {
 		#[cfg(any(feature = "logging", test))]
 		log::info!("Making a Link[name = \"{}\"]", self.name);
 
@@ -79,6 +81,13 @@ impl BuildLink for LinkBuilder {
 				direct_parent: LinkParent::KinematicTree(Weak::clone(tree)),
 				child_joints: Vec::new(),
 				inertial: None, //TODO:
+				// visuals: process_results(
+				// 	self.visuals
+				// 		.into_iter()
+				// 		.map(|visual_builder| visual_builder.build(tree)),
+				// 	|iter| iter.collect(),
+				// )
+				// .unwrap(),
 				visuals: self.visuals,
 				colliders: self.colliders,
 				end_point: None,
@@ -87,7 +96,7 @@ impl BuildLink for LinkBuilder {
 		})
 	}
 
-	fn start_building_chain(self, tree: &Weak<KinematicTreeData>) -> ArcLock<Link> {
+	fn start_building_chain(self, tree: &Weak<KinematicDataTree>) -> ArcLock<Link> {
 		let joint_builders = self.joints.clone();
 		let root = self.build(tree);
 		// This unwrap is Ok since the Link has just been build
@@ -100,7 +109,7 @@ impl BuildLink for LinkBuilder {
 
 	fn build_chain(
 		self,
-		tree: &Weak<KinematicTreeData>,
+		tree: &Weak<KinematicDataTree>,
 		parent_joint: &WeakLock<Joint>,
 	) -> ArcLock<Link> {
 		Arc::new_cyclic(|me| {
@@ -114,6 +123,12 @@ impl BuildLink for LinkBuilder {
 					.map(|joint_builder| joint_builder.build_chain(tree, me))
 					.collect(),
 				inertial: None, // FIXME: Fix this
+				// visuals: itertools::process_results(
+				// 	self.visuals
+				// 		.into_iter()
+				// 		.map(|visual_builder| visual_builder.build(tree)),
+				// 	|iter| iter.collect(),
+				// )				.unwrap(), // UNWRAP NOT OK
 				visuals: self.visuals,
 				colliders: self.colliders,
 				end_point: None, // FIXME: Fix this

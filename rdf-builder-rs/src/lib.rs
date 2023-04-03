@@ -13,6 +13,7 @@ pub use cluster_objects::{KinematicInterface, KinematicTree, Robot};
 pub use joint::{Joint, JointBuilder, JointType, OffsetMode, SmartJointBuilder};
 pub use link::{helper_functions, link_data, Link};
 pub use material::{Material, MaterialData};
+// pub use material::MaterialDescriptor;
 pub use transform_data::TransformData;
 
 pub mod linkbuilding {

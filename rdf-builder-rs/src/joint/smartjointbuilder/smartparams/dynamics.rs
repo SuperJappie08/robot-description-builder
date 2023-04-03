@@ -1,4 +1,8 @@
-use crate::joint::smartjointbuilder::{smart_joint_datatraits, SmartJointBuilder};
+use crate::joint::{
+	joint_data,
+	jointbuilder::JointBuilder,
+	smartjointbuilder::{smart_joint_datatraits, SmartJointBuilder},
+};
 
 pub trait DynamicsAllowed {}
 
@@ -11,7 +15,21 @@ pub struct WithDynamics {
 	damping: Option<f32>,
 	friction: Option<f32>,
 }
-impl smart_joint_datatraits::DynamicsDataType for WithDynamics {}
+
+impl From<WithDynamics> for joint_data::DynamicsData {
+	fn from(value: WithDynamics) -> Self {
+		Self {
+			damping: value.damping,
+			friction: value.friction,
+		}
+	}
+}
+
+impl smart_joint_datatraits::DynamicsDataType for WithDynamics {
+	fn simplify(&self, joint_builder: &mut JointBuilder) {
+		joint_builder.with_dynamics_data(self.clone().into());
+	}
+}
 
 impl<Type, Axis, Calibration, Limit, Mimic, SafetyController>
 	SmartJointBuilder<Type, Axis, Calibration, NoDynamics, Limit, Mimic, SafetyController>

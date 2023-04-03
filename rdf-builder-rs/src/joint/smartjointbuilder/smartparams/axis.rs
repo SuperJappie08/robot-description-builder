@@ -1,4 +1,7 @@
-use crate::joint::smartjointbuilder::{smart_joint_datatraits, SmartJointBuilder};
+use crate::joint::{
+	jointbuilder::JointBuilder,
+	smartjointbuilder::{smart_joint_datatraits, SmartJointBuilder},
+};
 
 pub trait AxisAllowed {}
 
@@ -8,7 +11,11 @@ impl smart_joint_datatraits::AxisDataType for NoAxis {}
 
 #[derive(Debug, Default, Clone)]
 pub struct WithAxis(f32, f32, f32);
-impl smart_joint_datatraits::AxisDataType for WithAxis {}
+impl smart_joint_datatraits::AxisDataType for WithAxis {
+	fn simplify(&self, joint_builder: &mut JointBuilder) {
+		joint_builder.with_axis((self.0, self.1, self.2));
+	}
+}
 
 impl<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>
 	SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>
@@ -40,7 +47,7 @@ where
 		}
 	}
 
-	// #[deprecated]
+	#[deprecated]
 	/// TODO: Maybe Deprecate
 	pub fn set_axis(
 		self,

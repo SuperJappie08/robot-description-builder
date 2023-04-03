@@ -1,4 +1,8 @@
-use crate::joint::smartjointbuilder::{smart_joint_datatraits, SmartJointBuilder};
+use crate::joint::{
+	joint_data,
+	jointbuilder::JointBuilder,
+	smartjointbuilder::{smart_joint_datatraits, SmartJointBuilder},
+};
 
 /// TODO: Maybe add a continous lockout thing
 pub trait LimitAllowed {}
@@ -18,7 +22,34 @@ pub struct WithLimit {
 	/// An attribute for enforcing the maximum joint velocity (in radians per second [rad/s] for revolute joints, in metres per second [m/s] for prismatic joints).
 	velocity: f32,
 }
-impl smart_joint_datatraits::LimitDataType for WithLimit {}
+
+impl From<WithLimit> for joint_data::LimitData {
+	fn from(value: WithLimit) -> Self {
+		Self {
+			lower: value.lower,
+			upper: value.upper,
+			effort: value.effort,
+			velocity: value.velocity,
+		}
+	}
+}
+
+impl smart_joint_datatraits::LimitDataType for WithLimit {
+	fn simplify(&self, joint_builder: &mut JointBuilder, is_continous: bool) {
+		joint_builder.with_limit_data(joint_data::LimitData {
+			lower: match is_continous {
+				true => None,
+				false => self.lower,
+			},
+			upper: match is_continous {
+				true => None,
+				false => self.upper,
+			},
+			effort: self.effort,
+			velocity: self.velocity,
+		})
+	}
+}
 
 impl<Type, Axis, Calibration, Dynamics, Mimic, SafetyController>
 	SmartJointBuilder<Type, Axis, Calibration, Dynamics, NoLimit, Mimic, SafetyController>

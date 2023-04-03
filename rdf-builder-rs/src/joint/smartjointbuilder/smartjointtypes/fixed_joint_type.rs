@@ -1,7 +1,7 @@
 use std::sync::Weak;
 
 use crate::{
-	cluster_objects::kinematic_tree_data::KinematicTreeData,
+	cluster_objects::kinematic_data_tree::KinematicDataTree,
 	joint::{
 		jointbuilder::{BuildJoint, JointBuilder},
 		smartjointbuilder::{
@@ -19,6 +19,12 @@ use crate::{
 #[derive(Debug, Default, Clone)]
 pub struct FixedType;
 
+impl From<FixedType> for JointType {
+	fn from(_value: FixedType) -> Self {
+		JointType::Fixed
+	}
+}
+
 impl BuildJoint
 	for SmartJointBuilder<
 		FixedType,
@@ -32,11 +38,11 @@ impl BuildJoint
 {
 	fn build(
 		self,
-		tree: Weak<KinematicTreeData>,
+		tree: Weak<KinematicDataTree>,
 		parent_link: WeakLock<Link>,
 		child_link: ArcLock<Link>,
 	) -> ArcLock<Joint> {
-		let joint_builder = JointBuilder::new(self.name, JointType::Fixed);
+		let joint_builder = JointBuilder::new(self.name, self.joint_type.into());
 
 		let joint_builder = if let Some(mode) = self.offset {
 			joint_builder.add_origin_offset(match mode {

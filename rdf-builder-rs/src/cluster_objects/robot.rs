@@ -10,7 +10,7 @@ use quick_xml::{events::attributes::Attribute, name::QName};
 use crate::to_rdf::to_urdf::{ToURDF, URDFConfig};
 use crate::{
 	cluster_objects::{
-		kinematic_data_errors::AddTransmissionError, kinematic_tree_data::KinematicTreeData,
+		kinematic_data_errors::AddTransmissionError, kinematic_data_tree::KinematicDataTree,
 		KinematicInterface,
 	},
 	joint::Joint,
@@ -24,11 +24,11 @@ use crate::{
 pub struct Robot {
 	/// The name of the robot
 	pub name: String, //TODO: Temp Pub
-	data: Arc<KinematicTreeData>,
+	data: Arc<KinematicDataTree>,
 }
 
 impl Robot {
-	pub(crate) fn new<Name: Into<String>>(name: Name, data: Arc<KinematicTreeData>) -> Self {
+	pub(crate) fn new<Name: Into<String>>(name: Name, data: Arc<KinematicDataTree>) -> Self {
 		Self {
 			name: name.into(),
 			data,

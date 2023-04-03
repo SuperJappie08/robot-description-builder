@@ -1,4 +1,8 @@
-use crate::joint::smartjointbuilder::{smart_joint_datatraits, SmartJointBuilder};
+use crate::joint::{
+	joint_data,
+	jointbuilder::JointBuilder,
+	smartjointbuilder::{smart_joint_datatraits, SmartJointBuilder},
+};
 
 pub trait CalibrationAllowed {}
 
@@ -11,7 +15,21 @@ pub struct WithCalibration {
 	rising: Option<f32>,
 	falling: Option<f32>,
 }
-impl smart_joint_datatraits::CalibrationDataType for WithCalibration {}
+
+impl From<WithCalibration> for joint_data::CalibrationData {
+	fn from(value: WithCalibration) -> Self {
+		Self {
+			rising: value.rising,
+			falling: value.falling,
+		}
+	}
+}
+
+impl smart_joint_datatraits::CalibrationDataType for WithCalibration {
+	fn simplify(&self, joint_builder: &mut JointBuilder) {
+		joint_builder.with_calibration_data(self.clone().into());
+	}
+}
 
 impl<Type, Axis, Dynamics, Limit, Mimic, SafetyController>
 	SmartJointBuilder<Type, Axis, NoCalibration, Dynamics, Limit, Mimic, SafetyController>

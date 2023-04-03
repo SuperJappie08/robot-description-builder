@@ -82,7 +82,7 @@ impl Clone for Collision {
 	fn clone(&self) -> Self {
 		Self {
 			name: self.name.clone(),
-			origin: self.origin.clone(),
+			origin: self.origin,
 			geometry: self.geometry.boxed_clone(),
 		}
 	}

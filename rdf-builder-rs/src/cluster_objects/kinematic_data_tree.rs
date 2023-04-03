@@ -17,7 +17,7 @@ use crate::cluster_objects::kinematic_data_errors::*;
 // pub(crate) trait KinematicTreeTrait {}
 
 #[derive(Debug)]
-pub struct KinematicTreeData {
+pub struct KinematicDataTree {
 	pub(crate) root_link: ArcLock<Link>,
 	//TODO: In this implementation the Keys, are not linked to the objects and could be changed.
 	// These index maps are ArcLock in order to be exposable to the outside world via the ref of this thing
@@ -28,11 +28,12 @@ pub struct KinematicTreeData {
 	/// Do Transmission have to wrapped into ArcLock? Maybe we can get a way with raw stuff?
 	/// Don't now it would unpack on the Python side...
 	pub(crate) transmissions: ArcLock<HashMap<String, ArcLock<Transmission>>>,
+	/// The most recently updated `Link`
 	pub(crate) newest_link: RwLock<WeakLock<Link>>,
 	// is_rigid: bool // ? For gazebo -> TO AdvancedSimulationData [ASD]
 }
 
-impl KinematicTreeData {
+impl KinematicDataTree {
 	pub(crate) fn newer_link(root_link_builder: impl BuildLink) -> Arc<Self> {
 		let data = Arc::new_cyclic(|tree| Self {
 			root_link: root_link_builder.start_building_chain(tree),
@@ -57,7 +58,7 @@ impl KinematicTreeData {
 	}
 
 	/// TODO: This should be updated to also work on Links that are being toring out
-	pub(crate) fn new_link(root_link: ArcLock<Link>) -> Arc<KinematicTreeData> {
+	pub(crate) fn new_link(root_link: ArcLock<Link>) -> Arc<KinematicDataTree> {
 		let material_index = HashMap::new();
 		let mut links = HashMap::new();
 		let joints = HashMap::new();
@@ -113,7 +114,7 @@ impl KinematicTreeData {
 
 		let other_material = { self.material_index.read()?.get(name) }.map(Arc::clone);
 		if let Some(preexisting_material) = other_material {
-			if Arc::ptr_eq(&preexisting_material, material) {
+			if !Arc::ptr_eq(&preexisting_material, material) {
 				Err(AddMaterialError::Conflict(name.into()))
 			} else {
 				Ok(())
@@ -128,30 +129,30 @@ impl KinematicTreeData {
 		}
 	}
 
-	pub(crate) fn try_add_link(&self, link: ArcLock<Link>) -> Result<(), AddLinkError> {
-		let link_binding = link.read()?;
-		let name = link_binding.get_name();
+	// pub(crate) fn try_add_link(&self, link: ArcLock<Link>) -> Result<(), AddLinkError> {
+	// 	let link_binding = link.read()?;
+	// 	let name = link_binding.get_name();
 
-		#[cfg(any(feature = "logging", test))]
-		log::debug!(target: "KinematicTreeData","Trying to attach Link: {}", name);
+	// 	#[cfg(any(feature = "logging", test))]
+	// 	log::debug!(target: "KinematicTreeData","Trying to attach Link: {}", name);
 
-		let other = { self.links.read()?.get(name) }.map(Weak::clone);
-		if let Some(preexisting_link) = other.and_then(|weak_link| weak_link.upgrade()) {
-			if Arc::ptr_eq(&preexisting_link, &link) {
-				Err(AddLinkError::Conflict(name.into()))
-			} else {
-				Ok(())
-			}
-		} else {
-			assert!(self
-				.links
-				.write()?
-				.insert(name.into(), Arc::downgrade(&link))
-				.is_none());
-			*self.newest_link.write().unwrap() = Arc::downgrade(&link); // Is unwrap Ok?
-			Ok(())
-		}
-	}
+	// 	let other = { self.links.read()?.get(name) }.map(Weak::clone);
+	// 	if let Some(preexisting_link) = other.and_then(|weak_link| weak_link.upgrade()) {
+	// 		if !Arc::ptr_eq(&preexisting_link, &link) {
+	// 			Err(AddLinkError::Conflict(name.into()))
+	// 		} else {
+	// 			Ok(())
+	// 		}
+	// 	} else {
+	// 		assert!(self
+	// 			.links
+	// 			.write()?
+	// 			.insert(name.into(), Arc::downgrade(&link))
+	// 			.is_none());
+	// 		*self.newest_link.write().unwrap() = Arc::downgrade(&link); // Is unwrap Ok?
+	// 		Ok(())
+	// 	}
+	// }
 
 	/// This might replace try_add_link at some point, when i figure out of this contual building works?
 	/// But it loops throug everything which could be a lot...
@@ -167,7 +168,7 @@ impl KinematicTreeData {
 
 		let other = { self.links.read()?.get(name) }.map(Weak::clone);
 		if let Some(preexisting_link) = other.and_then(|weak_link| weak_link.upgrade()) {
-			if Arc::ptr_eq(&preexisting_link, &link) {
+			if !Arc::ptr_eq(&preexisting_link, &link) {
 				return Err(AddLinkError::Conflict(name.into()));
 			}
 		} else {
@@ -185,7 +186,10 @@ impl KinematicTreeData {
 				.get_visuals()
 				.iter()
 				.filter_map(|visual| visual.get_material())
-				.map(|material| self.try_add_material(material)),
+				.map(|material| match self.try_add_material(material) {
+					Err(AddMaterialError::NoName) => Ok(()), // TODO: SHOULD LOG HERE or earlier???
+					o => o,
+				}),
 			|iter| iter.collect_vec(),
 		)
 		.unwrap(); // FIXME: THIS IS TEMP
@@ -203,29 +207,29 @@ impl KinematicTreeData {
 		Ok(())
 	}
 
-	pub(crate) fn try_add_joint(&self, joint: &ArcLock<Joint>) -> Result<(), AddJointError> {
-		let joint_binding = joint.read()?;
-		let name = joint_binding.get_name();
+	// pub(crate) fn try_add_joint(&self, joint: &ArcLock<Joint>) -> Result<(), AddJointError> {
+	// 	let joint_binding = joint.read()?;
+	// 	let name = joint_binding.get_name();
 
-		#[cfg(any(feature = "logging", test))]
-		log::debug!(target: "KinematicTreeData","Trying to attach Joint: {}", name);
+	// 	#[cfg(any(feature = "logging", test))]
+	// 	log::debug!(target: "KinematicTreeData","Trying to attach Joint: {}", name);
 
-		let other = { self.joints.read()?.get(name) }.map(Weak::clone);
-		if let Some(preexisting_joint) = other.and_then(|weak_joint| weak_joint.upgrade()) {
-			if Arc::ptr_eq(&preexisting_joint, joint) {
-				Err(AddJointError::Conflict(name.into()))
-			} else {
-				Ok(())
-			}
-		} else {
-			assert!(self
-				.joints
-				.write()?
-				.insert(name.into(), Arc::downgrade(joint))
-				.is_none());
-			Ok(())
-		}
-	}
+	// 	let other = { self.joints.read()?.get(name) }.map(Weak::clone);
+	// 	if let Some(preexisting_joint) = other.and_then(|weak_joint| weak_joint.upgrade()) {
+	// 		if !Arc::ptr_eq(&preexisting_joint, joint) {
+	// 			Err(AddJointError::Conflict(name.into()))
+	// 		} else {
+	// 			Ok(())
+	// 		}
+	// 	} else {
+	// 		assert!(self
+	// 			.joints
+	// 			.write()?
+	// 			.insert(name.into(), Arc::downgrade(joint))
+	// 			.is_none());
+	// 		Ok(())
+	// 	}
+	// }
 
 	pub(crate) fn try_add_joint2(&self, joint: &ArcLock<Joint>) -> Result<(), AddJointError> {
 		let joint_binding = joint.read()?;
@@ -236,7 +240,7 @@ impl KinematicTreeData {
 
 		let other = { self.joints.read()?.get(name) }.map(Weak::clone);
 		if let Some(preexisting_joint) = other.and_then(|weak_joint| weak_joint.upgrade()) {
-			if Arc::ptr_eq(&preexisting_joint, joint) {
+			if !Arc::ptr_eq(&preexisting_joint, joint) {
 				return Err(AddJointError::Conflict(name.into()));
 			}
 		} else {
@@ -263,7 +267,7 @@ impl KinematicTreeData {
 
 		let other_transmission = { self.transmissions.read()?.get(&name) }.map(Arc::clone);
 		if let Some(preexisting_transmission) = other_transmission {
-			if Arc::ptr_eq(&preexisting_transmission, &transmission) {
+			if !Arc::ptr_eq(&preexisting_transmission, &transmission) {
 				Err(AddTransmissionError::Conflict(name))
 			} else {
 				Ok(())
@@ -333,7 +337,7 @@ impl KinematicTreeData {
 }
 
 #[cfg(feature = "urdf")]
-impl ToURDF for KinematicTreeData {
+impl ToURDF for KinematicDataTree {
 	fn to_urdf(
 		&self,
 		writer: &mut quick_xml::Writer<std::io::Cursor<Vec<u8>>>,
@@ -384,7 +388,7 @@ impl ToURDF for KinematicTreeData {
 	}
 }
 
-impl PartialEq for KinematicTreeData {
+impl PartialEq for KinematicDataTree {
 	fn eq(&self, other: &Self) -> bool {
 		Arc::ptr_eq(&self.root_link, &other.root_link)
 			&& Weak::ptr_eq(
@@ -404,7 +408,7 @@ mod tests {
 	use test_log::test;
 
 	use crate::{
-		cluster_objects::kinematic_tree_data::KinematicTreeData,
+		cluster_objects::kinematic_data_tree::KinematicDataTree,
 		joint::{JointBuilder, JointType},
 		link_data::LinkParent,
 		linkbuilding::LinkBuilder,
@@ -417,7 +421,7 @@ mod tests {
 
 	#[test]
 	fn newer_link_singular_empty() {
-		let tree = KinematicTreeData::newer_link(LinkBuilder::new("Linky"));
+		let tree = KinematicDataTree::newer_link(LinkBuilder::new("Linky"));
 
 		assert_eq!(tree.links.try_read().unwrap().len(), 1);
 		assert_eq!(tree.joints.try_read().unwrap().len(), 0);
@@ -456,7 +460,7 @@ mod tests {
 
 	#[test]
 	fn newer_link_multi_empty() {
-		let tree = KinematicTreeData::newer_link(LinkBuilder {
+		let tree = KinematicDataTree::newer_link(LinkBuilder {
 			joints: vec![
 				JointBuilder {
 					child: Some(LinkBuilder {

@@ -1,4 +1,8 @@
-use crate::joint::smartjointbuilder::{smart_joint_datatraits, SmartJointBuilder};
+use crate::joint::{
+	joint_data,
+	jointbuilder::JointBuilder,
+	smartjointbuilder::{smart_joint_datatraits, SmartJointBuilder},
+};
 
 pub trait SafetyControllerAllowed {}
 
@@ -26,7 +30,23 @@ pub struct WithSafetyController {
 	/// An attribute specifying the relation between effort and velocity limits. See See safety limits for more details.
 	k_velocity: f32,
 }
-impl smart_joint_datatraits::SafetyControllerDataType for WithSafetyController {}
+
+impl From<WithSafetyController> for joint_data::SafetyControllerData {
+	fn from(value: WithSafetyController) -> Self {
+		Self {
+			soft_lower_limit: value.soft_lower_limit,
+			soft_upper_limit: value.soft_upper_limit,
+			k_position: value.k_position,
+			k_velocity: value.k_velocity,
+		}
+	}
+}
+
+impl smart_joint_datatraits::SafetyControllerDataType for WithSafetyController {
+	fn simplify(&self, joint_builder: &mut JointBuilder) {
+		joint_builder.with_safety_controller(self.clone().into());
+	}
+}
 
 impl<Type, Axis, Calibration, Dynamics, Limit, Mimic>
 	SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, Mimic, NoSafetyController>

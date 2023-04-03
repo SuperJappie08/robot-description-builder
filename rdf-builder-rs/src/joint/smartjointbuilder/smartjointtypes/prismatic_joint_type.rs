@@ -2,9 +2,8 @@ use std::sync::Weak;
 
 use crate::{
 	cluster_objects::kinematic_data_tree::KinematicDataTree,
-	joint::smartjointbuilder::OffsetMode,
-	joint::JointType,
 	joint::{
+		jointbuilder::{BuildJoint, JointBuilder},
 		smartjointbuilder::{
 			smartparams::{
 				smart_joint_datatraits::{self, LimitDataType},
@@ -12,31 +11,38 @@ use crate::{
 			},
 			SmartJointBuilder,
 		},
-		BuildJoint, Joint, JointBuilder,
+		Joint, JointType,
 	},
 	link::Link,
 	ArcLock, WeakLock,
 };
 
 #[derive(Debug, Default, Clone)]
-pub struct RevoluteType;
+pub struct PrismaticType;
 
-impl From<RevoluteType> for JointType {
-	fn from(_value: RevoluteType) -> Self {
-		JointType::Revolute
+impl From<PrismaticType> for JointType {
+	fn from(_value: PrismaticType) -> Self {
+		JointType::Continuous
 	}
 }
 
-impl smart_joint_specification::AxisAllowed for RevoluteType {}
-impl smart_joint_specification::CalibrationAllowed for RevoluteType {}
-impl smart_joint_specification::DynamicsAllowed for RevoluteType {}
-impl smart_joint_specification::LimitAllowed for RevoluteType {}
-impl smart_joint_specification::MimicAllowed for RevoluteType {}
-impl smart_joint_specification::SafetyControllerAllowed for RevoluteType {}
+impl smart_joint_specification::AxisAllowed for PrismaticType {}
+impl smart_joint_specification::CalibrationAllowed for PrismaticType {}
+impl smart_joint_specification::DynamicsAllowed for PrismaticType {}
+impl smart_joint_specification::LimitAllowed for PrismaticType {}
+impl smart_joint_specification::MimicAllowed for PrismaticType {}
+impl smart_joint_specification::SafetyControllerAllowed for PrismaticType {}
 
 impl<Axis, Calibration, Dynamics, Mimic, SafetyController> BuildJoint
-	for SmartJointBuilder<RevoluteType, Axis, Calibration, Dynamics, WithLimit, Mimic, SafetyController>
-where
+	for SmartJointBuilder<
+		PrismaticType,
+		Axis,
+		Calibration,
+		Dynamics,
+		WithLimit,
+		Mimic,
+		SafetyController,
+	> where
 	Axis: smart_joint_datatraits::AxisDataType,
 	Calibration: smart_joint_datatraits::CalibrationDataType,
 	Dynamics: smart_joint_datatraits::DynamicsDataType,
@@ -51,17 +57,8 @@ where
 	) -> ArcLock<Joint> {
 		let mut joint_builder = JointBuilder::new(self.name, self.joint_type.into());
 
-		if let Some(mode) = self.offset {
-			// todo!("BUILD FUNCTIOn")
-			joint_builder = match mode {
-				OffsetMode::Offset(x, y, z) => joint_builder.add_origin_offset((x, y, z)),
-				OffsetMode::FigureItOut(_) => todo!(),
-			}
-		}
-
-		if let Some(rotation) = self.rotation {
-			// TODO: MAKE SMARTER
-			joint_builder = joint_builder.add_origin_rotation(rotation)
+		if self.offset.is_some() || self.rotation.is_some() {
+			todo!("Build Prismatic Joint")
 		}
 
 		self.axis.simplify(&mut joint_builder);
@@ -70,8 +67,6 @@ where
 		self.limit.simplify(&mut joint_builder, false);
 		self.mimic.simplify(&mut joint_builder);
 		self.safety_controller.simplify(&mut joint_builder);
-
-		// THIS MIGHT BE DONE// todo!("Create a `RevoluteJoint`")
 
 		joint_builder.build(tree, parent_link, child_link)
 	}

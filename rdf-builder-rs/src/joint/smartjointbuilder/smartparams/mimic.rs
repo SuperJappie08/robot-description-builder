@@ -1,4 +1,8 @@
-use crate::joint::smartjointbuilder::{smart_joint_datatraits, SmartJointBuilder};
+use crate::joint::{
+	joint_data,
+	jointbuilder::JointBuilder,
+	smartjointbuilder::{smart_joint_datatraits, SmartJointBuilder},
+};
 
 pub trait MimicAllowed {}
 
@@ -19,7 +23,22 @@ pub struct WithMimic {
 	/// Specifies the offset to add in the formula above. Defaults to 0 (radians for revolute joints, meters for prismatic joints)
 	offset: Option<f32>,
 }
-impl smart_joint_datatraits::MimicDataType for WithMimic {}
+
+impl From<WithMimic> for joint_data::MimicBuilderData {
+	fn from(value: WithMimic) -> Self {
+		Self {
+			joint_name: value.joint_name,
+			multiplier: value.multiplier,
+			offset: value.offset,
+		}
+	}
+}
+
+impl smart_joint_datatraits::MimicDataType for WithMimic {
+	fn simplify(&self, joint_builder: &mut JointBuilder) {
+		joint_builder.with_mimic_data(self.clone().into())
+	}
+}
 
 impl<Type, Axis, Calibration, Dynamics, Limit, SafetyController>
 	SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, NoMimic, SafetyController>

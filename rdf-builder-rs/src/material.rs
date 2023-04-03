@@ -1,3 +1,4 @@
+// mod material_descriptor;
 use std::sync::{Arc, RwLock};
 
 #[cfg(feature = "xml")]
@@ -7,10 +8,12 @@ use quick_xml::{events::attributes::Attribute, name::QName};
 use crate::to_rdf::to_urdf::{ToURDF, URDFMaterialMode};
 use crate::ArcLock;
 
+// pub use material_descriptor::MaterialDescriptor;
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct Material {
 	pub name: Option<String>,
-	material: MaterialData,
+	data: MaterialData,
 }
 
 impl Material {
@@ -23,7 +26,7 @@ impl Material {
 	) -> Material {
 		Material {
 			name,
-			material: MaterialData::Color(red, green, blue, alpha),
+			data: MaterialData::Color(red, green, blue, alpha),
 		}
 	}
 
@@ -33,9 +36,21 @@ impl Material {
 	) -> Material {
 		Material {
 			name,
-			material: MaterialData::Texture(texture_path.into()),
+			data: MaterialData::Texture(texture_path.into()),
 		}
 	}
+
+	// pub(crate) fn new_data(name: Option<String>, data: MaterialData) -> Material {
+	// 	Material { name, data }
+	// }
+
+	// #[deprecated]
+	// pub(crate) fn new_builder(builder: &material_descriptor::MaterialDescriptor) -> Material {
+	// 	Material {
+	// 		name: builder.name.clone(),
+	// 		data: builder.data.clone(),
+	// 	}
+	// }
 
 	/// Returns a Reference to the optional material name
 	/// TODO: Maybe Make the name a reference only
@@ -44,8 +59,16 @@ impl Material {
 	}
 
 	pub fn get_material_data(&self) -> &MaterialData {
-		&self.material
+		&self.data
 	}
+
+	// #[deprecated]
+	// pub fn describe(&self) -> material_descriptor::MaterialDescriptor {
+	// 	material_descriptor::MaterialDescriptor {
+	// 		name: self.name.clone(),
+	// 		data: self.data.clone(),
+	// 	}
+	// }
 }
 
 #[cfg(feature = "urdf")]

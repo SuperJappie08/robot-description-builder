@@ -1,8 +1,8 @@
 use std::sync::{Arc, RwLock, Weak};
 
 use crate::{
-	cluster_objects::kinematic_tree_data::KinematicTreeData,
-	joint::{Joint, JointType},
+	cluster_objects::kinematic_data_tree::KinematicDataTree,
+	joint::{joint_data, Joint, JointType},
 	link::Link,
 	linkbuilding::{BuildLink, LinkBuilder},
 	transform_data::{MirrorAxis, TransformData},
@@ -13,19 +13,19 @@ pub trait BuildJoint {
 	/// Creates the joint ?? and subscribes it to the right right places
 	fn build(
 		self,
-		tree: Weak<KinematicTreeData>,
+		tree: Weak<KinematicDataTree>,
 		parent_link: WeakLock<Link>,
 		child_link: ArcLock<Link>,
 	) -> ArcLock<Joint>;
 
-	fn register_to_tree(
-		tree: &Weak<KinematicTreeData>,
-		joint: &ArcLock<Joint>,
-	) -> Result<(), crate::cluster_objects::kinematic_data_errors::AddJointError> {
-		tree.upgrade()
-			.unwrap() // FIXME: Figure out if unwrap is Ok?
-			.try_add_joint(joint)
-	}
+	// fn register_to_tree(
+	// 	tree: &Weak<KinematicTreeData>,
+	// 	joint: &ArcLock<Joint>,
+	// ) -> Result<(), crate::cluster_objects::kinematic_data_errors::AddJointError> {
+	// 	tree.upgrade()
+	// 		.unwrap() // FIXME: Figure out if unwrap is Ok?
+	// 		.try_add_joint(joint)
+	// }
 
 	// fn register_to_link(parent_link: &WeakLock<Link>, joint: ArcLock<Box<dyn JointInterface + Sync + Send>>) {
 	// 	parent_link.upgrade().unwrap().try_write().unwrap()
@@ -35,7 +35,7 @@ pub trait BuildJoint {
 pub(crate) trait BuildJointChain: BuildJoint {
 	fn build_chain(
 		self,
-		tree: &Weak<KinematicTreeData>,
+		tree: &Weak<KinematicDataTree>,
 		parent_link: &WeakLock<Link>,
 	) -> ArcLock<Joint>;
 }
@@ -46,6 +46,15 @@ pub struct JointBuilder {
 	pub(crate) joint_type: JointType, // TODO: FINISH ME
 	pub(crate) origin: TransformData,
 	pub(crate) child: Option<LinkBuilder>,
+
+	/// TODO: DO SOMETHING WITH THIS
+	/// TODO: MAYBE CHANGE TO Vec3D Or something
+	pub(crate) axis: Option<(f32, f32, f32)>,
+	pub(crate) calibration: joint_data::CalibrationData,
+	pub(crate) dynamics: joint_data::DynamicsData,
+	pub(crate) limit: Option<joint_data::LimitData>,
+	pub(crate) mimic: Option<joint_data::MimicBuilderData>,
+	pub(crate) safety_controller: Option<joint_data::SafetyControllerData>,
 }
 
 impl JointBuilder {
@@ -68,9 +77,44 @@ impl JointBuilder {
 	}
 
 	/// Nominated for Deprication
-	pub(crate) fn with_origin(mut self, origin: TransformData) -> Self {
+	/// Maybe Not??
+	#[inline]
+	pub(crate) fn with_origin(&mut self, origin: TransformData) {
 		self.origin = origin;
-		self
+	}
+
+	#[inline]
+	pub fn with_axis(&mut self, axis: (f32, f32, f32)) {
+		self.axis = Some(axis);
+	}
+
+	/// Add the full `CalibrationData` to the `JointBuillder`.
+	#[inline]
+	pub(crate) fn with_calibration_data(&mut self, calibration_data: joint_data::CalibrationData) {
+		self.calibration = calibration_data;
+	}
+
+	#[inline]
+	pub(crate) fn with_dynamics_data(&mut self, dynamics_data: joint_data::DynamicsData) {
+		self.dynamics = dynamics_data;
+	}
+
+	#[inline]
+	pub(crate) fn with_limit_data(&mut self, limit_data: joint_data::LimitData) {
+		self.limit = Some(limit_data);
+	}
+
+	#[inline]
+	pub(crate) fn with_mimic_data(&mut self, mimic_data: joint_data::MimicBuilderData) {
+		self.mimic = Some(mimic_data);
+	}
+
+	#[inline]
+	pub(crate) fn with_safety_controller(
+		&mut self,
+		safety_controller_data: joint_data::SafetyControllerData,
+	) {
+		self.safety_controller = Some(safety_controller_data);
 	}
 
 	/// TODO: WIP SEE TransfromData::mirrored()
@@ -85,7 +129,7 @@ impl JointBuilder {
 impl BuildJoint for JointBuilder {
 	fn build(
 		self,
-		tree: Weak<KinematicTreeData>,
+		tree: Weak<KinematicDataTree>,
 		parent_link: WeakLock<Link>,
 		child_link: ArcLock<Link>,
 	) -> ArcLock<Joint> {
@@ -97,11 +141,18 @@ impl BuildJoint for JointBuilder {
 				child_link,
 				joint_type: self.joint_type,
 				origin: self.origin,
+				axis: self.axis,
+				calibration: self.calibration,
+				dynamics: self.dynamics,
+				limit: self.limit,
+				mimic: self.mimic.map(|mimic| mimic.to_mimic_data(&tree)),
+				safety_controller: self.safety_controller,
 				me: Weak::clone(me),
 			})
 		});
 
-		Self::register_to_tree(&tree, &joint).unwrap(); // FIXME: Figure out if Unwrap is Ok here?
+		// Self::register_to_tree(&tree, &joint).unwrap(); // FIXME: Figure out if Unwrap is Ok here?
+		tree.upgrade().unwrap().try_add_joint2(&joint).unwrap(); // FIXME: Figure out if Unwrap is Ok here?
 		joint
 	}
 }
@@ -109,7 +160,7 @@ impl BuildJoint for JointBuilder {
 impl BuildJointChain for JointBuilder {
 	fn build_chain(
 		self,
-		tree: &Weak<KinematicTreeData>,
+		tree: &Weak<KinematicDataTree>,
 		parent_link: &WeakLock<Link>,
 	) -> ArcLock<Joint> {
 		#[cfg(any(feature = "logging", test))]
@@ -124,6 +175,14 @@ impl BuildJointChain for JointBuilder {
 				child_link: self.child.expect("When Building Kinematic Branches Joints should have a child link, since a Joint only makes sense when attachted to a Parent and a Child").build_chain(tree, me),
 				joint_type: self.joint_type,
 				origin: self.origin,
+				axis: self.axis,
+				calibration: self.calibration,
+				dynamics: self.dynamics,
+				limit: self.limit,
+				mimic: self
+					.mimic
+					.map(|mimic| mimic.to_mimic_data(tree)),
+				safety_controller: self.safety_controller,
 				me: Weak::clone(me),
 			})
 		})

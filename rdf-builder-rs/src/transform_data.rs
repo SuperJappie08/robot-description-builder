@@ -3,7 +3,7 @@ use crate::to_rdf::to_urdf::ToURDF;
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
-#[derive(Debug, PartialEq, Clone, Default)]
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
 pub struct TransformData {
 	pub translation: Option<(f32, f32, f32)>,
 	pub rotation: Option<(f32, f32, f32)>,
@@ -53,7 +53,8 @@ impl TransformData {
 				MirrorAxis::Z => todo!(),
 			}
 		} else {
-			self.clone()
+			// Coping self
+			*self
 		}
 	}
 }
