@@ -33,10 +33,11 @@ impl PyVisual {
 		repr += &format!(", {:?}", self.inner.get_geometry());
 
 		if let Some(material) = self.inner.get_material() {
-			repr += &format!(
-				", material = {}",
-				Into::<PyMaterial>::into(Arc::clone(material)).__repr__()
-			);
+			todo!()
+			// repr += &format!(
+			// 	", material = {}",
+			// 	Into::<PyMaterial>::into(Arc::clone(material)).__repr__()
+			// );
 		}
 
 		repr += ")";

@@ -9,11 +9,11 @@ use crate::{
 		robot::Robot, KinematicInterface,
 	},
 	joint::Joint,
+	link::builder::BuildLink,
 	link::Link,
-	linkbuilding::BuildLink,
 	material::Material,
 	transmission::Transmission,
-	ArcLock, WeakLock,
+	ArcLock, MaterialData, WeakLock,
 };
 
 #[derive(Debug)]
@@ -46,7 +46,7 @@ impl KinematicInterface for KinematicTree {
 		Arc::clone(&self.0.joints)
 	}
 
-	fn get_materials(&self) -> ArcLock<HashMap<String, ArcLock<Material>>> {
+	fn get_materials(&self) -> ArcLock<HashMap<String, ArcLock<MaterialData>>> {
 		Arc::clone(&self.0.material_index)
 	}
 
@@ -72,13 +72,14 @@ impl KinematicInterface for KinematicTree {
 			.and_then(|weak_joint| weak_joint.upgrade())
 	}
 
-	fn get_material(&self, name: &str) -> Option<ArcLock<Material>> {
+	fn get_material(&self, name: &str) -> Option<Material> {
 		self.0
 			.material_index
 			.read()
 			.unwrap() // FIXME: Unwrapping might not be ok
 			.get(name)
 			.map(Arc::clone)
+			.map(|data| (name.into(), data).into())
 	}
 
 	fn get_transmission(&self, name: &str) -> Option<ArcLock<Transmission>> {
@@ -111,7 +112,7 @@ impl KinematicInterface for KinematicTree {
 
 	fn purge_materials(
 		&self,
-	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, ArcLock<Material>>>>> {
+	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, ArcLock<MaterialData>>>>> {
 		self.0.purge_materials()
 	}
 
@@ -123,58 +124,6 @@ impl KinematicInterface for KinematicTree {
 }
 
 impl Clone for KinematicTree {
-	// /// TODO: THIS DOESN'T WORK FOR MOST LINKDATA
-	// fn clone(&self) -> Self {
-	// 	// TODO: Maybe update identifier?
-	// 	let tree = Link::new(self.get_root_link().read().unwrap().name.clone()); // FIXME: Unwrapping might not be ok
-
-	// 	let mut change = true;
-	// 	while change {
-	// 		let keys: Vec<String> = tree.get_links().read().unwrap().keys().cloned().collect(); // FIXME: Unwrapping might not be ok
-	// 		let key_count = keys.len();
-
-	// 		for key in keys {
-	// 			let binding = tree.get_link(&key).unwrap();
-	// 			let mut current_link = binding.write().unwrap(); // FIXME: Unwrapping might not be ok
-	// 			if current_link.get_joints().len()
-	// 				== self
-	// 					.get_link(&key)
-	// 					.unwrap()
-	// 					.read()
-	// 					.unwrap()
-	// 					.get_joints()
-	// 					.len()
-	// 			// FIXME: Unwrapping might not be ok
-	// 			{
-	// 				// FIXME: Clone other internal data
-	// 				continue;
-	// 			} else {
-	// 				for joint in self
-	// 					.get_link(&key)
-	// 					.unwrap()
-	// 					.read()
-	// 					.unwrap() // FIXME: Unwrapping might not be ok
-	// 					.get_joints()
-	// 					.iter()
-	// 					.map(|joint| joint.read().unwrap())
-	// 				// FIXME: Unwrapping might not be ok
-	// 				{
-	// 					current_link
-	// 						.try_attach_child(
-	// 							Link::new(joint.get_child_link().read().unwrap().name.clone())
-	// 								.into(), // FIXME: Unwrapping might not be ok
-	// 							joint.rebuild(),
-	// 						)
-	// 						.unwrap()
-	// 				}
-	// 			}
-	// 		}
-
-	// 		change = key_count != tree.get_links().read().unwrap().len(); // FIXME: Unwrapping might not be ok
-	// 	}
-	// 	tree
-	// }
-
 	fn clone(&self) -> Self {
 		let root_link = self.get_root_link().read().unwrap().rebuild_branch(); // FIXME: UNWRAP MIGHTN NOT BE OK HERE
 
@@ -195,13 +144,18 @@ mod tests {
 	use test_log::test;
 
 	use crate::{
-		link::{link_data::LinkParent, Link},
-		JointBuilder, JointType, KinematicInterface,
+		joint::{JointBuilder, JointType},
+		link::{
+			builder::{BuildLink, LinkBuilder},
+			link_data::LinkParent,
+			Link,
+		},
+		KinematicInterface,
 	};
 
 	#[test]
 	fn clone_single() {
-		let tree = Link::new("example-link");
+		let tree = Link::builder("example-link").build_tree();
 		let cloned_tree = tree.clone();
 
 		trace!(
@@ -430,14 +384,14 @@ mod tests {
 
 	#[test]
 	fn clone_multi() {
-		let tree = Link::new("example-link");
-		let other_tree = Link::new("other-link");
+		let tree = LinkBuilder::new("example-link").build_tree();
+		let other_tree = LinkBuilder::new("other-link").build_tree();
 		other_tree
 			.get_newest_link()
 			.try_write()
 			.unwrap()
 			.try_attach_child(
-				Link::new("other-child").into(),
+				LinkBuilder::new("other-child").build_tree().into(),
 				JointBuilder::new("other-child-joint", JointType::Fixed),
 			)
 			.unwrap();
@@ -455,7 +409,7 @@ mod tests {
 			.try_write()
 			.unwrap()
 			.try_attach_child(
-				Link::new("3").into(),
+				LinkBuilder::new("3").build_tree().into(),
 				JointBuilder::new("three", JointType::Fixed),
 			)
 			.unwrap();

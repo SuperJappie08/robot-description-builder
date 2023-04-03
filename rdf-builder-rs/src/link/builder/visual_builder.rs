@@ -1,8 +1,6 @@
-use std::sync::Weak;
-
 use crate::{
-	cluster_objects::kinematic_data_tree::KinematicDataTree, link::geometry::GeometryInterface,
-	link::Visual, material::MaterialDescriptor, transform_data::TransformData,
+	link::geometry::GeometryInterface, link::visual::Visual, material::MaterialBuilder,
+	transform_data::TransformData,
 };
 
 #[derive(Debug)]
@@ -14,7 +12,7 @@ pub struct VisualBuilder {
 	/// Figure out if this needs to be public or not
 	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
 	/// Not sure about refCell
-	pub material_description: Option<MaterialDescriptor>,
+	pub material_description: Option<MaterialBuilder>,
 }
 
 impl VisualBuilder {
@@ -23,7 +21,7 @@ impl VisualBuilder {
 		name: Option<String>,
 		origin: Option<TransformData>,
 		geometry: Geometry,
-		material_description: Option<MaterialDescriptor>,
+		material_description: Option<MaterialBuilder>,
 	) -> Self {
 		Self {
 			name,
@@ -34,9 +32,9 @@ impl VisualBuilder {
 	}
 
 	/// FIXME: Propper Error
-	pub(crate) fn build(self, tree: &Weak<KinematicDataTree>) -> Result<Visual, String> {
+	pub(crate) fn build(self) -> Result<Visual, String> {
 		let material = match self.material_description {
-			Some(description) => Some(description.construct(tree)?),
+			Some(description) => Some(description.build()),
 			None => None,
 		};
 

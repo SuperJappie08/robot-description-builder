@@ -1,5 +1,6 @@
 mod joint;
 mod material;
+mod material_builder;
 mod visual;
 
 use joint::*;
@@ -117,13 +118,16 @@ impl PyLink {
 	) -> PyKinematicTree {
 		// Link::new(name).into()
 		let mut builder = LinkBuilder::new(name);
-		builder.get_visuals_mut().append(
-			&mut visuals
-				.unwrap_or_default()
-				.iter()
-				.map(|visual| visual.clone().into())
-				.collect(),
-		);
+		// builder.get_visuals_mut().append(
+		// 	&mut visuals
+		// 		.unwrap_or_default()
+		// 		.iter()
+		// 		.map(|visual| visual.clone().into())
+		// 		.collect(),
+		// );
+		if visuals.is_some() {
+			panic!("Not IMPLEMENTED YET")
+		}
 
 		if colliders.is_some() {
 			panic!("Not IMPLEMENTED YET")

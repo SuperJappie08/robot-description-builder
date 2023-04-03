@@ -6,10 +6,10 @@ use crate::{
 };
 
 mod linkbuilder;
-// mod visual_builder;
+mod visual_builder;
 
 pub use linkbuilder::LinkBuilder;
-// pub use visual_builder::VisualBuilder;
+pub use visual_builder::VisualBuilder;
 
 pub trait BuildLink {
 	/// TODO: THE BUILDER IS ALLOWED TO BUILD JOINTS FOR THIS BEAST, Maybe not for end users but might be usefull for cloning;

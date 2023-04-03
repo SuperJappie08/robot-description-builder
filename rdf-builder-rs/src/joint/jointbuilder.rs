@@ -3,8 +3,10 @@ use std::sync::{Arc, RwLock, Weak};
 use crate::{
 	cluster_objects::kinematic_data_tree::KinematicDataTree,
 	joint::{joint_data, Joint, JointType},
-	link::Link,
-	linkbuilding::{BuildLink, LinkBuilder},
+	link::{
+		builder::{BuildLink, LinkBuilder},
+		Link,
+	},
 	transform_data::{MirrorAxis, TransformData},
 	ArcLock, WeakLock,
 };
@@ -151,8 +153,7 @@ impl BuildJoint for JointBuilder {
 			})
 		});
 
-		// Self::register_to_tree(&tree, &joint).unwrap(); // FIXME: Figure out if Unwrap is Ok here?
-		tree.upgrade().unwrap().try_add_joint2(&joint).unwrap(); // FIXME: Figure out if Unwrap is Ok here?
+		tree.upgrade().unwrap().try_add_joint(&joint).unwrap(); // FIXME: Figure out if Unwrap is Ok here?
 		joint
 	}
 }

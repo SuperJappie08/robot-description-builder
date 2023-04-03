@@ -1,108 +1,14 @@
-// mod material_descriptor;
-use std::sync::{Arc, RwLock};
+mod material;
+mod material_builder;
 
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
 #[cfg(feature = "urdf")]
-use crate::to_rdf::to_urdf::{ToURDF, URDFMaterialMode};
-use crate::ArcLock;
+use crate::to_rdf::to_urdf::ToURDF;
 
-// pub use material_descriptor::MaterialDescriptor;
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct Material {
-	pub name: Option<String>,
-	data: MaterialData,
-}
-
-impl Material {
-	pub fn new_color(
-		name: Option<String>,
-		red: f32,
-		green: f32,
-		blue: f32,
-		alpha: f32,
-	) -> Material {
-		Material {
-			name,
-			data: MaterialData::Color(red, green, blue, alpha),
-		}
-	}
-
-	pub fn new_texture<TexturePath: Into<String>>(
-		name: Option<String>,
-		texture_path: TexturePath,
-	) -> Material {
-		Material {
-			name,
-			data: MaterialData::Texture(texture_path.into()),
-		}
-	}
-
-	// pub(crate) fn new_data(name: Option<String>, data: MaterialData) -> Material {
-	// 	Material { name, data }
-	// }
-
-	// #[deprecated]
-	// pub(crate) fn new_builder(builder: &material_descriptor::MaterialDescriptor) -> Material {
-	// 	Material {
-	// 		name: builder.name.clone(),
-	// 		data: builder.data.clone(),
-	// 	}
-	// }
-
-	/// Returns a Reference to the optional material name
-	/// TODO: Maybe Make the name a reference only
-	pub fn get_name(&self) -> Option<&String> {
-		self.name.as_ref()
-	}
-
-	pub fn get_material_data(&self) -> &MaterialData {
-		&self.data
-	}
-
-	// #[deprecated]
-	// pub fn describe(&self) -> material_descriptor::MaterialDescriptor {
-	// 	material_descriptor::MaterialDescriptor {
-	// 		name: self.name.clone(),
-	// 		data: self.data.clone(),
-	// 	}
-	// }
-}
-
-#[cfg(feature = "urdf")]
-impl ToURDF for Material {
-	fn to_urdf(
-		&self,
-		writer: &mut quick_xml::Writer<std::io::Cursor<Vec<u8>>>,
-		urdf_config: &crate::to_rdf::to_urdf::URDFConfig,
-	) -> Result<(), quick_xml::Error> {
-		let mut element = writer.create_element("material");
-		if let Some(name) = self.get_name() {
-			element = element.with_attribute(Attribute {
-				key: QName(b"name"),
-				value: name.as_bytes().into(),
-			});
-			match urdf_config.direct_material_ref {
-				URDFMaterialMode::Referenced => {
-					element.write_empty()?;
-				}
-				URDFMaterialMode::FullMaterial => {
-					element.write_inner_content(|writer| {
-						self.get_material_data().to_urdf(writer, urdf_config)
-					})?;
-				}
-			};
-			Ok(())
-		} else {
-			element.write_inner_content(|writer| {
-				self.get_material_data().to_urdf(writer, urdf_config)
-			})?;
-			Ok(())
-		}
-	}
-}
+pub use material::Material;
+pub use material_builder::MaterialBuilder;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum MaterialData {
@@ -146,27 +52,33 @@ impl ToURDF for MaterialData {
 	}
 }
 
-impl From<Material> for ArcLock<Material> {
-	fn from(value: Material) -> Self {
-		Arc::new(RwLock::new(value))
-	}
-}
-
 #[cfg(test)]
 mod tests {
+	// use crate::material::Material;
+	use crate::material::MaterialBuilder;
+	use test_log::test;
 
-	use crate::material::Material;
+	// #[test]
+	// fn rebuild() {
+	// 	// assert_eq!(MaterialBuilder::new_color(9., 1., 2., 1.).build().rebuild(), );
+	// }
 
 	#[cfg(feature = "urdf")]
 	mod to_urdf {
-		use super::*;
-		use crate::to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialMode};
+		use super::{test, MaterialBuilder};
+		use crate::{
+			link::builder::{BuildLink, LinkBuilder, VisualBuilder},
+			link_data::geometry::BoxGeometry,
+			to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialMode},
+			KinematicInterface,
+		};
 		use std::io::Seek;
 
 		#[test]
 		fn color_no_name_full() {
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(Material::new_color(None, 0.2, 0.4, 0.6, 0.8)
+			assert!(MaterialBuilder::new_color(0.2, 0.4, 0.6, 0.8)
+				.build()
 				.to_urdf(&mut writer, &URDFConfig::default())
 				.is_ok());
 
@@ -181,11 +93,11 @@ mod tests {
 		#[test]
 		fn color_name_full() {
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(
-				Material::new_color(Some("test_material".into()), 0.2, 0.4, 0.6, 0.8)
-					.to_urdf(&mut writer, &URDFConfig::default())
-					.is_ok()
-			);
+			assert!(MaterialBuilder::new_color(0.2, 0.4, 0.6, 0.8)
+				.named("test_material")
+				.build()
+				.to_urdf(&mut writer, &URDFConfig::default())
+				.is_ok());
 
 			writer.inner().rewind().unwrap();
 
@@ -199,18 +111,29 @@ mod tests {
 
 		#[test]
 		fn color_name_ref() {
+			let tree = LinkBuilder::new("link")
+				.add_visual(VisualBuilder::new(
+					None,
+					None,
+					BoxGeometry::new(1., 1., 1.),
+					MaterialBuilder::new_color(0.2, 0.4, 0.6, 0.8)
+						.named("test_material")
+						.into(),
+				))
+				.build_tree();
+
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(
-				Material::new_color(Some("test_material".into()), 0.2, 0.4, 0.6, 0.8)
-					.to_urdf(
-						&mut writer,
-						&URDFConfig {
-							direct_material_ref: URDFMaterialMode::Referenced,
-							..Default::default()
-						}
-					)
-					.is_ok()
-			);
+			assert!(tree
+				.get_material("test_material")
+				.unwrap()
+				.to_urdf(
+					&mut writer,
+					&URDFConfig {
+						direct_material_ref: URDFMaterialMode::Referenced,
+						..Default::default()
+					}
+				)
+				.is_ok());
 
 			writer.inner().rewind().unwrap();
 
@@ -224,7 +147,8 @@ mod tests {
 		fn texture_no_name_full() {
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
 			assert!(
-				Material::new_texture(None, "package://robot_description/...")
+				MaterialBuilder::new_texture("package://robot_description/...")
+					.build()
 					.to_urdf(&mut writer, &URDFConfig::default())
 					.is_ok()
 			);
@@ -242,12 +166,13 @@ mod tests {
 		#[test]
 		fn texture_name_full() {
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(Material::new_texture(
-				Some("texture_material".into()),
-				"package://robot_description/..."
-			)
-			.to_urdf(&mut writer, &URDFConfig::default())
-			.is_ok());
+			assert!(
+				MaterialBuilder::new_texture("package://robot_description/...")
+					.named("texture_material")
+					.build()
+					.to_urdf(&mut writer, &URDFConfig::default())
+					.is_ok()
+			);
 
 			writer.inner().rewind().unwrap();
 
@@ -261,19 +186,29 @@ mod tests {
 
 		#[test]
 		fn texture_name_ref() {
+			let tree = LinkBuilder::new("link")
+				.add_visual(VisualBuilder::new(
+					None,
+					None,
+					BoxGeometry::new(1., 1., 1.),
+					MaterialBuilder::new_texture("package://robot_description/...")
+						.named("texture_material")
+						.into(),
+				))
+				.build_tree();
+
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(Material::new_texture(
-				Some("texture_material".into()),
-				"package://robot_description/..."
-			)
-			.to_urdf(
-				&mut writer,
-				&URDFConfig {
-					direct_material_ref: URDFMaterialMode::Referenced,
-					..Default::default()
-				}
-			)
-			.is_ok());
+			assert!(tree
+				.get_material("texture_material")
+				.unwrap()
+				.to_urdf(
+					&mut writer,
+					&URDFConfig {
+						direct_material_ref: URDFMaterialMode::Referenced,
+						..Default::default()
+					}
+				)
+				.is_ok());
 
 			writer.inner().rewind().unwrap();
 

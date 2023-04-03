@@ -45,7 +45,7 @@ use crate::{
 	cluster_objects::{
 		kinematic_data_errors::{AddJointError, AddLinkError, AddMaterialError},
 		kinematic_data_tree::KinematicDataTree,
-		KinematicInterface, KinematicTree,
+		KinematicInterface,
 	},
 	joint::{BuildJoint, Joint},
 	link::collision::Collision,
@@ -55,7 +55,7 @@ use crate::{
 	ArcLock, WeakLock,
 };
 
-use self::builder::LinkBuilder;
+use self::builder::{BuildLink, LinkBuilder};
 
 /// TODO: Make Builder For Link
 #[derive(Debug)]
@@ -73,28 +73,8 @@ pub struct Link {
 }
 
 impl Link {
-	pub fn new<Name: Into<String>>(name: Name) -> KinematicTree {
-		let name = name.into();
-		#[cfg(any(feature = "logging", test))]
-		log::info!("Making a Link[name = \"{}\"]", name);
-
-		let link = Arc::new_cyclic(|me| {
-			RwLock::new(Link {
-				name,
-				tree: Weak::new(),
-				direct_parent: LinkParent::KinematicTree(Weak::new()),
-				child_joints: Vec::new(),
-				inertial: None,
-				visuals: Vec::new(),
-				colliders: Vec::new(),
-				end_point: None,
-				me: Weak::clone(me),
-			})
-		});
-
-		let tree = KinematicDataTree::new_link(link);
-
-		KinematicTree::new(tree)
+	pub fn builder<Name: Into<String>>(name: Name) -> LinkBuilder {
+		LinkBuilder::new(name)
 	}
 
 	/// Gets a (strong) refence to the current `Link`. (An `Arc<RwLock<Link>>`)
@@ -148,60 +128,49 @@ impl Link {
 	///  - The newest link get transfered from the child tree.
 	pub fn try_attach_child(
 		&mut self,
-		tree: Box<dyn KinematicInterface>,
+		old_tree: Box<dyn KinematicInterface>,
 		joint_builder: impl BuildJoint,
 	) -> Result<(), AttachChildError> {
-		// Generics dont workt that well Rc<RefCell<T>>  where T: KinematicInterface
-		//Box<Rc<RefCell<dyn KinematicInterface>>>
-		// TODO: NEEDS TO DO SOMETHING WITH JOINT TYPE
-		let parent_link = self.get_weak_self();
+		// Yanking and rebuilding is less effiecent than what was done before, however this is easier to maintain
 
-		let joint = joint_builder.build(Weak::clone(&self.tree), parent_link, tree.get_root_link());
+		let root_name = old_tree.get_root_link().read().unwrap().get_name().clone(); // FIXME: UNWRAP
+		let link_builder = old_tree.yank_link(&root_name).unwrap(); // FIXME: UNWRAP
 
-		self.child_joints.push(Arc::clone(&joint));
+		let tree = Weak::clone(&self.tree);
 
-		{
-			tree.get_root_link().write()?.direct_parent = LinkParent::Joint(Arc::downgrade(&joint))
-		}
+		let child_link = link_builder.start_building_chain(&tree);
+		let weak_self = self.get_weak_self();
+		self.get_joints_mut()
+			.push(joint_builder.build(tree, weak_self, child_link));
 
-		// Maybe I can just go down the tree and add everything by hand for now? It sounds like a terrible Idea, let's do it!
+		self.tree
+			.upgrade()
+			.unwrap()
+			.try_add_joint(self.get_joints().last().unwrap())?; // FIXME: unwrap not OK
 
-		// The parent tree exists so unwrapping is Ok
-		let parent_tree = self.tree.upgrade().unwrap();
-		{
-			parent_tree.try_add_link2(tree.get_root_link())?;
-			// Joint has already been added
-			// parent_tree.try_add_joint(joint)?;
-		}
-		// {
-		// 	tree.get_root_link().write()?.add_to_tree(&parent_tree);
-		// }
+		self.tree
+			.upgrade()
+			.expect("KinematicDataTree should be initialized")
+			.newest_link
+			.read()
+			.unwrap() // FIXME: is unwrap OK?
+			.upgrade()
+			.unwrap() // FIXME: is unwrap OK?
+			.write()
+			.unwrap() // FIXME: is unwrap OK?
+			.direct_parent = LinkParent::Joint(Arc::downgrade(self.get_joints().last().unwrap()));
 
 		Ok(())
 	}
-
-	// pub(crate) fn add_to_tree(&mut self, new_parent_tree: &Arc<KinematicTreeData>) {
-	// 	{
-	// 		self.child_joints
-	// 			.iter()
-	// 			.for_each(|joint| new_parent_tree.try_add_joint(joint).unwrap());
-	// 		// TODO: Add materials, and other stuff
-	// 		// The Material Copying might get complex, because I depend on the Ref_Count for determining how to display it.
-	// 	}
-	// 	self.child_joints.iter().for_each(|joint| {
-	// 		joint.write().unwrap().add_to_tree(new_parent_tree); // FIXME: Probably shouldn't unwrap
-	// 	});
-	// 	self.tree = Arc::downgrade(new_parent_tree);
-	// }
 
 	pub fn add_visual(&mut self, visual: Visual) -> &mut Self {
 		self.try_add_visual(visual).unwrap()
 	}
 
-	pub fn try_add_visual(&mut self, visual: Visual) -> Result<&mut Self, AddVisualError> {
+	pub fn try_add_visual(&mut self, mut visual: Visual) -> Result<&mut Self, AddVisualError> {
 		if visual.material.is_some() {
 			let binding = self.tree.upgrade().unwrap();
-			let result = binding.try_add_material(visual.get_material().unwrap()); // FIXME: UNWRAP?
+			let result = binding.try_add_material(visual.get_material_mut().unwrap()); // FIXME: UNWRAP?
 			if let Err(material_error) = result {
 				match material_error {
 					AddMaterialError::NoName =>
@@ -238,6 +207,10 @@ impl Link {
 		&self.visuals
 	}
 
+	pub(crate) fn get_visuals_mut(&mut self) -> &mut Vec<Visual> {
+		&mut self.visuals
+	}
+
 	pub fn get_colliders(&self) -> &Vec<Collision> {
 		&self.colliders
 	}
@@ -246,8 +219,7 @@ impl Link {
 	pub fn rebuild(&self) -> LinkBuilder {
 		LinkBuilder {
 			name: self.name.clone(),
-			// visual_builders: self.visuals.iter().map(|visual| visual.rebuild()).collect(),
-			visuals: self.visuals.to_vec(),
+			visual_builders: self.visuals.iter().map(|visual| visual.rebuild()).collect(),
 			colliders: self.colliders.to_vec(),
 			..Default::default()
 		}
@@ -284,7 +256,10 @@ impl Link {
 					.get_joints_mut()
 					.retain(|other_joint| Arc::ptr_eq(&joint, other_joint));
 			}
-			LinkParent::KinematicTree(_) => todo!("The tree should be dropped, but how?"),
+			LinkParent::KinematicTree(_) => {
+				#[cfg(any(feature = "logging", test))]
+				log::trace!("The tree should be dropped, but how?")
+			}
 		}
 
 		builder
@@ -426,12 +401,16 @@ mod tests {
 	use crate::{
 		cluster_objects::KinematicInterface,
 		joint::{JointBuilder, JointType},
-		link::{link_parent::LinkParent, Link},
+		link::{
+			builder::{BuildLink, LinkBuilder},
+			link_parent::LinkParent,
+			Link,
+		},
 	};
 
 	#[test]
 	fn new() {
-		let tree = Link::new("Link-on-Park");
+		let tree = LinkBuilder::new("Link-on-Park").build_tree();
 
 		let binding = tree.get_root_link();
 		let root_link = binding.try_read().unwrap();
@@ -458,14 +437,14 @@ mod tests {
 
 	#[test]
 	fn try_attach_single_child() {
-		let tree = Link::new("base_link");
+		let tree = LinkBuilder::new("base_link").build_tree();
 
 		assert_eq!(
 			tree.get_newest_link()
 				.try_write()
 				.unwrap()
 				.try_attach_child(
-					Link::new("child_link").into(),
+					LinkBuilder::new("child_link").build_tree().into(),
 					JointBuilder::new("steve", JointType::Fixed)
 				),
 			Ok(())
@@ -529,16 +508,16 @@ mod tests {
 
 	#[test]
 	fn try_attach_multi_child() {
-		let tree = Link::new("root");
-		let other_tree = Link::new("other_root");
-		let tree_three = Link::new("3");
+		let tree = Link::builder("root").build_tree();
+		let other_tree = Link::builder("other_root").build_tree();
+		let tree_three = Link::builder("3").build_tree();
 
 		other_tree
 			.get_newest_link()
 			.try_write()
 			.unwrap()
 			.try_attach_child(
-				Link::new("other_child_link").into(),
+				LinkBuilder::new("other_child_link").build_tree().into(),
 				JointBuilder::new("other_joint", JointType::Fixed),
 			)
 			.unwrap();

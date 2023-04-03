@@ -55,19 +55,6 @@ impl Joint {
 		self.joint_type
 	}
 
-	// /// TODO: Deprecate, please
-	// pub(crate) fn add_to_tree(&mut self, new_parent_tree: &Arc<KinematicTreeData>) {
-	// 	{
-	// 		new_parent_tree.try_add_link(self.get_child_link()).unwrap(); // FIXME: Probablly shouldn't unwrap
-	// 		                                                  // TODO: Add materials, and other stuff
-	// 	}
-	// 	self.get_child_link()
-	// 		.write()
-	// 		.unwrap() // FIXME: Probablly shouldn't unwrap
-	// 		.add_to_tree(new_parent_tree);
-	// 	self.tree = Arc::downgrade(new_parent_tree);
-	// }
-
 	/// Returns a reference to the parent `Link`
 	///
 	/// TODO: ADD EXAMPLE
@@ -206,6 +193,24 @@ impl ToURDF for Joint {
 				.write_empty()?;
 
 			//TODO: REST OF THE FIELDS
+			//TODO: AXIS
+
+			self.calibration.to_urdf(writer, urdf_config)?;
+			self.dynamics.to_urdf(writer, urdf_config)?;
+
+			if let Some(limit) = &self.limit {
+				limit.to_urdf(writer, urdf_config)?;
+			}
+
+			// TODO: TEST INTEGRATION OF THESE
+			if let Some(mimic) = &self.mimic {
+				todo!("ToURDF for MimicData: {:?}", mimic);
+			}
+
+			if let Some(safety_contoller) = &self.safety_controller {
+				todo!("ToURDF for SafetyControllerData: {:?}", safety_contoller);
+			}
+
 			Ok(())
 		})?;
 
@@ -265,10 +270,7 @@ impl From<JointType> for Cow<'_, [u8]> {
 #[cfg(test)]
 mod tests {
 
-	use std::sync::{Arc, RwLock};
-
 	use crate::{
-		// linkbuilding::VisualBuilder, MaterialDescriptor,
 		cluster_objects::KinematicInterface,
 		joint::{
 			joint_data,
@@ -281,21 +283,20 @@ mod tests {
 				geometry::{BoxGeometry, CylinderGeometry, SphereGeometry},
 				Collision, Visual,
 			},
-			Link,
 		},
-		material::Material,
+		material::MaterialBuilder,
 		transform_data::TransformData,
 	};
 	use test_log::test;
 
 	#[test]
 	fn rebuild() {
-		let tree = Link::new("root");
+		let tree = LinkBuilder::new("root").build_tree();
 		tree.get_newest_link()
 			.try_write()
 			.unwrap()
 			.try_attach_child(
-				Link::new("child").into(),
+				LinkBuilder::new("child").build_tree().into(),
 				SmartJointBuilder::new("Joint1")
 					.fixed()
 					.add_offset(OffsetMode::Offset(2.0, 3.0, 5.0)),
@@ -316,21 +317,15 @@ mod tests {
 
 	#[test]
 	fn yank_simple() {
-		let material_red = Arc::new(RwLock::new(Material::new_color(
-			Some("Red".into()),
-			1.,
-			0.,
-			0.,
-			1.,
-		)));
+		let material_red = MaterialBuilder::new_color(1., 0., 0., 1.).named("Red");
 
 		let tree = LinkBuilder::new("link-0")
 			.add_collider(Collision::new(None, None, BoxGeometry::new(1.0, 2.0, 3.0)))
-			.add_visual(Visual::new(
+			.add_visual(Visual::builder(
 				None,
 				None,
 				BoxGeometry::new(1.0, 2.0, 3.0),
-				Some(Arc::clone(&material_red)),
+				Some(material_red.clone()),
 			))
 			.build_tree();
 
@@ -348,7 +343,7 @@ mod tests {
 						.into(),
 						SphereGeometry::new(4.),
 					))
-					.add_visual(Visual::new(
+					.add_visual(Visual::builder(
 						None,
 						TransformData {
 							translation: Some((2., 0., 0.)),
@@ -356,7 +351,7 @@ mod tests {
 						}
 						.into(),
 						SphereGeometry::new(4.),
-						Some(Arc::clone(&material_red)),
+						Some(material_red.clone()),
 					))
 					.build_tree()
 					.into(),
@@ -395,7 +390,7 @@ mod tests {
 				},
 				child: Some(LinkBuilder {
 					name: "link-1".into(),
-					visuals: vec![Visual::new(
+					visual_builders: vec![Visual::builder(
 						None,
 						Some(TransformData {
 							translation: Some((2., 0., 0.)),
@@ -425,21 +420,15 @@ mod tests {
 	#[test]
 	fn yank_less_simple() {
 		let tree = {
-			let material_red = Arc::new(RwLock::new(Material::new_color(
-				Some("Red".into()),
-				1.,
-				0.,
-				0.,
-				1.,
-			)));
+			let material_red = MaterialBuilder::new_color(1., 0., 0., 1.).named("Red");
 
 			LinkBuilder::new("link-0")
 				.add_collider(Collision::new(None, None, BoxGeometry::new(1.0, 2.0, 3.0)))
-				.add_visual(Visual::new(
+				.add_visual(Visual::builder(
 					None,
 					None,
 					BoxGeometry::new(1.0, 2.0, 3.0),
-					Some(Arc::clone(&material_red)),
+					Some(material_red.clone()),
 				))
 				.build_tree()
 		};
@@ -459,7 +448,7 @@ mod tests {
 							.into(),
 							SphereGeometry::new(4.),
 						))
-						.add_visual(Visual::new(
+						.add_visual(Visual::builder(
 							None,
 							TransformData {
 								translation: Some((2., 0., 0.)),
@@ -467,13 +456,7 @@ mod tests {
 							}
 							.into(),
 							SphereGeometry::new(4.),
-							Some(Arc::new(RwLock::new(Material::new_color(
-								Some("Blue".into()),
-								0.,
-								0.,
-								1.,
-								1.,
-							)))),
+							Some(MaterialBuilder::new_color(0., 0., 1., 1.).named("Blue")),
 						))
 						.build_tree();
 
@@ -483,7 +466,7 @@ mod tests {
 						.unwrap()
 						.try_attach_child(
 							LinkBuilder::new("link-1-1")
-								.add_visual(Visual::new(
+								.add_visual(Visual::builder(
 									Some("link-1-1-vis".into()),
 									TransformData {
 										translation: Some((9., 0.5, 0.)),
@@ -491,9 +474,7 @@ mod tests {
 									}
 									.into(),
 									CylinderGeometry::new(0.5, 18.),
-									Some(Arc::new(RwLock::new(Material::new_color(
-										None, 0.5, 0.5, 0.5, 0.75,
-									)))),
+									Some(MaterialBuilder::new_color(0.5, 0.5, 0.5, 0.75)),
 								))
 								.build_tree()
 								.into(),
@@ -664,16 +645,14 @@ mod tests {
 					},
 					child: Some(LinkBuilder {
 						name: "link-1-1".into(),
-						visuals: vec![Visual::new(
+						visual_builders: vec![Visual::builder(
 							Some("link-1-1-vis".into()),
 							Some(TransformData {
 								translation: Some((9., 0.5, 0.)),
 								..Default::default()
 							}),
 							CylinderGeometry::new(0.5, 18.),
-							Some(Arc::new(RwLock::new(Material::new_color(
-								None, 0.5, 0.5, 0.5, 0.75
-							))))
+							Some(MaterialBuilder::new_color(0.5, 0.5, 0.5, 0.75))
 						)],
 						..Default::default()
 					}),
@@ -749,14 +728,15 @@ mod tests {
 					},
 					child: Some(LinkBuilder {
 						name: "link-1".into(),
-						visuals: vec![Visual::new(
+						visual_builders: vec![Visual::builder(
 							None,
 							Some(TransformData {
 								translation: Some((2., 0., 0.)),
 								..Default::default()
 							}),
 							SphereGeometry::new(4.),
-							tree.get_material("Blue")
+							// tree.get_material("Blue")
+							Some(MaterialBuilder::new_color(0., 0., 1., 1.,).named("Blue"))
 						)],
 						colliders: vec![Collision::new(
 							None,
@@ -775,16 +755,14 @@ mod tests {
 							},
 							child: Some(LinkBuilder {
 								name: "link-1-1".into(),
-								visuals: vec![Visual::new(
+								visual_builders: vec![Visual::builder(
 									Some("link-1-1-vis".into()),
 									Some(TransformData {
 										translation: Some((9., 0.5, 0.)),
 										..Default::default()
 									}),
 									CylinderGeometry::new(0.5, 18.),
-									Some(Arc::new(RwLock::new(Material::new_color(
-										None, 0.5, 0.5, 0.5, 0.75
-									))))
+									Some(MaterialBuilder::new_color(0.5, 0.5, 0.5, 0.75))
 								)],
 								..Default::default()
 							}),

@@ -15,7 +15,7 @@ use crate::{
 	},
 	joint::Joint,
 	link::Link,
-	material::Material,
+	material::{Material, MaterialData},
 	transmission::Transmission,
 	ArcLock, WeakLock,
 };
@@ -68,7 +68,7 @@ impl KinematicInterface for Robot {
 		Arc::clone(&self.data.joints)
 	}
 
-	fn get_materials(&self) -> ArcLock<HashMap<String, ArcLock<Material>>> {
+	fn get_materials(&self) -> ArcLock<HashMap<String, ArcLock<MaterialData>>> {
 		Arc::clone(&self.data.material_index)
 	}
 
@@ -94,13 +94,14 @@ impl KinematicInterface for Robot {
 			.and_then(|weak_joint| weak_joint.upgrade())
 	}
 
-	fn get_material(&self, name: &str) -> Option<ArcLock<Material>> {
+	fn get_material(&self, name: &str) -> Option<Material> {
 		self.data
 			.material_index
 			.read()
 			.unwrap() // FIXME: Unwrapping might not be ok
 			.get(name)
 			.map(Arc::clone)
+			.map(|data| (name.to_string(), data).into())
 	}
 
 	fn get_transmission(&self, name: &str) -> Option<ArcLock<Transmission>> {
@@ -133,7 +134,7 @@ impl KinematicInterface for Robot {
 
 	fn purge_materials(
 		&self,
-	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, ArcLock<Material>>>>> {
+	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, ArcLock<MaterialData>>>>> {
 		self.data.purge_materials()
 	}
 

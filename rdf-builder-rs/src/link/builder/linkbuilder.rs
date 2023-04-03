@@ -1,11 +1,14 @@
 use std::sync::{Arc, RwLock, Weak};
 
-// use itertools::process_results;
+use itertools::process_results;
 
 use crate::{
 	cluster_objects::kinematic_data_tree::KinematicDataTree,
 	joint::{BuildJointChain, Joint, JointBuilder},
-	link::{builder::BuildLink, link_data, Link, LinkParent},
+	link::{
+		builder::{visual_builder::VisualBuilder, BuildLink},
+		link_data, Link, LinkParent,
+	},
 	ArcLock, WeakLock,
 };
 
@@ -14,7 +17,7 @@ pub struct LinkBuilder {
 	// All fields are pub(crate) so I can struct initialize in rebuild
 	pub(crate) name: String,
 	/// TODO: Figure out if we make this immutable on a `Link` and only allow editting throug the builder.
-	pub(crate) visuals: Vec<link_data::Visual>,
+	pub(crate) visual_builders: Vec<VisualBuilder>,
 	pub(crate) colliders: Vec<link_data::Collision>,
 	// TODO: Calulate InertialData?
 	// pub(crate) intertial: Option<link_data::InertialData>,
@@ -30,8 +33,8 @@ impl LinkBuilder {
 		}
 	}
 
-	pub fn add_visual(mut self, visual: link_data::Visual) -> Self {
-		self.visuals.push(visual);
+	pub fn add_visual(mut self, visual: VisualBuilder) -> Self {
+		self.visual_builders.push(visual);
 		self
 	}
 
@@ -43,12 +46,12 @@ impl LinkBuilder {
 
 	// ===== NON BUILDER METHODS =====
 
-	pub fn get_visuals(&self) -> &Vec<link_data::Visual> {
-		&self.visuals
+	pub fn get_visuals(&self) -> &Vec<VisualBuilder> {
+		&self.visual_builders
 	}
 
-	pub fn get_visuals_mut(&mut self) -> &mut Vec<link_data::Visual> {
-		&mut self.visuals
+	pub fn get_visuals_mut(&mut self) -> &mut Vec<VisualBuilder> {
+		&mut self.visual_builders
 	}
 
 	pub fn get_colliders(&self) -> &Vec<link_data::Collision> {
@@ -81,14 +84,13 @@ impl BuildLink for LinkBuilder {
 				direct_parent: LinkParent::KinematicTree(Weak::clone(tree)),
 				child_joints: Vec::new(),
 				inertial: None, //TODO:
-				// visuals: process_results(
-				// 	self.visuals
-				// 		.into_iter()
-				// 		.map(|visual_builder| visual_builder.build(tree)),
-				// 	|iter| iter.collect(),
-				// )
-				// .unwrap(),
-				visuals: self.visuals,
+				visuals: process_results(
+					self.visual_builders
+						.into_iter()
+						.map(|visual_builder| visual_builder.build()),
+					|iter| iter.collect(),
+				)
+				.unwrap(),
 				colliders: self.colliders,
 				end_point: None,
 				me: Weak::clone(me),
@@ -123,13 +125,13 @@ impl BuildLink for LinkBuilder {
 					.map(|joint_builder| joint_builder.build_chain(tree, me))
 					.collect(),
 				inertial: None, // FIXME: Fix this
-				// visuals: itertools::process_results(
-				// 	self.visuals
-				// 		.into_iter()
-				// 		.map(|visual_builder| visual_builder.build(tree)),
-				// 	|iter| iter.collect(),
-				// )				.unwrap(), // UNWRAP NOT OK
-				visuals: self.visuals,
+				visuals: itertools::process_results(
+					self.visual_builders
+						.into_iter()
+						.map(|visual_builder| visual_builder.build()),
+					|iter| iter.collect(),
+				)
+				.unwrap(), // UNWRAP NOT OK
 				colliders: self.colliders,
 				end_point: None, // FIXME: Fix this
 				me: Weak::clone(me),

@@ -8,13 +8,14 @@ use itertools::{process_results, Itertools};
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialMode, URDFMaterialReferences};
 use crate::{
-	joint::Joint, link::Link, linkbuilding::BuildLink, material::Material,
-	transmission::Transmission, ArcLock, WeakLock,
+	joint::Joint,
+	link::{builder::BuildLink, Link},
+	material::{Material, MaterialData},
+	transmission::Transmission,
+	ArcLock, WeakLock,
 };
 
 use crate::cluster_objects::kinematic_data_errors::*;
-
-// pub(crate) trait KinematicTreeTrait {}
 
 #[derive(Debug)]
 pub struct KinematicDataTree {
@@ -22,7 +23,7 @@ pub struct KinematicDataTree {
 	//TODO: In this implementation the Keys, are not linked to the objects and could be changed.
 	// These index maps are ArcLock in order to be exposable to the outside world via the ref of this thing
 	/// TODO:? Maybe make materials immutable after creation.
-	pub(crate) material_index: ArcLock<HashMap<String, ArcLock<Material>>>,
+	pub(crate) material_index: ArcLock<HashMap<String, ArcLock<MaterialData>>>,
 	pub(crate) links: ArcLock<HashMap<String, WeakLock<Link>>>,
 	pub(crate) joints: ArcLock<HashMap<String, WeakLock<Joint>>>,
 	/// Do Transmission have to wrapped into ArcLock? Maybe we can get a way with raw stuff?
@@ -52,121 +53,31 @@ impl KinematicDataTree {
 			let root_link = Arc::clone(&data.root_link);
 
 			// 1st Unwrapping is Ok here, since we just made the KinematicDataTree
-			data.try_add_link2(root_link).unwrap(); //FIXME: 2nd Unwrap Ok?
+			data.try_add_link(root_link).unwrap(); //FIXME: 2nd Unwrap Ok?
 		}
 		data
 	}
 
-	/// TODO: This should be updated to also work on Links that are being toring out
-	pub(crate) fn new_link(root_link: ArcLock<Link>) -> Arc<KinematicDataTree> {
-		let material_index = HashMap::new();
-		let mut links = HashMap::new();
-		let joints = HashMap::new();
-		let transmissions = HashMap::new();
+	pub(crate) fn try_add_material(&self, material: &mut Material) -> Result<(), AddMaterialError> {
+		material.initialize(&self).unwrap(); // FIXME: Is unwrap Ok here?
 
-		links.insert(
-			// Unwrap is Ok here, since the root_link just got made and therefor have the only reference to it.
-			root_link.read().unwrap().get_name().into(),
-			Arc::downgrade(&root_link),
-		);
-
-		// There exist no child links, because a new link is being made.
-
-		let tree = Arc::new(Self {
-			newest_link: RwLock::new(Arc::downgrade(&root_link)),
-			root_link,
-			material_index: Arc::new(RwLock::new(material_index)),
-			links: Arc::new(RwLock::new(links)),
-			joints: Arc::new(RwLock::new(joints)),
-			transmissions: Arc::new(RwLock::new(transmissions)),
-		});
-
-		{
-			// Unwraps Ok here, because `New` tree
-			let cloned_root_link = Arc::clone(&tree.root_link);
-			// Unwraps Ok here, because `New` Link
-			let mut root_link = cloned_root_link.write().unwrap();
-
-			root_link.set_parent(Arc::downgrade(&tree).into());
-
-			root_link.tree = Arc::downgrade(&tree);
-		}
-
-		tree
+		Ok(())
 	}
-
-	pub(crate) fn try_add_material(
-		&self,
-		material: &ArcLock<Material>,
-	) -> Result<(), AddMaterialError> {
-		let binding = material.read()?;
-		let name = binding.get_name();
-
-		#[cfg(any(feature = "logging", test))]
-		log::debug!(target: "KinematicTreeData","Trying to attach Material: {:?}", binding);
-
-		if name.is_none() {
-			return Err(AddMaterialError::NoName);
-		}
-
-		// Unwrap is Ok, since we checked above.
-		let name = name.unwrap();
-
-		let other_material = { self.material_index.read()?.get(name) }.map(Arc::clone);
-		if let Some(preexisting_material) = other_material {
-			if !Arc::ptr_eq(&preexisting_material, material) {
-				Err(AddMaterialError::Conflict(name.into()))
-			} else {
-				Ok(())
-			}
-		} else {
-			assert!(self
-				.material_index
-				.write()?
-				.insert(name.into(), Arc::clone(material))
-				.is_none());
-			Ok(())
-		}
-	}
-
-	// pub(crate) fn try_add_link(&self, link: ArcLock<Link>) -> Result<(), AddLinkError> {
-	// 	let link_binding = link.read()?;
-	// 	let name = link_binding.get_name();
-
-	// 	#[cfg(any(feature = "logging", test))]
-	// 	log::debug!(target: "KinematicTreeData","Trying to attach Link: {}", name);
-
-	// 	let other = { self.links.read()?.get(name) }.map(Weak::clone);
-	// 	if let Some(preexisting_link) = other.and_then(|weak_link| weak_link.upgrade()) {
-	// 		if !Arc::ptr_eq(&preexisting_link, &link) {
-	// 			Err(AddLinkError::Conflict(name.into()))
-	// 		} else {
-	// 			Ok(())
-	// 		}
-	// 	} else {
-	// 		assert!(self
-	// 			.links
-	// 			.write()?
-	// 			.insert(name.into(), Arc::downgrade(&link))
-	// 			.is_none());
-	// 		*self.newest_link.write().unwrap() = Arc::downgrade(&link); // Is unwrap Ok?
-	// 		Ok(())
-	// 	}
-	// }
 
 	/// This might replace try_add_link at some point, when i figure out of this contual building works?
 	/// But it loops throug everything which could be a lot...
 	///
 	/// Never mind it only will loop over things down stream.
 	/// It might actually be worth doing it
-	pub(crate) fn try_add_link2(&self, link: ArcLock<Link>) -> Result<(), AddLinkError> {
-		let link_binding = link.read()?;
-		let name = link_binding.get_name();
+	///
+	/// I have done it.
+	pub(crate) fn try_add_link(&self, link: ArcLock<Link>) -> Result<(), AddLinkError> {
+		let name = link.read()?.get_name().clone();
 
 		#[cfg(any(feature = "logging", test))]
 		log::debug!(target: "KinematicTreeData","Trying to attach Link: {}", name);
 
-		let other = { self.links.read()?.get(name) }.map(Weak::clone);
+		let other = { self.links.read()?.get(&name) }.map(Weak::clone);
 		if let Some(preexisting_link) = other.and_then(|weak_link| weak_link.upgrade()) {
 			if !Arc::ptr_eq(&preexisting_link, &link) {
 				return Err(AddLinkError::Conflict(name.into()));
@@ -181,11 +92,11 @@ impl KinematicDataTree {
 		}
 
 		process_results(
-			link.read()
+			link.try_write()
 				.unwrap() // FIXME: Figure out if unwrap Ok?
-				.get_visuals()
-				.iter()
-				.filter_map(|visual| visual.get_material())
+				.get_visuals_mut()
+				.iter_mut()
+				.filter_map(|visual| visual.get_material_mut())
 				.map(|material| match self.try_add_material(material) {
 					Err(AddMaterialError::NoName) => Ok(()), // TODO: SHOULD LOG HERE or earlier???
 					o => o,
@@ -199,7 +110,7 @@ impl KinematicDataTree {
 				.unwrap() // FIXME: Figureout if unwrap Ok?
 				.get_joints()
 				.iter()
-				.map(|joint| self.try_add_joint2(joint)),
+				.map(|joint| self.try_add_joint(joint)),
 			|iter| iter.collect_vec(),
 		)
 		.unwrap(); // FIXME: THIS IS TEMP
@@ -207,31 +118,7 @@ impl KinematicDataTree {
 		Ok(())
 	}
 
-	// pub(crate) fn try_add_joint(&self, joint: &ArcLock<Joint>) -> Result<(), AddJointError> {
-	// 	let joint_binding = joint.read()?;
-	// 	let name = joint_binding.get_name();
-
-	// 	#[cfg(any(feature = "logging", test))]
-	// 	log::debug!(target: "KinematicTreeData","Trying to attach Joint: {}", name);
-
-	// 	let other = { self.joints.read()?.get(name) }.map(Weak::clone);
-	// 	if let Some(preexisting_joint) = other.and_then(|weak_joint| weak_joint.upgrade()) {
-	// 		if !Arc::ptr_eq(&preexisting_joint, joint) {
-	// 			Err(AddJointError::Conflict(name.into()))
-	// 		} else {
-	// 			Ok(())
-	// 		}
-	// 	} else {
-	// 		assert!(self
-	// 			.joints
-	// 			.write()?
-	// 			.insert(name.into(), Arc::downgrade(joint))
-	// 			.is_none());
-	// 		Ok(())
-	// 	}
-	// }
-
-	pub(crate) fn try_add_joint2(&self, joint: &ArcLock<Joint>) -> Result<(), AddJointError> {
+	pub(crate) fn try_add_joint(&self, joint: &ArcLock<Joint>) -> Result<(), AddJointError> {
 		let joint_binding = joint.read()?;
 		let name = joint_binding.get_name();
 
@@ -251,7 +138,7 @@ impl KinematicDataTree {
 				.is_none());
 		}
 
-		self.try_add_link2(joint.read().unwrap().get_child_link())
+		self.try_add_link(joint.read().unwrap().get_child_link())
 			.unwrap(); //FIXME: Unwrap is not OK here
 		Ok(())
 	}
@@ -308,7 +195,7 @@ impl KinematicDataTree {
 	/// FIXME: This doesn't work if you hace multiple robots using the same material.
 	pub(crate) fn purge_materials(
 		&self,
-	) -> Result<(), PoisonError<RwLockWriteGuard<'_, HashMap<String, ArcLock<Material>>>>> {
+	) -> Result<(), PoisonError<RwLockWriteGuard<'_, HashMap<String, ArcLock<MaterialData>>>>> {
 		let mut materials = self.material_index.write()?;
 		materials.retain(|_, material| Arc::strong_count(material) > 1);
 		materials.shrink_to_fit();
@@ -344,6 +231,7 @@ impl ToURDF for KinematicDataTree {
 		urdf_config: &URDFConfig,
 	) -> Result<(), quick_xml::Error> {
 		// Write Materials if use > 2 depending on Config
+		// That might already be handled by the new material system
 		// TODO: Config stuff
 		process_results(
 			self.material_index
@@ -410,8 +298,8 @@ mod tests {
 	use crate::{
 		cluster_objects::kinematic_data_tree::KinematicDataTree,
 		joint::{JointBuilder, JointType},
+		link::builder::LinkBuilder,
 		link_data::LinkParent,
-		linkbuilding::LinkBuilder,
 	};
 
 	// 	#[test]

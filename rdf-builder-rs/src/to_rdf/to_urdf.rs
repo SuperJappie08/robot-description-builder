@@ -16,14 +16,14 @@ pub struct URDFConfig {
 	pub xml_mode: XMLMode,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub enum URDFMaterialReferences {
 	#[default]
 	AllNamedMaterialOnTop,
 	OnlyMultiUseMaterials,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub enum URDFMaterialMode {
 	#[default]
 	FullMaterial,

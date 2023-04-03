@@ -13,11 +13,12 @@ use rdf_builder_rs::{
 		geometry::{BoxGeometry, CylinderGeometry, SphereGeometry},
 		Collision, Visual,
 	},
+	linkbuilding::{BuildLink, LinkBuilder},
 	JointBuilder, JointType, KinematicInterface, Link, TransformData,
 };
 
 fn main() {
-	let link = Link::new("Leg_[R1]_l0");
+	let link = Link::builder("Leg_[R1]_l0").build_tree();
 	link.get_root_link()
 		.write()
 		.unwrap()
@@ -43,7 +44,7 @@ fn main() {
 		.try_write()
 		.unwrap()
 		.try_attach_child(
-			Box::new(Link::new("Leg_[R1]_l1")),
+			LinkBuilder::new("Leg_[R1]_l1").build_tree().into(),
 			JointBuilder::new("Leg_[R1]_j1", JointType::Fixed)
 				.add_origin_offset((2.0, 0., 0.))
 				.to_owned(),
@@ -71,7 +72,7 @@ fn main() {
 			BoxGeometry::new(0.25, 0.1, 0.1),
 		));
 
-	let robot_root = Link::new("robot_root");
+	let robot_root = LinkBuilder::new("robot_root").build_tree();
 	let robot = robot_root.to_robot("my_robot");
 	robot
 		.get_root_link()

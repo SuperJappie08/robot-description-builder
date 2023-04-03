@@ -1,10 +1,9 @@
 use crate::{
-	cluster_objects::{KinematicInterface, KinematicTree},
+	cluster_objects::KinematicTree,
 	link::{
+		builder::{BuildLink, LinkBuilder, VisualBuilder},
 		collision::Collision,
 		geometry::{BoxGeometry, CylinderGeometry, GeometryInterface, SphereGeometry},
-		visual::Visual,
-		Link,
 	},
 };
 
@@ -18,27 +17,22 @@ pub fn new_quick_link<Name: Into<String>>(
 	geometry: Box<dyn GeometryInterface + Sync + Send>,
 ) -> KinematicTree {
 	let link_name = link_name.into();
-	let tree = Link::new(link_name.clone());
-
-	let binding = tree.get_newest_link();
-	// Unwrap is Ok here, since we just craeted the tree
-	let mut link = binding.try_write().unwrap();
+	let mut link = LinkBuilder::new(link_name.clone());
 
 	let mut visual_name = link_name.clone();
 	visual_name.push_str("_visual");
-	link.try_add_visual(Visual::new(
+	link = link.add_visual(VisualBuilder::new(
 		visual_name.into(),
 		None, // TODO: NOT HOW I WANT IT
 		geometry.boxed_clone(),
 		None, // TODO: TEMP
-	))
-	.unwrap(); // FIXME: Ok?
+	));
 
 	let mut collision_name = link_name;
 	collision_name.push_str("_collision");
-	link.add_collider(Collision::new(collision_name.into(), None, geometry));
+	link = link.add_collider(Collision::new(collision_name.into(), None, geometry));
 
-	tree
+	link.build_tree()
 }
 
 /// TODO: Finalize, this is temp
@@ -86,7 +80,7 @@ pub fn new_sphere_link<Name: Into<String>>(link_name: Name, radius: f32) -> Kine
 
 #[cfg(test)]
 mod tests {
-	use crate::link::helper_functions::*;
+	use crate::{link::helper_functions::*, KinematicInterface};
 
 	#[test]
 	fn test_new_box_link() {
