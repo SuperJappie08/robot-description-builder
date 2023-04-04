@@ -10,7 +10,7 @@ use crate::to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialMode, URDFMaterialR
 use crate::{
 	joint::Joint,
 	link::{builder::BuildLink, Link},
-	material::{Material, MaterialData},
+	material_mod::{Material, MaterialData},
 	transmission::Transmission,
 	ArcLock, WeakLock,
 };
@@ -59,7 +59,7 @@ impl KinematicDataTree {
 	}
 
 	pub(crate) fn try_add_material(&self, material: &mut Material) -> Result<(), AddMaterialError> {
-		material.initialize(&self).unwrap(); // FIXME: Is unwrap Ok here?
+		material.initialize(self).unwrap(); // FIXME: Is unwrap Ok here?
 
 		Ok(())
 	}
@@ -80,13 +80,13 @@ impl KinematicDataTree {
 		let other = { self.links.read()?.get(&name) }.map(Weak::clone);
 		if let Some(preexisting_link) = other.and_then(|weak_link| weak_link.upgrade()) {
 			if !Arc::ptr_eq(&preexisting_link, &link) {
-				return Err(AddLinkError::Conflict(name.into()));
+				return Err(AddLinkError::Conflict(name));
 			}
 		} else {
 			assert!(self
 				.links
 				.write()?
-				.insert(name.into(), Arc::downgrade(&link))
+				.insert(name, Arc::downgrade(&link))
 				.is_none());
 			*self.newest_link.write().unwrap() = Arc::downgrade(&link); //FIXME: Unwrap Ok?
 		}

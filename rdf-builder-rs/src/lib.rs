@@ -1,7 +1,7 @@
 mod cluster_objects;
 mod joint;
 mod link;
-mod material;
+mod material_mod;
 mod transform_data;
 mod transmission;
 
@@ -12,7 +12,7 @@ pub mod to_rdf;
 pub use cluster_objects::{KinematicInterface, KinematicTree, Robot};
 pub use joint::{Joint, JointBuilder, JointType, OffsetMode, SmartJointBuilder};
 pub use link::{helper_functions, link_data, Link};
-pub use material::{Material, MaterialBuilder, MaterialData};
+pub use material_mod::{Material, MaterialBuilder, MaterialData};
 pub use transform_data::TransformData;
 
 pub mod linkbuilding {

@@ -15,7 +15,7 @@ use crate::{
 	},
 	joint::Joint,
 	link::Link,
-	material::{Material, MaterialData},
+	material_mod::{Material, MaterialData},
 	transmission::Transmission,
 	ArcLock, WeakLock,
 };

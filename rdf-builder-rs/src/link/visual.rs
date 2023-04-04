@@ -3,10 +3,11 @@ use quick_xml::{events::attributes::Attribute, name::QName};
 
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
-use crate::{link::geometry::GeometryInterface, transform_data::TransformData};
-
-use crate::linkbuilding::VisualBuilder;
-use crate::material::{Material, MaterialBuilder};
+use crate::{
+	link::{builder::VisualBuilder, geometry::GeometryInterface},
+	material_mod::{Material, MaterialBuilder},
+	transform_data::TransformData,
+};
 
 #[derive(Debug)]
 pub struct Visual {
@@ -155,130 +156,104 @@ mod tests {
 	mod to_urdf {
 		use super::{test, *};
 		use crate::{
-			material::MaterialBuilder,
+			material_mod::MaterialBuilder,
 			to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialReferences},
 		};
 		use std::io::Seek;
 
-		#[test]
-		fn no_name_no_origin_no_material() {
+		fn test_to_urdf_visual(visual: Visual, result: String, urdf_config: &URDFConfig) {
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(
-				Visual::new(None, None, BoxGeometry::new(1.0, 2.0, 3.0), None)
-					.to_urdf(&mut writer, &URDFConfig::default())
-					.is_ok()
-			);
+			assert!(visual.to_urdf(&mut writer, urdf_config).is_ok());
 
 			writer.inner().rewind().unwrap();
 
-			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
-				String::from(r#"<visual><geometry><box size="1 2 3"/></geometry></visual>"#)
-			)
+			assert_eq!(std::io::read_to_string(writer.inner()).unwrap(), result)
+		}
+
+		#[test]
+		fn no_name_no_origin_no_material() {
+			test_to_urdf_visual(
+				Visual::new(None, None, BoxGeometry::new(1.0, 2.0, 3.0), None),
+				String::from(r#"<visual><geometry><box size="1 2 3"/></geometry></visual>"#),
+				&URDFConfig::default(),
+			);
 		}
 
 		#[test]
 		fn name_no_origin_no_material() {
-			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(Visual::new(
-				Some("myLink_vis".to_owned()),
-				None,
-				CylinderGeometry::new(9., 6.258),
-				None
-			)
-			.to_urdf(&mut writer, &URDFConfig::default())
-			.is_ok());
-
-			writer.inner().rewind().unwrap();
-
-			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
+			test_to_urdf_visual(
+				Visual::new(
+					Some("myLink_vis".to_owned()),
+					None,
+					CylinderGeometry::new(9., 6.258),
+					None,
+				),
 				String::from(
-					r#"<visual name="myLink_vis"><geometry><cylinder radius="9" length="6.258"/></geometry></visual>"#
-				)
-			)
+					r#"<visual name="myLink_vis"><geometry><cylinder radius="9" length="6.258"/></geometry></visual>"#,
+				),
+				&URDFConfig::default(),
+			);
 		}
 
 		#[test]
 		fn no_name_origin_no_material() {
-			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(Visual::new(
-				None,
-				Some(TransformData {
-					translation: Some((4., 6.78, 1.)),
-					rotation: Some((PI, 2. * PI, 0.))
-				}),
-				SphereGeometry::new(3.),
-				None
-			)
-			.to_urdf(&mut writer, &URDFConfig::default())
-			.is_ok());
-
-			writer.inner().rewind().unwrap();
-
-			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
+			test_to_urdf_visual(
+				Visual::new(
+					None,
+					Some(TransformData {
+						translation: Some((4., 6.78, 1.)),
+						rotation: Some((PI, 2. * PI, 0.)),
+					}),
+					SphereGeometry::new(3.),
+					None,
+				),
 				String::from(
-					r#"<visual><origin xyz="4 6.78 1" rpy="3.1415927 6.2831855 0"/><geometry><sphere radius="3"/></geometry></visual>"#
-				)
-			)
+					r#"<visual><origin xyz="4 6.78 1" rpy="3.1415927 6.2831855 0"/><geometry><sphere radius="3"/></geometry></visual>"#,
+				),
+				&URDFConfig::default(),
+			);
 		}
 
 		#[test]
 		fn no_name_no_origin_material() {
-			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(Visual::builder(
-				None,
-				None,
-				CylinderGeometry::new(4.5, 75.35),
-				Some(MaterialBuilder::new_color(0.5, 0.55, 0.6, 1.).named("material_name"))
-			)
-			.build()
-			.unwrap()
-			.to_urdf(
-				&mut writer,
+			test_to_urdf_visual(
+				Visual::builder(
+					None,
+					None,
+					CylinderGeometry::new(4.5, 75.35),
+					Some(MaterialBuilder::new_color(0.5, 0.55, 0.6, 1.).named("material_name")),
+				)
+				.build()
+				.unwrap(),
+				String::from(
+					r#"<visual><geometry><cylinder radius="4.5" length="75.35"/></geometry><material name="material_name"><color rgba="0.5 0.55 0.6 1"/></material></visual>"#,
+				),
 				&URDFConfig {
 					material_references: URDFMaterialReferences::OnlyMultiUseMaterials,
 					..Default::default()
-				}
-			)
-			.is_ok());
-
-			writer.inner().rewind().unwrap();
-
-			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
-				String::from(
-					r#"<visual><geometry><cylinder radius="4.5" length="75.35"/></geometry><material name="material_name"><color rgba="0.5 0.55 0.6 1"/></material></visual>"#
-				)
-			)
+				},
+			);
 		}
 
 		#[test]
 		fn name_origin_material() {
-			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(Visual::builder(
-				Some("some_col".into()),
-				Some(TransformData {
-					translation: Some((5.4, 9.1, 7.8)),
-					..Default::default()
-				}),
-				CylinderGeometry::new(4.5, 75.35),
-				Some(MaterialBuilder::new_color(0.75, 0.5, 1., 1.))
-			)
-			.build()
-			.unwrap()
-			.to_urdf(&mut writer, &URDFConfig::default())
-			.is_ok());
-
-			writer.inner().rewind().unwrap();
-
-			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
-				String::from(
-					r#"<visual name="some_col"><origin xyz="5.4 9.1 7.8"/><geometry><cylinder radius="4.5" length="75.35"/></geometry><material><color rgba="0.75 0.5 1 1"/></material></visual>"#
+			test_to_urdf_visual(
+				Visual::builder(
+					Some("some_col".into()),
+					Some(TransformData {
+						translation: Some((5.4, 9.1, 7.8)),
+						..Default::default()
+					}),
+					CylinderGeometry::new(4.5, 75.35),
+					Some(MaterialBuilder::new_color(0.75, 0.5, 1., 1.)),
 				)
-			)
+				.build()
+				.unwrap(),
+				String::from(
+					r#"<visual name="some_col"><origin xyz="5.4 9.1 7.8"/><geometry><cylinder radius="4.5" length="75.35"/></geometry><material><color rgba="0.75 0.5 1 1"/></material></visual>"#,
+				),
+				&URDFConfig::default(),
+			);
 		}
 	}
 }

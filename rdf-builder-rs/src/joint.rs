@@ -192,7 +192,6 @@ impl ToURDF for Joint {
 				})
 				.write_empty()?;
 
-			//TODO: REST OF THE FIELDS
 			//TODO: AXIS
 
 			self.calibration.to_urdf(writer, urdf_config)?;
@@ -204,11 +203,11 @@ impl ToURDF for Joint {
 
 			// TODO: TEST INTEGRATION OF THESE
 			if let Some(mimic) = &self.mimic {
-				todo!("ToURDF for MimicData: {:?}", mimic);
+				mimic.to_urdf(writer, urdf_config)?;
 			}
 
 			if let Some(safety_contoller) = &self.safety_controller {
-				todo!("ToURDF for SafetyControllerData: {:?}", safety_contoller);
+				safety_contoller.to_urdf(writer, urdf_config)?;
 			}
 
 			Ok(())
@@ -284,7 +283,7 @@ mod tests {
 				Collision, Visual,
 			},
 		},
-		material::MaterialBuilder,
+		material_mod::MaterialBuilder,
 		transform_data::TransformData,
 	};
 	use test_log::test;

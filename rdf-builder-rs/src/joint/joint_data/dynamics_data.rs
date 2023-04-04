@@ -105,175 +105,116 @@ mod tests {
 		use super::DynamicsData;
 		use crate::to_rdf::to_urdf::{ToURDF, URDFConfig};
 
-		#[test]
-		fn empty() {
+		fn test_to_urdf_dynamics(
+			dynamics_data: DynamicsData,
+			result: String,
+			urdf_config: &URDFConfig,
+		) {
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(DynamicsData::default()
-				.to_urdf(&mut writer, &URDFConfig::default())
-				.is_ok());
+			assert!(dynamics_data.to_urdf(&mut writer, urdf_config).is_ok());
 
 			writer.inner().rewind().unwrap();
 
-			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
-				String::from(r#""#)
+			assert_eq!(std::io::read_to_string(writer.inner()).unwrap(), result);
+		}
+
+		#[test]
+		fn empty() {
+			test_to_urdf_dynamics(
+				DynamicsData::default(),
+				String::from(r#""#),
+				&URDFConfig::default(),
 			);
 		}
 
 		#[test]
 		fn damping() {
-			{
-				let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-				assert!(DynamicsData {
+			test_to_urdf_dynamics(
+				DynamicsData {
 					damping: Some(1000.),
 					..Default::default()
-				}
-				.to_urdf(&mut writer, &URDFConfig::default())
-				.is_ok());
+				},
+				String::from(r#"<dynamics damping="1000"/>"#),
+				&URDFConfig::default(),
+			);
 
-				writer.inner().rewind().unwrap();
-
-				assert_eq!(
-					std::io::read_to_string(writer.inner()).unwrap(),
-					String::from(r#"<dynamics damping="1000"/>"#)
-				);
-			}
-			{
-				let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-				assert!(DynamicsData {
+			test_to_urdf_dynamics(
+				DynamicsData {
 					damping: Some(0.02),
 					..Default::default()
-				}
-				.to_urdf(&mut writer, &URDFConfig::default())
-				.is_ok());
+				},
+				String::from(r#"<dynamics damping="0.02"/>"#),
+				&URDFConfig::default(),
+			);
 
-				writer.inner().rewind().unwrap();
-
-				assert_eq!(
-					std::io::read_to_string(writer.inner()).unwrap(),
-					String::from(r#"<dynamics damping="0.02"/>"#)
-				);
-			}
-			{
-				let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-				assert!(DynamicsData {
+			test_to_urdf_dynamics(
+				DynamicsData {
 					damping: Some(9e-6),
 					..Default::default()
-				}
-				.to_urdf(&mut writer, &URDFConfig::default())
-				.is_ok());
-
-				writer.inner().rewind().unwrap();
-
-				assert_eq!(
-					std::io::read_to_string(writer.inner()).unwrap(),
-					String::from(r#"<dynamics damping="0.000009"/>"#)
-				);
-			}
+				},
+				String::from(r#"<dynamics damping="0.000009"/>"#),
+				&URDFConfig::default(),
+			);
 		}
 
 		#[test]
 		fn friction() {
-			{
-				let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-				assert!(DynamicsData {
+			test_to_urdf_dynamics(
+				DynamicsData {
 					friction: Some(1000.),
 					..Default::default()
-				}
-				.to_urdf(&mut writer, &URDFConfig::default())
-				.is_ok());
+				},
+				String::from(r#"<dynamics friction="1000"/>"#),
+				&URDFConfig::default(),
+			);
 
-				writer.inner().rewind().unwrap();
-
-				assert_eq!(
-					std::io::read_to_string(writer.inner()).unwrap(),
-					String::from(r#"<dynamics friction="1000"/>"#)
-				);
-			}
-			{
-				let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-				assert!(DynamicsData {
+			test_to_urdf_dynamics(
+				DynamicsData {
 					friction: Some(0.02),
 					..Default::default()
-				}
-				.to_urdf(&mut writer, &URDFConfig::default())
-				.is_ok());
+				},
+				String::from(r#"<dynamics friction="0.02"/>"#),
+				&URDFConfig::default(),
+			);
 
-				writer.inner().rewind().unwrap();
-
-				assert_eq!(
-					std::io::read_to_string(writer.inner()).unwrap(),
-					String::from(r#"<dynamics friction="0.02"/>"#)
-				);
-			}
-			{
-				let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-				assert!(DynamicsData {
+			test_to_urdf_dynamics(
+				DynamicsData {
 					friction: Some(9e-6),
 					..Default::default()
-				}
-				.to_urdf(&mut writer, &URDFConfig::default())
-				.is_ok());
-
-				writer.inner().rewind().unwrap();
-
-				assert_eq!(
-					std::io::read_to_string(writer.inner()).unwrap(),
-					String::from(r#"<dynamics friction="0.000009"/>"#)
-				);
-			}
+				},
+				String::from(r#"<dynamics friction="0.000009"/>"#),
+				&URDFConfig::default(),
+			);
 		}
 
 		#[test]
 		fn damping_friction() {
-			{
-				let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-				assert!(DynamicsData {
+			test_to_urdf_dynamics(
+				DynamicsData {
 					damping: Some(1000.),
-					friction: Some(900000.)
-				}
-				.to_urdf(&mut writer, &URDFConfig::default())
-				.is_ok());
+					friction: Some(900000.),
+				},
+				String::from(r#"<dynamics damping="1000" friction="900000"/>"#),
+				&URDFConfig::default(),
+			);
 
-				writer.inner().rewind().unwrap();
-
-				assert_eq!(
-					std::io::read_to_string(writer.inner()).unwrap(),
-					String::from(r#"<dynamics damping="1000" friction="900000"/>"#)
-				);
-			}
-			{
-				let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-				assert!(DynamicsData {
+			test_to_urdf_dynamics(
+				DynamicsData {
 					damping: Some(0.02),
-					friction: Some(0.004)
-				}
-				.to_urdf(&mut writer, &URDFConfig::default())
-				.is_ok());
+					friction: Some(0.004),
+				},
+				String::from(r#"<dynamics damping="0.02" friction="0.004"/>"#),
+				&URDFConfig::default(),
+			);
 
-				writer.inner().rewind().unwrap();
-
-				assert_eq!(
-					std::io::read_to_string(writer.inner()).unwrap(),
-					String::from(r#"<dynamics damping="0.02" friction="0.004"/>"#)
-				);
-			}
-			{
-				let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-				assert!(DynamicsData {
+			test_to_urdf_dynamics(
+				DynamicsData {
 					damping: Some(9e-6),
-					friction: Some(15e-4)
-				}
-				.to_urdf(&mut writer, &URDFConfig::default())
-				.is_ok());
-
-				writer.inner().rewind().unwrap();
-
-				assert_eq!(
-					std::io::read_to_string(writer.inner()).unwrap(),
-					String::from(r#"<dynamics damping="0.000009" friction="0.0015"/>"#)
-				);
-			}
+					friction: Some(15e-4),
+				},
+				String::from(r#"<dynamics damping="0.000009" friction="0.0015"/>"#),
+				&URDFConfig::default(),
+			);
 		}
 	}
 }

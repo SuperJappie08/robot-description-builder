@@ -4,7 +4,7 @@ use std::sync::{Arc, RwLock};
 use quick_xml::events::attributes::Attribute;
 
 use crate::{
-	cluster_objects::kinematic_data_tree::KinematicDataTree, material::MaterialData,
+	cluster_objects::kinematic_data_tree::KinematicDataTree, material_mod::MaterialData,
 	to_rdf::to_urdf::URDFMaterialMode, ArcLock,
 };
 
@@ -16,10 +16,7 @@ use super::MaterialBuilder;
 /// TODO: Name is subject to change
 #[derive(Debug, PartialEq)]
 pub enum Material {
-	Named {
-		name: String,
-		data: LocalMaterialStage,
-	},
+	Named { name: String, data: MaterialStage },
 	Unamed(MaterialData),
 }
 
@@ -27,10 +24,10 @@ impl Material {
 	/// TODO: PROPPER ERRORS
 	pub(crate) fn initialize(&mut self, tree: &KinematicDataTree) -> Result<(), String> {
 		match self {
-			Material::Unamed(_) => return Ok(()),
+			Material::Unamed(_) => Ok(()),
 			Material::Named { name, data } => {
 				let material_data = match data {
-					LocalMaterialStage::PreInit(data) => {
+					MaterialStage::PreInit(data) => {
 						let material_data_index = Arc::clone(&tree.material_index);
 
 						let other_material = material_data_index
@@ -57,7 +54,7 @@ impl Material {
 							}
 						}
 					}
-					LocalMaterialStage::Initialized(data) => Arc::clone(&data),
+					MaterialStage::Initialized(data) => Arc::clone(data),
 				};
 				data.initialize(material_data);
 				Ok(())
@@ -105,13 +102,13 @@ impl ToURDF for Material {
 				});
 				match (urdf_config.direct_material_ref, dbg!(data.get_used_count())) {
 					(URDFMaterialMode::Referenced, 2..) => element.write_empty()?,
-					(URDFMaterialMode::FullMaterial, _) | _ => {
+					(URDFMaterialMode::FullMaterial, _) | (URDFMaterialMode::Referenced, _) => {
 						element.write_inner_content(|writer| data.to_urdf(writer, urdf_config))?
 					}
 				}
 			}
 			Material::Unamed(data) => {
-				element.write_inner_content(|writer| data.to_urdf(writer, &urdf_config))?
+				element.write_inner_content(|writer| data.to_urdf(writer, urdf_config))?
 			}
 		};
 		Ok(())
@@ -137,34 +134,32 @@ impl From<(String, ArcLock<MaterialData>)> for Material {
 
 		Self::Named {
 			name,
-			data: LocalMaterialStage::Initialized(data),
+			data: MaterialStage::Initialized(data),
 		}
 	}
 }
 
 /// FIXME: TEMP PUB
 #[derive(Debug)]
-pub enum LocalMaterialStage {
+pub enum MaterialStage {
 	PreInit(MaterialData),
 	Initialized(ArcLock<MaterialData>),
 }
 
-impl LocalMaterialStage {
+impl MaterialStage {
 	/// Gets the Strong count of the `MaterialData`,
 	/// returns 0 if the `LocalMaterial` is not fully initialized yet.
 	fn get_used_count(&self) -> usize {
 		match self {
-			LocalMaterialStage::PreInit(_) => 0,
-			LocalMaterialStage::Initialized(arc_data) => Arc::strong_count(arc_data),
+			MaterialStage::PreInit(_) => 0,
+			MaterialStage::Initialized(arc_data) => Arc::strong_count(arc_data),
 		}
 	}
 
 	pub(crate) fn initialize(&mut self, material_data: ArcLock<MaterialData>) {
 		match self {
-			LocalMaterialStage::PreInit(_) => {
-				*self = LocalMaterialStage::Initialized(material_data)
-			}
-			LocalMaterialStage::Initialized(data) => {
+			MaterialStage::PreInit(_) => *self = MaterialStage::Initialized(material_data),
+			MaterialStage::Initialized(data) => {
 				debug_assert!(Arc::ptr_eq(data, &material_data));
 			}
 		}
@@ -172,29 +167,29 @@ impl LocalMaterialStage {
 
 	pub(crate) fn get_data(&self) -> MaterialDataRefereceWrapper {
 		match self {
-			LocalMaterialStage::PreInit(data) => data.into(),
-			LocalMaterialStage::Initialized(arc_data) => Arc::clone(arc_data).into(), //Unwrap not Ok
+			MaterialStage::PreInit(data) => data.into(),
+			MaterialStage::Initialized(arc_data) => Arc::clone(arc_data).into(), //Unwrap not Ok
 		}
 	}
 }
 
 #[cfg(feature = "urdf")]
-impl ToURDF for LocalMaterialStage {
+impl ToURDF for MaterialStage {
 	fn to_urdf(
 		&self,
 		writer: &mut quick_xml::Writer<std::io::Cursor<Vec<u8>>>,
 		urdf_config: &crate::to_rdf::to_urdf::URDFConfig,
 	) -> Result<(), quick_xml::Error> {
 		match self {
-			LocalMaterialStage::PreInit(data) => data.to_urdf(writer, urdf_config),
-			LocalMaterialStage::Initialized(arc_data) => {
+			MaterialStage::PreInit(data) => data.to_urdf(writer, urdf_config),
+			MaterialStage::Initialized(arc_data) => {
 				arc_data.read().unwrap().to_urdf(writer, urdf_config) // FIXME: UNWRAP NOT OK
 			}
 		}
 	}
 }
 
-impl PartialEq for LocalMaterialStage {
+impl PartialEq for MaterialStage {
 	fn eq(&self, other: &Self) -> bool {
 		match (self, other) {
 			(Self::PreInit(l0), Self::PreInit(r0)) => l0 == r0,
@@ -204,7 +199,7 @@ impl PartialEq for LocalMaterialStage {
 	}
 }
 
-impl Clone for LocalMaterialStage {
+impl Clone for MaterialStage {
 	fn clone(&self) -> Self {
 		match self {
 			Self::PreInit(arg0) => Self::PreInit(arg0.clone()),
@@ -213,7 +208,7 @@ impl Clone for LocalMaterialStage {
 	}
 }
 
-impl From<MaterialData> for LocalMaterialStage {
+impl From<MaterialData> for MaterialStage {
 	fn from(value: MaterialData) -> Self {
 		Self::PreInit(value)
 	}
@@ -235,11 +230,11 @@ impl<'a> MaterialDataRefereceWrapper<'a> {
 			(
 				MaterialDataRefereceWrapper::Direct(left),
 				MaterialDataRefereceWrapper::Global(right),
-			) => *left.clone() == right.read().unwrap().clone(), // FIXME: Unwrap not OK
+			) => (*left).clone() == right.read().unwrap().clone(), // FIXME: Unwrap not OK
 			(
 				MaterialDataRefereceWrapper::Global(left),
 				MaterialDataRefereceWrapper::Direct(right),
-			) => *right.clone() == left.read().unwrap().clone(), // FIXME: Unwrap not OK
+			) => (*right).clone() == left.read().unwrap().clone(), // FIXME: Unwrap not OK
 			(
 				MaterialDataRefereceWrapper::Global(left),
 				MaterialDataRefereceWrapper::Global(right),

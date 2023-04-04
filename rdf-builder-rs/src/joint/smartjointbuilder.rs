@@ -83,6 +83,7 @@ impl
 	}
 
 	/// TODO: Maybe do it like this
+	/// I Like it...
 	pub fn new_revolute<Name: Into<String>>(
 		name: Name,
 	) -> SmartJointBuilder<
@@ -95,6 +96,34 @@ impl
 		NoSafetyController,
 	> {
 		Self::new(name).revolute()
+	}
+
+	pub fn new_continuous<Name: Into<String>>(
+		name: Name,
+	) -> SmartJointBuilder<
+		ContinuousType,
+		NoAxis,
+		NoCalibration,
+		NoDynamics,
+		NoLimit,
+		NoMimic,
+		NoSafetyController,
+	> {
+		Self::new(name).continuous()
+	}
+
+	pub fn new_fixed<Name: Into<String>>(
+		name: Name,
+	) -> SmartJointBuilder<
+		FixedType,
+		NoAxis,
+		NoCalibration,
+		NoDynamics,
+		NoLimit,
+		NoMimic,
+		NoSafetyController,
+	> {
+		Self::new(name).fixed()
 	}
 
 	/// TODO: Maybe move these to a more generic implementation

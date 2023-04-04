@@ -60,60 +60,71 @@ impl ToURDF for InertialData {
 #[cfg(test)]
 mod tests {
 	use crate::link::inertial::InertialData;
+	use test_log::test;
 
 	#[cfg(feature = "urdf")]
 	mod to_urdf {
-		use super::*;
-		use crate::to_rdf::to_urdf::{ToURDF, URDFConfig};
+		use super::{test, *};
+
+		use crate::{
+			to_rdf::to_urdf::{ToURDF, URDFConfig},
+			transform_data::TransformData,
+		};
+
 		use std::io::Seek;
 
-		#[test]
-		fn no_origin() {
+		fn test_to_urdf_inertial(
+			inertial_data: InertialData,
+			result: String,
+			urdf_config: &URDFConfig,
+		) {
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(InertialData {
-				mass: 0.12,
-				ixx: 1.23,
-				ixy: 2.34,
-				ixz: 3.45,
-				iyy: 4.56,
-				iyz: 5.67,
-				izz: 6.78,
-				..Default::default()
-			}
-			.to_urdf(&mut writer, &URDFConfig::default())
-			.is_ok());
+			assert!(inertial_data.to_urdf(&mut writer, urdf_config).is_ok());
 
 			writer.inner().rewind().unwrap();
 
-			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
-				r#"<inertial><mass value="0.12"/><inertia ixx="1.23" ixy="2.34" ixz="3.45" iyy="4.56" iyz="5.67" izz="6.78"/></inertial>"#
-			)
+			assert_eq!(std::io::read_to_string(writer.inner()).unwrap(), result)
+		}
+
+		#[test]
+		fn no_origin() {
+			test_to_urdf_inertial(
+				InertialData {
+					mass: 0.12,
+					ixx: 1.23,
+					ixy: 2.34,
+					ixz: 3.45,
+					iyy: 4.56,
+					iyz: 5.67,
+					izz: 6.78,
+					..Default::default()
+				},
+				String::from(
+					r#"<inertial><mass value="0.12"/><inertia ixx="1.23" ixy="2.34" ixz="3.45" iyy="4.56" iyz="5.67" izz="6.78"/></inertial>"#,
+				),
+				&URDFConfig::default(),
+			);
 		}
 
 		#[test]
 		fn with_origin() {
-			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(InertialData {
-				origin: Some(crate::transform_data::TransformData {
-					translation: Some((10.1, 20.2, 30.3)),
+			test_to_urdf_inertial(
+				InertialData {
+					origin: Some(TransformData {
+						translation: Some((10.1, 20.2, 30.3)),
+						..Default::default()
+					}),
+					mass: 100.,
+					ixx: 123.,
+					iyy: 456.,
+					izz: 789.,
 					..Default::default()
-				}),
-				mass: 100.,
-				ixx: 123.,
-				iyy: 456.,
-				izz: 789.,
-				..Default::default()
-			}
-			.to_urdf(&mut writer, &URDFConfig::default())
-			.is_ok());
-
-			writer.inner().rewind().unwrap();
-
-			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
-				r#"<inertial><origin xyz="10.1 20.2 30.3"/><mass value="100"/><inertia ixx="123" ixy="0" ixz="0" iyy="456" iyz="0" izz="789"/></inertial>"#
-			)
+				},
+				String::from(
+					r#"<inertial><origin xyz="10.1 20.2 30.3"/><mass value="100"/><inertia ixx="123" ixy="0" ixz="0" iyy="456" iyz="0" izz="789"/></inertial>"#,
+				),
+				&URDFConfig::default(),
+			);
 		}
 	}
 }

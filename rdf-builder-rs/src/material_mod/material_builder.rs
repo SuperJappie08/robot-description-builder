@@ -1,5 +1,5 @@
-use crate::material::material::Material;
-use crate::material::MaterialData;
+use crate::material_mod::material::Material;
+use crate::material_mod::MaterialData;
 
 /// FIXME: Name not final
 #[derive(Debug, PartialEq, Clone)]

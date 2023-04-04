@@ -100,62 +100,60 @@ impl ToURDF for TransformData {
 #[cfg(test)]
 mod tests {
 	use crate::transform_data::TransformData;
+	use test_log::test;
 
 	#[cfg(feature = "urdf")]
 	mod to_urdf {
-		use super::*;
+		use super::{test, TransformData};
 		use crate::to_rdf::to_urdf::{ToURDF, URDFConfig};
 		use std::io::Seek;
 
-		#[test]
-		fn translation_only() {
+		fn test_to_urdf_transform(
+			transform_data: TransformData,
+			result: String,
+			urdf_config: &URDFConfig,
+		) {
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(TransformData {
-				translation: Some((1.2, 2.3, 3.4)),
-				..Default::default()
-			}
-			.to_urdf(&mut writer, &URDFConfig::default())
-			.is_ok());
+			assert!(transform_data.to_urdf(&mut writer, urdf_config).is_ok());
 
 			writer.inner().rewind().unwrap();
-			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
-				String::from(r#"<origin xyz="1.2 2.3 3.4"/>"#)
-			)
+			assert_eq!(std::io::read_to_string(writer.inner()).unwrap(), result)
+		}
+
+		#[test]
+		fn translation_only() {
+			test_to_urdf_transform(
+				TransformData {
+					translation: Some((1.2, 2.3, 3.4)),
+					..Default::default()
+				},
+				String::from(r#"<origin xyz="1.2 2.3 3.4"/>"#),
+				&URDFConfig::default(),
+			);
 		}
 
 		#[test]
 		fn rotation_only() {
-			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(TransformData {
-				rotation: Some((1.2, 2.3, 3.4)),
-				..Default::default()
-			}
-			.to_urdf(&mut writer, &URDFConfig::default())
-			.is_ok());
-
-			writer.inner().rewind().unwrap();
-			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
-				String::from(r#"<origin rpy="1.2 2.3 3.4"/>"#)
-			)
+			test_to_urdf_transform(
+				TransformData {
+					rotation: Some((1.2, 2.3, 3.4)),
+					..Default::default()
+				},
+				String::from(r#"<origin rpy="1.2 2.3 3.4"/>"#),
+				&URDFConfig::default(),
+			);
 		}
 
 		#[test]
 		fn translation_rotatation() {
-			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(TransformData {
-				translation: Some((1.23, 2.34, 3.45)),
-				rotation: Some((4.56, 5.67, 6.78)),
-			}
-			.to_urdf(&mut writer, &URDFConfig::default())
-			.is_ok());
-
-			writer.inner().rewind().unwrap();
-			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
-				String::from(r#"<origin xyz="1.23 2.34 3.45" rpy="4.56 5.67 6.78"/>"#)
-			)
+			test_to_urdf_transform(
+				TransformData {
+					translation: Some((1.23, 2.34, 3.45)),
+					rotation: Some((4.56, 5.67, 6.78)),
+				},
+				String::from(r#"<origin xyz="1.23 2.34 3.45" rpy="4.56 5.67 6.78"/>"#),
+				&URDFConfig::default(),
+			);
 		}
 	}
 }

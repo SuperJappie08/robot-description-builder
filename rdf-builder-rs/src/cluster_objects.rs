@@ -7,7 +7,7 @@ use crate::{
 	cluster_objects::kinematic_data_errors::AddTransmissionError,
 	joint::Joint,
 	link::{builder::LinkBuilder, Link},
-	material::{Material, MaterialData},
+	material_mod::{Material, MaterialData},
 	transmission::Transmission,
 	ArcLock, JointBuilder, WeakLock,
 };

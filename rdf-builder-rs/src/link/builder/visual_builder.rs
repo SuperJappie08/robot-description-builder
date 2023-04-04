@@ -1,5 +1,5 @@
 use crate::{
-	link::geometry::GeometryInterface, link::visual::Visual, material::MaterialBuilder,
+	link::geometry::GeometryInterface, link::visual::Visual, material_mod::MaterialBuilder,
 	transform_data::TransformData,
 };
 
@@ -33,10 +33,9 @@ impl VisualBuilder {
 
 	/// FIXME: Propper Error
 	pub(crate) fn build(self) -> Result<Visual, String> {
-		let material = match self.material_description {
-			Some(description) => Some(description.build()),
-			None => None,
-		};
+		let material = self
+			.material_description
+			.map(|description| description.build());
 
 		Ok(Visual {
 			name: self.name,
@@ -60,7 +59,7 @@ impl Clone for VisualBuilder {
 	fn clone(&self) -> Self {
 		Self {
 			name: self.name.clone(),
-			origin: self.origin.clone(),
+			origin: self.origin,
 			geometry: self.geometry.boxed_clone(),
 			material_description: self.material_description.clone(),
 		}

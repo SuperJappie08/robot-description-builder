@@ -55,7 +55,7 @@ impl ToURDF for MaterialData {
 #[cfg(test)]
 mod tests {
 	// use crate::material::Material;
-	use crate::material::MaterialBuilder;
+	use crate::material_mod::MaterialBuilder;
 	use test_log::test;
 
 	// #[test]
@@ -74,39 +74,40 @@ mod tests {
 		};
 		use std::io::Seek;
 
-		#[test]
-		fn color_no_name_full() {
+		fn test_to_urdf_material(
+			material_builder: MaterialBuilder,
+			result: String,
+			urdf_config: &URDFConfig,
+		) {
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(MaterialBuilder::new_color(0.2, 0.4, 0.6, 0.8)
+			assert!(material_builder
 				.build()
-				.to_urdf(&mut writer, &URDFConfig::default())
+				.to_urdf(&mut writer, urdf_config)
 				.is_ok());
 
 			writer.inner().rewind().unwrap();
 
-			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
-				String::from(r#"<material><color rgba="0.2 0.4 0.6 0.8"/></material>"#)
-			)
+			assert_eq!(std::io::read_to_string(writer.inner()).unwrap(), result)
+		}
+
+		#[test]
+		fn color_no_name_full() {
+			test_to_urdf_material(
+				MaterialBuilder::new_color(0.2, 0.4, 0.6, 0.8),
+				String::from(r#"<material><color rgba="0.2 0.4 0.6 0.8"/></material>"#),
+				&URDFConfig::default(),
+			);
 		}
 
 		#[test]
 		fn color_name_full() {
-			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(MaterialBuilder::new_color(0.2, 0.4, 0.6, 0.8)
-				.named("test_material")
-				.build()
-				.to_urdf(&mut writer, &URDFConfig::default())
-				.is_ok());
-
-			writer.inner().rewind().unwrap();
-
-			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
+			test_to_urdf_material(
+				MaterialBuilder::new_color(0.2, 0.4, 0.6, 0.8).named("test_material"),
 				String::from(
-					r#"<material name="test_material"><color rgba="0.2 0.4 0.6 0.8"/></material>"#
-				)
-			)
+					r#"<material name="test_material"><color rgba="0.2 0.4 0.6 0.8"/></material>"#,
+				),
+				&URDFConfig::default(),
+			);
 		}
 
 		#[test]
@@ -145,43 +146,25 @@ mod tests {
 
 		#[test]
 		fn texture_no_name_full() {
-			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(
-				MaterialBuilder::new_texture("package://robot_description/...")
-					.build()
-					.to_urdf(&mut writer, &URDFConfig::default())
-					.is_ok()
-			);
-
-			writer.inner().rewind().unwrap();
-
-			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
+			test_to_urdf_material(
+				MaterialBuilder::new_texture("package://robot_description/..."),
 				String::from(
-					r#"<material><texture filename="package://robot_description/..."/></material>"#
-				)
-			)
+					r#"<material><texture filename="package://robot_description/..."/></material>"#,
+				),
+				&URDFConfig::default(),
+			);
 		}
 
 		#[test]
 		fn texture_name_full() {
-			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(
+			test_to_urdf_material(
 				MaterialBuilder::new_texture("package://robot_description/...")
-					.named("texture_material")
-					.build()
-					.to_urdf(&mut writer, &URDFConfig::default())
-					.is_ok()
-			);
-
-			writer.inner().rewind().unwrap();
-
-			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
+					.named("texture_material"),
 				String::from(
-					r#"<material name="texture_material"><texture filename="package://robot_description/..."/></material>"#
-				)
-			)
+					r#"<material name="texture_material"><texture filename="package://robot_description/..."/></material>"#,
+				),
+				&URDFConfig::default(),
+			);
 		}
 
 		#[test]

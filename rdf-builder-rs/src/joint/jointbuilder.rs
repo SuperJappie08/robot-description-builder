@@ -19,19 +19,6 @@ pub trait BuildJoint {
 		parent_link: WeakLock<Link>,
 		child_link: ArcLock<Link>,
 	) -> ArcLock<Joint>;
-
-	// fn register_to_tree(
-	// 	tree: &Weak<KinematicTreeData>,
-	// 	joint: &ArcLock<Joint>,
-	// ) -> Result<(), crate::cluster_objects::kinematic_data_errors::AddJointError> {
-	// 	tree.upgrade()
-	// 		.unwrap() // FIXME: Figure out if unwrap is Ok?
-	// 		.try_add_joint(joint)
-	// }
-
-	// fn register_to_link(parent_link: &WeakLock<Link>, joint: ArcLock<Box<dyn JointInterface + Sync + Send>>) {
-	// 	parent_link.upgrade().unwrap().try_write().unwrap()
-	// }
 }
 
 pub(crate) trait BuildJointChain: BuildJoint {
