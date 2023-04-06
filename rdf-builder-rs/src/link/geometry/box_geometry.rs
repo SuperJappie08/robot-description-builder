@@ -5,10 +5,12 @@ use crate::link::geometry::GeometryInterface;
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
 
+/// TODO: DOCS
+/// 
+/// The fields are public for the Python wrapper. It doesn't change much for the Rust side, since most of the time these will be `Box<dyn GeometryInterface + Sync + Send>`.
 #[derive(Debug, PartialEq, Clone)]
 pub struct BoxGeometry {
 	/// TODO: Figure out correct field names
-	/// TODO: Figure out if pub necesary for ToRDF things
 	pub side1: f32,
 	pub side2: f32,
 	pub side3: f32,

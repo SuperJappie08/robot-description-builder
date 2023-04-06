@@ -41,4 +41,13 @@ impl MaterialBuilder {
 			None => Material::Unamed(self.data),
 		}
 	}
+
+	// ===== Non-Builder Methods ======
+	pub fn get_name(&self) -> Option<&String> {
+		self.name.as_ref()
+	}
+
+	pub fn get_data(&self) -> &MaterialData {
+		&self.data
+	}
 }

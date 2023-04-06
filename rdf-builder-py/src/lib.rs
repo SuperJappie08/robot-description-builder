@@ -1,10 +1,13 @@
+mod geometry;
 mod joint;
 mod material;
 mod material_builder;
 mod visual;
+mod visual_builder;
 
 use joint::*;
 use material::*;
+use material_builder::PyMaterialBuilder;
 use visual::*;
 
 use std::sync::{Arc, RwLock};
@@ -218,7 +221,8 @@ fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn rdf_builder_py(_py: Python, m: &PyModule) -> PyResult<()> {
+#[pyo3(name = "rdf_builder_py")]
+fn rdf_builder_py(py: Python, m: &PyModule) -> PyResult<()> {
 	m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
 
 	// INTERRESTING IDEA, DICT Constructors...
@@ -228,8 +232,16 @@ fn rdf_builder_py(_py: Python, m: &PyModule) -> PyResult<()> {
 	m.add_class::<PyLink>()?;
 	m.add_class::<PyLinkBuilder>()?;
 
-	m.add_class::<PyVisual>()?;
 	m.add_class::<PyMaterial>()?;
+	m.add_class::<PyMaterialBuilder>()?;
+
+	m.add_class::<PyVisual>()?;
+
+	let geometry= PyModule::new(py, "geometry")?;
+	// Inits the python geometry module with the the init_module function from the rust geometry module
+	// Lots of packages do it like this and I don't know why, they do not do it like in the [PyO3 book](https://pyo3.rs/main/module#python-submodules)
+	geometry::init_module(geometry)?;
+	m.add_submodule(geometry)?;
 
 	m.add_class::<PyJoint>()?;
 	m.add_class::<PyJointBuilder>()?;
