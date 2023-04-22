@@ -112,6 +112,20 @@ impl
 		Self::new(name).continuous()
 	}
 
+	pub fn new_prismatic<Name: Into<String>>(
+		name: Name,
+	) -> SmartJointBuilder<
+		PrismaticType,
+		NoAxis,
+		NoCalibration,
+		NoDynamics,
+		NoLimit,
+		NoMimic,
+		NoSafetyController,
+	> {
+		Self::new(name).prismatic()
+	}
+
 	pub fn new_fixed<Name: Into<String>>(
 		name: Name,
 	) -> SmartJointBuilder<
@@ -124,6 +138,34 @@ impl
 		NoSafetyController,
 	> {
 		Self::new(name).fixed()
+	}
+
+	pub fn new_floating<Name: Into<String>>(
+		name: Name,
+	) -> SmartJointBuilder<
+		FloatingType,
+		NoAxis,
+		NoCalibration,
+		NoDynamics,
+		NoLimit,
+		NoMimic,
+		NoSafetyController,
+	> {
+		Self::new(name).floating()
+	}
+
+	pub fn new_planar<Name: Into<String>>(
+		name: Name,
+	) -> SmartJointBuilder<
+		PlanarType,
+		NoAxis,
+		NoCalibration,
+		NoDynamics,
+		NoLimit,
+		NoMimic,
+		NoSafetyController,
+	> {
+		Self::new(name).planar()
 	}
 
 	/// TODO: Maybe move these to a more generic implementation

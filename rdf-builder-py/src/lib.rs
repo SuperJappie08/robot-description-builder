@@ -237,7 +237,7 @@ fn rdf_builder_py(py: Python, m: &PyModule) -> PyResult<()> {
 
 	m.add_class::<PyVisual>()?;
 
-	let geometry= PyModule::new(py, "geometry")?;
+	let geometry = PyModule::new(py, "geometry")?;
 	// Inits the python geometry module with the the init_module function from the rust geometry module
 	// Lots of packages do it like this and I don't know why, they do not do it like in the [PyO3 book](https://pyo3.rs/main/module#python-submodules)
 	geometry::init_module(geometry)?;

@@ -1,11 +1,11 @@
-use pyo3::{prelude::*, intern};
+use pyo3::{intern, prelude::*};
 
 use rdf_builder_rs::link_data::geometry::{GeometryInterface, SphereGeometry};
 
 use crate::geometry::PyGeometryBase;
 
 #[derive(Debug)]
-#[pyclass(name="SphereGeometry", extends=PyGeometryBase)]
+#[pyclass(name="SphereGeometry", extends=PyGeometryBase, module = "geometry")]
 pub struct PySphereGeometry {
 	inner: SphereGeometry,
 }
@@ -21,41 +21,27 @@ impl PySphereGeometry {
 #[pymethods]
 impl PySphereGeometry {
 	#[new]
-	#[pyo3(signature = (radius))] //, *py_args, **py_kwargs))]
-	fn py_new(
-		radius: f32,
-		// py_args: &PyTuple,
-		// py_kwargs: Option<&PyDict>,
-	) -> PyResult<(PySphereGeometry, PyGeometryBase)> {
-		// if py_args.is_empty() || py_args.is_none() {
-		// 	if let Some(radius_data) = py_kwargs.map(|dict| dict.get_item("radius")).flatten() {
-		// 		match radius_data.extract::<f32>() {
-		// 			Ok(radius) => Ok(Self::new(radius)),
-		// 			Err(e) => Err(e),
-		// 		}
-		// 	} else {
-		// 		Err(PyValueError::new_err("radius must be given"))
-		// 	}
-		// } else {
-		// 	if let Ok((radius,)) = py_args.extract::<(f32,)>() {
-		// 		Ok(Self::new(radius))
-		// 	} else {
-		// 		Err(PyValueError::new_err("radius must be a number"))
-		// 	}
-		// }
-
+	#[pyo3(signature = (radius))]
+	fn py_new(radius: f32) -> (PySphereGeometry, PyGeometryBase) {
 		// TODO: Maybe add kwargs and args checking
-		Ok(Self::new(radius))
+		// I do not think it is necessary yet.
+		Self::new(radius)
 	}
 
 	fn __repr__(slf: &PyCell<Self>) -> PyResult<String> {
-        let module_name = slf.get_type().getattr(intern!(slf.py(), "__module__"))?.extract::<&str>()?;
-		let class_name = slf.get_type().getattr(intern!(slf.py(),"__qualname__"))?.extract::<&str>()?;
+		let module_name = slf
+			.get_type()
+			.getattr(intern!(slf.py(), "__module__"))?
+			.extract::<&str>()?;
+		let class_name = slf
+			.get_type()
+			.getattr(intern!(slf.py(), "__qualname__"))?
+			.extract::<&str>()?;
 
 		Ok(format!(
 			"{}.{}({})",
 			module_name,
-            class_name,
+			class_name,
 			slf.try_borrow()?.inner.radius
 		))
 	}

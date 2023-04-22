@@ -1,39 +1,40 @@
-use pyo3::{
-	prelude::*,
-	types::{PyDict, PyTuple}, intern,
-};
+use pyo3::{intern, prelude::*};
 
 use rdf_builder_rs::link_data::geometry::{CylinderGeometry, GeometryInterface};
 
 use crate::geometry::PyGeometryBase;
 
 #[derive(Debug)]
-#[pyclass(name="CylinderGeometry", extends=PyGeometryBase)]
+#[pyclass(name = "CylinderGeometry", extends = PyGeometryBase, module = "geometry")]
 pub struct PyCylinderGeometry {
 	inner: CylinderGeometry,
+}
+
+impl PyCylinderGeometry {
+	fn new(radius: f32, length: f32) -> (PyCylinderGeometry, PyGeometryBase) {
+		let geometry = CylinderGeometry::new(radius, length);
+		let base = PyGeometryBase::new(&geometry);
+		(PyCylinderGeometry { inner: geometry }, base)
+	}
 }
 
 #[pymethods]
 impl PyCylinderGeometry {
 	#[new]
-	#[pyo3(signature = (*py_args, **py_kwargs))]
-	fn new(py_args: &PyTuple, py_kwargs: Option<&PyDict>) -> (PyCylinderGeometry, PyGeometryBase) {
-		if py_args.is_empty() || py_args.is_none() {
-			todo!()
-		} else {
-			if let Ok(cylinder_dim) = py_args.extract::<(f32, f32)>() {
-				let geometry = CylinderGeometry::new(cylinder_dim.0, cylinder_dim.1);
-				let base = PyGeometryBase::new(&geometry);
-				(PyCylinderGeometry { inner: geometry }, base)
-			} else {
-				todo!()
-			}
-		}
+	#[pyo3(signature = (radius, length))]
+	fn py_new(radius: f32, length: f32) -> (PyCylinderGeometry, PyGeometryBase) {
+		Self::new(radius, length)
 	}
 
 	fn __repr__(slf: &PyCell<Self>) -> PyResult<String> {
-        let module_name = slf.get_type().getattr(intern!(slf.py(), "__module__"))?.extract::<&str>()?;
-		let class_name = slf.get_type().getattr(intern!(slf.py(),"__qualname__"))?.extract::<&str>()?;
+		let module_name = slf
+			.get_type()
+			.getattr(intern!(slf.py(), "__module__"))?
+			.extract::<&str>()?;
+		let class_name = slf
+			.get_type()
+			.getattr(intern!(slf.py(), "__qualname__"))?
+			.extract::<&str>()?;
 
 		let cylinder = slf.try_borrow()?;
 

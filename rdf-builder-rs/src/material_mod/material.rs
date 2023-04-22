@@ -38,6 +38,7 @@ impl Material {
 						match other_material {
 							Some(other_material) => {
 								if *other_material.read().unwrap() == *data {
+									//FIXME: Is unwrap Ok?
 									other_material
 								} else {
 									return Err("Conflict".into());
@@ -47,7 +48,7 @@ impl Material {
 								let material_data = Arc::new(RwLock::new(data.clone()));
 								assert!(material_data_index
 									.write()
-									.unwrap()
+									.unwrap() //FIXME: Is unwrap Ok?
 									.insert(name.clone(), Arc::clone(&material_data))
 									.is_none());
 								material_data

@@ -1,7 +1,4 @@
-use pyo3::{
-	prelude::*,
-	types::{PyDict, PyTuple}, intern,
-};
+use pyo3::{intern, prelude::*};
 
 use rdf_builder_rs::link_data::geometry::{BoxGeometry, GeometryInterface};
 
@@ -12,27 +9,32 @@ pub struct PyBoxGeometry {
 	inner: BoxGeometry,
 }
 
+impl PyBoxGeometry {
+	fn new(side0: f32, side1: f32, side2: f32) -> (PyBoxGeometry, PyGeometryBase) {
+		let geometry = BoxGeometry::new(side0, side1, side2);
+		let base = PyGeometryBase::new(&geometry);
+		(PyBoxGeometry { inner: geometry }, base)
+	}
+}
+
 #[pymethods]
 impl PyBoxGeometry {
+	/// TODO: Names of arguments might be incorrect/Require explanation
 	#[new]
-	#[pyo3(signature = (*py_args, **py_kwargs))]
-	fn new(py_args: &PyTuple, py_kwargs: Option<&PyDict>) -> (PyBoxGeometry, PyGeometryBase) {
-		if py_args.is_empty() || py_args.is_none() {
-			todo!()
-		} else {
-			if let Ok(box_dim) = py_args.extract::<(f32, f32, f32)>() {
-				let geometry = BoxGeometry::new(box_dim.0, box_dim.1, box_dim.2);
-				let base = PyGeometryBase::new(&geometry);
-				(PyBoxGeometry { inner: geometry }, base)
-			} else {
-				todo!()
-			}
-		}
+	#[pyo3(signature = (width, length, height))]
+	fn py_new(width: f32, length: f32, height: f32) -> (PyBoxGeometry, PyGeometryBase) {
+		Self::new(width, length, height)
 	}
 
 	fn __repr__(slf: &PyCell<Self>) -> PyResult<String> {
-        let module_name = slf.get_type().getattr(intern!(slf.py(), "__module__"))?.extract::<&str>()?;
-		let class_name = slf.get_type().getattr(intern!(slf.py(),"__qualname__"))?.extract::<&str>()?;
+		let module_name = slf
+			.get_type()
+			.getattr(intern!(slf.py(), "__module__"))?
+			.extract::<&str>()?;
+		let class_name = slf
+			.get_type()
+			.getattr(intern!(slf.py(), "__qualname__"))?
+			.extract::<&str>()?;
 
 		let box_ref = slf.try_borrow()?;
 

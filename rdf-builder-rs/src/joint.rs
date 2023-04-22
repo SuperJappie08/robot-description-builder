@@ -38,7 +38,7 @@ pub struct Joint {
 	calibration: joint_data::CalibrationData,
 	dynamics: joint_data::DynamicsData,
 	limit: Option<joint_data::LimitData>,
-	// Should be editable
+	/// TODO: Should be editable
 	mimic: Option<joint_data::MimicData>,
 	safety_controller: Option<joint_data::SafetyControllerData>,
 

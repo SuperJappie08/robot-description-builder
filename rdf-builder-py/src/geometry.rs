@@ -19,6 +19,7 @@ pub(crate) fn init_module(module: &PyModule) -> PyResult<()> {
 }
 
 #[pyclass(name = "GeometryBase", subclass)]
+#[derive(Debug)]
 pub struct PyGeometryBase {
 	inner: Box<dyn GeometryInterface + Send + Sync>,
 }
@@ -52,6 +53,14 @@ impl From<&(dyn GeometryInterface + Sync + Send)> for PyGeometryBase {
 	fn from(value: &(dyn GeometryInterface + Sync + Send)) -> Self {
 		Self {
 			inner: value.into(),
+		}
+	}
+}
+
+impl Clone for PyGeometryBase {
+	fn clone(&self) -> Self {
+		Self {
+			inner: self.inner.boxed_clone(),
 		}
 	}
 }
