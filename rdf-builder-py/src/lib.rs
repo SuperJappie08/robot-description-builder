@@ -16,8 +16,7 @@ use itertools::Itertools;
 use pyo3::prelude::*;
 
 use rdf_builder_rs::{
-	linkbuilding::{BuildLink, LinkBuilder},
-	JointBuilder, KinematicInterface, KinematicTree, Link, Robot,
+	linkbuilding::LinkBuilder, JointBuilder, KinematicInterface, KinematicTree, Link, Robot,
 };
 
 #[derive(Debug)]
@@ -150,7 +149,7 @@ impl PyLink {
 		self.inner
 			.try_write()
 			.unwrap() // TODO: Figure out if unwrap is Ok here?
-			.try_attach_child(
+			.try_attach_child_old(
 				Into::<KinematicTree>::into(tree).into(),
 				Into::<JointBuilder>::into(joint_builder),
 			)

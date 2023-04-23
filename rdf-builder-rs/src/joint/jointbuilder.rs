@@ -2,38 +2,87 @@ use std::sync::{Arc, RwLock, Weak};
 
 use crate::{
 	cluster_objects::kinematic_data_tree::KinematicDataTree,
-	joint::{joint_data, Joint, JointType},
+	joint::{joint_data, Joint, JointType, OffsetMode},
 	link::{
 		builder::{BuildLink, LinkBuilder},
-		Link,
+		Link, LinkShapeData,
 	},
 	transform_data::{MirrorAxis, TransformData},
 	ArcLock, WeakLock,
 };
 
-pub trait BuildJoint {
+pub trait BuildJoint: Into<JointBuilder> {
 	/// Creates the joint ?? and subscribes it to the right right places
 	fn build(
 		self,
 		tree: Weak<KinematicDataTree>,
 		parent_link: WeakLock<Link>,
 		child_link: ArcLock<Link>,
+		parent_shape_data: LinkShapeData,
 	) -> ArcLock<Joint>;
 }
 
-pub(crate) trait BuildJointChain: BuildJoint {
+/// NOTE: Removed Trait bound due for `Chained<JointBuilder>`
+pub(crate) trait BuildJointChain {
 	fn build_chain(
 		self,
 		tree: &Weak<KinematicDataTree>,
 		parent_link: &WeakLock<Link>,
+		parent_shape_data: LinkShapeData,
 	) -> ArcLock<Joint>;
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum JointBuilderTransformMode {
+	Direct(TransformData),
+	FigureItOut,
+}
+
+impl JointBuilderTransformMode {
+	fn apply(self, _parent_link_data: LinkShapeData) -> TransformData {
+		match self {
+			JointBuilderTransformMode::Direct(transform) => transform,
+			JointBuilderTransformMode::FigureItOut => todo!(),
+		}
+	}
+
+	fn mirrored(&self, axis: MirrorAxis) -> Self {
+		match self {
+			JointBuilderTransformMode::Direct(tranform) => tranform.mirrored(axis).into(),
+			JointBuilderTransformMode::FigureItOut => todo!(),
+		}
+	}
+}
+
+impl Default for JointBuilderTransformMode {
+	fn default() -> Self {
+		Self::Direct(TransformData::default())
+	}
+}
+
+impl From<Option<OffsetMode>> for JointBuilderTransformMode {
+	fn from(value: Option<OffsetMode>) -> Self {
+		match value {
+			Some(OffsetMode::FigureItOut(_)) => {
+				#[cfg(any(test, feature = "logging"))]
+				log::warn!("This is not finished yet");
+				Self::FigureItOut
+			}
+			Some(OffsetMode::Offset(x, y, z)) => Self::Direct(TransformData {
+				translation: Some((x, y, z)),
+				..Default::default()
+			}),
+			None => Self::default(),
+		}
+	}
 }
 
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct JointBuilder {
 	pub(crate) name: String,
 	pub(crate) joint_type: JointType, // TODO: FINISH ME
-	pub(crate) origin: TransformData,
+	/// TODO: Maybe add a Figure it out???
+	pub(crate) origin: JointBuilderTransformMode,
 	pub(crate) child: Option<LinkBuilder>,
 
 	/// TODO: DO SOMETHING WITH THIS
@@ -56,20 +105,29 @@ impl JointBuilder {
 	}
 
 	pub fn add_origin_offset(mut self, offset: (f32, f32, f32)) -> Self {
-		self.origin.translation = Some(offset);
+		match &mut self.origin {
+			JointBuilderTransformMode::Direct(transform) => transform.translation = Some(offset),
+			JointBuilderTransformMode::FigureItOut => todo!("Don't know how to do this"),
+		};
 		self
 	}
 
 	pub fn add_origin_rotation(mut self, rotation: (f32, f32, f32)) -> Self {
-		self.origin.rotation = Some(rotation);
+		match &mut self.origin {
+			JointBuilderTransformMode::Direct(tranform) => tranform.rotation = Some(rotation),
+			JointBuilderTransformMode::FigureItOut => todo!("Don't know how to do this yet"),
+		}
 		self
 	}
 
 	/// Nominated for Deprication
 	/// Maybe Not??
 	#[inline]
-	pub(crate) fn with_origin(&mut self, origin: TransformData) {
-		self.origin = origin;
+	pub(crate) fn with_origin<OriginMode>(&mut self, origin: OriginMode)
+	where
+		OriginMode: Into<JointBuilderTransformMode>,
+	{
+		self.origin = origin.into();
 	}
 
 	#[inline]
@@ -121,6 +179,7 @@ impl BuildJoint for JointBuilder {
 		tree: Weak<KinematicDataTree>,
 		parent_link: WeakLock<Link>,
 		child_link: ArcLock<Link>,
+		parent_link_size_data: LinkShapeData,
 	) -> ArcLock<Joint> {
 		let joint = Arc::new_cyclic(|me| -> RwLock<Joint> {
 			RwLock::new(Joint {
@@ -129,7 +188,7 @@ impl BuildJoint for JointBuilder {
 				parent_link,
 				child_link,
 				joint_type: self.joint_type,
-				origin: self.origin,
+				origin: self.origin.apply(parent_link_size_data),
 				axis: self.axis,
 				calibration: self.calibration,
 				dynamics: self.dynamics,
@@ -150,6 +209,7 @@ impl BuildJointChain for JointBuilder {
 		self,
 		tree: &Weak<KinematicDataTree>,
 		parent_link: &WeakLock<Link>,
+		parent_shape_data: LinkShapeData,
 	) -> ArcLock<Joint> {
 		#[cfg(any(feature = "logging", test))]
 		log::trace!("Building a Joint[name ='{}']", self.name);
@@ -162,7 +222,7 @@ impl BuildJointChain for JointBuilder {
 				// This is Ok, since the Joint can only be attached with specific functions.
 				child_link: self.child.expect("When Building Kinematic Branches Joints should have a child link, since a Joint only makes sense when attachted to a Parent and a Child").build_chain(tree, me),
 				joint_type: self.joint_type,
-				origin: self.origin,
+				origin: self.origin.apply(parent_shape_data),
 				axis: self.axis,
 				calibration: self.calibration,
 				dynamics: self.dynamics,

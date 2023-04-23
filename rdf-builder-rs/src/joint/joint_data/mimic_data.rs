@@ -116,7 +116,7 @@ mod tests {
 		use crate::{
 			cluster_objects::KinematicInterface,
 			joint::{jointbuilder::BuildJoint, smartjointbuilder::SmartJointBuilder},
-			link::{builder::BuildLink, Link},
+			link::Link,
 			to_rdf::to_urdf::{ToURDF, URDFConfig},
 		};
 
@@ -130,7 +130,7 @@ mod tests {
 				.try_write()
 				.unwrap()
 				.try_attach_child(
-					Link::builder("child_link").build_tree().into(),
+					Link::builder("child_link").build_tree(),
 					SmartJointBuilder::new_fixed("joint-s"),
 				)
 				.unwrap();
@@ -138,10 +138,7 @@ mod tests {
 			tree.get_root_link()
 				.try_write()
 				.unwrap()
-				.try_attach_child(
-					Link::builder("child_link_2").build_tree().into(),
-					joint_builder,
-				)
+				.try_attach_child(Link::builder("child_link_2"), joint_builder)
 				.unwrap();
 
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));

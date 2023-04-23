@@ -5,11 +5,11 @@ use std::{
 
 use crate::{
 	cluster_objects::kinematic_data_errors::AddTransmissionError,
-	joint::Joint,
+	joint::{Joint, JointBuilder},
 	link::{builder::LinkBuilder, Link},
 	material_mod::{Material, MaterialData},
 	transmission::Transmission,
-	ArcLock, JointBuilder, WeakLock,
+	ArcLock, Chained, WeakLock,
 };
 
 pub mod kinematic_data_errors;
@@ -27,12 +27,12 @@ pub trait KinematicInterface {
 	///
 	/// # Example
 	/// ```
-	/// # use rdf_builder_rs::{KinematicInterface, Link, JointBuilder, JointType, linkbuilding::{LinkBuilder, BuildLink}};
+	/// # use rdf_builder_rs::{KinematicInterface, Link, JointBuilder, JointType, linkbuilding::LinkBuilder};
 	/// let tree = Link::builder("the root link").build_tree();
 	///
 	/// /// This is equivalent to `get_root_link` in this case, since this is a new tree/Link.
 	/// tree.get_newest_link().try_write().unwrap().try_attach_child(
-	///     LinkBuilder::new("his one and only child").build_tree().into(),
+	///     LinkBuilder::new("his one and only child"),
 	///     JointBuilder::new("just a joint", JointType::Fixed)
 	/// ).unwrap();
 	///
@@ -44,13 +44,13 @@ pub trait KinematicInterface {
 	///
 	/// # Example
 	/// ```
-	/// # use rdf_builder_rs::{KinematicInterface, Link, JointBuilder, JointType, linkbuilding::{LinkBuilder, BuildLink}};
+	/// # use rdf_builder_rs::{KinematicInterface, Link, JointBuilder, JointType, linkbuilding::LinkBuilder};
 	/// let tree = Link::builder("the root link").build_tree();
 	///
 	/// assert_eq!(tree.get_newest_link().try_read().unwrap().get_name(), "the root link");
 	///
 	/// tree.get_newest_link().try_write().unwrap().try_attach_child(
-	///     LinkBuilder::new("his one and only child").build_tree().into(),
+	///     LinkBuilder::new("his one and only child"),
 	///     JointBuilder::new("just a joint", JointType::Fixed)
 	/// ).unwrap();
 	///
@@ -59,11 +59,11 @@ pub trait KinematicInterface {
 	/// let long_sub_tree = LinkBuilder::new("the other child").build_tree();
 	///
 	/// long_sub_tree.get_newest_link().try_write().unwrap().try_attach_child(
-	///     Link::builder("the latest child").build_tree().into(),
+	///     Link::builder("the latest child"),
 	///     JointBuilder::new("second joint", JointType::Fixed)
 	/// ).unwrap();
 	///
-	/// tree.get_root_link().try_write().unwrap().try_attach_child(long_sub_tree.into(),
+	/// tree.get_root_link().try_write().unwrap().try_attach_child(long_sub_tree,
 	///     JointBuilder::new("third joint", JointType::Fixed)
 	/// ).unwrap();
 	///
@@ -71,7 +71,6 @@ pub trait KinematicInterface {
 	/// ```
 	fn get_newest_link(&self) -> ArcLock<Link>;
 
-	// These do not have to be mutable
 	fn get_links(&self) -> ArcLock<HashMap<String, WeakLock<Link>>>;
 	fn get_joints(&self) -> ArcLock<HashMap<String, WeakLock<Joint>>>;
 	fn get_materials(&self) -> ArcLock<HashMap<String, ArcLock<MaterialData>>>;
@@ -120,19 +119,21 @@ pub trait KinematicInterface {
 		&self,
 	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, ArcLock<Transmission>>>>>;
 
-	fn yank_link(&self, name: &str) -> Option<LinkBuilder> {
+	fn yank_link(&self, name: &str) -> Option<Chained<LinkBuilder>> {
 		let builder = self
 			.get_link(name)
-			.map(|link| link.try_read().unwrap().yank()); // FIXME: Is unwrap ok here?
+			.map(|link| link.try_read().unwrap().yank()) // FIXME: Is unwrap ok here?
+			.map(|builder| Chained(builder));
 		self.purge_joints().unwrap(); // FIXME: Is unwrap ok here?
 		self.purge_links().unwrap(); // FIXME: Is unwrap ok here?
 		builder
 	}
 
-	fn yank_joint(&self, name: &str) -> Option<JointBuilder> {
+	fn yank_joint(&self, name: &str) -> Option<Chained<JointBuilder>> {
 		let builder = self
 			.get_joint(name)
-			.map(|joint| joint.try_read().unwrap().yank()); // FIXME: Is unwrap ok here?
+			.map(|joint| joint.try_read().unwrap().yank()) // FIXME: Is unwrap ok here?
+			.map(|builder| Chained(builder));
 		self.purge_joints().unwrap(); // FIXME: Is unwrap ok here?
 		self.purge_links().unwrap(); // FIXME: Is unwrap ok here?
 		builder

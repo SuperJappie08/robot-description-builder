@@ -1,3 +1,4 @@
+mod chained;
 mod cluster_objects;
 mod joint;
 mod link;
@@ -9,6 +10,7 @@ type ArcLock<T> = std::sync::Arc<std::sync::RwLock<T>>;
 type WeakLock<T> = std::sync::Weak<std::sync::RwLock<T>>;
 
 pub mod to_rdf;
+pub use chained::Chained;
 pub use cluster_objects::{KinematicInterface, KinematicTree, Robot};
 pub use joint::{Joint, JointBuilder, JointType, OffsetMode, SmartJointBuilder};
 pub use link::{helper_functions, link_data, Link};

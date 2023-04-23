@@ -2,7 +2,6 @@ use std::sync::Weak;
 
 use crate::{
 	cluster_objects::kinematic_data_tree::KinematicDataTree,
-	joint::smartjointbuilder::OffsetMode,
 	joint::JointType,
 	joint::{
 		smartjointbuilder::{
@@ -48,31 +47,68 @@ where
 		tree: Weak<KinematicDataTree>,
 		parent_link: WeakLock<Link>,
 		child_link: ArcLock<Link>,
+		parent_shape_data: crate::link::LinkShapeData,
 	) -> ArcLock<Joint> {
-		let mut joint_builder = JointBuilder::new(self.name, self.joint_type.into());
+		Into::<JointBuilder>::into(self).build(tree, parent_link, child_link, parent_shape_data)
+	}
+}
 
-		if let Some(mode) = self.offset {
-			// todo!("BUILD FUNCTIOn")
-			joint_builder = match mode {
-				OffsetMode::Offset(x, y, z) => joint_builder.add_origin_offset((x, y, z)),
-				OffsetMode::FigureItOut(_) => todo!(),
-			}
-		}
+impl<Axis, Calibration, Dynamics, Mimic, SafetyController>
+	From<
+		SmartJointBuilder<
+			RevoluteType,
+			Axis,
+			Calibration,
+			Dynamics,
+			WithLimit,
+			Mimic,
+			SafetyController,
+		>,
+	> for JointBuilder
+where
+	Axis: smart_joint_datatraits::AxisDataType,
+	Calibration: smart_joint_datatraits::CalibrationDataType,
+	Dynamics: smart_joint_datatraits::DynamicsDataType,
+	Mimic: smart_joint_datatraits::MimicDataType,
+	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
+{
+	fn from(
+		value: SmartJointBuilder<
+			RevoluteType,
+			Axis,
+			Calibration,
+			Dynamics,
+			WithLimit,
+			Mimic,
+			SafetyController,
+		>,
+	) -> Self {
+		let mut joint_builder = JointBuilder::new(value.name, value.joint_type.into());
 
-		if let Some(rotation) = self.rotation {
-			// TODO: MAKE SMARTER
-			joint_builder = joint_builder.add_origin_rotation(rotation)
-		}
+		// if let Some(mode) = self.offset {
+		// 	// todo!("BUILD FUNCTIOn")
+		// 	joint_builder = match mode {
+		// 		OffsetMode::Offset(x, y, z) => joint_builder.add_origin_offset((x, y, z)),
+		// 		OffsetMode::FigureItOut(_) => todo!(),
+		// 	}
+		// }
+		//
+		// if let Some(rotation) = self.rotation {
+		// 	// TODO: MAKE SMARTER
+		// 	joint_builder = joint_builder.add_origin_rotation(rotation)
+		// }
 
-		self.axis.simplify(&mut joint_builder);
-		self.calibration.simplify(&mut joint_builder);
-		self.dynamics.simplify(&mut joint_builder);
-		self.limit.simplify(&mut joint_builder, false);
-		self.mimic.simplify(&mut joint_builder);
-		self.safety_controller.simplify(&mut joint_builder);
+		joint_builder.with_origin(value.offset);
+
+		value.axis.simplify(&mut joint_builder);
+		value.calibration.simplify(&mut joint_builder);
+		value.dynamics.simplify(&mut joint_builder);
+		value.limit.simplify(&mut joint_builder, false);
+		value.mimic.simplify(&mut joint_builder);
+		value.safety_controller.simplify(&mut joint_builder);
 
 		// THIS MIGHT BE DONE// todo!("Create a `RevoluteJoint`")
 
-		joint_builder.build(tree, parent_link, child_link)
+		joint_builder
 	}
 }

@@ -5,7 +5,7 @@ mod smartjointbuilder;
 pub(crate) mod joint_data;
 
 pub(crate) use jointbuilder::BuildJointChain;
-pub use jointbuilder::{BuildJoint, JointBuilder};
+pub use jointbuilder::{BuildJoint, JointBuilder, JointBuilderTransformMode};
 pub use smartjointbuilder::{OffsetMode, SmartJointBuilder};
 
 #[cfg(feature = "xml")]
@@ -84,7 +84,7 @@ impl Joint {
 		JointBuilder {
 			name: self.name.clone(),
 			joint_type: self.joint_type,
-			origin: self.origin,
+			origin: self.origin.into(),
 			axis: self.axis,
 			calibration: self.calibration,
 			dynamics: self.dynamics,
@@ -277,7 +277,7 @@ mod tests {
 			JointBuilder, JointType,
 		},
 		link::{
-			builder::{BuildLink, LinkBuilder},
+			builder::LinkBuilder,
 			link_data::{
 				geometry::{BoxGeometry, CylinderGeometry, SphereGeometry},
 				Collision, Visual,
@@ -295,7 +295,7 @@ mod tests {
 			.try_write()
 			.unwrap()
 			.try_attach_child(
-				LinkBuilder::new("child").build_tree().into(),
+				LinkBuilder::new("child"),
 				SmartJointBuilder::new("Joint1")
 					.fixed()
 					.add_offset(OffsetMode::Offset(2.0, 3.0, 5.0)),
@@ -351,9 +351,7 @@ mod tests {
 						.into(),
 						SphereGeometry::new(4.),
 						Some(material_red.clone()),
-					))
-					.build_tree()
-					.into(),
+					)),
 				SmartJointBuilder::new("joint-0")
 					.add_offset(OffsetMode::Offset(1.0, 0., 0.))
 					.fixed(),
@@ -379,14 +377,15 @@ mod tests {
 		assert_eq!(tree.get_joints().try_read().unwrap().len(), 0);
 
 		assert_eq!(
-			builder,
+			builder.0,
 			JointBuilder {
 				name: "joint-0".into(),
 				joint_type: JointType::Fixed,
 				origin: TransformData {
 					translation: Some((1., 0., 0.)),
 					rotation: None
-				},
+				}
+				.into(),
 				child: Some(LinkBuilder {
 					name: "link-1".into(),
 					visual_builders: vec![Visual::builder(
@@ -464,19 +463,16 @@ mod tests {
 						.write()
 						.unwrap()
 						.try_attach_child(
-							LinkBuilder::new("link-1-1")
-								.add_visual(Visual::builder(
-									Some("link-1-1-vis".into()),
-									TransformData {
-										translation: Some((9., 0.5, 0.)),
-										..Default::default()
-									}
-									.into(),
-									CylinderGeometry::new(0.5, 18.),
-									Some(MaterialBuilder::new_color(0.5, 0.5, 0.5, 0.75)),
-								))
-								.build_tree()
+							LinkBuilder::new("link-1-1").add_visual(Visual::builder(
+								Some("link-1-1-vis".into()),
+								TransformData {
+									translation: Some((9., 0.5, 0.)),
+									..Default::default()
+								}
 								.into(),
+								CylinderGeometry::new(0.5, 18.),
+								Some(MaterialBuilder::new_color(0.5, 0.5, 0.5, 0.75)),
+							)),
 							SmartJointBuilder::new("joint-1-1")
 								.revolute()
 								.add_offset(OffsetMode::Offset(4., 0., 0.))
@@ -488,8 +484,7 @@ mod tests {
 						.unwrap();
 
 					tmp_tree
-				}
-				.into(),
+				},
 				SmartJointBuilder::new("joint-0")
 					.add_offset(OffsetMode::Offset(1.0, 0., 0.))
 					.fixed(),
@@ -500,7 +495,7 @@ mod tests {
 			.write()
 			.unwrap()
 			.try_attach_child(
-				LinkBuilder::new("link-2").build_tree().into(),
+				LinkBuilder::new("link-2").build_tree(),
 				JointBuilder::new("joint-2", JointType::Fixed).add_origin_offset((0., 0., 1.5)),
 			)
 			.unwrap();
@@ -569,14 +564,15 @@ mod tests {
 			assert_eq!(tree.get_newest_link().read().unwrap().get_name(), "link-0");
 
 			assert_eq!(
-				yanked_branch.unwrap(),
+				yanked_branch.unwrap().0,
 				JointBuilder {
 					name: "joint-2".into(),
 					joint_type: JointType::Fixed,
 					origin: TransformData {
 						translation: Some((0., 0., 1.5)),
 						..Default::default()
-					},
+					}
+					.into(),
 					child: Some(LinkBuilder::new("link-2")),
 					..Default::default()
 				}
@@ -634,14 +630,15 @@ mod tests {
 			assert_eq!(tree.get_newest_link().read().unwrap().get_name(), "link-1");
 
 			assert_eq!(
-				yanked_branch.unwrap(),
+				yanked_branch.unwrap().0,
 				JointBuilder {
 					name: "joint-1-1".into(),
 					joint_type: JointType::Revolute,
 					origin: TransformData {
 						translation: Some((4., 0., 0.)),
 						..Default::default()
-					},
+					}
+					.into(),
 					child: Some(LinkBuilder {
 						name: "link-1-1".into(),
 						visual_builders: vec![Visual::builder(
@@ -718,13 +715,14 @@ mod tests {
 			assert_eq!(tree.get_newest_link().read().unwrap().get_name(), "link-0");
 
 			assert_eq!(
-				yanked_branch.unwrap(),
+				yanked_branch.unwrap().0,
 				JointBuilder {
 					name: "joint-0".into(),
 					origin: TransformData {
 						translation: Some((1., 0., 0.)),
 						..Default::default()
-					},
+					}
+					.into(),
 					child: Some(LinkBuilder {
 						name: "link-1".into(),
 						visual_builders: vec![Visual::builder(
@@ -751,7 +749,8 @@ mod tests {
 							origin: TransformData {
 								translation: Some((4., 0., 0.)),
 								..Default::default()
-							},
+							}
+							.into(),
 							child: Some(LinkBuilder {
 								name: "link-1-1".into(),
 								visual_builders: vec![Visual::builder(

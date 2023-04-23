@@ -13,7 +13,7 @@ use rdf_builder_rs::{
 		geometry::{BoxGeometry, CylinderGeometry, SphereGeometry},
 		Collision, Visual,
 	},
-	linkbuilding::{BuildLink, LinkBuilder},
+	linkbuilding::LinkBuilder,
 	JointBuilder, JointType, KinematicInterface, Link, TransformData,
 };
 
@@ -44,7 +44,7 @@ fn main() {
 		.try_write()
 		.unwrap()
 		.try_attach_child(
-			LinkBuilder::new("Leg_[R1]_l1").build_tree().into(),
+			LinkBuilder::new("Leg_[R1]_l1"),
 			JointBuilder::new("Leg_[R1]_j1", JointType::Fixed)
 				.add_origin_offset((2.0, 0., 0.))
 				.to_owned(),
@@ -90,7 +90,7 @@ fn main() {
 			SphereGeometry::new(0.35),
 		))
 		.try_attach_child(
-			link.into(),
+			link,
 			JointBuilder::new("Leg_[R1]_j0", JointType::Fixed)
 				.add_origin_offset((0.4, 0., 0.))
 				.to_owned(),

@@ -49,20 +49,48 @@ where
 		tree: Weak<KinematicDataTree>,
 		parent_link: WeakLock<Link>,
 		child_link: ArcLock<Link>,
+		parent_shape_data: crate::link::LinkShapeData,
 	) -> ArcLock<Joint> {
-		let mut joint_builder = JointBuilder::new(self.name, self.joint_type.into());
+		Into::<JointBuilder>::into(self).build(tree, parent_link, child_link, parent_shape_data)
+	}
+}
 
-		if self.offset.is_some() || self.rotation.is_some() {
+impl<Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>
+	From<SmartJointBuilder<PlanarType, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>>
+	for JointBuilder
+where
+	Axis: smart_joint_datatraits::AxisDataType,
+	Calibration: smart_joint_datatraits::CalibrationDataType,
+	Dynamics: smart_joint_datatraits::DynamicsDataType,
+	Limit: smart_joint_datatraits::LimitDataType,
+	Mimic: smart_joint_datatraits::MimicDataType,
+	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
+{
+	fn from(
+		value: SmartJointBuilder<
+			PlanarType,
+			Axis,
+			Calibration,
+			Dynamics,
+			Limit,
+			Mimic,
+			SafetyController,
+		>,
+	) -> Self {
+		let mut joint_builder = JointBuilder::new(value.name, value.joint_type.into());
+
+		if value.offset.is_some() || value.rotation.is_some() {
+			joint_builder.with_origin(value.offset);
 			todo!("TRANSLATION")
 		}
 
-		self.axis.simplify(&mut joint_builder);
-		self.calibration.simplify(&mut joint_builder);
-		self.dynamics.simplify(&mut joint_builder);
-		self.limit.simplify(&mut joint_builder, true); // FIXME: Is it contiuos tho?
-		self.mimic.simplify(&mut joint_builder);
-		self.safety_controller.simplify(&mut joint_builder);
+		value.axis.simplify(&mut joint_builder);
+		value.calibration.simplify(&mut joint_builder);
+		value.dynamics.simplify(&mut joint_builder);
+		value.limit.simplify(&mut joint_builder, true); // FIXME: Is it contiuos tho?
+		value.mimic.simplify(&mut joint_builder);
+		value.safety_controller.simplify(&mut joint_builder);
 
-		joint_builder.build(tree, parent_link, child_link)
+		joint_builder
 	}
 }

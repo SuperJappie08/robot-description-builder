@@ -1,7 +1,7 @@
 use crate::{
 	cluster_objects::KinematicTree,
 	link::{
-		builder::{BuildLink, LinkBuilder, VisualBuilder},
+		builder::{LinkBuilder, VisualBuilder},
 		collision::Collision,
 		geometry::{BoxGeometry, CylinderGeometry, GeometryInterface, SphereGeometry},
 	},

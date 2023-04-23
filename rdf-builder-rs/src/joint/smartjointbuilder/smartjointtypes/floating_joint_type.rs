@@ -68,24 +68,54 @@ impl BuildJoint
 		tree: Weak<KinematicDataTree>,
 		parent_link: WeakLock<Link>,
 		child_link: ArcLock<Link>,
+		parent_shape_data: crate::link::LinkShapeData,
 	) -> ArcLock<Joint> {
-		let mut joint_builder = JointBuilder::new(self.name, self.joint_type.into());
+		Into::<JointBuilder>::into(self).build(tree, parent_link, child_link, parent_shape_data)
+	}
+}
+
+impl
+	From<
+		SmartJointBuilder<
+			FloatingType,
+			NoAxis,
+			NoCalibration,
+			NoDynamics,
+			NoLimit,
+			NoMimic,
+			NoSafetyController,
+		>,
+	> for JointBuilder
+{
+	fn from(
+		value: SmartJointBuilder<
+			FloatingType,
+			NoAxis,
+			NoCalibration,
+			NoDynamics,
+			NoLimit,
+			NoMimic,
+			NoSafetyController,
+		>,
+	) -> Self {
+		let mut joint_builder = JointBuilder::new(value.name, value.joint_type.into());
 
 		#[cfg(any(feature = "logging", test))]
 		log::warn!("Floating Joints are kind of broken, si it is very likely it won't work in your simulator. Use at you own risk!");
 
-		if self.offset.is_some() || self.rotation.is_some() {
+		if value.offset.is_some() || value.rotation.is_some() {
+			joint_builder.with_origin(value.offset);
 			todo!("OFFSET ROTATION")
 		}
 
 		// Probably unneccessary
-		self.axis.simplify(&mut joint_builder);
-		self.calibration.simplify(&mut joint_builder);
-		self.dynamics.simplify(&mut joint_builder);
-		self.limit.simplify(&mut joint_builder, false);
-		self.mimic.simplify(&mut joint_builder);
-		self.safety_controller.simplify(&mut joint_builder);
+		value.axis.simplify(&mut joint_builder);
+		value.calibration.simplify(&mut joint_builder);
+		value.dynamics.simplify(&mut joint_builder);
+		value.limit.simplify(&mut joint_builder, false);
+		value.mimic.simplify(&mut joint_builder);
+		value.safety_controller.simplify(&mut joint_builder);
 
-		joint_builder.build(tree, parent_link, child_link)
+		joint_builder
 	}
 }

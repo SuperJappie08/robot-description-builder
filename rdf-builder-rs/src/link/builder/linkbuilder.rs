@@ -9,7 +9,7 @@ use crate::{
 		builder::{visual_builder::VisualBuilder, BuildLink},
 		link_data, Link, LinkParent,
 	},
-	ArcLock, WeakLock,
+	ArcLock, KinematicTree, WeakLock,
 };
 
 #[derive(Debug, PartialEq, Clone, Default)]
@@ -70,6 +70,11 @@ impl LinkBuilder {
 	//     // Not sure How i wanna do this yet,
 	//     // Maybe with colliders and visuals, stacking and calculating the always calculating the endpoint or not?
 	// }
+
+	/// FIXME: This is temporary, since BuildLink is now a private trait
+	pub fn build_tree(self) -> KinematicTree {
+		BuildLink::build_tree(self)
+	}
 }
 
 impl BuildLink for LinkBuilder {
@@ -101,10 +106,16 @@ impl BuildLink for LinkBuilder {
 	fn start_building_chain(self, tree: &Weak<KinematicDataTree>) -> ArcLock<Link> {
 		let joint_builders = self.joints.clone();
 		let root = self.build(tree);
+
+		// This unwrap is Ok since the Link has just been build
+		let shape_data = root.read().unwrap().get_shape_data();
+
 		// This unwrap is Ok since the Link has just been build
 		root.write().unwrap().child_joints = joint_builders
 			.into_iter()
-			.map(|joint_builder| joint_builder.build_chain(tree, &Arc::downgrade(&root)))
+			.map(|joint_builder| {
+				joint_builder.build_chain(tree, &Arc::downgrade(&root), shape_data.clone())
+			})
 			.collect();
 		root
 	}
@@ -114,6 +125,8 @@ impl BuildLink for LinkBuilder {
 		tree: &Weak<KinematicDataTree>,
 		parent_joint: &WeakLock<Joint>,
 	) -> ArcLock<Link> {
+		let shape_data = self.get_shape_data();
+
 		Arc::new_cyclic(|me| {
 			RwLock::new(Link {
 				name: self.name,
@@ -122,7 +135,7 @@ impl BuildLink for LinkBuilder {
 				child_joints: self
 					.joints
 					.into_iter()
-					.map(|joint_builder| joint_builder.build_chain(tree, me))
+					.map(|joint_builder| joint_builder.build_chain(tree, me, shape_data.clone()))
 					.collect(),
 				inertial: None, // FIXME: Fix this
 				visuals: itertools::process_results(
@@ -137,6 +150,11 @@ impl BuildLink for LinkBuilder {
 				me: Weak::clone(me),
 			})
 		})
+	}
+
+	fn get_shape_data(&self) -> crate::link::LinkShapeData {
+		// TODO: FIX THIS
+		crate::link::LinkShapeData::Box
 	}
 }
 

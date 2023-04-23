@@ -4,8 +4,11 @@ mod geometry;
 pub mod helper_functions;
 mod inertial;
 mod link_parent;
+mod link_shape_data;
 mod visual;
 // mod linkbuilder;
+
+pub(crate) use link_shape_data::LinkShapeData;
 
 #[cfg(feature = "xml")]
 use itertools::process_results;
@@ -42,17 +45,18 @@ use std::{
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
 use crate::{
+	chained::Chained,
 	cluster_objects::{
 		kinematic_data_errors::{AddJointError, AddLinkError, AddMaterialError},
 		kinematic_data_tree::KinematicDataTree,
 		KinematicInterface,
 	},
-	joint::{BuildJoint, Joint},
+	joint::{BuildJoint, BuildJointChain, Joint},
 	link::collision::Collision,
 	link::inertial::InertialData,
 	link::link_parent::LinkParent,
 	link::visual::Visual,
-	ArcLock, WeakLock,
+	ArcLock, JointBuilder, TransformData, WeakLock,
 };
 
 use self::builder::{BuildLink, LinkBuilder};
@@ -92,20 +96,11 @@ impl Link {
 		&self.direct_parent
 	}
 
-	/// NOMINATED FOR DEPRICATION
-	///
-	/// TODO: Figure out if this should be replaced with get mut
-	pub(crate) fn set_parent(&mut self, parent: LinkParent) {
-		self.direct_parent = parent;
-		// NO-FIXME: Add yourself to registry.
-		// Maybe that has already happend tho? -> You can't because of the Rc Pointer thing
-	}
-
 	/// Gets the reference to the name of the `Link`
 	///
 	/// # Example
 	/// ```rust
-	/// # use rdf_builder_rs::{KinematicInterface, linkbuilding::{LinkBuilder, BuildLink}};
+	/// # use rdf_builder_rs::{KinematicInterface, linkbuilding::LinkBuilder};
 	/// let tree = LinkBuilder::new("my-link").build_tree();
 	///
 	/// assert_eq!(tree.get_root_link().try_read().unwrap().get_name(), "my-link")
@@ -123,10 +118,13 @@ impl Link {
 		&mut self.child_joints
 	}
 
-	/// Maybe rename to try attach child
-	/// DEFINED BEHAVIOR:
+	/// TODO: DOC
+	///
+	/// # DEFINED BEHAVIOR:
 	///  - The newest link get transfered from the child tree.
-	pub fn try_attach_child(
+	///
+	/// TODO: Consider implemeting in reverse, by adding a making a Chained<JointBuilder> and then attaching that
+	pub fn try_attach_child_old(
 		&mut self,
 		old_tree: Box<dyn KinematicInterface>,
 		joint_builder: impl BuildJoint,
@@ -140,8 +138,11 @@ impl Link {
 
 		let child_link = link_builder.start_building_chain(&tree);
 		let weak_self = self.get_weak_self();
+
+		let shape_data = self.get_shape_data();
+
 		self.get_joints_mut()
-			.push(joint_builder.build(tree, weak_self, child_link));
+			.push(joint_builder.build(tree, weak_self, child_link, shape_data));
 
 		self.tree
 			.upgrade()
@@ -159,6 +160,64 @@ impl Link {
 			.write()
 			.unwrap() // FIXME: is unwrap OK?
 			.direct_parent = LinkParent::Joint(Arc::downgrade(self.get_joints().last().unwrap()));
+
+		Ok(())
+	}
+
+	///
+	/// ## TODO:
+	///  - DOC
+	///  - Test
+	///  - Doctest
+	pub fn try_attach_child<LinkChain>(
+		&mut self,
+		link_chain: LinkChain,
+		joint_builder: impl BuildJoint,
+	) -> Result<(), AttachChildError>
+	where
+		LinkChain: Into<Chained<LinkBuilder>>,
+	{
+		self.attach_joint_chain(Into::<Chained<JointBuilder>>::into((
+			joint_builder,
+			link_chain.into(),
+		)))
+	}
+
+	/// TODO: This is not finalized yet
+	///
+	/// ## TODO:
+	///  - DOC
+	///  - Test
+	///  - Doctest
+	pub fn attach_joint_chain_at(
+		&mut self,
+		mut joint_chain: Chained<JointBuilder>,
+		transform: TransformData,
+	) -> Result<(), AttachChildError> {
+		joint_chain.0.with_origin(transform);
+
+		self.attach_joint_chain(joint_chain)
+	}
+
+	/// Attach a `Chained<JointBuilder>` to the position set in the root `JointBuilder`
+	///
+	/// ## TODO:
+	///  - Implement
+	///  - Test
+	///  - Doctest
+	pub fn attach_joint_chain(
+		&mut self,
+		joint_chain: Chained<JointBuilder>,
+	) -> Result<(), AttachChildError> {
+		let joint =
+			joint_chain.build_chain(&self.tree, &self.get_weak_self(), self.get_shape_data());
+
+		self.get_joints_mut().push(joint);
+
+		self.tree
+			.upgrade()
+			.expect("KinematicDataTree should be initialized")
+			.try_add_joint(self.get_joints().last().unwrap())?;
 
 		Ok(())
 	}
@@ -263,6 +322,12 @@ impl Link {
 		}
 
 		builder
+	}
+
+	fn get_shape_data(&self) -> LinkShapeData {
+		// FIXME: FINISH THIS
+		// THIS SHOULD CONTAIN A BOUNDING BOX AND STUFF
+		LinkShapeData::Box
 	}
 }
 
@@ -401,11 +466,7 @@ mod tests {
 	use crate::{
 		cluster_objects::KinematicInterface,
 		joint::{JointBuilder, JointType},
-		link::{
-			builder::{BuildLink, LinkBuilder},
-			link_parent::LinkParent,
-			Link,
-		},
+		link::{builder::LinkBuilder, link_parent::LinkParent, Link},
 	};
 
 	#[test]
@@ -444,7 +505,7 @@ mod tests {
 				.try_write()
 				.unwrap()
 				.try_attach_child(
-					LinkBuilder::new("child_link").build_tree().into(),
+					LinkBuilder::new("child_link"),
 					JointBuilder::new("steve", JointType::Fixed)
 				),
 			Ok(())
@@ -517,7 +578,7 @@ mod tests {
 			.try_write()
 			.unwrap()
 			.try_attach_child(
-				LinkBuilder::new("other_child_link").build_tree().into(),
+				LinkBuilder::new("other_child_link"),
 				JointBuilder::new("other_joint", JointType::Fixed),
 			)
 			.unwrap();
@@ -526,7 +587,7 @@ mod tests {
 			.try_write()
 			.unwrap()
 			.try_attach_child(
-				other_tree.into(),
+				other_tree,
 				JointBuilder::new("initial_joint", JointType::Fixed),
 			)
 			.unwrap();
@@ -540,10 +601,7 @@ mod tests {
 		tree.get_root_link()
 			.try_write()
 			.unwrap()
-			.try_attach_child(
-				tree_three.into(),
-				JointBuilder::new("joint-3", JointType::Fixed),
-			)
+			.try_attach_child(tree_three, JointBuilder::new("joint-3", JointType::Fixed))
 			.unwrap();
 
 		assert_eq!(tree.get_root_link().try_read().unwrap().get_name(), "root");

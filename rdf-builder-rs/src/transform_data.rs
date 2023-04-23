@@ -97,6 +97,12 @@ impl ToURDF for TransformData {
 	}
 }
 
+impl From<TransformData> for crate::joint::JointBuilderTransformMode {
+	fn from(value: TransformData) -> Self {
+		Self::Direct(value)
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use crate::transform_data::TransformData;

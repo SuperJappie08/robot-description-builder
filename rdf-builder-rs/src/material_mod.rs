@@ -67,7 +67,7 @@ mod tests {
 	mod to_urdf {
 		use super::{test, MaterialBuilder};
 		use crate::{
-			link::builder::{BuildLink, LinkBuilder, VisualBuilder},
+			link::builder::{LinkBuilder, VisualBuilder},
 			link_data::geometry::BoxGeometry,
 			to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialMode},
 			KinematicInterface,

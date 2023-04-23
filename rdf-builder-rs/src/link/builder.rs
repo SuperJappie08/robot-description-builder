@@ -11,7 +11,10 @@ mod visual_builder;
 pub use linkbuilder::LinkBuilder;
 pub use visual_builder::VisualBuilder;
 
-pub trait BuildLink {
+use crate::link::link_shape_data::LinkShapeData;
+
+/// FIXME: Split the trait into multiple traits, because it does not make sense in all situations
+pub(crate) trait BuildLink {
 	/// TODO: THE BUILDER IS ALLOWED TO BUILD JOINTS FOR THIS BEAST, Maybe not for end users but might be usefull for cloning;
 	fn build(self, tree: &Weak<KinematicDataTree>) -> ArcLock<Link>;
 
@@ -23,12 +26,19 @@ pub trait BuildLink {
 		KinematicTree::new(data)
 	}
 
+	/// TODO: Make internal
+	/// TODO: Maybe move to `LinkChainBuilder`
+	///
+	/// Starts building the Kinematic Chain, the `tree` argument is not yet intitialized at this point.  
 	fn start_building_chain(self, tree: &Weak<KinematicDataTree>) -> ArcLock<Link>;
+
 	fn build_chain(
 		self,
 		tree: &Weak<KinematicDataTree>,
 		parent_joint: &WeakLock<Joint>,
 	) -> ArcLock<Link>;
+
+	fn get_shape_data(&self) -> LinkShapeData;
 }
 
 impl<T: BuildLink> From<T> for KinematicTree {
