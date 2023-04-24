@@ -65,8 +65,8 @@ where
 		SmartJointBuilder {
 			name: self.name,
 			joint_type: self.joint_type,
-			offset: self.offset,
-			rotation: self.rotation,
+			origin: self.origin,
+
 			axis: self.axis,
 			calibration: self.calibration,
 			dynamics: self.dynamics,

@@ -1,7 +1,7 @@
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
-use crate::link::geometry::GeometryInterface;
+use crate::link::geometry::{geometry_shape_data::GeometryShapeContainer, GeometryInterface};
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
 
@@ -64,13 +64,13 @@ impl GeometryInterface for BoxGeometry {
 		Box::new(self.clone())
 	}
 
-	// fn get_type(&self) -> GeometryType {
-	// 	GeometryType::Box
-	// }
+	fn bounding_box(&self) -> (f32, f32, f32) {
+		(self.side1, self.side2, self.side3)
+	}
 
-	// fn get_data(&self) -> GeometryData {
-	// 	GeometryData::Box(self.clone())
-	// }
+	fn try_get_shape(&self) -> Result<GeometryShapeContainer, ()> {
+		Ok(self.clone().into())
+	}
 }
 
 impl From<BoxGeometry> for Box<dyn GeometryInterface + Sync + Send> {
@@ -85,7 +85,9 @@ mod tests {
 	use std::io::Seek;
 	use test_log::test;
 
-	use crate::link::geometry::{box_geometry::BoxGeometry, GeometryInterface};
+	use crate::link::geometry::{
+		box_geometry::BoxGeometry, geometry_shape_data::GeometryShapeContainer, GeometryInterface,
+	};
 	#[cfg(feature = "urdf")]
 	use crate::to_rdf::to_urdf::{ToURDF, URDFConfig};
 
@@ -122,6 +124,50 @@ mod tests {
 		assert_eq!(
 			BoxGeometry::new(4.5, 20.0, 100.0).boxed_clone(),
 			BoxGeometry::new(4.5, 20.0, 100.0).into()
+		);
+	}
+
+	#[test]
+	fn bounding_box() {
+		assert_eq!(
+			BoxGeometry::new(1.0, 1.0, 1.0).bounding_box(),
+			(1.0, 1.0, 1.0)
+		);
+		assert_eq!(
+			BoxGeometry::new(1.0, 2.0, 3.0).bounding_box(),
+			(1.0, 2.0, 3.0)
+		);
+		assert_eq!(
+			BoxGeometry::new(9.0, 20.0, 100.0).bounding_box(),
+			(9.0, 20.0, 100.0)
+		);
+		assert_eq!(
+			BoxGeometry::new(4.5, 20.0, 100.0).bounding_box(),
+			(4.5, 20.0, 100.0)
+		);
+	}
+
+	#[test]
+	fn try_get_shape() {
+		assert_eq!(
+			BoxGeometry::new(1.0, 1.0, 1.0).try_get_shape(),
+			Ok(GeometryShapeContainer::Box(BoxGeometry::new(1.0, 1.0, 1.0)))
+		);
+		assert_eq!(
+			BoxGeometry::new(1.0, 2.0, 3.0).try_get_shape(),
+			Ok(GeometryShapeContainer::Box(BoxGeometry::new(1.0, 2.0, 3.0)))
+		);
+		assert_eq!(
+			BoxGeometry::new(9.0, 20.0, 100.0).try_get_shape(),
+			Ok(GeometryShapeContainer::Box(BoxGeometry::new(
+				9.0, 20.0, 100.0
+			)))
+		);
+		assert_eq!(
+			BoxGeometry::new(4.5, 20.0, 100.0).try_get_shape(),
+			Ok(GeometryShapeContainer::Box(BoxGeometry::new(
+				4.5, 20.0, 100.0
+			)))
 		);
 	}
 

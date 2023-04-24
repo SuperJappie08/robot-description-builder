@@ -5,18 +5,15 @@ use smartparams::{NoAxis, NoCalibration, NoDynamics, NoLimit, NoMimic, NoSafetyC
 
 pub use smartjointtypes::{FixedType, NoType, RevoluteType};
 
-use crate::link::link_data::ConnectionPoint;
+use crate::{
+	joint::joint_tranform_mode::JointTransformMode, link::LinkShapeData,
+	transform_data::TransformData,
+};
 
 use self::{
 	smartjointtypes::{ContinuousType, FloatingType, PlanarType, PrismaticType},
 	smartparams::smart_joint_datatraits,
 };
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum OffsetMode {
-	Offset(f32, f32, f32),
-	FigureItOut(ConnectionPoint),
-}
 
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>
@@ -30,8 +27,7 @@ where
 {
 	name: String,
 	joint_type: Type,
-	offset: Option<OffsetMode>,
-	rotation: Option<(f32, f32, f32)>,
+	origin: Option<JointTransformMode>,
 	axis: Axis,
 	calibration: Calibration,
 	dynamics: Dynamics,
@@ -50,13 +46,13 @@ where
 	Mimic: smart_joint_datatraits::MimicDataType,
 	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
 {
-	pub fn add_offset(mut self, offset_mode: OffsetMode) -> Self {
-		self.offset = Some(offset_mode);
+	pub fn add_transform(mut self, transform: TransformData) -> Self {
+		self.origin = Some(transform.into());
 		self
 	}
 
-	pub fn add_rotation(mut self, rotation: (f32, f32, f32)) -> Self {
-		self.rotation = Some(rotation);
+	pub fn add_dynamic_transform(mut self, func: fn(LinkShapeData) -> TransformData) -> Self {
+		self.origin = Some(func.into());
 		self
 	}
 }
@@ -183,8 +179,7 @@ impl
 		SmartJointBuilder {
 			name: self.name,
 			joint_type: RevoluteType,
-			offset: self.offset,
-			rotation: self.rotation,
+			origin: self.origin,
 			axis: self.axis,
 			calibration: self.calibration,
 			dynamics: self.dynamics,
@@ -208,8 +203,7 @@ impl
 		SmartJointBuilder {
 			name: self.name,
 			joint_type: ContinuousType,
-			offset: self.offset,
-			rotation: self.rotation,
+			origin: self.origin,
 			axis: self.axis,
 			calibration: self.calibration,
 			dynamics: self.dynamics,
@@ -233,8 +227,7 @@ impl
 		SmartJointBuilder {
 			name: self.name,
 			joint_type: PrismaticType,
-			offset: self.offset,
-			rotation: self.rotation,
+			origin: self.origin,
 			axis: self.axis,
 			calibration: self.calibration,
 			dynamics: self.dynamics,
@@ -259,8 +252,7 @@ impl
 		SmartJointBuilder {
 			name: self.name,
 			joint_type: FixedType,
-			offset: self.offset,
-			rotation: self.rotation,
+			origin: self.origin,
 			axis: self.axis,
 			calibration: self.calibration,
 			dynamics: self.dynamics,
@@ -284,8 +276,7 @@ impl
 		SmartJointBuilder {
 			name: self.name,
 			joint_type: FloatingType,
-			offset: self.offset,
-			rotation: self.rotation,
+			origin: self.origin,
 			axis: self.axis,
 			calibration: self.calibration,
 			dynamics: self.dynamics,
@@ -309,8 +300,7 @@ impl
 		SmartJointBuilder {
 			name: self.name,
 			joint_type: PlanarType,
-			offset: self.offset,
-			rotation: self.rotation,
+			origin: self.origin,
 			axis: self.axis,
 			calibration: self.calibration,
 			dynamics: self.dynamics,

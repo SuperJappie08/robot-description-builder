@@ -1,22 +1,16 @@
 use crate::{
-	link::geometry::GeometryInterface, link::visual::Visual,
-	link_data::geometry::GeometryShapeData, material_mod::MaterialBuilder,
+	link::geometry::GeometryInterface, link::geometry::GeometryShapeData, link::Collision,
 	transform_data::TransformData,
 };
 
 #[derive(Debug)]
-pub struct VisualBuilder {
-	/// TODO: Figure out if I want to keep the name optional?.
+pub struct CollisionBuilder {
 	pub(crate) name: Option<String>,
 	pub(crate) origin: Option<TransformData>,
-
-	/// Figure out if this needs to be public or not
 	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
-	/// Not sure about refCell
-	pub material_description: Option<MaterialBuilder>,
 }
 
-impl VisualBuilder {
+impl CollisionBuilder {
 	pub fn new<Geometry: Into<Box<dyn GeometryInterface + Sync + Send>>>(
 		geometry: Geometry,
 	) -> Self {
@@ -24,22 +18,18 @@ impl VisualBuilder {
 			name: None,
 			origin: None,
 			geometry: geometry.into(),
-			material_description: None,
 		}
 	}
 
-	/// TODO: Figure out if this will be kept [Added for easier transistion]
 	pub fn new_full<Geometry: Into<Box<dyn GeometryInterface + Sync + Send>>>(
 		name: Option<String>,
 		origin: Option<TransformData>,
 		geometry: Geometry,
-		material_description: Option<MaterialBuilder>,
 	) -> Self {
 		Self {
 			name,
 			origin,
 			geometry: geometry.into(),
-			material_description,
 		}
 	}
 
@@ -53,23 +43,12 @@ impl VisualBuilder {
 		self
 	}
 
-	pub fn material(mut self, material_description: MaterialBuilder) -> Self {
-		self.material_description = Some(material_description);
-		self
-	}
-
-	/// FIXME: Propper Error
-	pub(crate) fn build(self) -> Result<Visual, String> {
-		let material = self
-			.material_description
-			.map(|description| description.build());
-
-		Ok(Visual {
+	pub(crate) fn build(self) -> Collision {
+		Collision {
 			name: self.name,
 			origin: self.origin,
 			geometry: self.geometry,
-			material,
-		})
+		}
 	}
 
 	pub(crate) fn get_geometry_data(&self) -> GeometryShapeData {
@@ -80,27 +59,33 @@ impl VisualBuilder {
 	}
 }
 
-impl PartialEq for VisualBuilder {
+impl PartialEq for CollisionBuilder {
 	fn eq(&self, other: &Self) -> bool {
 		self.name == other.name
 			&& self.origin == other.origin
 			&& &(*self.geometry) == &(*other.geometry)
-			&& self.material_description == other.material_description
 	}
 }
 
-impl Clone for VisualBuilder {
+impl Clone for CollisionBuilder {
 	fn clone(&self) -> Self {
 		Self {
 			name: self.name.clone(),
-			origin: self.origin,
+			origin: self.origin.clone(),
 			geometry: self.geometry.boxed_clone(),
-			material_description: self.material_description.clone(),
 		}
+	}
+}
+
+/// TODO: Decide if this is ok?
+impl From<CollisionBuilder> for Collision {
+	fn from(value: CollisionBuilder) -> Self {
+		value.build()
 	}
 }
 
 #[cfg(test)]
 mod tests {
+	// use test_log::test;
 	// TODO: Write tests
 }

@@ -5,9 +5,11 @@ use crate::{
 	KinematicTree, WeakLock,
 };
 
+mod collision_builder;
 mod linkbuilder;
 mod visual_builder;
 
+pub use collision_builder::CollisionBuilder;
 pub use linkbuilder::LinkBuilder;
 pub use visual_builder::VisualBuilder;
 

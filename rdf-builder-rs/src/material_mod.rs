@@ -113,7 +113,7 @@ mod tests {
 		#[test]
 		fn color_name_ref() {
 			let tree = LinkBuilder::new("link")
-				.add_visual(VisualBuilder::new(
+				.add_visual(VisualBuilder::new_full(
 					None,
 					None,
 					BoxGeometry::new(1., 1., 1.),
@@ -170,7 +170,7 @@ mod tests {
 		#[test]
 		fn texture_name_ref() {
 			let tree = LinkBuilder::new("link")
-				.add_visual(VisualBuilder::new(
+				.add_visual(VisualBuilder::new_full(
 					None,
 					None,
 					BoxGeometry::new(1., 1., 1.),

@@ -79,10 +79,7 @@ where
 	) -> Self {
 		let mut joint_builder = JointBuilder::new(value.name, value.joint_type.into());
 
-		if value.offset.is_some() || value.rotation.is_some() {
-			joint_builder.with_origin(value.offset);
-			todo!("TRANSLATION")
-		}
+		joint_builder.with_origin(value.origin.unwrap_or_default());
 
 		value.axis.simplify(&mut joint_builder);
 		value.calibration.simplify(&mut joint_builder);

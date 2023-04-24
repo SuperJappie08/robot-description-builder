@@ -10,6 +10,27 @@ pub struct TransformData {
 }
 
 impl TransformData {
+	pub fn new_translation(x: f32, y: f32, z: f32) -> Self {
+		Self {
+			translation: Some((x, y, z)),
+			..Default::default()
+		}
+	}
+
+	pub fn new_rotation(r: f32, p: f32, y: f32) -> Self {
+		Self {
+			rotation: Some((r, p, y)),
+			..Default::default()
+		}
+	}
+
+	pub fn new(xyz: (f32, f32, f32), rpy: (f32, f32, f32)) -> Self {
+		Self {
+			translation: Some(xyz),
+			rotation: Some(rpy),
+		}
+	}
+
 	/// A function to check if any of the fields are set.
 	///
 	/// It doesn't check if the some fields have the default value, since it can be format depended.
@@ -59,6 +80,32 @@ impl TransformData {
 	}
 }
 
+// FIXME: TODO: MAYBE UUSE ndarray instead?
+// Or euclid or euler
+
+// impl std::ops::Add for TransformData {
+// 	type Output = TransformData;
+
+// 	fn add(self, rhs: Self) -> Self::Output {
+// 		match (self.contains_some(), rhs.contains_some()) {
+// 			(true, true) => Self {
+// 				translation: match (self.translation, rhs.translation) {
+// 					(Some(lhs), Some(rhs)) => Some((lhs.0 + rhs.0, lhs.1 + rhs.1, lhs.2 + rhs.2)),
+// 					(own_translation, None) => own_translation,
+// 					(None, rhs_translation) => rhs_translation,
+// 				},
+// 				rotation: match (self.rotation, rhs.rotation) {
+// 					(Some(lhs), Some(rhs)) => Some((lhs.0 + rhs.0, lhs.1 + rhs.1, lhs.2 + rhs.2)),
+// 					(own_rot, None) => own_rot,
+// 					(None, rhs_rot) => rhs_rot,
+// 				},
+// 			},
+// 			(false, true) => rhs,
+// 			(_, false) => self,
+// 		}
+// 	}
+// }
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum MirrorAxis {
 	X,
@@ -97,7 +144,7 @@ impl ToURDF for TransformData {
 	}
 }
 
-impl From<TransformData> for crate::joint::JointBuilderTransformMode {
+impl From<TransformData> for crate::joint::JointTransformMode {
 	fn from(value: TransformData) -> Self {
 		Self::Direct(value)
 	}

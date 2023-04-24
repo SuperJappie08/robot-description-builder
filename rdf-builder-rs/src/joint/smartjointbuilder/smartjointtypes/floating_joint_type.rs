@@ -103,10 +103,7 @@ impl
 		#[cfg(any(feature = "logging", test))]
 		log::warn!("Floating Joints are kind of broken, si it is very likely it won't work in your simulator. Use at you own risk!");
 
-		if value.offset.is_some() || value.rotation.is_some() {
-			joint_builder.with_origin(value.offset);
-			todo!("OFFSET ROTATION")
-		}
+		joint_builder.with_origin(value.origin.unwrap_or_default());
 
 		// Probably unneccessary
 		value.axis.simplify(&mut joint_builder);

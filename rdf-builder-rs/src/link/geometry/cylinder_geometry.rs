@@ -3,7 +3,7 @@ use std::f32::consts::{PI, TAU};
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
-use crate::link::geometry::GeometryInterface;
+use crate::link::geometry::{geometry_shape_data::GeometryShapeContainer, GeometryInterface};
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
 
@@ -61,13 +61,13 @@ impl GeometryInterface for CylinderGeometry {
 		Box::new(self.clone())
 	}
 
-	// fn get_type(&self) -> GeometryType {
-	// 	GeometryType::Cylinder
-	// }
+	fn bounding_box(&self) -> (f32, f32, f32) {
+		(2. * self.radius, 2. * self.radius, self.length)
+	}
 
-	// fn get_data(&self) -> GeometryData {
-	// 	GeometryData::Cylinder(self.clone())
-	// }
+	fn try_get_shape(&self) -> Result<GeometryShapeContainer, ()> {
+		Ok(self.clone().into())
+	}
 }
 
 impl From<CylinderGeometry> for Box<dyn GeometryInterface + Sync + Send> {
@@ -83,7 +83,10 @@ mod tests {
 	use std::io::Seek;
 	use test_log::test;
 
-	use crate::link::geometry::{cylinder_geometry::CylinderGeometry, GeometryInterface};
+	use crate::link::geometry::{
+		cylinder_geometry::CylinderGeometry, geometry_shape_data::GeometryShapeContainer,
+		GeometryInterface,
+	};
 
 	#[cfg(feature = "urdf")]
 	use crate::to_rdf::to_urdf::{ToURDF, URDFConfig};
@@ -124,6 +127,54 @@ mod tests {
 		assert_eq!(
 			CylinderGeometry::new(4.5, 75.35).boxed_clone(),
 			CylinderGeometry::new(4.5, 75.35).into()
+		);
+	}
+
+	#[test]
+	fn bounding_box() {
+		assert_eq!(
+			CylinderGeometry::new(1.0, 1.0).bounding_box(),
+			(2.0, 2.0, 1.0)
+		);
+		assert_eq!(
+			CylinderGeometry::new(2.0, 3.0).bounding_box(),
+			(4.0, 4.0, 3.0)
+		);
+		assert_eq!(
+			CylinderGeometry::new(9.0, 20.0).bounding_box(),
+			(18.0, 18.0, 20.)
+		);
+		assert_eq!(
+			CylinderGeometry::new(4.5, 75.35).bounding_box(),
+			(9., 9., 75.35)
+		);
+	}
+
+	#[test]
+	fn try_get_shape() {
+		assert_eq!(
+			CylinderGeometry::new(1.0, 1.0).try_get_shape(),
+			Ok(GeometryShapeContainer::Cylinder(CylinderGeometry::new(
+				1.0, 1.0
+			)))
+		);
+		assert_eq!(
+			CylinderGeometry::new(2.0, 3.0).try_get_shape(),
+			Ok(GeometryShapeContainer::Cylinder(CylinderGeometry::new(
+				2.0, 3.0
+			)))
+		);
+		assert_eq!(
+			CylinderGeometry::new(9.0, 20.0).try_get_shape(),
+			Ok(GeometryShapeContainer::Cylinder(CylinderGeometry::new(
+				9.0, 20.0
+			)))
+		);
+		assert_eq!(
+			CylinderGeometry::new(4.5, 75.35).try_get_shape(),
+			Ok(GeometryShapeContainer::Cylinder(CylinderGeometry::new(
+				4.5, 75.35
+			)))
 		);
 	}
 

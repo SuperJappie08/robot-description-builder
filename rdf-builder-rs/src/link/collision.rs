@@ -3,13 +3,16 @@ use quick_xml::{events::attributes::Attribute, name::QName};
 
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
-use crate::{link::geometry::GeometryInterface, transform_data::TransformData};
+use crate::{
+	link::geometry::GeometryInterface, linkbuilding::CollisionBuilder,
+	transform_data::TransformData,
+};
 
 #[derive(Debug)]
 pub struct Collision {
 	/// TODO: Figure out if I want to keep the name optional?.
-	pub name: Option<String>,
-	origin: Option<TransformData>,
+	pub(crate) name: Option<String>,
+	pub(crate) origin: Option<TransformData>,
 
 	/// Figure out if this needs to be public or not
 	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
@@ -39,6 +42,14 @@ impl Collision {
 
 	pub fn get_geometry(&self) -> &Box<dyn GeometryInterface + Sync + Send> {
 		&self.geometry
+	}
+
+	pub fn rebuild(&self) -> CollisionBuilder {
+		CollisionBuilder {
+			name: self.name.clone(),
+			origin: self.origin.clone(),
+			geometry: self.geometry.boxed_clone(),
+		}
 	}
 }
 
@@ -74,7 +85,7 @@ impl PartialEq for Collision {
 	fn eq(&self, other: &Self) -> bool {
 		self.name == other.name
 			&& self.origin == other.origin
-			&& (&self.geometry == &other.geometry)
+			&& &(*self.geometry) == &(*other.geometry)
 	}
 }
 

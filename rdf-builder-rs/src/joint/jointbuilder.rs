@@ -2,12 +2,12 @@ use std::sync::{Arc, RwLock, Weak};
 
 use crate::{
 	cluster_objects::kinematic_data_tree::KinematicDataTree,
-	joint::{joint_data, Joint, JointType, OffsetMode},
+	joint::{joint_data, joint_tranform_mode::JointTransformMode, Joint, JointType},
 	link::{
 		builder::{BuildLink, LinkBuilder},
 		Link, LinkShapeData,
 	},
-	transform_data::{MirrorAxis, TransformData},
+	transform_data::MirrorAxis,
 	ArcLock, WeakLock,
 };
 
@@ -32,57 +32,12 @@ pub(crate) trait BuildJointChain {
 	) -> ArcLock<Joint>;
 }
 
-#[derive(Debug, PartialEq, Clone)]
-pub enum JointBuilderTransformMode {
-	Direct(TransformData),
-	FigureItOut,
-}
-
-impl JointBuilderTransformMode {
-	fn apply(self, _parent_link_data: LinkShapeData) -> TransformData {
-		match self {
-			JointBuilderTransformMode::Direct(transform) => transform,
-			JointBuilderTransformMode::FigureItOut => todo!(),
-		}
-	}
-
-	fn mirrored(&self, axis: MirrorAxis) -> Self {
-		match self {
-			JointBuilderTransformMode::Direct(tranform) => tranform.mirrored(axis).into(),
-			JointBuilderTransformMode::FigureItOut => todo!(),
-		}
-	}
-}
-
-impl Default for JointBuilderTransformMode {
-	fn default() -> Self {
-		Self::Direct(TransformData::default())
-	}
-}
-
-impl From<Option<OffsetMode>> for JointBuilderTransformMode {
-	fn from(value: Option<OffsetMode>) -> Self {
-		match value {
-			Some(OffsetMode::FigureItOut(_)) => {
-				#[cfg(any(test, feature = "logging"))]
-				log::warn!("This is not finished yet");
-				Self::FigureItOut
-			}
-			Some(OffsetMode::Offset(x, y, z)) => Self::Direct(TransformData {
-				translation: Some((x, y, z)),
-				..Default::default()
-			}),
-			None => Self::default(),
-		}
-	}
-}
-
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct JointBuilder {
 	pub(crate) name: String,
 	pub(crate) joint_type: JointType, // TODO: FINISH ME
 	/// TODO: Maybe add a Figure it out???
-	pub(crate) origin: JointBuilderTransformMode,
+	pub(crate) origin: JointTransformMode,
 	pub(crate) child: Option<LinkBuilder>,
 
 	/// TODO: DO SOMETHING WITH THIS
@@ -106,16 +61,16 @@ impl JointBuilder {
 
 	pub fn add_origin_offset(mut self, offset: (f32, f32, f32)) -> Self {
 		match &mut self.origin {
-			JointBuilderTransformMode::Direct(transform) => transform.translation = Some(offset),
-			JointBuilderTransformMode::FigureItOut => todo!("Don't know how to do this"),
+			JointTransformMode::Direct(transform) => transform.translation = Some(offset),
+			JointTransformMode::FigureItOut(_) => todo!("Don't know how to do this"),
 		};
 		self
 	}
 
 	pub fn add_origin_rotation(mut self, rotation: (f32, f32, f32)) -> Self {
 		match &mut self.origin {
-			JointBuilderTransformMode::Direct(tranform) => tranform.rotation = Some(rotation),
-			JointBuilderTransformMode::FigureItOut => todo!("Don't know how to do this yet"),
+			JointTransformMode::Direct(tranform) => tranform.rotation = Some(rotation),
+			JointTransformMode::FigureItOut(_) => todo!("Don't know how to do this yet"),
 		}
 		self
 	}
@@ -123,9 +78,9 @@ impl JointBuilder {
 	/// Nominated for Deprication
 	/// Maybe Not??
 	#[inline]
-	pub(crate) fn with_origin<OriginMode>(&mut self, origin: OriginMode)
+	pub(crate) fn with_origin<JTM>(&mut self, origin: JTM)
 	where
-		OriginMode: Into<JointBuilderTransformMode>,
+		JTM: Into<JointTransformMode>,
 	{
 		self.origin = origin.into();
 	}

@@ -5,6 +5,7 @@ use quick_xml::{events::attributes::Attribute, name::QName};
 use crate::to_rdf::to_urdf::ToURDF;
 use crate::{
 	link::{builder::VisualBuilder, geometry::GeometryInterface},
+	link_data::geometry::GeometryShapeData,
 	material_mod::{Material, MaterialBuilder},
 	transform_data::TransformData,
 };
@@ -29,7 +30,7 @@ impl Visual {
 		geometry: Geometry,
 		material_description: Option<MaterialBuilder>,
 	) -> VisualBuilder {
-		VisualBuilder::new(name, origin, geometry, material_description)
+		VisualBuilder::new_full(name, origin, geometry, material_description)
 	}
 
 	/// Maybe temp
@@ -78,6 +79,13 @@ impl Visual {
 			material_description: self.material.as_ref().map(|material| material.rebuild()), // UNWRAP???
 		}
 	}
+
+	pub(crate) fn get_geometry_data(&self) -> GeometryShapeData {
+		GeometryShapeData {
+			origin: self.origin.unwrap_or_default(),
+			geometry: self.geometry.try_get_shape().unwrap(), // FIXME: Is unwrap OK?, for now Ok until Mesh gets supported
+		}
+	}
 }
 
 #[cfg(feature = "urdf")]
@@ -114,7 +122,7 @@ impl PartialEq for Visual {
 	fn eq(&self, other: &Self) -> bool {
 		self.name == other.name
 			&& self.origin == other.origin
-			&& (&self.geometry == &other.geometry)
+			&& &(*self.geometry) == &(*other.geometry)
 			&& match (&self.material, &other.material) {
 				(None, None) => true,
 				(Some(own_material), Some(other_material)) => {

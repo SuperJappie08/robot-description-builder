@@ -15,7 +15,7 @@ impl ChainableBuilder for LinkBuilder {
 
 impl BuildLink for Chained<LinkBuilder> {
 	fn build(self, _tree: &Weak<KinematicDataTree>) -> ArcLock<Link> {
-		panic!("build should not be able to be called?")
+		unimplemented!("build should not be able to be called?")
 	}
 
 	fn start_building_chain(self, tree: &Weak<KinematicDataTree>) -> ArcLock<Link> {
@@ -27,11 +27,11 @@ impl BuildLink for Chained<LinkBuilder> {
 		_tree: &Weak<KinematicDataTree>,
 		_parent_joint: &WeakLock<Joint>,
 	) -> ArcLock<Link> {
-		panic!("build_chain should not be able to be called?")
+		unimplemented!("build_chain should not be able to be called?")
 	}
 
 	fn get_shape_data(&self) -> crate::link::LinkShapeData {
-		panic!("get_shape_data should not be able to be called?")
+		unimplemented!("get_shape_data should not be able to be called?")
 	}
 }
 

@@ -21,7 +21,7 @@ pub fn new_quick_link<Name: Into<String>>(
 
 	let mut visual_name = link_name.clone();
 	visual_name.push_str("_visual");
-	link = link.add_visual(VisualBuilder::new(
+	link = link.add_visual(VisualBuilder::new_full(
 		visual_name.into(),
 		None, // TODO: NOT HOW I WANT IT
 		geometry.boxed_clone(),

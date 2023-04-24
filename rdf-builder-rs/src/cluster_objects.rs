@@ -123,7 +123,7 @@ pub trait KinematicInterface {
 		let builder = self
 			.get_link(name)
 			.map(|link| link.try_read().unwrap().yank()) // FIXME: Is unwrap ok here?
-			.map(|builder| Chained(builder));
+			.map(Chained);
 		self.purge_joints().unwrap(); // FIXME: Is unwrap ok here?
 		self.purge_links().unwrap(); // FIXME: Is unwrap ok here?
 		builder
@@ -133,7 +133,7 @@ pub trait KinematicInterface {
 		let builder = self
 			.get_joint(name)
 			.map(|joint| joint.try_read().unwrap().yank()) // FIXME: Is unwrap ok here?
-			.map(|builder| Chained(builder));
+			.map(Chained);
 		self.purge_joints().unwrap(); // FIXME: Is unwrap ok here?
 		self.purge_links().unwrap(); // FIXME: Is unwrap ok here?
 		builder

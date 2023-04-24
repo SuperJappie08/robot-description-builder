@@ -82,7 +82,7 @@ where
 	) -> Self {
 		let mut joint_builder = JointBuilder::new(value.name, value.joint_type.into());
 
-		joint_builder.with_origin(value.offset);
+		joint_builder.with_origin(value.origin.unwrap_or_default());
 
 		value.axis.simplify(&mut joint_builder);
 		value.calibration.simplify(&mut joint_builder);

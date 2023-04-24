@@ -25,6 +25,7 @@ pub mod link_data {
 		pub use crate::link::geometry::*;
 	}
 
+	/// TODO: Depricate or Implement?
 	#[derive(Debug, PartialEq, Eq, Clone)]
 	pub enum ConnectionPoint {
 		/// Point at Link connection point (Link Origin without translation)
@@ -324,10 +325,12 @@ impl Link {
 		builder
 	}
 
-	fn get_shape_data(&self) -> LinkShapeData {
-		// FIXME: FINISH THIS
-		// THIS SHOULD CONTAIN A BOUNDING BOX AND STUFF
-		LinkShapeData::Box
+	pub(crate) fn get_shape_data(&self) -> LinkShapeData {
+		LinkShapeData::new(
+			self.get_visuals()
+				.iter()
+				.map(|visual| visual.get_geometry_data()),
+		)
 	}
 }
 

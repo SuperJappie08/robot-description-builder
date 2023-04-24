@@ -3,7 +3,7 @@ use std::f32::consts::{FRAC_PI_3, PI};
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
-use crate::link::geometry::GeometryInterface;
+use crate::link::geometry::{geometry_shape_data::GeometryShapeContainer, GeometryInterface};
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
 
@@ -56,13 +56,14 @@ impl GeometryInterface for SphereGeometry {
 		Box::new(self.clone())
 	}
 
-	// fn get_type(&self) -> GeometryType {
-	// GeometryType::Sphere
-	// }
+	fn bounding_box(&self) -> (f32, f32, f32) {
+		let diameter = 2. * self.radius;
+		(diameter, diameter, diameter)
+	}
 
-	// fn get_data(&self) -> GeometryData {
-	// GeometryData::Sphere(self.clone())
-	// }
+	fn try_get_shape(&self) -> Result<GeometryShapeContainer, ()> {
+		Ok(self.clone().into())
+	}
 }
 
 impl From<SphereGeometry> for Box<dyn GeometryInterface + Sync + Send> {
@@ -78,7 +79,10 @@ mod tests {
 	use std::io::Seek;
 	use test_log::test;
 
-	use crate::link::geometry::{sphere_geometry::SphereGeometry, GeometryInterface};
+	use crate::link::geometry::{
+		geometry_shape_data::GeometryShapeContainer, sphere_geometry::SphereGeometry,
+		GeometryInterface,
+	};
 	#[cfg(feature = "urdf")]
 	use crate::to_rdf::to_urdf::{ToURDF, URDFConfig};
 
@@ -121,6 +125,37 @@ mod tests {
 		assert_eq!(
 			SphereGeometry::new(75.35).boxed_clone(),
 			SphereGeometry::new(75.35).into()
+		);
+	}
+
+	#[test]
+	fn bounding_box() {
+		assert_eq!(SphereGeometry::new(1.0).bounding_box(), (2., 2., 2.));
+		assert_eq!(SphereGeometry::new(2.0).bounding_box(), (4., 4., 4.));
+		assert_eq!(SphereGeometry::new(9.0).bounding_box(), (18., 18., 18.));
+		assert_eq!(
+			SphereGeometry::new(75.35).bounding_box(),
+			(150.7, 150.7, 150.7)
+		);
+	}
+
+	#[test]
+	fn try_get_shape() {
+		assert_eq!(
+			SphereGeometry::new(1.0).try_get_shape(),
+			Ok(GeometryShapeContainer::Sphere(SphereGeometry::new(1.0)))
+		);
+		assert_eq!(
+			SphereGeometry::new(2.0).try_get_shape(),
+			Ok(GeometryShapeContainer::Sphere(SphereGeometry::new(2.0)))
+		);
+		assert_eq!(
+			SphereGeometry::new(9.0).try_get_shape(),
+			Ok(GeometryShapeContainer::Sphere(SphereGeometry::new(9.0)))
+		);
+		assert_eq!(
+			SphereGeometry::new(75.35).try_get_shape(),
+			Ok(GeometryShapeContainer::Sphere(SphereGeometry::new(75.35)))
 		);
 	}
 

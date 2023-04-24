@@ -7,7 +7,7 @@ use crate::{
 	joint::{BuildJointChain, Joint, JointBuilder},
 	link::{
 		builder::{visual_builder::VisualBuilder, BuildLink},
-		link_data, Link, LinkParent,
+		link_data, Link, LinkParent, LinkShapeData,
 	},
 	ArcLock, KinematicTree, WeakLock,
 };
@@ -39,8 +39,8 @@ impl LinkBuilder {
 	}
 
 	/// TODO: Not really sure if this is the way... but it is how clap does it.
-	pub fn add_collider(mut self, collider: link_data::Collision) -> Self {
-		self.colliders.push(collider);
+	pub fn add_collider<Col: Into<link_data::Collision>>(mut self, collider: Col) -> Self {
+		self.colliders.push(collider.into());
 		self
 	}
 
@@ -152,15 +152,104 @@ impl BuildLink for LinkBuilder {
 		})
 	}
 
-	fn get_shape_data(&self) -> crate::link::LinkShapeData {
-		// TODO: FIX THIS
-		crate::link::LinkShapeData::Box
+	fn get_shape_data(&self) -> LinkShapeData {
+		LinkShapeData::new(
+			self.get_visuals()
+				.iter()
+				.map(|visual| visual.get_geometry_data()),
+		)
 	}
 }
 
 #[cfg(test)]
 mod tests {
-	// use test_log::test;
-
+	use crate::{
+		link::{
+			builder::{BuildLink, LinkBuilder, VisualBuilder},
+			geometry::{BoxGeometry, GeometryShapeData, SphereGeometry},
+			link_shape_data::LinkShapeData,
+		},
+		link_data::geometry::CylinderGeometry,
+		linkbuilding::CollisionBuilder,
+		transform_data::TransformData,
+	};
+	use test_log::test;
 	//TODO: Write test
+
+	#[test]
+	fn get_shape_data() {
+		{
+			let link_builder = LinkBuilder::new("a Link");
+
+			assert_eq!(
+				link_builder.get_shape_data(),
+				LinkShapeData {
+					main_geometry: GeometryShapeData {
+						origin: TransformData::default(),
+						geometry: SphereGeometry::new(0.).into()
+					},
+					geometries: vec![GeometryShapeData {
+						origin: TransformData::default(),
+						geometry: SphereGeometry::new(0.).into()
+					}]
+				}
+			)
+		}
+		{
+			let link_builder = LinkBuilder::new("a Link")
+				.add_visual(
+					VisualBuilder::new(BoxGeometry::new(10., 20., 30.)).named("a link's visual"),
+				)
+				.add_collider(
+					CollisionBuilder::new(SphereGeometry::new(3.)).named("this does not get used"),
+				);
+
+			assert_eq!(
+				link_builder.get_shape_data(),
+				LinkShapeData {
+					main_geometry: GeometryShapeData {
+						origin: TransformData::default(),
+						geometry: BoxGeometry::new(10., 20., 30.).into()
+					},
+					geometries: vec![GeometryShapeData {
+						origin: TransformData::default(),
+						geometry: BoxGeometry::new(10., 20., 30.).into()
+					}]
+				}
+			)
+		}
+		{
+			let link_builder = LinkBuilder::new("a Link")
+				.add_visual(
+					VisualBuilder::new(CylinderGeometry::new(1., 2.))
+						.tranformed(TransformData::new_translation(5., 0., 16.)),
+				)
+				.add_visual(
+					VisualBuilder::new(BoxGeometry::new(10., 20., 30.)).named("a link's visual"),
+				)
+				.add_collider(
+					CollisionBuilder::new(SphereGeometry::new(3.)).named("this does not get used"),
+				);
+
+			assert_eq!(
+				link_builder.get_shape_data(),
+				LinkShapeData {
+					main_geometry: GeometryShapeData {
+						origin: TransformData::new_translation(5., 0., 16.),
+						geometry: CylinderGeometry::new(1., 2.).into()
+					},
+					geometries: vec![
+						GeometryShapeData {
+							origin: TransformData::new_translation(5., 0., 16.),
+							geometry: CylinderGeometry::new(1., 2.).into()
+						},
+						GeometryShapeData {
+							origin: TransformData::default(),
+							geometry: BoxGeometry::new(10., 20., 30.).into()
+						}
+					]
+				}
+			)
+		}
+	}
 }

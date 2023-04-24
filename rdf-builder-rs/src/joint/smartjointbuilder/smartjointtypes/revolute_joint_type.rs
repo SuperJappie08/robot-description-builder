@@ -85,20 +85,7 @@ where
 	) -> Self {
 		let mut joint_builder = JointBuilder::new(value.name, value.joint_type.into());
 
-		// if let Some(mode) = self.offset {
-		// 	// todo!("BUILD FUNCTIOn")
-		// 	joint_builder = match mode {
-		// 		OffsetMode::Offset(x, y, z) => joint_builder.add_origin_offset((x, y, z)),
-		// 		OffsetMode::FigureItOut(_) => todo!(),
-		// 	}
-		// }
-		//
-		// if let Some(rotation) = self.rotation {
-		// 	// TODO: MAKE SMARTER
-		// 	joint_builder = joint_builder.add_origin_rotation(rotation)
-		// }
-
-		joint_builder.with_origin(value.offset);
+		joint_builder.with_origin(value.origin.unwrap_or_default());
 
 		value.axis.simplify(&mut joint_builder);
 		value.calibration.simplify(&mut joint_builder);

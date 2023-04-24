@@ -1,12 +1,14 @@
+mod joint_tranform_mode;
 mod jointbuilder;
 mod smartjointbuilder;
 
 /// TODO: Pub(crate) for now
 pub(crate) mod joint_data;
 
+pub use joint_tranform_mode::JointTransformMode;
 pub(crate) use jointbuilder::BuildJointChain;
-pub use jointbuilder::{BuildJoint, JointBuilder, JointBuilderTransformMode};
-pub use smartjointbuilder::{OffsetMode, SmartJointBuilder};
+pub use jointbuilder::{BuildJoint, JointBuilder};
+pub use smartjointbuilder::SmartJointBuilder;
 
 #[cfg(feature = "xml")]
 use std::borrow::Cow;
@@ -271,11 +273,7 @@ mod tests {
 
 	use crate::{
 		cluster_objects::KinematicInterface,
-		joint::{
-			joint_data,
-			smartjointbuilder::{OffsetMode, SmartJointBuilder},
-			JointBuilder, JointType,
-		},
+		joint::{joint_data, smartjointbuilder::SmartJointBuilder, JointBuilder, JointType},
 		link::{
 			builder::LinkBuilder,
 			link_data::{
@@ -298,7 +296,10 @@ mod tests {
 				LinkBuilder::new("child"),
 				SmartJointBuilder::new("Joint1")
 					.fixed()
-					.add_offset(OffsetMode::Offset(2.0, 3.0, 5.0)),
+					.add_transform(TransformData {
+						translation: (2.0, 3.0, 5.0).into(),
+						..Default::default()
+					}),
 			)
 			.unwrap();
 
@@ -353,7 +354,7 @@ mod tests {
 						Some(material_red.clone()),
 					)),
 				SmartJointBuilder::new("joint-0")
-					.add_offset(OffsetMode::Offset(1.0, 0., 0.))
+					.add_transform(TransformData::new_translation(1.0, 0., 0.))
 					.fixed(),
 			)
 			.unwrap();
@@ -475,7 +476,7 @@ mod tests {
 							)),
 							SmartJointBuilder::new("joint-1-1")
 								.revolute()
-								.add_offset(OffsetMode::Offset(4., 0., 0.))
+								.add_transform(TransformData::new_translation(4., 0., 0.))
 								.with_axis((0., 0., 1.))
 								.with_limit(100., 1000.)
 								.set_upper_limit(std::f32::consts::FRAC_PI_6)
@@ -486,7 +487,7 @@ mod tests {
 					tmp_tree
 				},
 				SmartJointBuilder::new("joint-0")
-					.add_offset(OffsetMode::Offset(1.0, 0., 0.))
+					.add_transform(TransformData::new_translation(1.0, 0., 0.))
 					.fixed(),
 			)
 			.unwrap();
