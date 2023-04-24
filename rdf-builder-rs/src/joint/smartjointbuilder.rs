@@ -60,8 +60,8 @@ where
 impl
 	SmartJointBuilder<NoType, NoAxis, NoCalibration, NoDynamics, NoLimit, NoMimic, NoSafetyController>
 {
-	pub fn new<Name: Into<String>>(
-		name: Name,
+	pub fn new(
+		name: impl Into<String>,
 	) -> SmartJointBuilder<
 		NoType,
 		NoAxis,
@@ -80,8 +80,8 @@ impl
 
 	/// TODO: Maybe do it like this
 	/// I Like it...
-	pub fn new_revolute<Name: Into<String>>(
-		name: Name,
+	pub fn new_revolute(
+		name: impl Into<String>,
 	) -> SmartJointBuilder<
 		RevoluteType,
 		NoAxis,
@@ -94,8 +94,8 @@ impl
 		Self::new(name).revolute()
 	}
 
-	pub fn new_continuous<Name: Into<String>>(
-		name: Name,
+	pub fn new_continuous(
+		name: impl Into<String>,
 	) -> SmartJointBuilder<
 		ContinuousType,
 		NoAxis,
@@ -108,8 +108,8 @@ impl
 		Self::new(name).continuous()
 	}
 
-	pub fn new_prismatic<Name: Into<String>>(
-		name: Name,
+	pub fn new_prismatic(
+		name: impl Into<String>,
 	) -> SmartJointBuilder<
 		PrismaticType,
 		NoAxis,
@@ -122,8 +122,8 @@ impl
 		Self::new(name).prismatic()
 	}
 
-	pub fn new_fixed<Name: Into<String>>(
-		name: Name,
+	pub fn new_fixed(
+		name: impl Into<String>,
 	) -> SmartJointBuilder<
 		FixedType,
 		NoAxis,
@@ -136,8 +136,8 @@ impl
 		Self::new(name).fixed()
 	}
 
-	pub fn new_floating<Name: Into<String>>(
-		name: Name,
+	pub fn new_floating(
+		name: impl Into<String>,
 	) -> SmartJointBuilder<
 		FloatingType,
 		NoAxis,
@@ -150,8 +150,8 @@ impl
 		Self::new(name).floating()
 	}
 
-	pub fn new_planar<Name: Into<String>>(
-		name: Name,
+	pub fn new_planar(
+		name: impl Into<String>,
 	) -> SmartJointBuilder<
 		PlanarType,
 		NoAxis,

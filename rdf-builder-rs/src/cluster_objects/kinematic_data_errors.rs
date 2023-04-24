@@ -2,87 +2,122 @@ use thiserror::Error;
 
 use std::{
 	collections::HashMap,
-	sync::{PoisonError, RwLockReadGuard, RwLockWriteGuard},
+	sync::{Arc, PoisonError, Weak},
 };
 
 use crate::{
-	joint::Joint, link::Link, material_mod::Material, transmission::Transmission, ArcLock, WeakLock,
+	joint::Joint, link::Link, material_mod::MaterialData, transmission::Transmission, ArcLock,
+	WeakLock,
 };
+
+use super::kinematic_data_tree::KinematicDataTree;
+
+#[derive(Debug)]
+pub struct ErroredRead<T>(pub T);
+
+#[inline]
+pub(crate) fn errored_read_lock<T>(
+	errored_lock: &ArcLock<T>,
+) -> PoisonError<ErroredRead<ArcLock<T>>> {
+	PoisonError::new(ErroredRead(Arc::clone(errored_lock)))
+}
+
+impl<T> PartialEq for ErroredRead<Arc<T>> {
+	fn eq(&self, other: &Self) -> bool {
+		Arc::ptr_eq(&self.0, &other.0)
+	}
+}
+
+impl<T> PartialEq for ErroredRead<Weak<T>> {
+	fn eq(&self, other: &Self) -> bool {
+		Weak::ptr_eq(&self.0, &other.0)
+	}
+}
+
+#[derive(Debug)]
+pub struct ErroredWrite<T>(pub T);
+
+#[inline]
+pub(crate) fn errored_write_lock<T>(
+	errored_lock: &ArcLock<T>,
+) -> PoisonError<ErroredWrite<ArcLock<T>>> {
+	PoisonError::new(ErroredWrite(Arc::clone(errored_lock)))
+}
+
+impl<T> PartialEq for ErroredWrite<Arc<T>> {
+	fn eq(&self, other: &Self) -> bool {
+		Arc::ptr_eq(&self.0, &other.0)
+	}
+}
+
+impl<T> PartialEq for ErroredWrite<Weak<T>> {
+	fn eq(&self, other: &Self) -> bool {
+		Weak::ptr_eq(&self.0, &other.0)
+	}
+}
 
 #[derive(Debug, Error)]
 pub enum AddMaterialError {
-	#[error("Read Material Error")]
-	ReadMaterial, //(PoisonError<RwLockReadGuard<'a, Material>>),
-	#[error("Read MaterialIndex Error")]
-	ReadIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, ArcLock<Material>>>>),
-	#[error("Write MaterialIndex Error")]
-	WriteIndex, //(PoisonError<RwLockWriteGuard<'a, HashMap<String, ArcLock<Material>>>>),
+	/// Error that results from `PoisonError<RwLockReadGuard<'_, MaterialData>>` occurs when attempting to read a poisoned `Arc<RwLock<MaterialData>>`.
+	#[error("Read Material Error: {0}")]
+	ReadMaterial(#[from] PoisonError<ErroredRead<ArcLock<MaterialData>>>),
+	/// Error that results from `PoisonError<RwLockReadGuard<'_, HashMap<String, ArcLock<MaterialData>>>>` occurs when attempting to read a poisoned `HashMap<String, ArcLock<MaterialData>>`.
+	#[error("Read MaterialIndex Error: {0}")]
+	ReadIndex(#[from] PoisonError<ErroredRead<ArcLock<HashMap<String, ArcLock<MaterialData>>>>>),
+	/// Error that results from `PoisonError<RwLockWriteGuard<'_, HashMap<String, ArcLock<MaterialData>>>>` occurs when attempting to write to a poisoned `HashMap<String, ArcLock<MaterialData>>`.
+	#[error("Write MaterialIndex Error: {0}")]
+	WriteIndex(#[from] PoisonError<ErroredWrite<ArcLock<HashMap<String, ArcLock<MaterialData>>>>>),
 	#[error("Duplicate Material name '{0}'")]
 	Conflict(String),
-	/// To be returned when the material has no name to index by.
-	#[error("The material has no name, to be used as index.")]
-	NoName,
 }
 
-impl From<PoisonError<RwLockReadGuard<'_, Material>>> for AddMaterialError {
-	fn from(_value: PoisonError<RwLockReadGuard<'_, Material>>) -> Self {
-		Self::ReadMaterial //(value)
-	}
-}
-
-impl From<PoisonError<RwLockReadGuard<'_, HashMap<String, ArcLock<Material>>>>>
-	for AddMaterialError
-{
-	fn from(_value: PoisonError<RwLockReadGuard<'_, HashMap<String, ArcLock<Material>>>>) -> Self {
-		Self::ReadIndex //(value)
-	}
-}
-
-impl From<PoisonError<RwLockWriteGuard<'_, HashMap<String, ArcLock<Material>>>>>
-	for AddMaterialError
-{
-	fn from(_value: PoisonError<RwLockWriteGuard<'_, HashMap<String, ArcLock<Material>>>>) -> Self {
-		Self::WriteIndex //(value)
+impl PartialEq for AddMaterialError {
+	fn eq(&self, other: &Self) -> bool {
+		match (self, other) {
+			(Self::ReadMaterial(l0), Self::ReadMaterial(r0)) => l0.get_ref() == r0.get_ref(),
+			(Self::ReadIndex(l0), Self::ReadIndex(r0)) => l0.get_ref() == r0.get_ref(),
+			(Self::WriteIndex(l0), Self::WriteIndex(r0)) => l0.get_ref() == r0.get_ref(),
+			(Self::Conflict(l0), Self::Conflict(r0)) => l0 == r0,
+			_ => false,
+		}
 	}
 }
 
 #[derive(Debug, Error)]
 pub enum AddLinkError {
-	#[error("Read Link Error")]
-	ReadLink, //(PoisonError<RwLockReadGuard<'a, Link>>),
-	#[error("Read LinkIndex Error")]
-	ReadIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, WeakLock<Link>>>>),
-	#[error("Write LinkIndex Error")]
-	WriteIndex, //(PoisonError<RwLockWriteGuard<'a, HashMap<String, WeakLock<Link>>>>),
+	/// Error that results from `PoisonError<RwLockReadGuard<'_, Link>>` occurs when attempting to read a poisoned `Arc<RwLock<Link>>`.
+	#[error("Read Link Error: {0}")]
+	ReadLink(#[from] PoisonError<ErroredRead<ArcLock<Link>>>),
+	/// Error that results from `PoisonError<RwLockWriteGuard<'_, Link>>` occurs when attempting to write to a poisoned `Arc<RwLock<Link>>`.
+	#[error("Write Link Error: {0}")]
+	WriteLink(#[from] PoisonError<ErroredWrite<ArcLock<Link>>>),
+	/// Error that results from `PoisonError<RwLockReaddGuard<'_, HashMap<String, Weak<RwLock<Link>>>>` occurs when attempting to read a poisoned `Arc<RwLock<HashMap<String, Weak<RwLock<Link>>>>>`.
+	#[error("Read LinkIndex Error: {0}")]
+	ReadIndex(#[from] PoisonError<ErroredRead<ArcLock<HashMap<String, WeakLock<Link>>>>>),
+	/// Error that results from `PoisonError<RwLockWriteGuard<'_, HashMap<String, Weak<RwLock<Link>>>>` occurs when attempting to write to a poisoned `Arc<RwLock<HashMap<String, Weak<RwLock<Link>>>>>`.
+	#[error("Write LinkIndex Error: {0}")]
+	WriteIndex(#[from] PoisonError<ErroredWrite<ArcLock<HashMap<String, WeakLock<Link>>>>>),
 	#[error("Duplicate Link name '{0}'")]
 	Conflict(String),
-}
-
-impl From<PoisonError<RwLockReadGuard<'_, Link>>> for AddLinkError {
-	fn from(_value: PoisonError<RwLockReadGuard<'_, Link>>) -> Self {
-		Self::ReadLink //(value)
-	}
-}
-
-impl From<PoisonError<RwLockReadGuard<'_, HashMap<String, WeakLock<Link>>>>> for AddLinkError {
-	fn from(_value: PoisonError<RwLockReadGuard<'_, HashMap<String, WeakLock<Link>>>>) -> Self {
-		Self::ReadIndex //(value)
-	}
-}
-
-impl From<PoisonError<RwLockWriteGuard<'_, HashMap<String, WeakLock<Link>>>>> for AddLinkError {
-	fn from(_value: PoisonError<RwLockWriteGuard<'_, HashMap<String, WeakLock<Link>>>>) -> Self {
-		Self::WriteIndex //(value)
-	}
+	#[error(transparent)]
+	AddJoint(#[from] Box<AddJointError>),
+	#[error(transparent)]
+	AddMaterial(#[from] AddMaterialError),
+	/// Error that results from `PoisonError<RwLockWriteGuard<'_, Weak<RwLock<Link>>>>` occurs when attempting to write to a poisoned `RwLock<Weak<RwLock<Link>>>>`. (Only used for [`KinematicDataTree`]`.newest_link`)
+	#[error("Accesses `newest_link` failed: {0}")]
+	AccesNewestLink(#[from] PoisonError<ErroredWrite<Arc<KinematicDataTree>>>),
 }
 
 impl PartialEq for AddLinkError {
 	fn eq(&self, other: &Self) -> bool {
 		match (self, other) {
-			(Self::ReadLink, Self::ReadLink) => true,
-			(Self::ReadIndex, Self::ReadIndex) => true,
-			(Self::WriteIndex, Self::WriteIndex) => true,
+			(Self::ReadLink(l0), Self::ReadLink(r0)) => l0.get_ref() == r0.get_ref(),
+			(Self::ReadIndex(l0), Self::ReadIndex(r0)) => l0.get_ref() == r0.get_ref(),
+			(Self::WriteIndex(l0), Self::WriteIndex(r0)) => l0.get_ref() == r0.get_ref(),
 			(Self::Conflict(l0), Self::Conflict(r0)) => l0 == r0,
+			(Self::AddJoint(l0), Self::AddJoint(r0)) => *l0 == *r0,
+			(Self::AddMaterial(l0), Self::AddMaterial(r0)) => l0 == r0,
+			(Self::AccesNewestLink(l0), Self::AccesNewestLink(r0)) => l0.get_ref() == r0.get_ref(),
 			_ => false,
 		}
 	}
@@ -90,41 +125,29 @@ impl PartialEq for AddLinkError {
 
 #[derive(Debug, Error)]
 pub enum AddJointError {
-	#[error("Read Joint Error")]
-	ReadJoint, //(PoisonError<RwLockReadGuard<'a, Joint>>),
-	#[error("Read JointIndex Error")]
-	ReadIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, WeakLock<Joint>>>>),
-	#[error("Write JointIndex Error")]
-	WriteIndex, //(PoisonError<RwLockWriteGuard<'a, HashMap<String, WeakLock<Joint>>>>),
+	/// Error that results from `PoisonError<RwLockReadGuard<'_, Joint>>` occurs when attempting to read a poisoned `Arc<RwLock<Joint>>`.
+	#[error("Read Joint Error: {0}")]
+	ReadJoint(#[from] PoisonError<ErroredRead<ArcLock<Joint>>>),
+	/// Error that results from `PoisonError<RwLockReaddGuard<'_, HashMap<String, Weak<RwLock<Joint>>>>` occurs when attempting to read a poisoned `Arc<RwLock<HashMap<String, Weak<RwLock<Joint>>>>>`.
+	#[error("Read JointIndex Error: {0}")]
+	ReadIndex(#[from] PoisonError<ErroredRead<ArcLock<HashMap<String, WeakLock<Joint>>>>>),
+	/// Error that results from `PoisonError<RwLockWriteGuard<'_, HashMap<String, Weak<RwLock<Joint>>>>` occurs when attempting to write to a poisoned `Arc<RwLock<HashMap<String, Weak<RwLock<Joint>>>>>`.
+	#[error("Write JointIndex Error: {0}")]
+	WriteIndex(#[from] PoisonError<ErroredWrite<ArcLock<HashMap<String, WeakLock<Joint>>>>>),
 	#[error("Duplicate Joint name '{0}'")]
 	Conflict(String),
-}
-
-impl From<PoisonError<RwLockReadGuard<'_, Joint>>> for AddJointError {
-	fn from(_value: PoisonError<RwLockReadGuard<'_, Joint>>) -> Self {
-		Self::ReadJoint //(value)
-	}
-}
-
-impl From<PoisonError<RwLockReadGuard<'_, HashMap<String, WeakLock<Joint>>>>> for AddJointError {
-	fn from(_value: PoisonError<RwLockReadGuard<'_, HashMap<String, WeakLock<Joint>>>>) -> Self {
-		Self::ReadIndex //(value)
-	}
-}
-
-impl From<PoisonError<RwLockWriteGuard<'_, HashMap<String, WeakLock<Joint>>>>> for AddJointError {
-	fn from(_value: PoisonError<RwLockWriteGuard<'_, HashMap<String, WeakLock<Joint>>>>) -> Self {
-		Self::WriteIndex //(value)
-	}
+	#[error(transparent)]
+	AddLink(#[from] Box<AddLinkError>),
 }
 
 impl PartialEq for AddJointError {
 	fn eq(&self, other: &Self) -> bool {
 		match (self, other) {
-			(Self::ReadJoint, Self::ReadJoint) => true,
-			(Self::ReadIndex, Self::ReadIndex) => true,
-			(Self::WriteIndex, Self::WriteIndex) => true,
+			(Self::ReadJoint(l0), Self::ReadJoint(r0)) => l0.get_ref() == r0.get_ref(),
+			(Self::ReadIndex(l0), Self::ReadIndex(r0)) => l0.get_ref() == r0.get_ref(),
+			(Self::WriteIndex(l0), Self::WriteIndex(r0)) => l0.get_ref() == r0.get_ref(),
 			(Self::Conflict(l0), Self::Conflict(r0)) => l0 == r0,
+			(Self::AddLink(l0), Self::AddLink(r0)) => *l0 == *r0,
 			_ => false,
 		}
 	}
@@ -132,48 +155,27 @@ impl PartialEq for AddJointError {
 
 #[derive(Debug, Error)]
 pub enum AddTransmissionError {
-	#[error("Read Transmission Error")]
-	ReadTransmission, //(PoisonError<RwLockReadGuard<'a, Transmission>>),
-	#[error("Read TransmissionIndex Error")]
-	ReadIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, ArcLock<Transmission>>>>),
-	#[error("Write TransmissionIndex Error")]
-	WriteIndex, //(PoisonError<RwLockWriteGuard<'a, HashMap<String, ArcLock<Transmission>>>>),
+	/// Error that results from `PoisonError<RwLockReadGuard<'_, Transmission>>` occurs when attempting to read a poisoned `Arc<RwLock<Transmission>>`.
+	#[error("Read Transmission Error: {0}")]
+	ReadTransmission(#[from] PoisonError<ErroredRead<ArcLock<Transmission>>>),
+	/// Error that results from `PoisonError<RwLockReaddGuard<'_, HashMap<String, Weak<RwLock<Transmission>>>>` occurs when attempting to read a poisoned `Arc<RwLock<HashMap<String, Weak<RwLock<Transmission>>>>>`.
+	#[error("Read TransmissionIndex Error: {0}")]
+	ReadIndex(#[from] PoisonError<ErroredRead<ArcLock<HashMap<String, ArcLock<Transmission>>>>>),
+	/// Error that results from `PoisonError<RwLockWriteGuard<'_, HashMap<String, Weak<RwLock<Transmission>>>>` occurs when attempting to write to a poisoned `Arc<RwLock<HashMap<String, Weak<RwLock<Transmission>>>>>`.
+	#[error("Write TransmissionIndex Error: {0}")]
+	WriteIndex(#[from] PoisonError<ErroredWrite<ArcLock<HashMap<String, ArcLock<Transmission>>>>>),
 	#[error("Duplicate Transmission name '{0}'")]
 	Conflict(String),
-}
-
-impl From<PoisonError<RwLockReadGuard<'_, Transmission>>> for AddTransmissionError {
-	fn from(_value: PoisonError<RwLockReadGuard<'_, Transmission>>) -> Self {
-		Self::ReadTransmission //(value)
-	}
-}
-
-impl From<PoisonError<RwLockReadGuard<'_, HashMap<String, ArcLock<Transmission>>>>>
-	for AddTransmissionError
-{
-	fn from(
-		_value: PoisonError<RwLockReadGuard<'_, HashMap<String, ArcLock<Transmission>>>>,
-	) -> Self {
-		Self::ReadIndex //(value)
-	}
-}
-
-impl From<PoisonError<RwLockWriteGuard<'_, HashMap<String, ArcLock<Transmission>>>>>
-	for AddTransmissionError
-{
-	fn from(
-		_value: PoisonError<RwLockWriteGuard<'_, HashMap<String, ArcLock<Transmission>>>>,
-	) -> Self {
-		Self::WriteIndex //(value)
-	}
 }
 
 impl PartialEq for AddTransmissionError {
 	fn eq(&self, other: &Self) -> bool {
 		match (self, other) {
-			(Self::ReadTransmission, Self::ReadTransmission) => true,
-			(Self::ReadIndex, Self::ReadIndex) => true,
-			(Self::WriteIndex, Self::WriteIndex) => true,
+			(Self::ReadTransmission(l0), Self::ReadTransmission(r0)) => {
+				l0.get_ref() == r0.get_ref()
+			}
+			(Self::ReadIndex(l0), Self::ReadIndex(r0)) => l0.get_ref() == r0.get_ref(),
+			(Self::WriteIndex(l0), Self::WriteIndex(r0)) => l0.get_ref() == r0.get_ref(),
 			(Self::Conflict(l0), Self::Conflict(r0)) => l0 == r0,
 			_ => false,
 		}

@@ -33,7 +33,7 @@ impl CollisionBuilder {
 		}
 	}
 
-	pub fn named<Name: Into<String>>(mut self, name: Name) -> Self {
+	pub fn named(mut self, name: impl Into<String>) -> Self {
 		self.name = Some(name.into());
 		self
 	}
@@ -61,9 +61,7 @@ impl CollisionBuilder {
 
 impl PartialEq for CollisionBuilder {
 	fn eq(&self, other: &Self) -> bool {
-		self.name == other.name
-			&& self.origin == other.origin
-			&& &(*self.geometry) == &(*other.geometry)
+		self.name == other.name && self.origin == other.origin && *self.geometry == *other.geometry
 	}
 }
 
@@ -71,7 +69,7 @@ impl Clone for CollisionBuilder {
 	fn clone(&self) -> Self {
 		Self {
 			name: self.name.clone(),
-			origin: self.origin.clone(),
+			origin: self.origin,
 			geometry: self.geometry.boxed_clone(),
 		}
 	}

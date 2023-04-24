@@ -81,7 +81,6 @@ pub trait KinematicInterface {
 	fn get_material(&self, name: &str) -> Option<Material>;
 	fn get_transmission(&self, name: &str) -> Option<ArcLock<Transmission>>;
 
-	// TODO: ADD try_add_material()
 	/// TODO: NOT FINAL
 	/// TODO: Maybe remove rcrefcell from transmission parameter
 	fn try_add_transmission(
@@ -122,7 +121,7 @@ pub trait KinematicInterface {
 	fn yank_link(&self, name: &str) -> Option<Chained<LinkBuilder>> {
 		let builder = self
 			.get_link(name)
-			.map(|link| link.try_read().unwrap().yank()) // FIXME: Is unwrap ok here?
+			.map(|link| link.read().unwrap().yank()) // FIXME: Is unwrap ok here?
 			.map(Chained);
 		self.purge_joints().unwrap(); // FIXME: Is unwrap ok here?
 		self.purge_links().unwrap(); // FIXME: Is unwrap ok here?
@@ -132,7 +131,7 @@ pub trait KinematicInterface {
 	fn yank_joint(&self, name: &str) -> Option<Chained<JointBuilder>> {
 		let builder = self
 			.get_joint(name)
-			.map(|joint| joint.try_read().unwrap().yank()) // FIXME: Is unwrap ok here?
+			.map(|joint| joint.read().unwrap().yank()) // FIXME: Is unwrap ok here?
 			.map(Chained);
 		self.purge_joints().unwrap(); // FIXME: Is unwrap ok here?
 		self.purge_links().unwrap(); // FIXME: Is unwrap ok here?

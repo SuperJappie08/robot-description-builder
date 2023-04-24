@@ -122,7 +122,7 @@ impl PartialEq for Visual {
 	fn eq(&self, other: &Self) -> bool {
 		self.name == other.name
 			&& self.origin == other.origin
-			&& &(*self.geometry) == &(*other.geometry)
+			&& *self.geometry == *other.geometry
 			&& match (&self.material, &other.material) {
 				(None, None) => true,
 				(Some(own_material), Some(other_material)) => {

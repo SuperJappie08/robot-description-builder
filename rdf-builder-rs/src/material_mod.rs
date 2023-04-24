@@ -1,5 +1,7 @@
 mod material;
 mod material_builder;
+pub(crate) mod material_data_reference;
+pub(crate) mod material_stage;
 
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
@@ -12,9 +14,11 @@ pub use material_builder::MaterialBuilder;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum MaterialData {
-	/// Color as RGBA
+	/// Color as RGBA.
+	///
+	/// The fields need to be between 0 and 1 (for most simulators). (Not enforced)
 	Color(f32, f32, f32, f32),
-	/// TODO: TO TEXTURE OR NOT?
+	/// Texture, containing the texture path as a valid package path (e.g. `"package://robot_description/textures/{texture}"`). You are on your own here.
 	Texture(String),
 }
 

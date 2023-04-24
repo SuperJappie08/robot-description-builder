@@ -6,7 +6,6 @@ mod inertial;
 mod link_parent;
 mod link_shape_data;
 mod visual;
-// mod linkbuilder;
 
 pub(crate) use link_shape_data::LinkShapeData;
 
@@ -36,31 +35,24 @@ pub mod link_data {
 	}
 }
 
-use thiserror::Error;
-
-use std::{
-	collections::HashMap,
-	sync::{Arc, PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard, Weak},
-};
+use std::sync::{Arc, Weak};
 
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
 use crate::{
 	chained::Chained,
 	cluster_objects::{
-		kinematic_data_errors::{AddJointError, AddLinkError, AddMaterialError},
+		kinematic_data_errors::{AddJointError, AddMaterialError},
 		kinematic_data_tree::KinematicDataTree,
-		KinematicInterface,
 	},
-	joint::{BuildJoint, BuildJointChain, Joint},
-	link::collision::Collision,
-	link::inertial::InertialData,
-	link::link_parent::LinkParent,
-	link::visual::Visual,
-	ArcLock, JointBuilder, TransformData, WeakLock,
+	joint::{BuildJoint, BuildJointChain, Joint, JointBuilder},
+	link::{
+		builder::LinkBuilder, collision::Collision, inertial::InertialData,
+		link_parent::LinkParent, visual::Visual,
+	},
+	transform_data::TransformData,
+	ArcLock, WeakLock,
 };
-
-use self::builder::{BuildLink, LinkBuilder};
 
 /// TODO: Make Builder For Link
 #[derive(Debug)]
@@ -74,21 +66,21 @@ pub struct Link {
 	colliders: Vec<link_data::Collision>,
 	/// TODO: Maybe array, or thing
 	end_point: Option<(f32, f32, f32)>,
-	me: Weak<RwLock<Self>>,
+	me: WeakLock<Self>,
 }
 
 impl Link {
-	pub fn builder<Name: Into<String>>(name: Name) -> LinkBuilder {
+	pub fn builder(name: impl Into<String>) -> LinkBuilder {
 		LinkBuilder::new(name)
 	}
 
-	/// Gets a (strong) refence to the current `Link`. (An `Arc<RwLock<Link>>`)
+	/// Gets a (strong) refence to the current [`Link`]. (An `Arc<RwLock<Link>>`)
 	pub fn get_self(&self) -> ArcLock<Link> {
 		// Unwrapping is Ok here, because if the Link exists, its self refence should exist.
 		Weak::upgrade(&self.me).unwrap()
 	}
 
-	/// Gets a weak refence to the current `Link`. (An `Weak<RwLock<Link>>`)
+	/// Gets a weak refence to the current [`Link`]. (An `Weak<RwLock<Link>>`)
 	pub fn get_weak_self(&self) -> WeakLock<Link> {
 		Weak::clone(&self.me)
 	}
@@ -110,11 +102,20 @@ impl Link {
 		&self.name
 	}
 
+	/// Returns a reference to the joints of this [`Link`].
+	///
+	/// The vector contains all [`Joint`]s connected to this [`Link`], wrapped in a `Arc<RwLock<T>>`.
+	///
+	/// TODO: Maybe rename to `joints`
 	pub fn get_joints(&self) -> &Vec<ArcLock<Joint>> {
 		&self.child_joints
-		// self.child_joints.iter().map(Arc::clone).collect()
 	}
 
+	/// Returns a mutable reference to joints `Vec` of this [`Link`].
+	///
+	/// The vector contains all [`Joint`]s connected to this [`Link`], wrapped in a `Arc<RwLock<T>>`.
+	///
+	/// TODO: Maybe rename to `joints_mut`
 	pub(crate) fn get_joints_mut(&mut self) -> &mut Vec<ArcLock<Joint>> {
 		&mut self.child_joints
 	}
@@ -122,49 +123,7 @@ impl Link {
 	/// TODO: DOC
 	///
 	/// # DEFINED BEHAVIOR:
-	///  - The newest link get transfered from the child tree.
-	///
-	/// TODO: Consider implemeting in reverse, by adding a making a Chained<JointBuilder> and then attaching that
-	pub fn try_attach_child_old(
-		&mut self,
-		old_tree: Box<dyn KinematicInterface>,
-		joint_builder: impl BuildJoint,
-	) -> Result<(), AttachChildError> {
-		// Yanking and rebuilding is less effiecent than what was done before, however this is easier to maintain
-
-		let root_name = old_tree.get_root_link().read().unwrap().get_name().clone(); // FIXME: UNWRAP
-		let link_builder = old_tree.yank_link(&root_name).unwrap(); // FIXME: UNWRAP
-
-		let tree = Weak::clone(&self.tree);
-
-		let child_link = link_builder.start_building_chain(&tree);
-		let weak_self = self.get_weak_self();
-
-		let shape_data = self.get_shape_data();
-
-		self.get_joints_mut()
-			.push(joint_builder.build(tree, weak_self, child_link, shape_data));
-
-		self.tree
-			.upgrade()
-			.unwrap()
-			.try_add_joint(self.get_joints().last().unwrap())?; // FIXME: unwrap not OK
-
-		self.tree
-			.upgrade()
-			.expect("KinematicDataTree should be initialized")
-			.newest_link
-			.read()
-			.unwrap() // FIXME: is unwrap OK?
-			.upgrade()
-			.unwrap() // FIXME: is unwrap OK?
-			.write()
-			.unwrap() // FIXME: is unwrap OK?
-			.direct_parent = LinkParent::Joint(Arc::downgrade(self.get_joints().last().unwrap()));
-
-		Ok(())
-	}
-
+	///  - The newest link get transfered from the child tree. TODO: VERIFY
 	///
 	/// ## TODO:
 	///  - DOC
@@ -174,7 +133,7 @@ impl Link {
 		&mut self,
 		link_chain: LinkChain,
 		joint_builder: impl BuildJoint,
-	) -> Result<(), AttachChildError>
+	) -> Result<(), AddJointError>
 	where
 		LinkChain: Into<Chained<LinkBuilder>>,
 	{
@@ -194,7 +153,7 @@ impl Link {
 		&mut self,
 		mut joint_chain: Chained<JointBuilder>,
 		transform: TransformData,
-	) -> Result<(), AttachChildError> {
+	) -> Result<(), AddJointError> {
 		joint_chain.0.with_origin(transform);
 
 		self.attach_joint_chain(joint_chain)
@@ -209,17 +168,16 @@ impl Link {
 	pub fn attach_joint_chain(
 		&mut self,
 		joint_chain: Chained<JointBuilder>,
-	) -> Result<(), AttachChildError> {
+	) -> Result<(), AddJointError> {
 		let joint =
 			joint_chain.build_chain(&self.tree, &self.get_weak_self(), self.get_shape_data());
-
-		self.get_joints_mut().push(joint);
 
 		self.tree
 			.upgrade()
 			.expect("KinematicDataTree should be initialized")
-			.try_add_joint(self.get_joints().last().unwrap())?;
+			.try_add_joint(&joint)?;
 
+		self.get_joints_mut().push(joint);
 		Ok(())
 	}
 
@@ -227,22 +185,13 @@ impl Link {
 		self.try_add_visual(visual).unwrap()
 	}
 
-	pub fn try_add_visual(&mut self, mut visual: Visual) -> Result<&mut Self, AddVisualError> {
+	pub fn try_add_visual(&mut self, mut visual: Visual) -> Result<&mut Self, AddMaterialError> {
 		if visual.material.is_some() {
 			let binding = self.tree.upgrade().unwrap();
-			let result = binding.try_add_material(visual.get_material_mut().unwrap()); // FIXME: UNWRAP?
-			if let Err(material_error) = result {
-				match material_error {
-					AddMaterialError::NoName =>
-					{
-						#[cfg(any(feature = "logging", test))]
-						if log::log_enabled!(log::Level::Info) {
-							log::info!("An attempt was made to add a material, without a `name`. So Moving on!")
-						}
-					}
-					_ => Err(material_error)?,
-				}
-			}
+			let result = visual
+				.get_material_mut()
+				.map_or(Ok(()), |material| binding.try_add_material(material));
+			result?
 		}
 
 		self.visuals.push(visual);
@@ -404,60 +353,6 @@ impl PartialEq for Link {
 				.iter()
 				.zip(other.child_joints.iter())
 				.all(|(own_joint, other_joint)| Arc::ptr_eq(own_joint, other_joint))
-	}
-}
-
-#[derive(Debug, PartialEq, Error)]
-pub enum AttachChildError {
-	#[error(transparent)]
-	AddLink(#[from] AddLinkError),
-	#[error(transparent)]
-	AddJoint(#[from] AddJointError),
-	#[error("Read Tree Error")]
-	ReadTree, //(PoisonError<RwLockReadGuard<'a, KinematicTreeData>>),
-	#[error("Read LinkIndex Error")]
-	ReadLinkIndex, //(PoisonError<RwLockReadGuard<'a, HashMap<String, WeakLock<Link>>>>),
-	#[error("Write Link Error")]
-	WriteLink,
-	#[error("Write Tree Error")]
-	WriteTree,
-}
-
-impl From<PoisonError<RwLockReadGuard<'_, KinematicDataTree>>> for AttachChildError {
-	fn from(_value: PoisonError<RwLockReadGuard<'_, KinematicDataTree>>) -> Self {
-		Self::ReadTree //(value)
-	}
-}
-
-impl From<PoisonError<RwLockReadGuard<'_, HashMap<String, WeakLock<Link>>>>> for AttachChildError {
-	fn from(_value: PoisonError<RwLockReadGuard<'_, HashMap<String, WeakLock<Link>>>>) -> Self {
-		Self::ReadLinkIndex //(value)
-	}
-}
-
-impl From<PoisonError<RwLockWriteGuard<'_, Link>>> for AttachChildError {
-	fn from(_value: PoisonError<RwLockWriteGuard<'_, Link>>) -> Self {
-		Self::WriteLink
-	}
-}
-
-impl From<PoisonError<RwLockWriteGuard<'_, KinematicDataTree>>> for AttachChildError {
-	fn from(_value: PoisonError<RwLockWriteGuard<'_, KinematicDataTree>>) -> Self {
-		Self::WriteTree
-	}
-}
-
-#[derive(Debug, Error)]
-pub enum AddVisualError {
-	#[error(transparent)]
-	AddMaterial(#[from] AddMaterialError),
-	#[error("Write KinematicTreeData Error")]
-	WriteKinemeticData,
-}
-
-impl From<PoisonError<RwLockWriteGuard<'_, KinematicDataTree>>> for AddVisualError {
-	fn from(_value: PoisonError<RwLockWriteGuard<'_, KinematicDataTree>>) -> Self {
-		Self::WriteKinemeticData
 	}
 }
 

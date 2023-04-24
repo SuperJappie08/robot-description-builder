@@ -26,7 +26,7 @@ pub struct LinkBuilder {
 
 impl LinkBuilder {
 	/// TODO: depreaction Planned
-	pub fn new<Name: Into<String>>(name: Name) -> LinkBuilder {
+	pub fn new(name: impl Into<String>) -> LinkBuilder {
 		Self {
 			name: name.into(),
 			..Default::default()
@@ -39,7 +39,7 @@ impl LinkBuilder {
 	}
 
 	/// TODO: Not really sure if this is the way... but it is how clap does it.
-	pub fn add_collider<Col: Into<link_data::Collision>>(mut self, collider: Col) -> Self {
+	pub fn add_collider(mut self, collider: impl Into<link_data::Collision>) -> Self {
 		self.colliders.push(collider.into());
 		self
 	}

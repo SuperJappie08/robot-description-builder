@@ -50,9 +50,9 @@ where
 	Limit: smart_joint_datatraits::LimitDataType,
 	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
 {
-	pub fn with_mimic<Name: Into<String>>(
+	pub fn with_mimic(
 		self,
-		mimiced_joint_name: Name,
+		mimiced_joint_name: impl Into<String>,
 	) -> SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, WithMimic, SafetyController> {
 		SmartJointBuilder {
 			name: self.name,
@@ -82,7 +82,7 @@ where
 	Limit: smart_joint_datatraits::LimitDataType,
 	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
 {
-	pub fn set_mimiced_joint_name<Name: Into<String>>(mut self, mimiced_joint_name: Name) -> Self {
+	pub fn set_mimiced_joint_name(mut self, mimiced_joint_name: impl Into<String>) -> Self {
 		self.mimic.joint_name = mimiced_joint_name.into();
 		self
 	}

@@ -75,6 +75,11 @@ impl Joint {
 		Arc::clone(&self.child_link)
 	}
 
+	/// FIXME: pub(crate) for now
+	pub(crate) fn get_child_link_ref(&self) -> &ArcLock<Link> {
+		&self.child_link
+	}
+
 	pub fn get_origin(&self) -> &TransformData {
 		&self.origin
 	}

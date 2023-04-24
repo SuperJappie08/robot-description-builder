@@ -12,8 +12,8 @@ use crate::{
 /// TODO: Add material Specifierer
 /// TODO: Add Inertial data options
 /// TODO: ADD TEST?
-pub fn new_quick_link<Name: Into<String>>(
-	link_name: Name,
+pub fn new_quick_link(
+	link_name: impl Into<String>,
 	geometry: Box<dyn GeometryInterface + Sync + Send>,
 ) -> KinematicTree {
 	let link_name = link_name.into();
@@ -40,8 +40,8 @@ pub fn new_quick_link<Name: Into<String>>(
 /// TODO: Add material Specifierer
 /// TODO: Add Inertial data options
 /// TODO: ADD TEST?
-pub fn new_box_link<Name: Into<String>>(
-	link_name: Name,
+pub fn new_box_link(
+	link_name: impl Into<String>,
 	side1: f32,
 	side2: f32,
 	side3: f32,
@@ -57,11 +57,7 @@ pub fn new_box_link<Name: Into<String>>(
 /// TODO: Add Inertial data options
 /// TODO: ADD TEST?
 /// TODO: Orientation??
-pub fn new_cylinder_link<Name: Into<String>>(
-	link_name: Name,
-	radius: f32,
-	length: f32,
-) -> KinematicTree {
+pub fn new_cylinder_link(link_name: impl Into<String>, radius: f32, length: f32) -> KinematicTree {
 	let geometry = CylinderGeometry::new(radius, length);
 
 	new_quick_link(link_name, geometry.into())
@@ -72,7 +68,7 @@ pub fn new_cylinder_link<Name: Into<String>>(
 /// TODO: Add material Specifierer
 /// TODO: Add Inertial data options
 /// TODO: ADD TEST?
-pub fn new_sphere_link<Name: Into<String>>(link_name: Name, radius: f32) -> KinematicTree {
+pub fn new_sphere_link(link_name: impl Into<String>, radius: f32) -> KinematicTree {
 	let geometry = SphereGeometry::new(radius);
 
 	new_quick_link(link_name, geometry.into())

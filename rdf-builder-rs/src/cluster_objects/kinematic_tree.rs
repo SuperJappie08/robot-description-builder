@@ -23,7 +23,7 @@ impl KinematicTree {
 		KinematicTree(data)
 	}
 
-	pub fn to_robot<Name: Into<String>>(self, name: Name) -> Robot {
+	pub fn to_robot(self, name: impl Into<String>) -> Robot {
 		Robot::new(name, self.0)
 	}
 }

@@ -47,7 +47,7 @@ impl Collision {
 	pub fn rebuild(&self) -> CollisionBuilder {
 		CollisionBuilder {
 			name: self.name.clone(),
-			origin: self.origin.clone(),
+			origin: self.origin,
 			geometry: self.geometry.boxed_clone(),
 		}
 	}
@@ -83,9 +83,7 @@ impl ToURDF for Collision {
 
 impl PartialEq for Collision {
 	fn eq(&self, other: &Self) -> bool {
-		self.name == other.name
-			&& self.origin == other.origin
-			&& &(*self.geometry) == &(*other.geometry)
+		self.name == other.name && self.origin == other.origin && *self.geometry == *other.geometry
 	}
 }
 

@@ -43,7 +43,7 @@ impl VisualBuilder {
 		}
 	}
 
-	pub fn named<Name: Into<String>>(mut self, name: Name) -> Self {
+	pub fn named(mut self, name: impl Into<String>) -> Self {
 		self.name = Some(name.into());
 		self
 	}
@@ -84,7 +84,7 @@ impl PartialEq for VisualBuilder {
 	fn eq(&self, other: &Self) -> bool {
 		self.name == other.name
 			&& self.origin == other.origin
-			&& &(*self.geometry) == &(*other.geometry)
+			&& *self.geometry == *other.geometry
 			&& self.material_description == other.material_description
 	}
 }

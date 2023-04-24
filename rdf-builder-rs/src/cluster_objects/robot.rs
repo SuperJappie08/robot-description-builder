@@ -28,7 +28,7 @@ pub struct Robot {
 }
 
 impl Robot {
-	pub(crate) fn new<Name: Into<String>>(name: Name, data: Arc<KinematicDataTree>) -> Self {
+	pub(crate) fn new(name: impl Into<String>, data: Arc<KinematicDataTree>) -> Self {
 		Self {
 			name: name.into(),
 			data,

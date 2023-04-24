@@ -149,8 +149,8 @@ impl PyLink {
 		self.inner
 			.try_write()
 			.unwrap() // TODO: Figure out if unwrap is Ok here?
-			.try_attach_child_old(
-				Into::<KinematicTree>::into(tree).into(),
+			.try_attach_child(
+				Into::<KinematicTree>::into(tree),
 				Into::<JointBuilder>::into(joint_builder),
 			)
 			.unwrap() // TODO: Figure out if unwrap is Ok here?
