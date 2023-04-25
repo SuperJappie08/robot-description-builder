@@ -1,5 +1,6 @@
 use std::sync::{Arc, RwLock, Weak};
 
+use inertial::InertialData;
 use itertools::process_results;
 
 use crate::{
@@ -7,10 +8,13 @@ use crate::{
 	joint::{BuildJointChain, Joint, JointBuilder},
 	link::{
 		builder::{visual_builder::VisualBuilder, BuildLink},
-		link_data, Link, LinkParent, LinkShapeData,
+		Link, LinkParent, LinkShapeData,
 	},
+	link::{inertial, link_data},
 	ArcLock, KinematicTree, WeakLock,
 };
+
+use super::CollisionBuilder;
 
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct LinkBuilder {
@@ -18,9 +22,9 @@ pub struct LinkBuilder {
 	pub(crate) name: String,
 	/// TODO: Figure out if we make this immutable on a `Link` and only allow editting throug the builder.
 	pub(crate) visual_builders: Vec<VisualBuilder>,
-	pub(crate) colliders: Vec<link_data::Collision>,
-	// TODO: Calulate InertialData?
-	// pub(crate) intertial: Option<link_data::InertialData>,
+	pub(crate) colliders: Vec<CollisionBuilder>,
+	/// TODO: Calulate InertialData?
+	pub(crate) intertial: Option<link_data::InertialData>,
 	pub(crate) joints: Vec<JointBuilder>,
 }
 
@@ -39,8 +43,13 @@ impl LinkBuilder {
 	}
 
 	/// TODO: Not really sure if this is the way... but it is how clap does it.
-	pub fn add_collider(mut self, collider: impl Into<link_data::Collision>) -> Self {
-		self.colliders.push(collider.into());
+	pub fn add_collider(mut self, collider: CollisionBuilder) -> Self {
+		self.colliders.push(collider);
+		self
+	}
+
+	pub fn intertial(mut self, inertial: InertialData) -> Self {
+		self.intertial = Some(inertial);
 		self
 	}
 
@@ -54,11 +63,11 @@ impl LinkBuilder {
 		&mut self.visual_builders
 	}
 
-	pub fn get_colliders(&self) -> &Vec<link_data::Collision> {
+	pub fn get_colliders(&self) -> &Vec<CollisionBuilder> {
 		&self.colliders
 	}
 
-	pub fn get_colliders_mut(&mut self) -> &mut Vec<link_data::Collision> {
+	pub fn get_colliders_mut(&mut self) -> &mut Vec<CollisionBuilder> {
 		&mut self.colliders
 	}
 
@@ -88,7 +97,7 @@ impl BuildLink for LinkBuilder {
 				tree: Weak::clone(tree),
 				direct_parent: LinkParent::KinematicTree(Weak::clone(tree)),
 				child_joints: Vec::new(),
-				inertial: None, //TODO:
+				inertial: self.intertial,
 				visuals: process_results(
 					self.visual_builders
 						.into_iter()
@@ -96,8 +105,12 @@ impl BuildLink for LinkBuilder {
 					|iter| iter.collect(),
 				)
 				.unwrap(),
-				colliders: self.colliders,
-				end_point: None,
+				colliders: self
+					.colliders
+					.into_iter()
+					.map(|collision_builder| collision_builder.build())
+					.collect(),
+				end_point: None, //TODO:
 				me: Weak::clone(me),
 			})
 		})
@@ -137,7 +150,7 @@ impl BuildLink for LinkBuilder {
 					.into_iter()
 					.map(|joint_builder| joint_builder.build_chain(tree, me, shape_data.clone()))
 					.collect(),
-				inertial: None, // FIXME: Fix this
+				inertial: self.intertial,
 				visuals: itertools::process_results(
 					self.visual_builders
 						.into_iter()
@@ -145,7 +158,11 @@ impl BuildLink for LinkBuilder {
 					|iter| iter.collect(),
 				)
 				.unwrap(), // UNWRAP NOT OK
-				colliders: self.colliders,
+				colliders: self
+					.colliders
+					.into_iter()
+					.map(|collider_builder| collider_builder.build())
+					.collect(),
 				end_point: None, // FIXME: Fix this
 				me: Weak::clone(me),
 			})
@@ -171,7 +188,7 @@ mod tests {
 		},
 		link_data::geometry::CylinderGeometry,
 		linkbuilding::CollisionBuilder,
-		transform_data::TransformData,
+		transform_data::Transform,
 	};
 	use test_log::test;
 	//TODO: Write test
@@ -185,11 +202,11 @@ mod tests {
 				link_builder.get_shape_data(),
 				LinkShapeData {
 					main_geometry: GeometryShapeData {
-						origin: TransformData::default(),
+						origin: Transform::default(),
 						geometry: SphereGeometry::new(0.).into()
 					},
 					geometries: vec![GeometryShapeData {
-						origin: TransformData::default(),
+						origin: Transform::default(),
 						geometry: SphereGeometry::new(0.).into()
 					}]
 				}
@@ -208,11 +225,11 @@ mod tests {
 				link_builder.get_shape_data(),
 				LinkShapeData {
 					main_geometry: GeometryShapeData {
-						origin: TransformData::default(),
+						origin: Transform::default(),
 						geometry: BoxGeometry::new(10., 20., 30.).into()
 					},
 					geometries: vec![GeometryShapeData {
-						origin: TransformData::default(),
+						origin: Transform::default(),
 						geometry: BoxGeometry::new(10., 20., 30.).into()
 					}]
 				}
@@ -222,7 +239,7 @@ mod tests {
 			let link_builder = LinkBuilder::new("a Link")
 				.add_visual(
 					VisualBuilder::new(CylinderGeometry::new(1., 2.))
-						.tranformed(TransformData::new_translation(5., 0., 16.)),
+						.tranformed(Transform::new_translation(5., 0., 16.)),
 				)
 				.add_visual(
 					VisualBuilder::new(BoxGeometry::new(10., 20., 30.)).named("a link's visual"),
@@ -235,16 +252,16 @@ mod tests {
 				link_builder.get_shape_data(),
 				LinkShapeData {
 					main_geometry: GeometryShapeData {
-						origin: TransformData::new_translation(5., 0., 16.),
+						origin: Transform::new_translation(5., 0., 16.),
 						geometry: CylinderGeometry::new(1., 2.).into()
 					},
 					geometries: vec![
 						GeometryShapeData {
-							origin: TransformData::new_translation(5., 0., 16.),
+							origin: Transform::new_translation(5., 0., 16.),
 							geometry: CylinderGeometry::new(1., 2.).into()
 						},
 						GeometryShapeData {
-							origin: TransformData::default(),
+							origin: Transform::default(),
 							geometry: BoxGeometry::new(10., 20., 30.).into()
 						}
 					]

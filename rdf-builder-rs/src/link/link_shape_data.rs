@@ -1,6 +1,6 @@
 use crate::{
 	link::geometry::{GeometryShapeData, SphereGeometry},
-	transform_data::TransformData,
+	transform_data::Transform,
 };
 
 /// Contains the main geometry (first occurance). and the rest for use in the closure
@@ -22,7 +22,7 @@ impl LinkShapeData {
 
 		if geometries.is_empty() {
 			let main_geometry = GeometryShapeData {
-				origin: TransformData::default(),
+				origin: Transform::default(),
 				geometry: SphereGeometry::new(0.).into(),
 			};
 

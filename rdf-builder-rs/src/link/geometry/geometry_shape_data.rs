@@ -1,11 +1,11 @@
 use crate::{
 	link::geometry::{BoxGeometry, CylinderGeometry, GeometryInterface, SphereGeometry},
-	transform_data::TransformData,
+	transform_data::Transform,
 };
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct GeometryShapeData {
-	pub origin: TransformData,
+	pub origin: Transform,
 	pub geometry: GeometryShapeContainer,
 }
 

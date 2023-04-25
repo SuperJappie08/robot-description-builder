@@ -1,13 +1,13 @@
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
-use crate::transform_data::TransformData;
+use crate::transform_data::Transform;
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
 #[derive(Debug, PartialEq, Clone, Default)]
 /// TODO: Figure out if things should be private or not?
 pub struct InertialData {
-	pub origin: Option<TransformData>,
+	pub origin: Option<Transform>,
 	pub mass: f32,
 	pub ixx: f32, // Not the nicesest way of doing this.
 	pub ixy: f32,
@@ -68,7 +68,7 @@ mod tests {
 
 		use crate::{
 			to_rdf::to_urdf::{ToURDF, URDFConfig},
-			transform_data::TransformData,
+			transform_data::Transform,
 		};
 
 		use std::io::Seek;
@@ -110,7 +110,7 @@ mod tests {
 		fn with_origin() {
 			test_to_urdf_inertial(
 				InertialData {
-					origin: Some(TransformData {
+					origin: Some(Transform {
 						translation: Some((10.1, 20.2, 30.3)),
 						..Default::default()
 					}),

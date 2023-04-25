@@ -1,10 +1,6 @@
-use crate::{
-	cluster_objects::KinematicTree,
-	link::{
-		builder::{LinkBuilder, VisualBuilder},
-		collision::Collision,
-		geometry::{BoxGeometry, CylinderGeometry, GeometryInterface, SphereGeometry},
-	},
+use crate::link::{
+	builder::{CollisionBuilder, LinkBuilder, VisualBuilder},
+	geometry::{BoxGeometry, CylinderGeometry, GeometryInterface, SphereGeometry},
 };
 
 /// TODO: Finalize, this is temp
@@ -15,7 +11,7 @@ use crate::{
 pub fn new_quick_link(
 	link_name: impl Into<String>,
 	geometry: Box<dyn GeometryInterface + Sync + Send>,
-) -> KinematicTree {
+) -> LinkBuilder {
 	let link_name = link_name.into();
 	let mut link = LinkBuilder::new(link_name.clone());
 
@@ -30,9 +26,13 @@ pub fn new_quick_link(
 
 	let mut collision_name = link_name;
 	collision_name.push_str("_collision");
-	link = link.add_collider(Collision::new(collision_name.into(), None, geometry));
+	link = link.add_collider(CollisionBuilder::new_full(
+		collision_name.into(),
+		None,
+		geometry,
+	));
 
-	link.build_tree()
+	link
 }
 
 /// TODO: Finalize, this is temp
@@ -45,7 +45,7 @@ pub fn new_box_link(
 	side1: f32,
 	side2: f32,
 	side3: f32,
-) -> KinematicTree {
+) -> LinkBuilder {
 	let geometry = BoxGeometry::new(side1, side2, side3);
 
 	new_quick_link(link_name, geometry.into())
@@ -57,7 +57,7 @@ pub fn new_box_link(
 /// TODO: Add Inertial data options
 /// TODO: ADD TEST?
 /// TODO: Orientation??
-pub fn new_cylinder_link(link_name: impl Into<String>, radius: f32, length: f32) -> KinematicTree {
+pub fn new_cylinder_link(link_name: impl Into<String>, radius: f32, length: f32) -> LinkBuilder {
 	let geometry = CylinderGeometry::new(radius, length);
 
 	new_quick_link(link_name, geometry.into())
@@ -68,7 +68,7 @@ pub fn new_cylinder_link(link_name: impl Into<String>, radius: f32, length: f32)
 /// TODO: Add material Specifierer
 /// TODO: Add Inertial data options
 /// TODO: ADD TEST?
-pub fn new_sphere_link(link_name: impl Into<String>, radius: f32) -> KinematicTree {
+pub fn new_sphere_link(link_name: impl Into<String>, radius: f32) -> LinkBuilder {
 	let geometry = SphereGeometry::new(radius);
 
 	new_quick_link(link_name, geometry.into())
@@ -80,7 +80,7 @@ mod tests {
 
 	#[test]
 	fn test_new_box_link() {
-		let tree = new_box_link("Zelda", 2f32, 3f32, 5f32);
+		let tree = new_box_link("Zelda", 2f32, 3f32, 5f32).build_tree();
 
 		assert_eq!(tree.get_links().try_read().unwrap().len(), 1);
 		assert_eq!(

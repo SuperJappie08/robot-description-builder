@@ -1,6 +1,6 @@
 use rdf_builder_rs::{
 	link_data::geometry::BoxGeometry, linkbuilding::VisualBuilder, KinematicInterface, Link,
-	SmartJointBuilder, TransformData,
+	SmartJointBuilder, Transform,
 };
 
 fn main() {
@@ -24,7 +24,7 @@ fn main() {
 				)
 			});
 
-			TransformData {
+			Transform {
 				translation: data.main_geometry.origin.translation.map(|(x, y, z)| {
 					(
 						extend(x, bounding_box.0),
@@ -41,7 +41,7 @@ fn main() {
 	let tree = Link::builder("root")
 		.add_visual(VisualBuilder::new_full(
 			Some("root_vis".into()),
-			TransformData::new_translation(1.0, 0., 0.).into(),
+			Transform::new_translation(1.0, 0., 0.).into(),
 			BoxGeometry::new(2., 1., 1.),
 			None,
 		))

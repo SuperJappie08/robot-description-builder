@@ -6,8 +6,7 @@ use smartparams::{NoAxis, NoCalibration, NoDynamics, NoLimit, NoMimic, NoSafetyC
 pub use smartjointtypes::{FixedType, NoType, RevoluteType};
 
 use crate::{
-	joint::joint_tranform_mode::JointTransformMode, link::LinkShapeData,
-	transform_data::TransformData,
+	joint::joint_tranform_mode::JointTransformMode, link::LinkShapeData, transform_data::Transform,
 };
 
 use self::{
@@ -46,12 +45,12 @@ where
 	Mimic: smart_joint_datatraits::MimicDataType,
 	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
 {
-	pub fn add_transform(mut self, transform: TransformData) -> Self {
+	pub fn add_transform(mut self, transform: Transform) -> Self {
 		self.origin = Some(transform.into());
 		self
 	}
 
-	pub fn add_dynamic_transform(mut self, func: fn(LinkShapeData) -> TransformData) -> Self {
+	pub fn add_dynamic_transform(mut self, func: fn(LinkShapeData) -> Transform) -> Self {
 		self.origin = Some(func.into());
 		self
 	}

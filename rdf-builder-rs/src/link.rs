@@ -50,7 +50,7 @@ use crate::{
 		builder::LinkBuilder, collision::Collision, inertial::InertialData,
 		link_parent::LinkParent, visual::Visual,
 	},
-	transform_data::TransformData,
+	transform_data::Transform,
 	ArcLock, WeakLock,
 };
 
@@ -65,6 +65,7 @@ pub struct Link {
 	visuals: Vec<link_data::Visual>,
 	colliders: Vec<link_data::Collision>,
 	/// TODO: Maybe array, or thing
+	/// Or calculate when necessary
 	end_point: Option<(f32, f32, f32)>,
 	me: WeakLock<Self>,
 }
@@ -152,7 +153,7 @@ impl Link {
 	pub fn attach_joint_chain_at(
 		&mut self,
 		mut joint_chain: Chained<JointBuilder>,
-		transform: TransformData,
+		transform: Transform,
 	) -> Result<(), AddJointError> {
 		joint_chain.0.with_origin(transform);
 
@@ -181,10 +182,12 @@ impl Link {
 		Ok(())
 	}
 
+	#[deprecated]
 	pub fn add_visual(&mut self, visual: Visual) -> &mut Self {
 		self.try_add_visual(visual).unwrap()
 	}
 
+	#[deprecated]
 	pub fn try_add_visual(&mut self, mut visual: Visual) -> Result<&mut Self, AddMaterialError> {
 		if visual.material.is_some() {
 			let binding = self.tree.upgrade().unwrap();
@@ -198,6 +201,7 @@ impl Link {
 		Ok(self)
 	}
 
+	#[deprecated]
 	/// TODO:NOTE: Originally returned self for chaining, dont now if that is neccessary? so removed for now
 	pub fn add_collider(&mut self, collider: Collision) -> &mut Self {
 		self.colliders.push(collider);
@@ -229,7 +233,12 @@ impl Link {
 		LinkBuilder {
 			name: self.name.clone(),
 			visual_builders: self.visuals.iter().map(|visual| visual.rebuild()).collect(),
-			colliders: self.colliders.to_vec(),
+			colliders: self
+				.colliders
+				.iter()
+				.map(|collision| collision.rebuild())
+				.collect(),
+			intertial: self.inertial.clone(),
 			..Default::default()
 		}
 	}

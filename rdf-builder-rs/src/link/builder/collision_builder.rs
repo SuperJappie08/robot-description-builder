@@ -1,12 +1,12 @@
 use crate::{
 	link::geometry::GeometryInterface, link::geometry::GeometryShapeData, link::Collision,
-	transform_data::TransformData,
+	transform_data::Transform,
 };
 
 #[derive(Debug)]
 pub struct CollisionBuilder {
 	pub(crate) name: Option<String>,
-	pub(crate) origin: Option<TransformData>,
+	pub(crate) origin: Option<Transform>,
 	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
 }
 
@@ -23,7 +23,7 @@ impl CollisionBuilder {
 
 	pub fn new_full<Geometry: Into<Box<dyn GeometryInterface + Sync + Send>>>(
 		name: Option<String>,
-		origin: Option<TransformData>,
+		origin: Option<Transform>,
 		geometry: Geometry,
 	) -> Self {
 		Self {
@@ -38,7 +38,7 @@ impl CollisionBuilder {
 		self
 	}
 
-	pub fn tranformed(mut self, transform: TransformData) -> Self {
+	pub fn tranformed(mut self, transform: Transform) -> Self {
 		self.origin = Some(transform);
 		self
 	}

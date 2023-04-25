@@ -1,19 +1,19 @@
 use crate::{
 	link::geometry::GeometryInterface, link::visual::Visual,
 	link_data::geometry::GeometryShapeData, material_mod::MaterialBuilder,
-	transform_data::TransformData,
+	transform_data::Transform,
 };
 
 #[derive(Debug)]
 pub struct VisualBuilder {
 	/// TODO: Figure out if I want to keep the name optional?.
 	pub(crate) name: Option<String>,
-	pub(crate) origin: Option<TransformData>,
+	pub(crate) origin: Option<Transform>,
 
 	/// Figure out if this needs to be public or not
 	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
 	/// Not sure about refCell
-	pub material_description: Option<MaterialBuilder>,
+	pub(crate) material_description: Option<MaterialBuilder>,
 }
 
 impl VisualBuilder {
@@ -31,7 +31,7 @@ impl VisualBuilder {
 	/// TODO: Figure out if this will be kept [Added for easier transistion]
 	pub fn new_full<Geometry: Into<Box<dyn GeometryInterface + Sync + Send>>>(
 		name: Option<String>,
-		origin: Option<TransformData>,
+		origin: Option<Transform>,
 		geometry: Geometry,
 		material_description: Option<MaterialBuilder>,
 	) -> Self {
@@ -48,7 +48,7 @@ impl VisualBuilder {
 		self
 	}
 
-	pub fn tranformed(mut self, transform: TransformData) -> Self {
+	pub fn tranformed(mut self, transform: Transform) -> Self {
 		self.origin = Some(transform);
 		self
 	}

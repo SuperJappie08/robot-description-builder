@@ -4,25 +4,31 @@ use quick_xml::{events::attributes::Attribute, name::QName};
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
 use crate::{
-	link::geometry::GeometryInterface, linkbuilding::CollisionBuilder,
-	transform_data::TransformData,
+	link::geometry::GeometryInterface, linkbuilding::CollisionBuilder, transform_data::Transform,
 };
 
 #[derive(Debug)]
 pub struct Collision {
 	/// TODO: Figure out if I want to keep the name optional?.
 	pub(crate) name: Option<String>,
-	pub(crate) origin: Option<TransformData>,
+	pub(crate) origin: Option<Transform>,
 
 	/// Figure out if this needs to be public or not
 	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
 }
 
 impl Collision {
+	pub fn builder<Geometry: Into<Box<dyn GeometryInterface + Sync + Send>>>(
+		geometry: Geometry,
+	) -> CollisionBuilder {
+		CollisionBuilder::new(geometry)
+	}
+
 	/// Maybe temp
+	#[deprecated]
 	pub fn new<Geometry: Into<Box<dyn GeometryInterface + Sync + Send>>>(
 		name: Option<String>,
-		origin: Option<TransformData>,
+		origin: Option<Transform>,
 		geometry: Geometry,
 	) -> Self {
 		Self {
@@ -36,7 +42,7 @@ impl Collision {
 		self.name.as_ref()
 	}
 
-	pub fn get_origin(&self) -> Option<&TransformData> {
+	pub fn get_origin(&self) -> Option<&Transform> {
 		self.origin.as_ref()
 	}
 
@@ -104,10 +110,11 @@ mod tests {
 
 	use crate::{
 		link::{
+			builder::CollisionBuilder,
 			collision::Collision,
 			geometry::{BoxGeometry, CylinderGeometry, SphereGeometry},
 		},
-		transform_data::TransformData,
+		transform_data::Transform,
 	};
 
 	#[cfg(feature = "urdf")]
@@ -116,9 +123,13 @@ mod tests {
 		use crate::to_rdf::to_urdf::{ToURDF, URDFConfig};
 		use std::io::Seek;
 
-		fn test_to_urdf_collision(collision: Collision, result: String, urdf_config: &URDFConfig) {
+		fn test_to_urdf_collision(
+			collision: CollisionBuilder,
+			result: String,
+			urdf_config: &URDFConfig,
+		) {
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(collision.to_urdf(&mut writer, urdf_config).is_ok());
+			assert!(collision.build().to_urdf(&mut writer, urdf_config).is_ok());
 
 			writer.inner().rewind().unwrap();
 
@@ -128,7 +139,7 @@ mod tests {
 		#[test]
 		fn no_name_no_origin() {
 			test_to_urdf_collision(
-				Collision::new(None, None, BoxGeometry::new(1.0, 2.0, 3.0)),
+				Collision::builder(BoxGeometry::new(1.0, 2.0, 3.0)),
 				String::from(r#"<collision><geometry><box size="1 2 3"/></geometry></collision>"#),
 				&URDFConfig::default(),
 			);
@@ -137,11 +148,7 @@ mod tests {
 		#[test]
 		fn name_no_origin() {
 			test_to_urdf_collision(
-				Collision::new(
-					Some("myLink_col".to_owned()),
-					None,
-					CylinderGeometry::new(9., 6.258),
-				),
+				Collision::builder(CylinderGeometry::new(9., 6.258)).named("myLink_col"),
 				String::from(
 					r#"<collision name="myLink_col"><geometry><cylinder radius="9" length="6.258"/></geometry></collision>"#,
 				),
@@ -152,14 +159,8 @@ mod tests {
 		#[test]
 		fn no_name_origin() {
 			test_to_urdf_collision(
-				Collision::new(
-					None,
-					Some(TransformData {
-						translation: Some((4., 6.78, 1.)),
-						rotation: Some((PI, 2. * PI, 0.)),
-					}),
-					SphereGeometry::new(3.),
-				),
+				Collision::builder(SphereGeometry::new(3.))
+					.tranformed(Transform::new((4., 6.78, 1.), (PI, 2. * PI, 0.))),
 				String::from(
 					r#"<collision><origin xyz="4 6.78 1" rpy="3.1415927 6.2831855 0"/><geometry><sphere radius="3"/></geometry></collision>"#,
 				),
@@ -170,14 +171,9 @@ mod tests {
 		#[test]
 		fn name_origin() {
 			test_to_urdf_collision(
-				Collision::new(
-					Some("some_col".into()),
-					Some(TransformData {
-						translation: Some((5.4, 9.1, 7.8)),
-						..Default::default()
-					}),
-					CylinderGeometry::new(4.5, 75.35),
-				),
+				Collision::builder(CylinderGeometry::new(4.5, 75.35))
+					.named("some_col")
+					.tranformed(Transform::new_translation(5.4, 9.1, 7.8)),
 				String::from(
 					r#"<collision name="some_col"><origin xyz="5.4 9.1 7.8"/><geometry><cylinder radius="4.5" length="75.35"/></geometry></collision>"#,
 				),

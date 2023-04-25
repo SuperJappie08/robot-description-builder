@@ -17,8 +17,8 @@ use std::sync::{Arc, Weak};
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
 use crate::{
-	cluster_objects::kinematic_data_tree::KinematicDataTree, link::Link,
-	transform_data::TransformData, ArcLock, WeakLock,
+	cluster_objects::kinematic_data_tree::KinematicDataTree, link::Link, transform_data::Transform,
+	ArcLock, WeakLock,
 };
 
 #[cfg(any(feature = "xml"))]
@@ -35,7 +35,7 @@ pub struct Joint {
 	pub(crate) child_link: ArcLock<Link>, //temp pub TODO: THIS PROBABLY ISN'T THE NICEST WAY TO DO THIS.
 	/// The information specific to the JointType: TODO: DECIDE IF THIS SHOULD BE PUBLIC
 	pub(crate) joint_type: JointType,
-	origin: TransformData,
+	origin: Transform,
 	axis: Option<(f32, f32, f32)>,
 	calibration: joint_data::CalibrationData,
 	dynamics: joint_data::DynamicsData,
@@ -80,7 +80,7 @@ impl Joint {
 		&self.child_link
 	}
 
-	pub fn get_origin(&self) -> &TransformData {
+	pub fn get_origin(&self) -> &Transform {
 		&self.origin
 	}
 
@@ -283,11 +283,12 @@ mod tests {
 			builder::LinkBuilder,
 			link_data::{
 				geometry::{BoxGeometry, CylinderGeometry, SphereGeometry},
-				Collision, Visual,
+				Visual,
 			},
 		},
+		linkbuilding::{CollisionBuilder, VisualBuilder},
 		material_mod::MaterialBuilder,
-		transform_data::TransformData,
+		transform_data::Transform,
 	};
 	use test_log::test;
 
@@ -301,10 +302,7 @@ mod tests {
 				LinkBuilder::new("child"),
 				SmartJointBuilder::new("Joint1")
 					.fixed()
-					.add_transform(TransformData {
-						translation: (2.0, 3.0, 5.0).into(),
-						..Default::default()
-					}),
+					.add_transform(Transform::new_translation(2.0, 3.0, 5.0)),
 			)
 			.unwrap();
 
@@ -325,13 +323,10 @@ mod tests {
 		let material_red = MaterialBuilder::new_color(1., 0., 0., 1.).named("Red");
 
 		let tree = LinkBuilder::new("link-0")
-			.add_collider(Collision::new(None, None, BoxGeometry::new(1.0, 2.0, 3.0)))
-			.add_visual(Visual::builder(
-				None,
-				None,
-				BoxGeometry::new(1.0, 2.0, 3.0),
-				Some(material_red.clone()),
-			))
+			.add_collider(CollisionBuilder::new(BoxGeometry::new(1.0, 2.0, 3.0)))
+			.add_visual(
+				Visual::builder(BoxGeometry::new(1.0, 2.0, 3.0)).material(material_red.clone()),
+			)
 			.build_tree();
 
 		tree.get_root_link()
@@ -339,27 +334,17 @@ mod tests {
 			.unwrap()
 			.try_attach_child(
 				LinkBuilder::new("link-1")
-					.add_collider(Collision::new(
-						None,
-						TransformData {
-							translation: Some((2., 0., 0.)),
-							..Default::default()
-						}
-						.into(),
-						SphereGeometry::new(4.),
-					))
-					.add_visual(Visual::builder(
-						None,
-						TransformData {
-							translation: Some((2., 0., 0.)),
-							..Default::default()
-						}
-						.into(),
-						SphereGeometry::new(4.),
-						Some(material_red.clone()),
-					)),
+					.add_collider(
+						CollisionBuilder::new(SphereGeometry::new(4.))
+							.tranformed(Transform::new_translation(2., 0., 0.)),
+					)
+					.add_visual(
+						Visual::builder(SphereGeometry::new(4.))
+							.tranformed(Transform::new_translation(2., 0., 0.))
+							.material(material_red.clone()),
+					),
 				SmartJointBuilder::new("joint-0")
-					.add_transform(TransformData::new_translation(1.0, 0., 0.))
+					.add_transform(Transform::new_translation(1.0, 0., 0.))
 					.fixed(),
 			)
 			.unwrap();
@@ -387,31 +372,31 @@ mod tests {
 			JointBuilder {
 				name: "joint-0".into(),
 				joint_type: JointType::Fixed,
-				origin: TransformData {
+				origin: Transform {
 					translation: Some((1., 0., 0.)),
 					rotation: None
 				}
 				.into(),
 				child: Some(LinkBuilder {
 					name: "link-1".into(),
-					visual_builders: vec![Visual::builder(
+					visual_builders: vec![VisualBuilder::new_full(
 						None,
-						Some(TransformData {
+						Some(Transform {
 							translation: Some((2., 0., 0.)),
 							rotation: None
 						}),
 						SphereGeometry::new(4.),
 						Some(material_red.clone())
 					)],
-					colliders: vec![Collision::new(
+					colliders: vec![CollisionBuilder::new_full(
 						None,
-						Some(TransformData {
+						Some(Transform {
 							translation: Some((2., 0., 0.)),
 							rotation: None
 						}),
 						SphereGeometry::new(4.)
 					)],
-					joints: Vec::new()
+					..Default::default()
 				}),
 				..Default::default() // TODO: Decide if this is Ok to do in a test
 			}
@@ -427,13 +412,10 @@ mod tests {
 			let material_red = MaterialBuilder::new_color(1., 0., 0., 1.).named("Red");
 
 			LinkBuilder::new("link-0")
-				.add_collider(Collision::new(None, None, BoxGeometry::new(1.0, 2.0, 3.0)))
-				.add_visual(Visual::builder(
-					None,
-					None,
-					BoxGeometry::new(1.0, 2.0, 3.0),
-					Some(material_red.clone()),
-				))
+				.add_collider(CollisionBuilder::new(BoxGeometry::new(1.0, 2.0, 3.0)))
+				.add_visual(
+					Visual::builder(BoxGeometry::new(1.0, 2.0, 3.0)).material(material_red.clone()),
+				)
 				.build_tree()
 		};
 
@@ -443,25 +425,15 @@ mod tests {
 			.try_attach_child(
 				{
 					let tmp_tree = LinkBuilder::new("link-1")
-						.add_collider(Collision::new(
-							None,
-							TransformData {
-								translation: Some((2., 0., 0.)),
-								..Default::default()
-							}
-							.into(),
-							SphereGeometry::new(4.),
-						))
-						.add_visual(Visual::builder(
-							None,
-							TransformData {
-								translation: Some((2., 0., 0.)),
-								..Default::default()
-							}
-							.into(),
-							SphereGeometry::new(4.),
-							Some(MaterialBuilder::new_color(0., 0., 1., 1.).named("Blue")),
-						))
+						.add_collider(
+							CollisionBuilder::new(SphereGeometry::new(4.))
+								.tranformed(Transform::new_translation(2., 0., 0.)),
+						)
+						.add_visual(
+							Visual::builder(SphereGeometry::new(4.))
+								.tranformed(Transform::new_translation(2., 0., 0.))
+								.material(MaterialBuilder::new_color(0., 0., 1., 1.).named("Blue")),
+						)
 						.build_tree();
 
 					tmp_tree
@@ -469,19 +441,15 @@ mod tests {
 						.write()
 						.unwrap()
 						.try_attach_child(
-							LinkBuilder::new("link-1-1").add_visual(Visual::builder(
-								Some("link-1-1-vis".into()),
-								TransformData {
-									translation: Some((9., 0.5, 0.)),
-									..Default::default()
-								}
-								.into(),
-								CylinderGeometry::new(0.5, 18.),
-								Some(MaterialBuilder::new_color(0.5, 0.5, 0.5, 0.75)),
-							)),
+							LinkBuilder::new("link-1-1").add_visual(
+								Visual::builder(CylinderGeometry::new(0.5, 18.))
+									.named("link-1-1-vis")
+									.tranformed(Transform::new_translation(9., 0.5, 0.))
+									.material(MaterialBuilder::new_color(0.5, 0.5, 0.5, 0.75)),
+							),
 							SmartJointBuilder::new("joint-1-1")
 								.revolute()
-								.add_transform(TransformData::new_translation(4., 0., 0.))
+								.add_transform(Transform::new_translation(4., 0., 0.))
 								.with_axis((0., 0., 1.))
 								.with_limit(100., 1000.)
 								.set_upper_limit(std::f32::consts::FRAC_PI_6)
@@ -492,7 +460,7 @@ mod tests {
 					tmp_tree
 				},
 				SmartJointBuilder::new("joint-0")
-					.add_transform(TransformData::new_translation(1.0, 0., 0.))
+					.add_transform(Transform::new_translation(1.0, 0., 0.))
 					.fixed(),
 			)
 			.unwrap();
@@ -574,7 +542,7 @@ mod tests {
 				JointBuilder {
 					name: "joint-2".into(),
 					joint_type: JointType::Fixed,
-					origin: TransformData {
+					origin: Transform {
 						translation: Some((0., 0., 1.5)),
 						..Default::default()
 					}
@@ -640,16 +608,16 @@ mod tests {
 				JointBuilder {
 					name: "joint-1-1".into(),
 					joint_type: JointType::Revolute,
-					origin: TransformData {
+					origin: Transform {
 						translation: Some((4., 0., 0.)),
 						..Default::default()
 					}
 					.into(),
 					child: Some(LinkBuilder {
 						name: "link-1-1".into(),
-						visual_builders: vec![Visual::builder(
+						visual_builders: vec![VisualBuilder::new_full(
 							Some("link-1-1-vis".into()),
-							Some(TransformData {
+							Some(Transform {
 								translation: Some((9., 0.5, 0.)),
 								..Default::default()
 							}),
@@ -724,44 +692,37 @@ mod tests {
 				yanked_branch.unwrap().0,
 				JointBuilder {
 					name: "joint-0".into(),
-					origin: TransformData {
+					origin: Transform {
 						translation: Some((1., 0., 0.)),
 						..Default::default()
 					}
 					.into(),
 					child: Some(LinkBuilder {
 						name: "link-1".into(),
-						visual_builders: vec![Visual::builder(
+						visual_builders: vec![VisualBuilder::new_full(
 							None,
-							Some(TransformData {
+							Some(Transform {
 								translation: Some((2., 0., 0.)),
 								..Default::default()
 							}),
 							SphereGeometry::new(4.),
-							// tree.get_material("Blue")
 							Some(MaterialBuilder::new_color(0., 0., 1., 1.,).named("Blue"))
 						)],
-						colliders: vec![Collision::new(
-							None,
-							Some(TransformData {
-								translation: Some((2., 0., 0.)),
-								..Default::default()
-							}),
-							SphereGeometry::new(4.)
-						)],
+						colliders: vec![CollisionBuilder::new(SphereGeometry::new(4.))
+							.tranformed(Transform::new_translation(2., 0., 0.))],
 						joints: vec![JointBuilder {
 							name: "joint-1-1".into(),
 							joint_type: JointType::Revolute,
-							origin: TransformData {
+							origin: Transform {
 								translation: Some((4., 0., 0.)),
 								..Default::default()
 							}
 							.into(),
 							child: Some(LinkBuilder {
 								name: "link-1-1".into(),
-								visual_builders: vec![Visual::builder(
+								visual_builders: vec![VisualBuilder::new_full(
 									Some("link-1-1-vis".into()),
-									Some(TransformData {
+									Some(Transform {
 										translation: Some((9., 0.5, 0.)),
 										..Default::default()
 									}),

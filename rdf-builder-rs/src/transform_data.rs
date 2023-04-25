@@ -4,12 +4,12 @@ use crate::to_rdf::to_urdf::ToURDF;
 use quick_xml::{events::attributes::Attribute, name::QName};
 
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
-pub struct TransformData {
+pub struct Transform {
 	pub translation: Option<(f32, f32, f32)>,
 	pub rotation: Option<(f32, f32, f32)>,
 }
 
-impl TransformData {
+impl Transform {
 	pub fn new_translation(x: f32, y: f32, z: f32) -> Self {
 		Self {
 			translation: Some((x, y, z)),
@@ -37,26 +37,26 @@ impl TransformData {
 	///
 	/// # Example
 	/// ```rust
-	/// # use rdf_builder_rs::TransformData;
-	/// assert!(TransformData {
+	/// # use rdf_builder_rs::Transform;
+	/// assert!(Transform {
 	///     translation: Some((1., 2., 3.)),
 	///     rotation: Some((4., 5., 6.))
 	/// }
 	/// .contains_some());
 	///
-	/// assert!(TransformData {
+	/// assert!(Transform {
 	///     translation: Some((1., 2., 3.)),
 	///     ..Default::default()
 	/// }
 	/// .contains_some());
 	///
-	/// assert!(TransformData {
+	/// assert!(Transform {
 	///     rotation: Some((4., 5., 6.)),
 	///     ..Default::default()
 	/// }
 	/// .contains_some());
 	///
-	/// assert!(!TransformData::default().contains_some())
+	/// assert!(!Transform::default().contains_some())
 	/// ```
 	pub fn contains_some(&self) -> bool {
 		self.translation.is_some() || self.rotation.is_some()
@@ -83,8 +83,8 @@ impl TransformData {
 // FIXME: TODO: MAYBE UUSE ndarray instead?
 // Or euclid or euler
 
-// impl std::ops::Add for TransformData {
-// 	type Output = TransformData;
+// impl std::ops::Add for Transform {
+// 	type Output = Transform;
 
 // 	fn add(self, rhs: Self) -> Self::Output {
 // 		match (self.contains_some(), rhs.contains_some()) {
@@ -114,7 +114,7 @@ pub enum MirrorAxis {
 }
 
 #[cfg(feature = "urdf")]
-impl ToURDF for TransformData {
+impl ToURDF for Transform {
 	fn to_urdf(
 		&self,
 		writer: &mut quick_xml::Writer<std::io::Cursor<Vec<u8>>>,
@@ -144,30 +144,26 @@ impl ToURDF for TransformData {
 	}
 }
 
-impl From<TransformData> for crate::joint::JointTransformMode {
-	fn from(value: TransformData) -> Self {
+impl From<Transform> for crate::joint::JointTransformMode {
+	fn from(value: Transform) -> Self {
 		Self::Direct(value)
 	}
 }
 
 #[cfg(test)]
 mod tests {
-	use crate::transform_data::TransformData;
+	use crate::transform_data::Transform;
 	use test_log::test;
 
 	#[cfg(feature = "urdf")]
 	mod to_urdf {
-		use super::{test, TransformData};
+		use super::{test, Transform};
 		use crate::to_rdf::to_urdf::{ToURDF, URDFConfig};
 		use std::io::Seek;
 
-		fn test_to_urdf_transform(
-			transform_data: TransformData,
-			result: String,
-			urdf_config: &URDFConfig,
-		) {
+		fn test_to_urdf_transform(transform: Transform, result: String, urdf_config: &URDFConfig) {
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(transform_data.to_urdf(&mut writer, urdf_config).is_ok());
+			assert!(transform.to_urdf(&mut writer, urdf_config).is_ok());
 
 			writer.inner().rewind().unwrap();
 			assert_eq!(std::io::read_to_string(writer.inner()).unwrap(), result)
@@ -176,7 +172,7 @@ mod tests {
 		#[test]
 		fn translation_only() {
 			test_to_urdf_transform(
-				TransformData {
+				Transform {
 					translation: Some((1.2, 2.3, 3.4)),
 					..Default::default()
 				},
@@ -188,7 +184,7 @@ mod tests {
 		#[test]
 		fn rotation_only() {
 			test_to_urdf_transform(
-				TransformData {
+				Transform {
 					rotation: Some((1.2, 2.3, 3.4)),
 					..Default::default()
 				},
@@ -200,7 +196,7 @@ mod tests {
 		#[test]
 		fn translation_rotatation() {
 			test_to_urdf_transform(
-				TransformData {
+				Transform {
 					translation: Some((1.23, 2.34, 3.45)),
 					rotation: Some((4.56, 5.67, 6.78)),
 				},

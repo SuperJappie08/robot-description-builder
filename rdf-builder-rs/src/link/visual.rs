@@ -6,38 +6,35 @@ use crate::to_rdf::to_urdf::ToURDF;
 use crate::{
 	link::{builder::VisualBuilder, geometry::GeometryInterface},
 	link_data::geometry::GeometryShapeData,
-	material_mod::{Material, MaterialBuilder},
-	transform_data::TransformData,
+	material_mod::Material,
+	transform_data::Transform,
 };
 
 #[derive(Debug)]
 pub struct Visual {
 	/// TODO: Figure out if I want to keep the name optional?.
-	pub name: Option<String>,
-	pub(crate) origin: Option<TransformData>,
+	pub(crate) name: Option<String>,
+	pub(crate) origin: Option<Transform>,
 
 	/// Figure out if this needs to be public or not
 	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
 	/// Not sure about refCell
-	pub material: Option<Material>,
+	pub(crate) material: Option<Material>,
 }
 
 impl Visual {
-	// #[deprecated]
 	pub fn builder<Geometry: Into<Box<dyn GeometryInterface + Sync + Send>>>(
-		name: Option<String>,
-		origin: Option<TransformData>,
 		geometry: Geometry,
-		material_description: Option<MaterialBuilder>,
 	) -> VisualBuilder {
-		VisualBuilder::new_full(name, origin, geometry, material_description)
+		VisualBuilder::new(geometry)
 	}
 
 	/// Maybe temp
 	// TODO: maybe Deprecation #[deprecated]
+	#[deprecated]
 	pub fn new<Geometry: Into<Box<dyn GeometryInterface + Sync + Send>>>(
 		name: Option<String>,
-		origin: Option<TransformData>,
+		origin: Option<Transform>,
 		geometry: Geometry,
 		material: Option<Material>,
 	) -> Self {
@@ -54,7 +51,7 @@ impl Visual {
 	}
 
 	/// TODO: Maybe make optional reference?
-	pub fn get_origin(&self) -> Option<&TransformData> {
+	pub fn get_origin(&self) -> Option<&Transform> {
 		self.origin.as_ref()
 	}
 
@@ -70,7 +67,6 @@ impl Visual {
 		self.material.as_mut()
 	}
 
-	// #[deprecated]
 	pub fn rebuild(&self) -> VisualBuilder {
 		VisualBuilder {
 			name: self.name.clone(),
@@ -103,6 +99,7 @@ impl ToURDF for Visual {
 			});
 		}
 		element.write_inner_content(|writer| {
+			// Could make this with `get_geometry_data``
 			if let Some(origin) = self.get_origin() {
 				origin.to_urdf(writer, urdf_config)?
 			}
@@ -128,7 +125,6 @@ impl PartialEq for Visual {
 				(Some(own_material), Some(other_material)) => {
 					// FIXME: The Or is for testing pursposes, It might need to be incorparted into the Lib, but then we need a differnt way
 					// Needed for unnamed materials, which do not share a reference.
-					// TODO: Redo materials
 					own_material == other_material
 				}
 				_ => false,
@@ -154,10 +150,11 @@ mod tests {
 
 	use crate::{
 		link::{
+			builder::VisualBuilder,
 			geometry::{BoxGeometry, CylinderGeometry, SphereGeometry},
 			visual::Visual,
 		},
-		transform_data::TransformData,
+		transform_data::Transform,
 	};
 
 	#[cfg(feature = "urdf")]
@@ -169,9 +166,13 @@ mod tests {
 		};
 		use std::io::Seek;
 
-		fn test_to_urdf_visual(visual: Visual, result: String, urdf_config: &URDFConfig) {
+		fn test_to_urdf_visual(visual: VisualBuilder, result: String, urdf_config: &URDFConfig) {
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(visual.to_urdf(&mut writer, urdf_config).is_ok());
+			assert!(visual
+				.build()
+				.unwrap()
+				.to_urdf(&mut writer, urdf_config)
+				.is_ok());
 
 			writer.inner().rewind().unwrap();
 
@@ -181,7 +182,7 @@ mod tests {
 		#[test]
 		fn no_name_no_origin_no_material() {
 			test_to_urdf_visual(
-				Visual::new(None, None, BoxGeometry::new(1.0, 2.0, 3.0), None),
+				Visual::builder(BoxGeometry::new(1.0, 2.0, 3.0)),
 				String::from(r#"<visual><geometry><box size="1 2 3"/></geometry></visual>"#),
 				&URDFConfig::default(),
 			);
@@ -190,12 +191,7 @@ mod tests {
 		#[test]
 		fn name_no_origin_no_material() {
 			test_to_urdf_visual(
-				Visual::new(
-					Some("myLink_vis".to_owned()),
-					None,
-					CylinderGeometry::new(9., 6.258),
-					None,
-				),
+				Visual::builder(CylinderGeometry::new(9., 6.258)).named("myLink_vis"),
 				String::from(
 					r#"<visual name="myLink_vis"><geometry><cylinder radius="9" length="6.258"/></geometry></visual>"#,
 				),
@@ -206,15 +202,8 @@ mod tests {
 		#[test]
 		fn no_name_origin_no_material() {
 			test_to_urdf_visual(
-				Visual::new(
-					None,
-					Some(TransformData {
-						translation: Some((4., 6.78, 1.)),
-						rotation: Some((PI, 2. * PI, 0.)),
-					}),
-					SphereGeometry::new(3.),
-					None,
-				),
+				Visual::builder(SphereGeometry::new(3.))
+					.tranformed(Transform::new((4., 6.78, 1.), (PI, 2. * PI, 0.))),
 				String::from(
 					r#"<visual><origin xyz="4 6.78 1" rpy="3.1415927 6.2831855 0"/><geometry><sphere radius="3"/></geometry></visual>"#,
 				),
@@ -225,14 +214,9 @@ mod tests {
 		#[test]
 		fn no_name_no_origin_material() {
 			test_to_urdf_visual(
-				Visual::builder(
-					None,
-					None,
-					CylinderGeometry::new(4.5, 75.35),
-					Some(MaterialBuilder::new_color(0.5, 0.55, 0.6, 1.).named("material_name")),
-				)
-				.build()
-				.unwrap(),
+				Visual::builder(CylinderGeometry::new(4.5, 75.35)).material(
+					MaterialBuilder::new_color(0.5, 0.55, 0.6, 1.).named("material_name"),
+				),
 				String::from(
 					r#"<visual><geometry><cylinder radius="4.5" length="75.35"/></geometry><material name="material_name"><color rgba="0.5 0.55 0.6 1"/></material></visual>"#,
 				),
@@ -246,17 +230,10 @@ mod tests {
 		#[test]
 		fn name_origin_material() {
 			test_to_urdf_visual(
-				Visual::builder(
-					Some("some_col".into()),
-					Some(TransformData {
-						translation: Some((5.4, 9.1, 7.8)),
-						..Default::default()
-					}),
-					CylinderGeometry::new(4.5, 75.35),
-					Some(MaterialBuilder::new_color(0.75, 0.5, 1., 1.)),
-				)
-				.build()
-				.unwrap(),
+				Visual::builder(CylinderGeometry::new(4.5, 75.35))
+					.named("some_col")
+					.tranformed(Transform::new_translation(5.4, 9.1, 7.8))
+					.material(MaterialBuilder::new_color(0.75, 0.5, 1., 1.)),
 				String::from(
 					r#"<visual name="some_col"><origin xyz="5.4 9.1 7.8"/><geometry><cylinder radius="4.5" length="75.35"/></geometry><material><color rgba="0.75 0.5 1 1"/></material></visual>"#,
 				),
