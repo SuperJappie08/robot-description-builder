@@ -81,7 +81,7 @@ fn main() {
 			},
 		)
 		.unwrap()
-		.inner()
+		.into_inner()
 		.to_owned();
 
 		let mut out = String::new();

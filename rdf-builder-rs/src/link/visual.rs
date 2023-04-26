@@ -174,9 +174,12 @@ mod tests {
 				.to_urdf(&mut writer, urdf_config)
 				.is_ok());
 
-			writer.inner().rewind().unwrap();
+			writer.get_mut().rewind().unwrap();
 
-			assert_eq!(std::io::read_to_string(writer.inner()).unwrap(), result)
+			assert_eq!(
+				std::io::read_to_string(writer.into_inner()).unwrap(),
+				result
+			)
 		}
 
 		#[test]

@@ -168,10 +168,10 @@ mod tests {
 				.to_urdf(&mut writer, &URDFConfig::default())
 				.is_ok());
 
-			writer.inner().rewind().unwrap();
+			writer.get_mut().rewind().unwrap();
 
 			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
+				std::io::read_to_string(writer.into_inner()).unwrap(),
 				String::from(r#"<geometry><sphere radius="1"/></geometry>"#)
 			);
 		}
@@ -181,10 +181,10 @@ mod tests {
 				.to_urdf(&mut writer, &URDFConfig::default())
 				.is_ok());
 
-			writer.inner().rewind().unwrap();
+			writer.get_mut().rewind().unwrap();
 
 			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
+				std::io::read_to_string(writer.into_inner()).unwrap(),
 				String::from(r#"<geometry><sphere radius="2"/></geometry>"#)
 			);
 		}
@@ -194,10 +194,10 @@ mod tests {
 				.to_urdf(&mut writer, &URDFConfig::default())
 				.is_ok());
 
-			writer.inner().rewind().unwrap();
+			writer.get_mut().rewind().unwrap();
 
 			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
+				std::io::read_to_string(writer.into_inner()).unwrap(),
 				String::from(r#"<geometry><sphere radius="9"/></geometry>"#)
 			);
 		}
@@ -207,10 +207,10 @@ mod tests {
 				.to_urdf(&mut writer, &URDFConfig::default())
 				.is_ok());
 
-			writer.inner().rewind().unwrap();
+			writer.get_mut().rewind().unwrap();
 
 			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
+				std::io::read_to_string(writer.into_inner()).unwrap(),
 				String::from(r#"<geometry><sphere radius="75.35"/></geometry>"#)
 			);
 		}

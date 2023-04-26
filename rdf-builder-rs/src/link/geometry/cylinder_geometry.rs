@@ -187,10 +187,10 @@ mod tests {
 				.to_urdf(&mut writer, &URDFConfig::default())
 				.is_ok());
 
-			writer.inner().rewind().unwrap();
+			writer.get_mut().rewind().unwrap();
 
 			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
+				std::io::read_to_string(writer.into_inner()).unwrap(),
 				String::from(r#"<geometry><cylinder radius="1" length="1"/></geometry>"#)
 			);
 		}
@@ -200,10 +200,10 @@ mod tests {
 				.to_urdf(&mut writer, &URDFConfig::default())
 				.is_ok());
 
-			writer.inner().rewind().unwrap();
+			writer.get_mut().rewind().unwrap();
 
 			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
+				std::io::read_to_string(writer.into_inner()).unwrap(),
 				String::from(r#"<geometry><cylinder radius="2" length="3"/></geometry>"#)
 			);
 		}
@@ -213,10 +213,10 @@ mod tests {
 				.to_urdf(&mut writer, &URDFConfig::default())
 				.is_ok());
 
-			writer.inner().rewind().unwrap();
+			writer.get_mut().rewind().unwrap();
 
 			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
+				std::io::read_to_string(writer.into_inner()).unwrap(),
 				String::from(r#"<geometry><cylinder radius="9" length="20"/></geometry>"#)
 			);
 		}
@@ -226,10 +226,10 @@ mod tests {
 				.to_urdf(&mut writer, &URDFConfig::default())
 				.is_ok());
 
-			writer.inner().rewind().unwrap();
+			writer.get_mut().rewind().unwrap();
 
 			assert_eq!(
-				std::io::read_to_string(writer.inner()).unwrap(),
+				std::io::read_to_string(writer.into_inner()).unwrap(),
 				String::from(r#"<geometry><cylinder radius="4.5" length="75.35"/></geometry>"#)
 			);
 		}
