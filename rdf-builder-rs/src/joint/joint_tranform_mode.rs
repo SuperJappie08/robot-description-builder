@@ -1,18 +1,11 @@
-use crate::{
-	link::LinkShapeData,
-	transform_data::{MirrorAxis, Transform},
-};
+use nalgebra::Matrix3;
+
+use crate::{link::LinkShapeData, transform_data::Transform};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum JointTransformMode {
 	Direct(Transform),
 	FigureItOut(fn(LinkShapeData) -> Transform),
-}
-
-impl From<fn(LinkShapeData) -> Transform> for JointTransformMode {
-	fn from(value: fn(LinkShapeData) -> Transform) -> Self {
-		Self::FigureItOut(value)
-	}
 }
 
 impl JointTransformMode {
@@ -23,12 +16,20 @@ impl JointTransformMode {
 		}
 	}
 
-	/// TODO: Maybe pub?
-	pub(crate) fn mirrored(&self, axis: MirrorAxis) -> Self {
+	pub(crate) fn mirror(&self, mirror_matrix: &Matrix3<f32>) -> (Self, Matrix3<f32>) {
 		match self {
-			JointTransformMode::Direct(tranform) => tranform.mirrored(axis).into(),
-			JointTransformMode::FigureItOut(_) => todo!(),
+			JointTransformMode::Direct(transform) => {
+				let (new_transform, new_mirror_matrix) = transform.mirror(mirror_matrix);
+				(Self::Direct(new_transform), new_mirror_matrix)
+			}
+			JointTransformMode::FigureItOut(_) => todo!("I do not know how to do this yet."),
 		}
+	}
+}
+
+impl From<fn(LinkShapeData) -> Transform> for JointTransformMode {
+	fn from(value: fn(LinkShapeData) -> Transform) -> Self {
+		Self::FigureItOut(value)
 	}
 }
 

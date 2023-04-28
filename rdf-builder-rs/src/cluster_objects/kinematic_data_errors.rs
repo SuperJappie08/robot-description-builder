@@ -12,6 +12,9 @@ use crate::{
 
 use super::kinematic_data_tree::KinematicDataTree;
 
+type PoisonReadIndexError<K, V> = PoisonError<ErroredRead<ArcLock<HashMap<K, V>>>>;
+type PoisonWriteIndexError<K, V> = PoisonError<ErroredWrite<ArcLock<HashMap<K, V>>>>;
+
 #[derive(Debug)]
 pub struct ErroredRead<T>(pub T);
 
@@ -63,10 +66,10 @@ pub enum AddMaterialError {
 	ReadMaterial(#[from] PoisonError<ErroredRead<ArcLock<MaterialData>>>),
 	/// Error that results from `PoisonError<RwLockReadGuard<'_, HashMap<String, ArcLock<MaterialData>>>>` occurs when attempting to read a poisoned `HashMap<String, ArcLock<MaterialData>>`.
 	#[error("Read MaterialIndex Error: {0}")]
-	ReadIndex(#[from] PoisonError<ErroredRead<ArcLock<HashMap<String, ArcLock<MaterialData>>>>>),
+	ReadIndex(#[from] PoisonReadIndexError<String, ArcLock<MaterialData>>),
 	/// Error that results from `PoisonError<RwLockWriteGuard<'_, HashMap<String, ArcLock<MaterialData>>>>` occurs when attempting to write to a poisoned `HashMap<String, ArcLock<MaterialData>>`.
 	#[error("Write MaterialIndex Error: {0}")]
-	WriteIndex(#[from] PoisonError<ErroredWrite<ArcLock<HashMap<String, ArcLock<MaterialData>>>>>),
+	WriteIndex(#[from] PoisonWriteIndexError<String, ArcLock<MaterialData>>),
 	#[error("Duplicate Material name '{0}'")]
 	Conflict(String),
 }
@@ -93,10 +96,10 @@ pub enum AddLinkError {
 	WriteLink(#[from] PoisonError<ErroredWrite<ArcLock<Link>>>),
 	/// Error that results from `PoisonError<RwLockReaddGuard<'_, HashMap<String, Weak<RwLock<Link>>>>` occurs when attempting to read a poisoned `Arc<RwLock<HashMap<String, Weak<RwLock<Link>>>>>`.
 	#[error("Read LinkIndex Error: {0}")]
-	ReadIndex(#[from] PoisonError<ErroredRead<ArcLock<HashMap<String, WeakLock<Link>>>>>),
+	ReadIndex(#[from] PoisonReadIndexError<String, WeakLock<Link>>),
 	/// Error that results from `PoisonError<RwLockWriteGuard<'_, HashMap<String, Weak<RwLock<Link>>>>` occurs when attempting to write to a poisoned `Arc<RwLock<HashMap<String, Weak<RwLock<Link>>>>>`.
 	#[error("Write LinkIndex Error: {0}")]
-	WriteIndex(#[from] PoisonError<ErroredWrite<ArcLock<HashMap<String, WeakLock<Link>>>>>),
+	WriteIndex(#[from] PoisonWriteIndexError<String, WeakLock<Link>>),
 	#[error("Duplicate Link name '{0}'")]
 	Conflict(String),
 	#[error(transparent)]
@@ -130,10 +133,10 @@ pub enum AddJointError {
 	ReadJoint(#[from] PoisonError<ErroredRead<ArcLock<Joint>>>),
 	/// Error that results from `PoisonError<RwLockReaddGuard<'_, HashMap<String, Weak<RwLock<Joint>>>>` occurs when attempting to read a poisoned `Arc<RwLock<HashMap<String, Weak<RwLock<Joint>>>>>`.
 	#[error("Read JointIndex Error: {0}")]
-	ReadIndex(#[from] PoisonError<ErroredRead<ArcLock<HashMap<String, WeakLock<Joint>>>>>),
+	ReadIndex(#[from] PoisonReadIndexError<String, WeakLock<Joint>>),
 	/// Error that results from `PoisonError<RwLockWriteGuard<'_, HashMap<String, Weak<RwLock<Joint>>>>` occurs when attempting to write to a poisoned `Arc<RwLock<HashMap<String, Weak<RwLock<Joint>>>>>`.
 	#[error("Write JointIndex Error: {0}")]
-	WriteIndex(#[from] PoisonError<ErroredWrite<ArcLock<HashMap<String, WeakLock<Joint>>>>>),
+	WriteIndex(#[from] PoisonWriteIndexError<String, WeakLock<Joint>>),
 	#[error("Duplicate Joint name '{0}'")]
 	Conflict(String),
 	#[error(transparent)]
@@ -160,10 +163,10 @@ pub enum AddTransmissionError {
 	ReadTransmission(#[from] PoisonError<ErroredRead<ArcLock<Transmission>>>),
 	/// Error that results from `PoisonError<RwLockReaddGuard<'_, HashMap<String, Weak<RwLock<Transmission>>>>` occurs when attempting to read a poisoned `Arc<RwLock<HashMap<String, Weak<RwLock<Transmission>>>>>`.
 	#[error("Read TransmissionIndex Error: {0}")]
-	ReadIndex(#[from] PoisonError<ErroredRead<ArcLock<HashMap<String, ArcLock<Transmission>>>>>),
+	ReadIndex(#[from] PoisonReadIndexError<String, ArcLock<Transmission>>),
 	/// Error that results from `PoisonError<RwLockWriteGuard<'_, HashMap<String, Weak<RwLock<Transmission>>>>` occurs when attempting to write to a poisoned `Arc<RwLock<HashMap<String, Weak<RwLock<Transmission>>>>>`.
 	#[error("Write TransmissionIndex Error: {0}")]
-	WriteIndex(#[from] PoisonError<ErroredWrite<ArcLock<HashMap<String, ArcLock<Transmission>>>>>),
+	WriteIndex(#[from] PoisonWriteIndexError<String, ArcLock<Transmission>>),
 	#[error("Duplicate Transmission name '{0}'")]
 	Conflict(String),
 }

@@ -1,6 +1,9 @@
+use nalgebra::Matrix3;
+
+use crate::transform_data::Transform;
+
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
-use crate::transform_data::Transform;
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
@@ -15,6 +18,18 @@ pub struct InertialData {
 	pub iyy: f32,
 	pub iyz: f32,
 	pub izz: f32,
+}
+
+impl InertialData {
+	pub(crate) fn mirror(&self, mirror_matrix: &Matrix3<f32>) -> Self {
+		Self {
+			origin: self
+				.origin
+				.as_ref()
+				.map(|transform| transform.mirror(mirror_matrix).0),
+			..self.clone()
+		}
+	}
 }
 
 #[cfg(feature = "urdf")]

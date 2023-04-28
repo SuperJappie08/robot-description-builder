@@ -1,3 +1,6 @@
+use itertools::Itertools;
+use nalgebra::{vector, Matrix3, Rotation3, Vector3};
+
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
 #[cfg(feature = "xml")]
@@ -62,55 +65,54 @@ impl Transform {
 		self.translation.is_some() || self.rotation.is_some()
 	}
 
-	/// TODO: There are multiple ways to mirror. Pick one that works and makes sense, or options
-	///  - Mirror full thing and thereby invert joint axis
-	///  - Mirror Only first joint
-	pub fn mirrored(&self, axis: MirrorAxis) -> Self {
-		// I doubt this check makes sense
-		if self.contains_some() {
-			match axis {
-				MirrorAxis::X => todo!(),
-				MirrorAxis::Y => todo!(),
-				MirrorAxis::Z => todo!(),
-			}
-		} else {
-			// Coping self
-			*self
-		}
+	pub(crate) fn mirror(&self, mirror_matrix: &Matrix3<f32>) -> (Self, Matrix3<f32>) {
+		(
+			Transform {
+				translation: self.translation.as_ref().map(|(x, y, z)| {
+					let old_translation = vector![*x, *y, *z];
+					(mirror_matrix * old_translation)
+						.component_mul(&Vector3::from_iterator(old_translation.iter().map(|val| {
+							if val.is_normal() {
+								1.
+							} else {
+								0.
+							}
+						}))) // TODO: Perfomance enhancements are probably possible.
+						.iter()
+						.copied()
+						.collect_tuple()
+						.unwrap() // Unwrapping here to ensure that we collect to a Tuple3 | TODO: Change to expect? or remove
+				}),
+				rotation: self.rotation.clone(),
+			},
+			match self.rotation.as_ref() {
+				Some(rpy) => {
+					Rotation3::from_euler_angles(rpy.0, rpy.1, rpy.2)
+						* mirror_matrix * Rotation3::from_euler_angles(rpy.0, rpy.1, rpy.2).inverse()
+				}
+				None => *mirror_matrix,
+			},
+		)
 	}
 }
-
-// FIXME: TODO: MAYBE UUSE ndarray instead?
-// Or euclid or euler
-
-// impl std::ops::Add for Transform {
-// 	type Output = Transform;
-
-// 	fn add(self, rhs: Self) -> Self::Output {
-// 		match (self.contains_some(), rhs.contains_some()) {
-// 			(true, true) => Self {
-// 				translation: match (self.translation, rhs.translation) {
-// 					(Some(lhs), Some(rhs)) => Some((lhs.0 + rhs.0, lhs.1 + rhs.1, lhs.2 + rhs.2)),
-// 					(own_translation, None) => own_translation,
-// 					(None, rhs_translation) => rhs_translation,
-// 				},
-// 				rotation: match (self.rotation, rhs.rotation) {
-// 					(Some(lhs), Some(rhs)) => Some((lhs.0 + rhs.0, lhs.1 + rhs.1, lhs.2 + rhs.2)),
-// 					(own_rot, None) => own_rot,
-// 					(None, rhs_rot) => rhs_rot,
-// 				},
-// 			},
-// 			(false, true) => rhs,
-// 			(_, false) => self,
-// 		}
-// 	}
-// }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum MirrorAxis {
 	X,
 	Y,
 	Z,
+}
+
+impl From<MirrorAxis> for Matrix3<f32> {
+	fn from(value: MirrorAxis) -> Self {
+		let diag = match value {
+			MirrorAxis::X => (-1., 1., 1.),
+			MirrorAxis::Y => (1., -1., 1.),
+			MirrorAxis::Z => (1., 1., -1.),
+		};
+
+		Matrix3::from_diagonal(&Vector3::new(diag.0, diag.1, diag.2))
+	}
 }
 
 #[cfg(feature = "urdf")]
@@ -153,7 +155,415 @@ impl From<Transform> for crate::joint::JointTransformMode {
 #[cfg(test)]
 mod tests {
 	use crate::transform_data::Transform;
+	use std::f32::consts::{FRAC_PI_2, FRAC_PI_4};
 	use test_log::test;
+
+	mod mirror {
+		use super::{test, *};
+		use crate::transform_data::MirrorAxis;
+		use nalgebra::{matrix, vector, Matrix3};
+
+		fn test_mirror(
+			transform: Transform,
+			mirror_axis: MirrorAxis,
+			result: (Transform, Matrix3<f32>),
+		) {
+			assert_eq!(transform.mirror(&mirror_axis.into()), result)
+		}
+
+		fn test_all_mirrors(transform: Transform, results: [(Transform, Matrix3<f32>); 3]) {
+			results
+				.into_iter()
+				.enumerate()
+				.map(|(index, result)| {
+					(
+						match index {
+							0 => MirrorAxis::X,
+							1 => MirrorAxis::Y,
+							2 => MirrorAxis::Z,
+							_ => unreachable!(),
+						},
+						result,
+					)
+				})
+				.for_each(|(mirror_axis, result)| test_mirror(transform, mirror_axis, result))
+		}
+
+		fn test_all_mirrors_angle_var(
+			transform: Transform,
+			angle: f32,
+			results: [(Transform, [Matrix3<f32>; 3]); 3],
+		) {
+			for i in 0..2 {
+				let rotation = match i {
+					0 => (angle, 0., 0.),
+					1 => (0., angle, 0.),
+					2 => (0., 0., angle),
+					_ => unreachable!(),
+				};
+
+				test_all_mirrors(
+					Transform {
+						rotation: Some(rotation),
+						..transform.clone()
+					},
+					[
+						(
+							Transform {
+								rotation: Some(rotation),
+								..results[0].0
+							},
+							results[0].1[i],
+						),
+						(
+							Transform {
+								rotation: Some(rotation),
+								..results[1].0
+							},
+							results[1].1[i],
+						),
+						(
+							Transform {
+								rotation: Some(rotation),
+								..results[2].0
+							},
+							results[2].1[i],
+						),
+					],
+				)
+			}
+		}
+
+		#[test]
+		fn uniaxial_no_rotation() {
+			// X
+			test_all_mirrors(
+				Transform::new_translation(2., 0., 0.),
+				[
+					(
+						Transform {
+							translation: Some((-2., 0., 0.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![-1., 1., 1.]),
+					),
+					(
+						Transform {
+							translation: Some((2., 0., 0.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![1., -1., 1.]),
+					),
+					(
+						Transform {
+							translation: Some((2., 0., 0.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![1., 1., -1.]),
+					),
+				],
+			);
+
+			// Y
+			test_all_mirrors(
+				Transform::new_translation(0., 0.5, 0.),
+				[
+					(
+						Transform {
+							translation: Some((0., 0.5, 0.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![-1., 1., 1.]),
+					),
+					(
+						Transform {
+							translation: Some((0., -0.5, 0.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![1., -1., 1.]),
+					),
+					(
+						Transform {
+							translation: Some((0., 0.5, 0.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![1., 1., -1.]),
+					),
+				],
+			);
+
+			// Z
+			test_all_mirrors(
+				Transform::new_translation(0., 0., -900.),
+				[
+					(
+						Transform {
+							translation: Some((0., 0., -900.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![-1., 1., 1.]),
+					),
+					(
+						Transform {
+							translation: Some((0., 0., -900.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![1., -1., 1.]),
+					),
+					(
+						Transform {
+							translation: Some((0., 0., 900.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![1., 1., -1.]),
+					),
+				],
+			);
+		}
+
+		#[test]
+		#[ignore = "Is this necessary?"]
+		fn uniaxial_unirotation() {
+			test_all_mirrors_angle_var(
+				Transform::new_translation(2., 0., 0.),
+				FRAC_PI_2,
+				[
+					(
+						Transform::new_translation(-2., 0., 0.),
+						[
+							matrix![
+								-1., 0., 0.;
+								0., 1., 0.;
+								0., 0., 1.;
+							],
+							Matrix3::from_diagonal(&vector![-1., 1., 1.]),
+							Matrix3::from_diagonal(&vector![-1., 1., 1.]),
+						],
+					),
+					(
+						Transform::new_translation(2., 0., 0.),
+						[
+							matrix![
+								1., 0. ,0.;
+								0., 1., 0.;
+								0. ,0. ,-1.;
+							],
+							Matrix3::from_diagonal(&vector![1., -1., 1.]),
+							Matrix3::from_diagonal(&vector![1., -1., 1.]),
+						],
+					),
+					(
+						Transform::new_translation(2., 0., 0.),
+						[
+							Matrix3::from_diagonal(&vector![1., 1., -1.]),
+							Matrix3::from_diagonal(&vector![1., 1., -1.]),
+							Matrix3::from_diagonal(&vector![1., 1., -1.]),
+						],
+					),
+				],
+			);
+
+			test_all_mirrors(
+				Transform::new_translation(2., 0., 0.),
+				[
+					(
+						Transform {
+							translation: Some((-2., 0., 0.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![-1., 1., 1.]),
+					),
+					(
+						Transform {
+							translation: Some((2., 0., 0.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![1., -1., 1.]),
+					),
+					(
+						Transform {
+							translation: Some((2., 0., 0.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![1., 1., -1.]),
+					),
+				],
+			);
+
+			// Y
+			test_all_mirrors(
+				Transform::new((0., 0.5, 0.), (FRAC_PI_2, 0., FRAC_PI_4)),
+				[
+					(
+						Transform {
+							translation: Some((0., 0.5, 0.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![-1., 1., 1.]),
+					),
+					(
+						Transform {
+							translation: Some((0., -0.5, 0.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![1., -1., 1.]),
+					),
+					(
+						Transform {
+							translation: Some((0., 0.5, 0.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![1., 1., -1.]),
+					),
+				],
+			);
+
+			// Z
+			test_all_mirrors(
+				Transform::new_translation(0., 0., -900.),
+				[
+					(
+						Transform {
+							translation: Some((0., 0., -900.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![-1., 1., 1.]),
+					),
+					(
+						Transform {
+							translation: Some((0., 0., -900.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![1., -1., 1.]),
+					),
+					(
+						Transform {
+							translation: Some((0., 0., 900.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![1., 1., -1.]),
+					),
+				],
+			);
+		}
+
+		#[test]
+		fn multiaxial_no_rotation() {
+			test_all_mirrors(
+				Transform::new_translation(2., 3., 0.),
+				[
+					(
+						Transform {
+							translation: Some((-2., 3., 0.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![-1., 1., 1.]),
+					),
+					(
+						Transform {
+							translation: Some((2., -3., 0.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![1., -1., 1.]),
+					),
+					(
+						Transform {
+							translation: Some((2., 3., 0.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![1., 1., -1.]),
+					),
+				],
+			);
+
+			test_all_mirrors(
+				Transform::new_translation(0., 0.5, 7.),
+				[
+					(
+						Transform {
+							translation: Some((0., 0.5, 7.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![-1., 1., 1.]),
+					),
+					(
+						Transform {
+							translation: Some((0., -0.5, 7.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![1., -1., 1.]),
+					),
+					(
+						Transform {
+							translation: Some((0., 0.5, -7.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![1., 1., -1.]),
+					),
+				],
+			);
+
+			test_all_mirrors(
+				Transform::new_translation(120., 0., -900.),
+				[
+					(
+						Transform {
+							translation: Some((-120., 0., -900.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![-1., 1., 1.]),
+					),
+					(
+						Transform {
+							translation: Some((120., 0., -900.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![1., -1., 1.]),
+					),
+					(
+						Transform {
+							translation: Some((120., 0., 900.)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![1., 1., -1.]),
+					),
+				],
+			);
+
+			test_all_mirrors(
+				Transform::new_translation(3., 4., 5.0005),
+				[
+					(
+						Transform {
+							translation: Some((-3., 4., 5.0005)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![-1., 1., 1.]),
+					),
+					(
+						Transform {
+							translation: Some((3., -4., 5.0005)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![1., -1., 1.]),
+					),
+					(
+						Transform {
+							translation: Some((3., 4., -5.0005)),
+							rotation: None,
+						},
+						Matrix3::from_diagonal(&vector![1., 1., -1.]),
+					),
+				],
+			)
+		}
+
+		#[test]
+		#[ignore = "Is this necessary?"]
+		fn multiaxial_rotation() {
+			todo!()
+		}
+	}
 
 	#[cfg(feature = "urdf")]
 	mod to_urdf {

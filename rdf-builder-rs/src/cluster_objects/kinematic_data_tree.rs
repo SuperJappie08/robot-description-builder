@@ -1,6 +1,6 @@
 use std::{
 	collections::HashMap,
-	sync::{Arc, PoisonError, RwLock, RwLockWriteGuard, Weak},
+	sync::{Arc, PoisonError, RwLock, Weak},
 };
 
 use itertools::{process_results, Itertools};
@@ -10,11 +10,12 @@ use crate::to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialMode, URDFMaterialR
 use crate::{
 	joint::Joint,
 	link::{builder::BuildLink, Link},
-	material_mod::{Material, MaterialData},
+	material_mod::{material_stage::MaterialStage, Material, MaterialData},
 	transmission::Transmission,
 	ArcLock, WeakLock,
 };
 
+use super::PoisonWriteIndexError;
 use crate::cluster_objects::kinematic_data_errors::*;
 
 #[derive(Debug)]
@@ -203,7 +204,7 @@ impl KinematicDataTree {
 	/// Cleans up orphaned/broken `Joint` entries from the `joints` HashMap.
 	pub(crate) fn purge_joints(
 		&self,
-	) -> Result<(), PoisonError<RwLockWriteGuard<'_, HashMap<String, WeakLock<Joint>>>>> {
+	) -> Result<(), PoisonWriteIndexError<String, WeakLock<Joint>>> {
 		let mut joints = self.joints.write()?;
 		joints.retain(|_, weak_joint| weak_joint.upgrade().is_some());
 		joints.shrink_to_fit();
@@ -211,9 +212,7 @@ impl KinematicDataTree {
 	}
 
 	/// Cleans up orphaned/broken `Link` entries from the `links` HashMap.
-	pub(crate) fn purge_links(
-		&self,
-	) -> Result<(), PoisonError<RwLockWriteGuard<'_, HashMap<String, WeakLock<Link>>>>> {
+	pub(crate) fn purge_links(&self) -> Result<(), PoisonWriteIndexError<String, WeakLock<Link>>> {
 		let mut links = self.links.write()?;
 		links.retain(|_, weak_link| weak_link.upgrade().is_some());
 		links.shrink_to_fit();
@@ -226,7 +225,7 @@ impl KinematicDataTree {
 	/// FIXME: This doesn't work if you hace multiple robots using the same material.
 	pub(crate) fn purge_materials(
 		&self,
-	) -> Result<(), PoisonError<RwLockWriteGuard<'_, HashMap<String, ArcLock<MaterialData>>>>> {
+	) -> Result<(), PoisonWriteIndexError<String, ArcLock<MaterialData>>> {
 		let mut materials = self.material_index.write()?;
 		materials.retain(|_, material| Arc::strong_count(material) > 1);
 		materials.shrink_to_fit();
@@ -236,7 +235,7 @@ impl KinematicDataTree {
 	/// Cleans up orphaned/broken `Transmission` entries from the `transmissions` HashMap
 	pub(crate) fn purge_transmissions(
 		&self,
-	) -> Result<(), PoisonError<RwLockWriteGuard<'_, HashMap<String, ArcLock<Transmission>>>>> {
+	) -> Result<(), PoisonWriteIndexError<String, ArcLock<Transmission>>> {
 		// Ok(())
 		todo!("Not Implemnted yet! First Implement `Transmission`")
 	}
@@ -268,17 +267,23 @@ impl ToURDF for KinematicDataTree {
 			self.material_index
 				.read()
 				.unwrap() // FIXME: Is unwrap ok here?
-				.values()
-				.filter(|material| {
+				.iter()
+				.filter(|(_, material_data)| {
+					// Maybe do this differently?
 					match urdf_config.material_references {
 						URDFMaterialReferences::AllNamedMaterialOnTop => true,
 						URDFMaterialReferences::OnlyMultiUseMaterials => {
-							Arc::strong_count(material) > 2
+							Arc::strong_count(material_data) > 2
 						} // Weak::strong_count(material_ref)
 					}
 				})
-				.map(|material| {
-					material.read().unwrap().to_urdf(
+				.map(|(name, arc_material_data)| Material::Named {
+					name: name.clone(), // FIXME: This might be a bit weird to do it like this, a propper construction method would be nice
+					data: MaterialStage::Initialized(Arc::clone(arc_material_data)),
+				})
+				.sorted_by_cached_key(|material| material.get_name().unwrap().clone()) // TODO: Is it worth to make sorting optional?
+				.map(|material: Material| {
+					material.to_urdf(
 						writer,
 						&URDFConfig {
 							direct_material_ref: URDFMaterialMode::FullMaterial,
@@ -319,7 +324,6 @@ impl PartialEq for KinematicDataTree {
 		// && self.transmissions == other.transmissions
 	}
 }
-// impl KinematicTreeTrait for KinematicTreeData {}
 
 #[cfg(test)]
 mod tests {
@@ -658,14 +662,179 @@ mod tests {
 	}
 
 	#[test]
-	#[ignore]
+	#[ignore = "TODO"]
 	fn newer_link_singular_full() {
 		todo!()
 	}
 
 	#[test]
-	#[ignore]
+	#[ignore = "TODO"]
 	fn newer_link_multi_full() {
 		todo!()
+	}
+
+	#[cfg(feature = "urdf")]
+	mod to_urdf {
+		use std::{io::Seek, sync::Arc};
+
+		use super::{test, KinematicDataTree};
+		use crate::{
+			link::link_data::{
+				geometry::{BoxGeometry, CylinderGeometry},
+				Collision, Visual,
+			},
+			link::Link,
+			to_rdf::{
+				to_urdf::{ToURDF, URDFConfig},
+				XMLMode,
+			},
+			MaterialBuilder, SmartJointBuilder, Transform,
+		};
+
+		fn test_to_urdf_kinematic_data_tree(
+			kinematic_data_tree: Arc<KinematicDataTree>,
+			result: String,
+			urdf_config: &URDFConfig,
+		) {
+			let mut writer = match urdf_config.xml_mode {
+				XMLMode::NoIndent => quick_xml::Writer::new(std::io::Cursor::new(Vec::new())),
+				XMLMode::Indent(c, depth) => quick_xml::Writer::new_with_indent(
+					std::io::Cursor::new(Vec::new()),
+					c as u8,
+					depth,
+				),
+			};
+			assert!(kinematic_data_tree
+				.to_urdf(&mut writer, urdf_config)
+				.is_ok());
+
+			writer.get_mut().rewind().unwrap();
+
+			assert_eq!(
+				std::io::read_to_string(writer.into_inner()).unwrap(),
+				result
+			)
+		}
+
+		#[test]
+		/// FIXME: This test checks for weird behavior, since I ran into an free floating [`MaterialData`](crate::material_mod::MaterialData)
+		///			It also show both root level materials and inline both is kind of Ok but it is uncessary
+		///
+		/// tl;dr: We are checking for weird behavior, but atleast the tested behavior is compliant.
+		fn material_as_matrials() {
+			let material_l1 = MaterialBuilder::new_rgb(1., 0., 0.).named("Leg_l1");
+			let material_l2 = MaterialBuilder::new_rgb(0., 1., 0.).named("Leg_l2");
+			let geom_leg_l1 = BoxGeometry::new(2., 3., 1.);
+			let geom_leg_l2 = CylinderGeometry::new(1., 10.);
+
+			let kinematic_data_tree = KinematicDataTree::newer_link(
+				Link::builder("Leg_[L1]_l1")
+					.add_visual(
+						Visual::builder(geom_leg_l1.clone())
+							.tranformed(Transform::new_translation(0., 1.5, 0.))
+							.named("Leg_[L1]_l1_vis_1")
+							.material(material_l1.clone()),
+					)
+					.add_collider(
+						Collision::builder(geom_leg_l1.clone())
+							.tranformed(Transform::new_translation(0., 1.5, 0.))
+							.named("Leg_[L1]_l1_col_1"),
+					),
+			);
+
+			kinematic_data_tree
+				.root_link
+				.try_write()
+				.unwrap()
+				.try_attach_child(
+					Link::builder("Leg_[L1]_l2")
+						.add_visual(
+							Visual::builder(geom_leg_l2.clone())
+								.tranformed(Transform::new(
+									(0., 5., 0.),
+									(std::f32::consts::FRAC_PI_2, 0., 0.),
+								))
+								.named("Leg_[L1]_l2_vis_1")
+								.material(material_l2.clone()),
+						)
+						.add_collider(
+							Collision::builder(geom_leg_l2.clone())
+								.tranformed(Transform::new(
+									(0., 5., 0.),
+									(std::f32::consts::FRAC_PI_2, 0., 0.),
+								))
+								.named("Leg_[L1]_l2_col_1"),
+						),
+					SmartJointBuilder::new_fixed("Leg_[L1]_j1").add_transform(Transform::new(
+						(0., 3., 0.),
+						(0., 0., std::f32::consts::FRAC_PI_2),
+					)),
+				)
+				.unwrap();
+
+			test_to_urdf_kinematic_data_tree(
+				kinematic_data_tree,
+				format!(
+					r#"<material name="Leg_l1">
+	<color rgba="1 0 0 1"/>
+</material>
+<material name="Leg_l2">
+	<color rgba="0 1 0 1"/>
+</material>
+<link name="Leg_[L1]_l1">
+	<visual name="Leg_[L1]_l1_vis_1">
+		<origin xyz="0 1.5 0"/>
+		<geometry>
+			<box size="2 3 1"/>
+		</geometry>
+		<material name="Leg_l1">
+			<color rgba="1 0 0 1"/>
+		</material>
+	</visual>
+	<collision name="Leg_[L1]_l1_col_1">
+		<origin xyz="0 1.5 0"/>
+		<geometry>
+			<box size="2 3 1"/>
+		</geometry>
+	</collision>
+</link>
+<joint name="Leg_[L1]_j1" type="fixed">
+	<origin xyz="0 3 0" rpy="0 0 {}"/>
+	<parent link="Leg_[L1]_l1"/>
+	<child link="Leg_[L1]_l2"/>
+</joint>
+<link name="Leg_[L1]_l2">
+	<visual name="Leg_[L1]_l2_vis_1">
+		<origin xyz="0 5 0" rpy="{} 0 0"/>
+		<geometry>
+			<cylinder radius="1" length="10"/>
+		</geometry>
+		<material name="Leg_l2">
+			<color rgba="0 1 0 1"/>
+		</material>
+	</visual>
+	<collision name="Leg_[L1]_l2_col_1">
+		<origin xyz="0 5 0" rpy="{} 0 0"/>
+		<geometry>
+			<cylinder radius="1" length="10"/>
+		</geometry>
+	</collision>
+</link>"#,
+					std::f32::consts::FRAC_PI_2,
+					std::f32::consts::FRAC_PI_2,
+					std::f32::consts::FRAC_PI_2,
+				),
+				&URDFConfig {
+					xml_mode: XMLMode::Indent('\t', 1),
+					..Default::default()
+				},
+			)
+		}
+
+		#[test]
+		#[ignore = "TODO"]
+		fn to_urdf_2() {
+			todo!("MORE TEST")
+		}
 	}
 }

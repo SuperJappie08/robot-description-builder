@@ -10,6 +10,7 @@ use crate::cluster_objects::KinematicInterface;
 use crate::to_rdf::XMLMode;
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
+/// FIXME: FIX CONFIG, MAYBE MAKE AN INTERNAL CONFIG TYPE
 pub struct URDFConfig {
 	pub material_references: URDFMaterialReferences,
 	pub direct_material_ref: URDFMaterialMode,

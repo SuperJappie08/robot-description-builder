@@ -8,7 +8,7 @@ pub struct MaterialBuilder {
 }
 
 impl MaterialBuilder {
-	/// Creates a new `MaterialBuilder` with a solid color (rgba)
+	/// Creates a new [`MaterialBuilder`] with a solid color (rgba)
 	///
 	/// The `red`, `green`, `blue` and `alpha` fields expect a value between 0 and 1.
 	///
@@ -26,7 +26,7 @@ impl MaterialBuilder {
 		}
 	}
 
-	/// Creates a new `MaterialBuilder` with a solid color (rgb)
+	/// Creates a new [`MaterialBuilder`] with a solid color (rgb)
 	///
 	/// The `red`, `green`, `blue` fields expect a value between 0 and 1.
 	///
@@ -44,7 +44,7 @@ impl MaterialBuilder {
 		}
 	}
 
-	/// Creates a new `MaterialBuilder` with a texture.
+	/// Creates a new [`MaterialBuilder`] with a texture.
 	///
 	/// `texture_path` should be a valid package path (e.g. `"package://robot_description/textures/{texture}"`). You are on your own here.
 	///
@@ -62,7 +62,7 @@ impl MaterialBuilder {
 		}
 	}
 
-	/// Creates a new `MaterialBuilder` from a pre-existing [`MaterialData`]
+	/// Creates a new [`MaterialBuilder`] from a pre-existing [`MaterialData`]
 	pub(crate) fn new_data(data: MaterialData) -> Self {
 		MaterialBuilder { name: None, data }
 	}

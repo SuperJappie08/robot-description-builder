@@ -30,7 +30,7 @@ pub enum Material {
 }
 
 impl Material {
-	/// TODO: PROPPER ERRORS
+	/// TODO: DOCS
 	pub(crate) fn initialize(&mut self, tree: &KinematicDataTree) -> Result<(), AddMaterialError> {
 		match self {
 			Material::Unamed(_) => Ok(()),
@@ -54,7 +54,7 @@ impl Material {
 								{
 									other_material
 								} else {
-									return Err(AddMaterialError::Conflict("Conflict".into()));
+									return Err(AddMaterialError::Conflict(name.clone()));
 								}
 							}
 							None => {

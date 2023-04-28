@@ -309,23 +309,3 @@ impl
 		}
 	}
 }
-
-// Convert to JointBuilder
-// impl<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>
-// 	TryFrom<SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>>
-// 	for JointBuilder
-// 	where Axis: smart_joint_datatraits::AxisDataType,
-// 	Calibration: smart_joint_datatraits::CalibrationDataType,
-// 	Dynamics: smart_joint_datatraits::DynamicsDataType,
-// 	Limit: smart_joint_datatraits::LimitDataType,
-// 	Mimic: smart_joint_datatraits::MimicDataType,
-// 	SafetyController: smart_joint_datatraits::SafetyControllerDataType
-// {
-// 	type Error = JointBuilder;
-
-// 	fn try_from(
-// 		value: SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>,
-// 	) -> Result<Self, Self::Error> {
-// 		todo!()
-// 	}
-// }

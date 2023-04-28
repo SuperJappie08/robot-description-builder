@@ -20,6 +20,8 @@ mod robot;
 pub use kinematic_tree::KinematicTree;
 pub use robot::Robot;
 
+type PoisonWriteIndexError<'a, K, V> = PoisonError<RwLockWriteGuard<'a, HashMap<K, V>>>;
+
 pub trait KinematicInterface {
 	// NOTE: THIS IS NOT FINAL;
 
@@ -73,6 +75,7 @@ pub trait KinematicInterface {
 
 	fn get_links(&self) -> ArcLock<HashMap<String, WeakLock<Link>>>;
 	fn get_joints(&self) -> ArcLock<HashMap<String, WeakLock<Joint>>>;
+	/// FIXME: This not Ok end-user should not interact wiht MaterialData
 	fn get_materials(&self) -> ArcLock<HashMap<String, ArcLock<MaterialData>>>;
 	fn get_transmissions(&self) -> ArcLock<HashMap<String, ArcLock<Transmission>>>;
 
@@ -95,28 +98,22 @@ pub trait KinematicInterface {
 	/// This mostly happens automatically, but is exposed for use in other methods.
 	///
 	/// TODO: DOCTEST/EXAMPLE
-	fn purge_links(
-		&self,
-	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, WeakLock<Link>>>>>;
+	fn purge_links(&self) -> Result<(), PoisonWriteIndexError<String, WeakLock<Link>>>;
 
 	/// Cleans up orphaned/broken `Joint` entries from the `joints` HashMap.
 	///
 	/// This mostly happens automatically, but is exposed for use in other methods.
 	///
 	/// TODO: DOCTEST/EXAMPLE
-	fn purge_joints(
-		&self,
-	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, WeakLock<Joint>>>>>;
+	fn purge_joints(&self) -> Result<(), PoisonWriteIndexError<String, WeakLock<Joint>>>;
 
 	/// Cleans up orphaned/unused `Material` entries from `material_index` HashMap
-	fn purge_materials(
-		&self,
-	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, ArcLock<MaterialData>>>>>;
+	fn purge_materials(&self) -> Result<(), PoisonWriteIndexError<String, ArcLock<MaterialData>>>;
 
 	/// Cleans up orphaned/broken `Transmission` entries from the `transmissions` HashMap
 	fn purge_transmissions(
 		&self,
-	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, ArcLock<Transmission>>>>>;
+	) -> Result<(), PoisonWriteIndexError<String, ArcLock<Transmission>>>;
 
 	fn yank_link(&self, name: &str) -> Option<Chained<LinkBuilder>> {
 		let builder = self
@@ -137,4 +134,6 @@ pub trait KinematicInterface {
 		self.purge_links().unwrap(); // FIXME: Is unwrap ok here?
 		builder
 	}
+
+	// TODO: MAYBE yank_root or a rebuild?
 }

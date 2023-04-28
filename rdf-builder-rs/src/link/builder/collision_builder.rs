@@ -1,3 +1,5 @@
+use nalgebra::Matrix3;
+
 use crate::{
 	link::geometry::GeometryInterface, link::geometry::GeometryShapeData, link::Collision,
 	transform_data::Transform,
@@ -55,6 +57,17 @@ impl CollisionBuilder {
 		GeometryShapeData {
 			origin: self.origin.unwrap_or_default(),
 			geometry: self.geometry.try_get_shape().unwrap(), // FIXME: Is unwrap OK?, for now Ok until Mesh gets supported
+		}
+	}
+
+	pub(crate) fn mirror(&self, mirror_matrix: &Matrix3<f32>) -> Self {
+		Self {
+			name: self.name.as_ref().map(Clone::clone), // FIXME: NAME
+			origin: self
+				.origin
+				.as_ref()
+				.map(|transform| transform.mirror(mirror_matrix).0),
+			geometry: self.geometry.boxed_clone(), // TODO: this only works on non-chiral geometries, non chiral meshes could maybe be scaled to neg
 		}
 	}
 }

@@ -1,3 +1,5 @@
+use nalgebra::Matrix3;
+
 use crate::{
 	link::geometry::GeometryInterface, link::visual::Visual,
 	link_data::geometry::GeometryShapeData, material_mod::MaterialBuilder,
@@ -76,6 +78,18 @@ impl VisualBuilder {
 		GeometryShapeData {
 			origin: self.origin.unwrap_or_default(),
 			geometry: self.geometry.try_get_shape().unwrap(), // FIXME: Is unwrap OK?, for now Ok until Mesh gets supported
+		}
+	}
+
+	pub(crate) fn mirror(&self, mirror_matrix: &Matrix3<f32>) -> Self {
+		Self {
+			name: self.name.as_ref().map(Clone::clone), // TODO: Fix
+			origin: self
+				.origin
+				.as_ref()
+				.map(|transform| transform.mirror(mirror_matrix).0),
+			geometry: self.geometry.boxed_clone(), // TODO: this only works on non-chiral geometries, FIX described in `CollisionBuilder`
+			material_description: self.material_description.clone(),
 		}
 	}
 }

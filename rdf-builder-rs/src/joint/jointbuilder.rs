@@ -1,5 +1,8 @@
 use std::sync::{Arc, RwLock, Weak};
 
+use itertools::Itertools;
+use nalgebra::{vector, Matrix3};
+
 use crate::{
 	cluster_objects::kinematic_data_tree::KinematicDataTree,
 	joint::{joint_data, joint_tranform_mode::JointTransformMode, Joint, JointType},
@@ -7,7 +10,6 @@ use crate::{
 		builder::{BuildLink, LinkBuilder},
 		Link, LinkShapeData,
 	},
-	transform_data::MirrorAxis,
 	ArcLock, WeakLock,
 };
 
@@ -119,11 +121,46 @@ impl JointBuilder {
 		self.safety_controller = Some(safety_controller_data);
 	}
 
-	/// TODO: WIP SEE TransfromData::mirrored()
-	pub fn mirrored(&self, axis: MirrorAxis) -> Self {
-		JointBuilder {
-			origin: self.origin.mirrored(axis),
-			..self.clone()
+	pub(crate) fn mirror(&self, mirror_matrix: &Matrix3<f32>) -> Self {
+		let (origin, new_mirror_matrix) = self.origin.mirror(mirror_matrix);
+		Self {
+			name: self.name.clone(), // FIXME: Rename
+			joint_type: self.joint_type,
+			origin,
+			child: self
+				.child
+				.as_ref()
+				.map(|link_builder| link_builder.mirror(&new_mirror_matrix)),
+			axis: match (self.joint_type, self.axis) {
+				(JointType::Fixed | JointType::Floating, _) => None, // TODO: Figure out if this clause should be moved down to allow for Fixed and Floating with axis if desired?
+				(_, Some((x, y, z))) => Some(
+					(new_mirror_matrix * vector![x, y, z])
+						.normalize() // Theoretically not necessary, but float rounding errors are a thing | TODO: Figure out if this improves the situation or makes it worse
+						.iter()
+						.copied()
+						.collect_tuple()
+						.unwrap(), // Unwrapping here to ensure that we collect to a Tuple3 | TODO: Change to expect? or remove
+				),
+				(
+					JointType::Revolute
+					| JointType::Continuous
+					| JointType::Prismatic
+					| JointType::Planar,
+					None,
+				) => Some(
+					(new_mirror_matrix * vector![1., 0., 0.])
+						.normalize() // Theoretically not necessary, but float rounding errors are a thing | TODO: Figure out if this improves the situation or makes it worse
+						.iter()
+						.copied()
+						.collect_tuple()
+						.unwrap(), // Unwrapping here to ensure that we collect to a Tuple3 | TODO: Change to expect? or remove
+				),
+			},
+			calibration: self.calibration,                // TODO: Is this Correct?
+			dynamics: self.dynamics,                      // TODO: Is this Correct?
+			limit: self.limit,                            // TODO: Is this Correct?
+			mimic: self.mimic.as_ref().map(Clone::clone), // TODO: Is this Correct?
+			safety_controller: self.safety_controller,    // TODO: Is this Correct?
 		}
 	}
 }

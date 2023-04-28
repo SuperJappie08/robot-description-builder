@@ -122,6 +122,7 @@ impl Link {
 	}
 
 	/// TODO: DOC
+	/// TODO: maybe flip arguments, because then it will be Link ( Joint, Link)
 	///
 	/// # DEFINED BEHAVIOR:
 	///  - The newest link get transfered from the child tree. TODO: VERIFY

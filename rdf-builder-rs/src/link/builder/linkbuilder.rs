@@ -1,16 +1,15 @@
 use std::sync::{Arc, RwLock, Weak};
 
-use inertial::InertialData;
 use itertools::process_results;
+use nalgebra::Matrix3;
 
 use crate::{
 	cluster_objects::kinematic_data_tree::KinematicDataTree,
 	joint::{BuildJointChain, Joint, JointBuilder},
 	link::{
 		builder::{visual_builder::VisualBuilder, BuildLink},
-		Link, LinkParent, LinkShapeData,
+		link_data, Link, LinkParent, LinkShapeData,
 	},
-	link::{inertial, link_data},
 	ArcLock, KinematicTree, WeakLock,
 };
 
@@ -48,7 +47,7 @@ impl LinkBuilder {
 		self
 	}
 
-	pub fn intertial(mut self, inertial: InertialData) -> Self {
+	pub fn intertial(mut self, inertial: link_data::InertialData) -> Self {
 		self.intertial = Some(inertial);
 		self
 	}
@@ -83,6 +82,31 @@ impl LinkBuilder {
 	/// FIXME: This is temporary, since BuildLink is now a private trait
 	pub fn build_tree(self) -> KinematicTree {
 		BuildLink::build_tree(self)
+	}
+
+	pub(crate) fn mirror(&self, mirror_matrix: &Matrix3<f32>) -> Self {
+		Self {
+			name: self.name.clone(), // TODO: rename mirrored
+			visual_builders: self
+				.visual_builders
+				.iter()
+				.map(|visual_builder| visual_builder.mirror(mirror_matrix))
+				.collect(),
+			colliders: self
+				.colliders
+				.iter()
+				.map(|collider_builder| collider_builder.mirror(mirror_matrix))
+				.collect(),
+			intertial: self
+				.intertial
+				.as_ref()
+				.map(|intertial_data| intertial_data.mirror(mirror_matrix)),
+			joints: self
+				.joints
+				.iter()
+				.map(|joint_builder| joint_builder.mirror(mirror_matrix))
+				.collect(),
+		}
 	}
 }
 

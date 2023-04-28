@@ -13,6 +13,7 @@ itertools = "0.10.5"
 log = { version = "0.4.*", optional = true, features = ["std"] }
 quick-xml = { version = "0.28.2", optional = true }
 thiserror = "1.0.40"
+nalgebra = "0.32.2"
 
 [dev-dependencies]
 log = { version = "0.4.*", features = ["std"] }
