@@ -1,7 +1,12 @@
 mod chained_jointbuilder;
 mod chained_linkbuilder;
 
-use std::fmt::Debug;
+use std::{
+	fmt::Debug,
+	ops::{Deref, DerefMut},
+};
+
+use crate::identifiers::GroupIDChanger;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Chained<Builder: ChainableBuilder>(pub(crate) Builder);
@@ -19,6 +24,7 @@ where
 		&mut self.0
 	}
 
+	/// TODO: Maybe deprecate since Deref and DerefMut
 	/// Allows the internal `Builder` and it's chain to be changed by a closure.
 	///
 	/// If in this process the `Builder` has lost it's chain, for example due to overwriting.
@@ -39,7 +45,145 @@ where
 	}
 }
 
-pub trait ChainableBuilder: Debug + PartialEq + Clone {
+// To allow for calling functions on the internal builders
+// TODO: Figure out if builderfunctions do not free the internal builder from it `Chained<Builder>` Identifier
+impl<Builder> Deref for Chained<Builder>
+where
+	Builder: ChainableBuilder,
+{
+	type Target = Builder;
+
+	fn deref(&self) -> &Self::Target {
+		&self.0
+	}
+}
+
+// To allow for calling functions on the internal builders
+impl<Builder> DerefMut for Chained<Builder>
+where
+	Builder: ChainableBuilder,
+{
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		&mut self.0
+	}
+}
+
+pub trait ChainableBuilder: Debug + PartialEq + Clone + GroupIDChanger {
 	/// Returns `true` if the builder has a chain/one or more childeren.
 	fn has_chain(&self) -> bool;
+}
+
+#[cfg(test)]
+mod tests {
+	use super::Chained;
+	use crate::{
+		joint::{JointBuilder, SmartJointBuilder},
+		link::{builder::LinkBuilder, Link},
+		prelude::*,
+	};
+	use test_log::test;
+
+	/// For my own conncept of `DerefMut`
+	#[test]
+	fn deref_mut_test() {
+		let leg_tree = Link::builder("leg_[[L01]]_l1").build_tree();
+		leg_tree
+			.get_root_link()
+			.try_write()
+			.unwrap()
+			.try_attach_child(
+				Link::builder("leg_[[L01]]_l2"),
+				SmartJointBuilder::new_fixed("leg_[[L01]]_j1"),
+			)
+			.unwrap();
+
+		let tree = Link::builder("root").build_tree();
+		tree.get_root_link()
+			.try_write()
+			.unwrap()
+			.try_attach_child(leg_tree, SmartJointBuilder::new_fixed("leg_[[L01]]_j0"))
+			.unwrap();
+
+		let builder_chain = tree.yank_joint("leg_[[L01]]_j0").unwrap();
+
+		assert_eq!(
+			builder_chain,
+			Chained(JointBuilder {
+				name: "leg_[[L01]]_j0".into(),
+				child: Some(LinkBuilder {
+					name: "leg_[[L01]]_l1".into(),
+					joints: vec![JointBuilder {
+						name: "leg_[[L01]]_j1".into(),
+						child: Some(LinkBuilder {
+							name: "leg_[[L01]]_l2".into(),
+							..Default::default()
+						}),
+						..Default::default()
+					}],
+					..Default::default()
+				}),
+				..Default::default()
+			})
+		);
+
+		let mut mirrored_chain = builder_chain
+			.clone()
+			.mirror(crate::transform_data::MirrorAxis::X);
+		// TODO: Add chainable version?
+		mirrored_chain.change_group_id("R01").unwrap();
+
+		let tree = Link::builder("root").build_tree();
+		tree.get_root_link()
+			.try_write()
+			.unwrap()
+			.attach_joint_chain(builder_chain)
+			.unwrap();
+		tree.get_root_link()
+			.try_write()
+			.unwrap()
+			.attach_joint_chain(mirrored_chain)
+			.unwrap();
+
+		assert_eq!(
+			tree.yank_link("root").unwrap(),
+			Chained(LinkBuilder {
+				name: "root".into(),
+				joints: vec![
+					JointBuilder {
+						name: "leg_[[L01]]_j0".into(),
+						child: Some(LinkBuilder {
+							name: "leg_[[L01]]_l1".into(),
+							joints: vec![JointBuilder {
+								name: "leg_[[L01]]_j1".into(),
+								child: Some(LinkBuilder {
+									name: "leg_[[L01]]_l2".into(),
+									..Default::default()
+								}),
+								..Default::default()
+							}],
+							..Default::default()
+						}),
+						..Default::default()
+					},
+					JointBuilder {
+						name: "leg_[[R01]]_j0".into(),
+						child: Some(LinkBuilder {
+							name: "leg_[[R01]]_l1".into(),
+							joints: vec![JointBuilder {
+								name: "leg_[[R01]]_j1".into(),
+								child: Some(LinkBuilder {
+									name: "leg_[[R01]]_l2".into(),
+									..Default::default()
+								}),
+								..Default::default()
+							}],
+							..Default::default()
+						}),
+						..Default::default()
+					}
+				],
+				..Default::default()
+			})
+		)
+	}
 }

@@ -7,10 +7,10 @@
 - [x] Implement geometries
 - [x] Implement Materials fully
 - [x] Implement to URDF some way.
-- [ ] Implement mirroring
-  - `KinematicInterface::Mirror(...)`
-- [ ] Implement propper name cloning
-  - `change_group_tag` function
+- [X] Implement mirroring
+  - ~~`KinematicInterface::Mirror(...)`~~ ```Chainded<T: ChainableBuilder>::mirror(...)``` 
+- [x] Implement propper name cloning
+  - ~~`change_group_tag`~~ `change_group_id` method
 - [ ] Transmissions
 - [ ] Wrap to python
 - [ ] Add LICENSE
@@ -27,3 +27,7 @@
   - This might be clearer and easier to find online 
 
 See Obsidian
+
+## Might be nice to look into
+ - [`nalgebra`](https://nalgebra.org/docs/user_guide/getting_started#usage-and-cargo-features) supports `arbitrary` feature which allows for randomized propperty testing using [`quickcheck`](https://crates.io/crates/quickcheck)
+   - `quick-xml` also has a feature for it

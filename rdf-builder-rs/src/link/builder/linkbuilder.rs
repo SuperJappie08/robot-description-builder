@@ -5,6 +5,7 @@ use nalgebra::Matrix3;
 
 use crate::{
 	cluster_objects::kinematic_data_tree::KinematicDataTree,
+	identifiers::GroupIDChanger,
 	joint::{BuildJointChain, Joint, JointBuilder},
 	link::{
 		builder::{visual_builder::VisualBuilder, BuildLink},
@@ -202,16 +203,49 @@ impl BuildLink for LinkBuilder {
 	}
 }
 
+impl GroupIDChanger for LinkBuilder {
+	unsafe fn change_group_id_unchecked(&mut self, new_group_id: &str) {
+		self.name.change_group_id_unchecked(new_group_id);
+
+		self.get_visuals_mut()
+			.iter_mut()
+			.for_each(|visual_builder| visual_builder.change_group_id_unchecked(new_group_id));
+		self.get_colliders_mut()
+			.iter_mut()
+			.for_each(|collision_builder| {
+				collision_builder.change_group_id_unchecked(new_group_id)
+			});
+
+		self.joints
+			.iter_mut()
+			.for_each(|joint_builder| joint_builder.change_group_id_unchecked(new_group_id));
+	}
+
+	fn apply_group_id(&mut self) {
+		self.name.apply_group_id();
+
+		self.get_visuals_mut()
+			.iter_mut()
+			.for_each(|visual_builder| visual_builder.apply_group_id());
+		self.get_colliders_mut()
+			.iter_mut()
+			.for_each(|collision_builder| collision_builder.apply_group_id());
+
+		self.joints
+			.iter_mut()
+			.for_each(|joint_builder| joint_builder.apply_group_id());
+	}
+}
+
 #[cfg(test)]
 mod tests {
+	use super::{BuildLink, LinkBuilder};
 	use crate::{
 		link::{
-			builder::{BuildLink, LinkBuilder, VisualBuilder},
-			geometry::{BoxGeometry, GeometryShapeData, SphereGeometry},
+			builder::{CollisionBuilder, VisualBuilder},
+			geometry::{BoxGeometry, CylinderGeometry, GeometryShapeData, SphereGeometry},
 			link_shape_data::LinkShapeData,
 		},
-		link_data::geometry::CylinderGeometry,
-		linkbuilding::CollisionBuilder,
 		transform_data::Transform,
 	};
 	use test_log::test;
@@ -291,6 +325,101 @@ mod tests {
 					]
 				}
 			)
+		}
+	}
+
+	mod group_id_changer {
+		use super::{test, LinkBuilder};
+		use crate::identifiers::{GroupIDChanger, GroupIDError};
+
+		#[test]
+		fn change_group_id_unchecked_simple() {
+			#[inline]
+			fn test(name: impl Into<String>, new_group_id: &str, result: &str) {
+				let mut link_builder = LinkBuilder::new(name);
+				unsafe {
+					link_builder.change_group_id_unchecked(new_group_id);
+				}
+				assert_eq!(link_builder.name, result)
+			}
+
+			test("leg_[[M09da]]_link_1", "C10df", "leg_[[C10df]]_link_1");
+			test("leg_[[M09da]]_link_1", "", "leg_[[]]_link_1");
+			test("leg_[[M09da]]_link_1", "[[tsst", "leg_[[[[tsst]]_link_1");
+			test("leg_[[M09da]]_link_1", "tsst]]", "leg_[[tsst]]]]_link_1");
+		}
+
+		#[test]
+		#[ignore = "TODO"]
+		fn change_group_id_unchecked_advanced() {
+			todo!()
+		}
+
+		#[test]
+		fn change_group_id_simple() {
+			#[inline]
+			fn test(
+				name: impl Into<String>,
+				new_group_id: &str,
+				change_result: Result<(), GroupIDError>,
+				result: &str,
+			) {
+				let mut link_builder = LinkBuilder::new(name);
+				assert_eq!(link_builder.change_group_id(new_group_id), change_result);
+				assert_eq!(link_builder.name, result)
+			}
+
+			test(
+				"leg_[[M09da]]_link_1",
+				"C10df",
+				Ok(()),
+				"leg_[[C10df]]_link_1",
+			);
+			test(
+				"leg_[[M09da]]_link_1",
+				"",
+				Err(GroupIDError::new_empty()),
+				"leg_[[M09da]]_link_1",
+			);
+			test(
+				"leg_[[M09da]]_link_1",
+				"[[tsst",
+				Err(GroupIDError::new_open("[[tsst")),
+				"leg_[[M09da]]_link_1",
+			);
+			test(
+				"leg_[[M09da]]_link_1",
+				"tsst]]",
+				Err(GroupIDError::new_close("tsst]]")),
+				"leg_[[M09da]]_link_1",
+			);
+		}
+
+		#[test]
+		#[ignore = "TODO"]
+		fn change_group_id_advanced() {
+			todo!()
+		}
+
+		#[test]
+		fn apply_group_id_simple() {
+			#[inline]
+			fn test(name: impl Into<String>, result: &str) {
+				let mut link_builder = LinkBuilder::new(name);
+				link_builder.apply_group_id();
+				assert_eq!(link_builder.name, result)
+			}
+
+			test("leg_[[M09da]]_link_1", "leg_M09da_link_1");
+			test("leg_[[M09daf_link_1", "leg_[[M09daf_link_1");
+			test("leg_sM09da]]_link_1", "leg_sM09da]]_link_1");
+			test("leg_[\\[M09da]\\]_link_1", "leg_[[M09da]]_link_1");
+		}
+
+		#[test]
+		#[ignore = "TODO"]
+		fn apply_group_id_advanced() {
+			todo!()
 		}
 	}
 }

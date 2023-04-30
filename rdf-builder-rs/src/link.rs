@@ -247,7 +247,7 @@ impl Link {
 	/// Rebuilds everything below this aswell
 	///
 	/// TODO: FINISH
-	pub fn rebuild_branch(&self) -> LinkBuilder {
+	pub(crate) fn rebuild_branch(&self) -> LinkBuilder {
 		LinkBuilder {
 			joints: self
 				.child_joints

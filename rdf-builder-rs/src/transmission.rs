@@ -1,3 +1,4 @@
+// use crate::{WeakLock, Joint};
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
 #[cfg(feature = "xml")]
@@ -6,10 +7,31 @@ use quick_xml::{
 	name::QName,
 };
 
+// #[derive(Debug)]
+// pub struct TransmissionBuilder{
+// 	name: String,
+// 	transmission_type: String,
+// 	joints: Vec<TransmissionJoint>
+// }
+
+// #[derive(Debug)]
+// pub struct TransmissionJoint {
+// 	joint: WeakLock<Joint>,
+// 	/// TODO:
+// 	hardware_interface: TransmissionHardwareInterface,
+// }
+
+// #[derive(Debug)]
+// pub enum TransmissionHardwareInterface {
+
+// }
+
 #[derive(Debug, PartialEq, Eq)]
 /// TODO: IMPLEMENT PROPPERLY, THIS IS TEMPORARY
 pub struct Transmission {
 	pub name: String,
+	/// TODO: Figure out if this is constant, probably give the ability to change it via builder
+	pub(crate) transmission_type: String,
 }
 
 impl Transmission {

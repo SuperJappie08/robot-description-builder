@@ -5,6 +5,7 @@ use nalgebra::{vector, Matrix3};
 
 use crate::{
 	cluster_objects::kinematic_data_tree::KinematicDataTree,
+	identifiers::GroupIDChanger,
 	joint::{joint_data, joint_tranform_mode::JointTransformMode, Joint, JointType},
 	link::{
 		builder::{BuildLink, LinkBuilder},
@@ -226,5 +227,173 @@ impl BuildJointChain for JointBuilder {
 				me: Weak::clone(me),
 			})
 		})
+	}
+}
+
+impl GroupIDChanger for JointBuilder {
+	unsafe fn change_group_id_unchecked(&mut self, new_group_id: &str) {
+		self.name.change_group_id_unchecked(new_group_id);
+
+		if let Some(link_builder) = self.child.as_mut() {
+			link_builder.change_group_id_unchecked(new_group_id);
+		}
+	}
+
+	fn apply_group_id(&mut self) {
+		self.name.apply_group_id();
+
+		if let Some(link_builder) = self.child.as_mut() {
+			link_builder.apply_group_id();
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::{JointBuilder, JointType};
+	use test_log::test;
+
+	mod group_id_changer {
+		use super::{test, JointBuilder, JointType};
+		use crate::identifiers::{GroupIDChanger, GroupIDError};
+
+		#[test]
+		fn change_group_id_unchecked_simple() {
+			#[inline]
+			fn test(
+				name: impl Into<String>,
+				joint_type: JointType,
+				new_group_id: &str,
+				result: &str,
+			) {
+				let mut joint_builder = JointBuilder::new(name, joint_type);
+				unsafe {
+					joint_builder.change_group_id_unchecked(new_group_id);
+				}
+				assert_eq!(joint_builder.name, result)
+			}
+
+			test(
+				"leg_[[M09da]]_joint_1",
+				JointType::Fixed,
+				"C10df",
+				"leg_[[C10df]]_joint_1",
+			);
+
+			test(
+				"leg_[[M09da]]_joint_1",
+				JointType::Fixed,
+				"",
+				"leg_[[]]_joint_1",
+			);
+
+			test(
+				"leg_[[M09da]]_joint_1",
+				JointType::Fixed,
+				"[[tsst",
+				"leg_[[[[tsst]]_joint_1",
+			);
+
+			test(
+				"leg_[[M09da]]_joint_1",
+				JointType::Fixed,
+				"tsst]]",
+				"leg_[[tsst]]]]_joint_1",
+			);
+		}
+
+		#[test]
+		#[ignore = "TODO"]
+		fn test_change_group_id_unchecked_advanced() {
+			todo!("Chained things")
+		}
+
+		#[test]
+		fn change_group_id_simple() {
+			#[inline]
+			fn test(
+				name: impl Into<String>,
+				joint_type: JointType,
+				group_id: &str,
+				change_result: Result<(), GroupIDError>,
+				final_name: &str,
+			) {
+				let mut joint_builder = JointBuilder::new(name, joint_type);
+				assert_eq!(joint_builder.change_group_id(group_id), change_result);
+				assert_eq!(joint_builder.name, final_name)
+			}
+
+			test(
+				"leg_[[M09da]]_joint_1",
+				JointType::Fixed,
+				"C10df",
+				Ok(()),
+				"leg_[[C10df]]_joint_1",
+			);
+			test(
+				"leg_[[M09da]]_joint_1",
+				JointType::Fixed,
+				"",
+				Err(GroupIDError::new_empty()),
+				"leg_[[M09da]]_joint_1",
+			);
+			test(
+				"leg_[[M09da]]_joint_1",
+				JointType::Fixed,
+				"[[tsst",
+				Err(GroupIDError::new_open("[[tsst")),
+				"leg_[[M09da]]_joint_1",
+			);
+			test(
+				"leg_[[M09da]]_joint_1",
+				JointType::Fixed,
+				"tsst]]",
+				Err(GroupIDError::new_close("tsst]]")),
+				"leg_[[M09da]]_joint_1",
+			);
+		}
+
+		#[test]
+		#[ignore = "TODO"]
+		fn change_group_id_advanced() {
+			todo!()
+		}
+
+		#[test]
+		fn apply_group_id_simple() {
+			#[inline]
+			fn test(name: impl Into<String>, joint_type: JointType, final_name: &str) {
+				let mut joint_builder = JointBuilder::new(name, joint_type);
+				joint_builder.apply_group_id();
+				assert_eq!(joint_builder.name, final_name)
+			}
+
+			test(
+				"leg_[[M09da]]_joint_1",
+				JointType::Fixed,
+				"leg_M09da_joint_1",
+			);
+			test(
+				"leg_[[M09daf_joint_1",
+				JointType::Fixed,
+				"leg_[[M09daf_joint_1",
+			);
+			test(
+				"leg_sM09da]]_joint_1",
+				JointType::Fixed,
+				"leg_sM09da]]_joint_1",
+			);
+			test(
+				"leg_[\\[M09da]\\]_joint_1",
+				JointType::Fixed,
+				"leg_[[M09da]]_joint_1",
+			);
+		}
+
+		#[test]
+		#[ignore = "TODO"]
+		fn apply_group_id_advanced() {
+			todo!()
+		}
 	}
 }

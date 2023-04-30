@@ -4,7 +4,8 @@ use quick_xml::{events::attributes::Attribute, name::QName};
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
 use crate::{
-	link::geometry::GeometryInterface, linkbuilding::CollisionBuilder, transform_data::Transform,
+	link::{builder::CollisionBuilder, geometry::GeometryInterface},
+	transform_data::Transform,
 };
 
 #[derive(Debug)]
@@ -18,24 +19,10 @@ pub struct Collision {
 }
 
 impl Collision {
-	pub fn builder<Geometry: Into<Box<dyn GeometryInterface + Sync + Send>>>(
-		geometry: Geometry,
+	pub fn builder(
+		geometry: impl Into<Box<dyn GeometryInterface + Sync + Send>>,
 	) -> CollisionBuilder {
 		CollisionBuilder::new(geometry)
-	}
-
-	/// Maybe temp
-	#[deprecated]
-	pub fn new<Geometry: Into<Box<dyn GeometryInterface + Sync + Send>>>(
-		name: Option<String>,
-		origin: Option<Transform>,
-		geometry: Geometry,
-	) -> Self {
-		Self {
-			name,
-			origin,
-			geometry: geometry.into(),
-		}
 	}
 
 	pub fn get_name(&self) -> Option<&String> {

@@ -102,7 +102,8 @@ impl Joint {
 		}
 	}
 
-	pub fn rebuild_branch(&self) -> JointBuilder {
+	/// TODO: MAKE A PUBLIC VERSION WHICH RETURNS WRAPPED IN CHAINED
+	pub(crate) fn rebuild_branch(&self) -> JointBuilder {
 		#[cfg(any(feature = "logging", test))]
 		log::info!(target: "JointBuilder","Rebuilding: {}", self.get_name());
 		JointBuilder {

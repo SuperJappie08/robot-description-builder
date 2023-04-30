@@ -83,7 +83,7 @@ impl Transform {
 						.collect_tuple()
 						.unwrap() // Unwrapping here to ensure that we collect to a Tuple3 | TODO: Change to expect? or remove
 				}),
-				rotation: self.rotation.clone(),
+				rotation: self.rotation,
 			},
 			match self.rotation.as_ref() {
 				Some(rpy) => {

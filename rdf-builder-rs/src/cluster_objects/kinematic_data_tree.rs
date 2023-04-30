@@ -127,8 +127,11 @@ impl KinematicDataTree {
 	}
 
 	pub(crate) fn try_add_joint(&self, joint: &ArcLock<Joint>) -> Result<(), AddJointError> {
-		let joint_binding = joint.read().map_err(|_| errored_read_lock(joint))?;
-		let name = joint_binding.get_name();
+		let name = joint
+			.read()
+			.map_err(|_| errored_read_lock(joint))?
+			.get_name()
+			.clone();
 
 		#[cfg(any(feature = "logging", test))]
 		log::debug!(target: "KinematicTreeData","Trying to attach Joint: {}", name);
@@ -137,19 +140,19 @@ impl KinematicDataTree {
 			self.joints
 				.read()
 				.map_err(|_| errored_read_lock(&self.joints))?
-				.get(name)
+				.get(&name)
 		}
 		.map(Weak::clone);
 		if let Some(preexisting_joint) = other.and_then(|weak_joint| weak_joint.upgrade()) {
 			if !Arc::ptr_eq(&preexisting_joint, joint) {
-				return Err(AddJointError::Conflict(name.into()));
+				return Err(AddJointError::Conflict(name));
 			}
 		} else {
 			assert!(self
 				.joints
 				.write()
 				.map_err(|_| errored_read_lock(&self.joints))?
-				.insert(name.into(), Arc::downgrade(joint))
+				.insert(name, Arc::downgrade(joint))
 				.is_none());
 		}
 

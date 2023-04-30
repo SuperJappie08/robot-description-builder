@@ -23,9 +23,7 @@ pub struct Visual {
 }
 
 impl Visual {
-	pub fn builder<Geometry: Into<Box<dyn GeometryInterface + Sync + Send>>>(
-		geometry: Geometry,
-	) -> VisualBuilder {
+	pub fn builder(geometry: impl Into<Box<dyn GeometryInterface + Sync + Send>>) -> VisualBuilder {
 		VisualBuilder::new(geometry)
 	}
 
