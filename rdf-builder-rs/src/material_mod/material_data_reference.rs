@@ -5,12 +5,12 @@ use crate::ArcLock;
 
 /// A wrapper for [`MaterialData`] references.
 ///
-/// This is neccessary for the global [`Material`](crate::material_mod::Material) implementation.
+/// This is neccessary for the global [`Material`](super::Material) implementation.
 #[derive(Debug)]
 pub enum MaterialDataReferenceWrapper<'a> {
-	/// A normal Reference to a [`MaterialData`] of an unnamed/unshared [`Material`](crate::material_mod::Material)
+	/// A normal Reference to a [`MaterialData`] of an unnamed/unshared [`Material`](super::Material)
 	Direct(&'a MaterialData),
-	/// A Global Reference to a [`MaterialData`] of a named/shared [`Material`](crate::material_mod::Material) via a [`ArcLock`].
+	/// A Global Reference to a [`MaterialData`] of a named/shared [`Material`](super::Material) via a `Arc<RwLock<T>>`.
 	Global(ArcLock<MaterialData>),
 }
 

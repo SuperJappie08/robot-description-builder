@@ -16,7 +16,7 @@ impl MaterialBuilder {
 	///
 	/// # Example
 	///
-	/// ```rust,text
+	/// ```
 	/// # use rdf_builder_rs::MaterialBuilder;
 	/// MaterialBuilder::new_color(1., 0.4, 0.6, 0.5)
 	/// # ;
@@ -34,7 +34,7 @@ impl MaterialBuilder {
 	///
 	/// # Example
 	///
-	/// ```rust,text
+	/// ```
 	/// # use rdf_builder_rs::MaterialBuilder;
 	/// MaterialBuilder::new_rgb(1., 0.4, 0.6)
 	/// # ;
@@ -52,7 +52,7 @@ impl MaterialBuilder {
 	///
 	/// # Example
 	///
-	/// ```rust,text
+	/// ```
 	/// # use rdf_builder_rs::MaterialBuilder;
 	/// MaterialBuilder::new_texture("package://robot_description/textures/example_texture.png")
 	/// # ;
@@ -77,7 +77,7 @@ impl MaterialBuilder {
 	///
 	/// # Example
 	///
-	/// ```rust,text
+	/// ```
 	/// # use rdf_builder_rs::MaterialBuilder;
 	/// MaterialBuilder::new_rgb(0.5, 1., 0.5).named("soft-green")
 	/// # ;
@@ -90,11 +90,8 @@ impl MaterialBuilder {
 	/// Builds a [`Material`] from the [`MaterialBuilder`].
 	pub(crate) fn build(self) -> Material {
 		match self.name {
-			Some(name) => Material::Named {
-				name,
-				data: self.data.into(),
-			},
-			None => Material::Unamed(self.data),
+			Some(name) => Material::new_named_uninited(name, self.data),
+			None => Material::new_unnamed(self.data),
 		}
 	}
 

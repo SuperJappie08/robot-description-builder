@@ -21,20 +21,40 @@ use super::{
 	MaterialBuilder,
 };
 
-/// TODO: Name is subject to change
-/// Need to rebuild this like [`ParseIntError`](https://doc.rust-lang.org/std/num/struct.ParseIntError.html) in order to allow privitized fields
-#[derive(Debug, PartialEq)]
-pub enum Material {
-	Named { name: String, data: MaterialStage },
-	Unamed(MaterialData),
-}
+/// TODO: DOCS
+#[derive(Debug, PartialEq, Clone)]
+pub struct Material(MaterialKind);
 
 impl Material {
 	/// TODO: DOCS
+	pub(crate) fn new_unnamed(data: MaterialData) -> Self {
+		Self(MaterialKind::Unamed(data))
+	}
+
+	/// TODO: DOCS
+	pub(crate) fn new_named_uninited(name: impl Into<String>, data: MaterialData) -> Self {
+		Self(MaterialKind::Named {
+			name: name.into(),
+			data: MaterialStage::PreInit(data),
+		})
+	}
+
+	/// TODO: DOCS
+	pub(crate) fn new_named_inited(
+		name: impl Into<String>,
+		data: Arc<RwLock<MaterialData>>,
+	) -> Self {
+		Self(MaterialKind::Named {
+			name: name.into(),
+			data: MaterialStage::Initialized(data),
+		})
+	}
+
+	/// TODO: DOCS
 	pub(crate) fn initialize(&mut self, tree: &KinematicDataTree) -> Result<(), AddMaterialError> {
-		match self {
-			Material::Unamed(_) => Ok(()),
-			Material::Named { name, data } => {
+		match &mut self.0 {
+			MaterialKind::Unamed(_) => Ok(()),
+			MaterialKind::Named { name, data } => {
 				let material_data = match data {
 					MaterialStage::PreInit(data) => {
 						let material_data_index = Arc::clone(&tree.material_index);
@@ -77,24 +97,24 @@ impl Material {
 	}
 
 	pub fn get_name(&self) -> Option<&String> {
-		match self {
-			Material::Named { name, data: _ } => Some(name),
-			Material::Unamed(_) => None,
+		match &self.0 {
+			MaterialKind::Named { name, data: _ } => Some(name),
+			MaterialKind::Unamed(_) => None,
 		}
 	}
 
 	pub fn get_material_data(&self) -> MaterialDataReferenceWrapper {
-		match self {
-			Material::Named { name: _, data } => data.get_data(),
-			Material::Unamed(data) => data.into(),
+		match &self.0 {
+			MaterialKind::Named { name: _, data } => data.get_data(),
+			MaterialKind::Unamed(data) => data.into(),
 		}
 	}
 
 	pub fn rebuild(&self) -> MaterialBuilder {
 		let builder = MaterialBuilder::new_data(self.get_material_data().try_into().unwrap()); //FIXME: Unwrap not OK
-		match self {
-			Material::Named { name, data: _ } => builder.named(name),
-			Material::Unamed(_) => builder,
+		match &self.0 {
+			MaterialKind::Named { name, data: _ } => builder.named(name),
+			MaterialKind::Unamed(_) => builder,
 		}
 	}
 }
@@ -108,8 +128,8 @@ impl ToURDF for Material {
 	) -> Result<(), quick_xml::Error> {
 		let mut element = writer.create_element("material");
 
-		match self {
-			Material::Named { name, data } => {
+		match &self.0 {
+			MaterialKind::Named { name, data } => {
 				element = element.with_attribute(Attribute {
 					key: quick_xml::name::QName(b"name"),
 					value: name.as_bytes().into(),
@@ -121,23 +141,11 @@ impl ToURDF for Material {
 					}
 				}
 			}
-			Material::Unamed(data) => {
+			MaterialKind::Unamed(data) => {
 				element.write_inner_content(|writer| data.to_urdf(writer, urdf_config))?
 			}
 		};
 		Ok(())
-	}
-}
-
-impl Clone for Material {
-	fn clone(&self) -> Self {
-		match self {
-			Self::Named { name, data } => Self::Named {
-				name: name.clone(),
-				data: data.clone(),
-			},
-			Self::Unamed(arg0) => Self::Unamed(arg0.clone()),
-		}
 	}
 }
 
@@ -146,9 +154,31 @@ impl From<(String, ArcLock<MaterialData>)> for Material {
 		let name = value.0;
 		let data = value.1;
 
-		Self::Named {
-			name,
-			data: MaterialStage::Initialized(data),
+		Self::new_named_inited(name, data)
+	}
+}
+
+/// TODO: DOCS
+#[derive(Debug, PartialEq)]
+pub enum MaterialKind {
+	Named { name: String, data: MaterialStage },
+	Unamed(MaterialData),
+}
+
+impl From<MaterialKind> for Material {
+	fn from(value: MaterialKind) -> Self {
+		Self(value)
+	}
+}
+
+impl Clone for MaterialKind {
+	fn clone(&self) -> Self {
+		match self {
+			Self::Named { name, data } => Self::Named {
+				name: name.clone(),
+				data: data.clone(),
+			},
+			Self::Unamed(arg0) => Self::Unamed(arg0.clone()),
 		}
 	}
 }

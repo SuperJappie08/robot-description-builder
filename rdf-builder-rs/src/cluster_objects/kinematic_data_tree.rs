@@ -10,7 +10,7 @@ use crate::to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialMode, URDFMaterialR
 use crate::{
 	joint::Joint,
 	link::{builder::BuildLink, Link},
-	material_mod::{material_stage::MaterialStage, Material, MaterialData},
+	material_mod::{Material, MaterialData},
 	transmission::Transmission,
 	ArcLock, WeakLock,
 };
@@ -280,10 +280,11 @@ impl ToURDF for KinematicDataTree {
 						} // Weak::strong_count(material_ref)
 					}
 				})
-				.map(|(name, arc_material_data)| Material::Named {
-					name: name.clone(), // FIXME: This might be a bit weird to do it like this, a propper construction method would be nice
-					data: MaterialStage::Initialized(Arc::clone(arc_material_data)),
-				})
+				.map(
+					|(name, arc_material_data)| {
+						Material::new_named_inited(name.clone(), Arc::clone(arc_material_data))
+					}, // FIXME: This might be a bit weird to do it like this, a propper construction method would be nice
+				)
 				.sorted_by_cached_key(|material| material.get_name().unwrap().clone()) // TODO: Is it worth to make sorting optional?
 				.map(|material: Material| {
 					material.to_urdf(
