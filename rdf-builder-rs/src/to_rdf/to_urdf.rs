@@ -14,6 +14,7 @@ use crate::to_rdf::XMLMode;
 pub struct URDFConfig {
 	pub material_references: URDFMaterialReferences,
 	pub direct_material_ref: URDFMaterialMode,
+	pub urdf_target: URDFTarget,
 	pub xml_mode: XMLMode,
 }
 
@@ -31,7 +32,18 @@ pub enum URDFMaterialMode {
 	Referenced,
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
+#[non_exhaustive]
+pub enum URDFTarget {
+	/// for RobotHW
+	#[default]
+	Standard,
+	/// Not fully implemented yet
+	Gazebo,
+}
+
 pub trait ToURDF {
+	/// Represents the element as in the URDF format.
 	fn to_urdf(
 		&self,
 		writer: &mut Writer<Cursor<Vec<u8>>>,

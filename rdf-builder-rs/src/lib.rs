@@ -4,13 +4,13 @@ mod joint;
 mod link;
 mod material_mod;
 mod transform_data;
-mod transmission;
 
 type ArcLock<T> = std::sync::Arc<std::sync::RwLock<T>>;
 type WeakLock<T> = std::sync::Weak<std::sync::RwLock<T>>;
 
 pub mod identifiers;
 pub mod to_rdf;
+pub mod transmission;
 pub use chained::Chained;
 pub use cluster_objects::{KinematicInterface, KinematicTree, Robot};
 pub use joint::{Joint, JointBuilder, JointType, SmartJointBuilder};

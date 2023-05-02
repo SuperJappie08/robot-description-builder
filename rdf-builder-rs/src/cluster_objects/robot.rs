@@ -16,7 +16,10 @@ use crate::{
 	joint::Joint,
 	link::Link,
 	material_mod::{Material, MaterialData},
-	transmission::Transmission,
+	transmission::{
+		transmission_builder_state::{WithActuator, WithJoints},
+		Transmission, TransmissionBuilder,
+	},
 	ArcLock, WeakLock,
 };
 
@@ -115,7 +118,7 @@ impl KinematicInterface for Robot {
 
 	fn try_add_transmission(
 		&self,
-		transmission: ArcLock<Transmission>,
+		transmission: TransmissionBuilder<WithJoints, WithActuator>,
 	) -> Result<(), AddTransmissionError> {
 		self.data.try_add_transmission(transmission)
 	}

@@ -9,12 +9,11 @@ use crate::{
 		kinematic_data_tree::KinematicDataTree,
 	},
 	material_mod::MaterialData,
-	to_rdf::to_urdf::URDFMaterialMode,
 	ArcLock,
 };
 
 #[cfg(feature = "urdf")]
-use crate::to_rdf::to_urdf::ToURDF;
+use crate::to_rdf::to_urdf::{ToURDF, URDFMaterialMode};
 
 use super::{
 	material_data_reference::MaterialDataReferenceWrapper, material_stage::MaterialStage,

@@ -6,14 +6,17 @@ use std::{
 };
 
 use crate::{
-	joint::Joint, link::Link, material_mod::MaterialData, transmission::Transmission, ArcLock,
-	WeakLock,
+	joint::Joint,
+	link::Link,
+	material_mod::MaterialData,
+	transmission::{BuildTransmissionError, Transmission},
+	ArcLock, WeakLock,
 };
 
 use super::kinematic_data_tree::KinematicDataTree;
 
-type PoisonReadIndexError<K, V> = PoisonError<ErroredRead<ArcLock<HashMap<K, V>>>>;
-type PoisonWriteIndexError<K, V> = PoisonError<ErroredWrite<ArcLock<HashMap<K, V>>>>;
+pub(crate) type PoisonReadIndexError<K, V> = PoisonError<ErroredRead<ArcLock<HashMap<K, V>>>>;
+pub(crate) type PoisonWriteIndexError<K, V> = PoisonError<ErroredWrite<ArcLock<HashMap<K, V>>>>;
 
 #[derive(Debug)]
 pub struct ErroredRead<T>(pub T);
@@ -158,9 +161,6 @@ impl PartialEq for AddJointError {
 
 #[derive(Debug, Error)]
 pub enum AddTransmissionError {
-	/// Error that results from `PoisonError<RwLockReadGuard<'_, Transmission>>` occurs when attempting to read a poisoned `Arc<RwLock<Transmission>>`.
-	#[error("Read Transmission Error: {0}")]
-	ReadTransmission(#[from] PoisonError<ErroredRead<ArcLock<Transmission>>>),
 	/// Error that results from `PoisonError<RwLockReaddGuard<'_, HashMap<String, Weak<RwLock<Transmission>>>>` occurs when attempting to read a poisoned `Arc<RwLock<HashMap<String, Weak<RwLock<Transmission>>>>>`.
 	#[error("Read TransmissionIndex Error: {0}")]
 	ReadIndex(#[from] PoisonReadIndexError<String, ArcLock<Transmission>>),
@@ -169,17 +169,17 @@ pub enum AddTransmissionError {
 	WriteIndex(#[from] PoisonWriteIndexError<String, ArcLock<Transmission>>),
 	#[error("Duplicate Transmission name '{0}'")]
 	Conflict(String),
+	#[error(transparent)]
+	BuildTransmission(#[from] BuildTransmissionError),
 }
 
 impl PartialEq for AddTransmissionError {
 	fn eq(&self, other: &Self) -> bool {
 		match (self, other) {
-			(Self::ReadTransmission(l0), Self::ReadTransmission(r0)) => {
-				l0.get_ref() == r0.get_ref()
-			}
 			(Self::ReadIndex(l0), Self::ReadIndex(r0)) => l0.get_ref() == r0.get_ref(),
 			(Self::WriteIndex(l0), Self::WriteIndex(r0)) => l0.get_ref() == r0.get_ref(),
 			(Self::Conflict(l0), Self::Conflict(r0)) => l0 == r0,
+			(Self::BuildTransmission(l0), Self::BuildTransmission(r0)) => l0 == r0,
 			_ => false,
 		}
 	}

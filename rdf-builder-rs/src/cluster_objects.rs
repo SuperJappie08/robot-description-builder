@@ -8,7 +8,10 @@ use crate::{
 	joint::{Joint, JointBuilder},
 	link::{builder::LinkBuilder, Link},
 	material_mod::{Material, MaterialData},
-	transmission::Transmission,
+	transmission::{
+		transmission_builder_state::{WithActuator, WithJoints},
+		Transmission, TransmissionBuilder,
+	},
 	ArcLock, Chained, WeakLock,
 };
 
@@ -88,7 +91,7 @@ pub trait KinematicInterface {
 	/// TODO: Maybe remove rcrefcell from transmission parameter
 	fn try_add_transmission(
 		&self,
-		transmission: ArcLock<Transmission>,
+		transmission: TransmissionBuilder<WithJoints, WithActuator>,
 	) -> Result<(), AddTransmissionError>;
 
 	// TODO: Expand

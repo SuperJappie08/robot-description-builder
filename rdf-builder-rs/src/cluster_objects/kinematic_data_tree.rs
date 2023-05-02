@@ -11,7 +11,10 @@ use crate::{
 	joint::Joint,
 	link::{builder::BuildLink, Link},
 	material_mod::{Material, MaterialData},
-	transmission::Transmission,
+	transmission::{
+		transmission_builder_state::{WithActuator, WithJoints},
+		Transmission, TransmissionBuilder,
+	},
 	ArcLock, WeakLock,
 };
 
@@ -169,13 +172,9 @@ impl KinematicDataTree {
 
 	pub(crate) fn try_add_transmission(
 		&self,
-		transmission: ArcLock<Transmission>,
+		transmission: TransmissionBuilder<WithJoints, WithActuator>,
 	) -> Result<(), AddTransmissionError> {
-		let name = transmission
-			.read()
-			.map_err(|_| errored_read_lock(&transmission))?
-			.get_name()
-			.clone();
+		let name = transmission.get_name().clone();
 
 		#[cfg(any(feature = "logging", test))]
 		log::debug!(target: "KinematicTreeData","Trying to attach Transmission: {}", name);
@@ -187,18 +186,14 @@ impl KinematicDataTree {
 				.get(&name)
 		}
 		.map(Arc::clone);
-		if let Some(preexisting_transmission) = other_transmission {
-			if !Arc::ptr_eq(&preexisting_transmission, &transmission) {
-				Err(AddTransmissionError::Conflict(name))
-			} else {
-				Ok(())
-			}
+		if other_transmission.is_some() {
+			Err(AddTransmissionError::Conflict(name))
 		} else {
 			assert!(self
 				.transmissions
 				.write()
 				.map_err(|_| errored_write_lock(&self.transmissions))?
-				.insert(name, transmission)
+				.insert(name, Arc::new(RwLock::new(transmission.build(&self.me)?)))
 				.is_none());
 			Ok(())
 		}
@@ -240,6 +235,7 @@ impl KinematicDataTree {
 		&self,
 	) -> Result<(), PoisonWriteIndexError<String, ArcLock<Transmission>>> {
 		// Ok(())
+		// TODO:
 		todo!("Not Implemnted yet! First Implement `Transmission`")
 	}
 
@@ -300,8 +296,8 @@ impl ToURDF for KinematicDataTree {
 
 		self.root_link
 			.read()
-			.unwrap()
-			.to_urdf(writer, urdf_config)?; // FIXME: Is unwrap ok here?
+			.unwrap() // FIXME: Is unwrap ok here?
+			.to_urdf(writer, urdf_config)?;
 
 		process_results(
 			self.transmissions

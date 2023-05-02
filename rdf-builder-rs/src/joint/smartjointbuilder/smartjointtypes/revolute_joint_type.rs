@@ -94,8 +94,6 @@ where
 		value.mimic.simplify(&mut joint_builder);
 		value.safety_controller.simplify(&mut joint_builder);
 
-		// THIS MIGHT BE DONE// todo!("Create a `RevoluteJoint`")
-
 		joint_builder
 	}
 }
