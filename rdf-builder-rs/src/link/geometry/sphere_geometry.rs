@@ -1,11 +1,10 @@
+use super::{GeometryInterface, GeometryShapeContainer};
 use std::f32::consts::{FRAC_PI_3, PI};
 
-#[cfg(feature = "xml")]
-use quick_xml::{events::attributes::Attribute, name::QName};
-
-use crate::link::geometry::{geometry_shape_data::GeometryShapeContainer, GeometryInterface};
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
+#[cfg(feature = "xml")]
+use quick_xml::{events::attributes::Attribute, name::QName};
 
 /// TODO: DOCS
 ///

@@ -2,12 +2,16 @@ use std::sync::Weak;
 
 use nalgebra::Matrix3;
 
+use super::{ChainableBuilder, Chained};
 use crate::{
-	chained::{ChainableBuilder, Chained},
-	cluster_objects::kinematic_data_tree::KinematicDataTree,
-	linkbuilding::{BuildLink, LinkBuilder},
-	transform_data::MirrorAxis,
-	ArcLock, Joint, KinematicInterface, Link, WeakLock,
+	cluster_objects::{kinematic_data_tree::KinematicDataTree, KinematicInterface},
+	joint::Joint,
+	link::{
+		builder::{BuildLink, LinkBuilder},
+		Link,
+	},
+	transform::MirrorAxis,
+	ArcLock, WeakLock,
 };
 
 impl Chained<LinkBuilder> {
@@ -89,7 +93,7 @@ mod tests {
 		},
 		linkbuilding::{CollisionBuilder, LinkBuilder, VisualBuilder},
 		material_mod::MaterialBuilder,
-		transform_data::MirrorAxis,
+		transform::MirrorAxis,
 		Chained, JointBuilder, JointType, SmartJointBuilder, Transform,
 	};
 
@@ -105,7 +109,7 @@ mod tests {
 				Visual::builder(geom_leg_l1.clone())
 					.tranformed(Transform::new_translation(0., 1.5, 0.))
 					.named("Leg_[L1]_l1_vis_1")
-					.material(material_l1.clone()),
+					.materialized(material_l1.clone()),
 			)
 			.add_collider(
 				Collision::builder(geom_leg_l1.clone())
@@ -124,7 +128,7 @@ mod tests {
 						Visual::builder(geom_leg_l2.clone())
 							.tranformed(Transform::new((0., 5., 0.), (FRAC_PI_2, 0., 0.)))
 							.named("Leg_[L1]_l2_vis_1")
-							.material(material_l2.clone()),
+							.materialized(material_l2.clone()),
 					)
 					.add_collider(
 						Collision::builder(geom_leg_l2.clone())

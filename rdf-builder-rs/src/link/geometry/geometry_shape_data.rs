@@ -1,7 +1,8 @@
-use crate::{
-	link::geometry::{BoxGeometry, CylinderGeometry, GeometryInterface, SphereGeometry},
-	transform_data::Transform,
-};
+use super::{BoxGeometry, CylinderGeometry, GeometryInterface, SphereGeometry};
+use crate::transform::Transform;
+
+#[cfg(feature = "urdf")]
+use crate::to_rdf::to_urdf::ToURDF;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct GeometryShapeData {
@@ -21,11 +22,31 @@ impl GeometryShapeData {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+#[non_exhaustive]
 pub enum GeometryShapeContainer {
 	Box(BoxGeometry),
 	Cylinder(CylinderGeometry),
 	Sphere(SphereGeometry),
 	// Capsule(String),
+}
+
+#[cfg(feature = "urdf")]
+impl ToURDF for GeometryShapeContainer {
+	fn to_urdf(
+		&self,
+		writer: &mut quick_xml::Writer<std::io::Cursor<Vec<u8>>>,
+		urdf_config: &crate::to_rdf::to_urdf::URDFConfig,
+	) -> Result<(), quick_xml::Error> {
+		match self {
+			GeometryShapeContainer::Box(box_geometry) => box_geometry.to_urdf(writer, urdf_config),
+			GeometryShapeContainer::Cylinder(cylinder_geometry) => {
+				cylinder_geometry.to_urdf(writer, urdf_config)
+			}
+			GeometryShapeContainer::Sphere(sphere_geometry) => {
+				sphere_geometry.to_urdf(writer, urdf_config)
+			}
+		}
+	}
 }
 
 impl From<BoxGeometry> for GeometryShapeContainer {

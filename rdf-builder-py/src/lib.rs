@@ -30,7 +30,7 @@ struct PyRobot {
 impl PyRobot {
 	#[getter]
 	fn name(&self) -> String {
-		self.inner.get_name().clone()
+		self.inner.name().clone()
 	}
 }
 
@@ -140,7 +140,7 @@ impl PyLink {
 
 	#[getter]
 	fn name(&self) -> String {
-		self.inner.try_read().unwrap().get_name().clone() // TODO: Figure out if unwrap is Ok here?
+		self.inner.try_read().unwrap().name().clone() // TODO: Figure out if unwrap is Ok here?
 	}
 
 	///TODO: Joint Type Selection
@@ -158,10 +158,10 @@ impl PyLink {
 
 	fn __repr__(&self) -> String {
 		let link = self.inner.read().unwrap(); // FIXME: Unwrap ok?
-		let mut repr = format!("Link('{}'", link.get_name());
+		let mut repr = format!("Link('{}'", link.name());
 
 		{
-			let visuals = link.get_visuals();
+			let visuals = link.visuals();
 			if !visuals.is_empty() {
 				repr += ", visuals = [";
 				// repr += &visuals.iter().map(|visual| PyVisual::from(visual.clone()).__repr__()).collect::<Vec<String>>().join(", ");

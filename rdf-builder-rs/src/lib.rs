@@ -3,7 +3,7 @@ mod cluster_objects;
 mod joint;
 mod link;
 mod material_mod;
-mod transform_data;
+mod transform;
 
 type ArcLock<T> = std::sync::Arc<std::sync::RwLock<T>>;
 type WeakLock<T> = std::sync::Weak<std::sync::RwLock<T>>;
@@ -13,10 +13,10 @@ pub mod to_rdf;
 pub mod transmission;
 pub use chained::Chained;
 pub use cluster_objects::{KinematicInterface, KinematicTree, Robot};
-pub use joint::{Joint, JointBuilder, JointType, SmartJointBuilder};
+pub use joint::{joint_data, Joint, JointBuilder, JointType, SmartJointBuilder};
 pub use link::{helper_functions, link_data, Link};
 pub use material_mod::{Material, MaterialBuilder, MaterialData};
-pub use transform_data::Transform;
+pub use transform::Transform;
 
 pub mod linkbuilding {
 	use super::link;

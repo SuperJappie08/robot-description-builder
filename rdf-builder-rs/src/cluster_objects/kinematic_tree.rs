@@ -200,8 +200,8 @@ mod tests {
 				.as_ptr()
 		);
 		assert_eq!(
-			&tree.get_root_link().try_read().unwrap().get_name(),
-			&cloned_tree.get_root_link().try_read().unwrap().get_name()
+			&tree.get_root_link().try_read().unwrap().name(),
+			&cloned_tree.get_root_link().try_read().unwrap().name()
 		);
 
 		trace!(
@@ -227,7 +227,7 @@ mod tests {
 					.get_root_link()
 					.try_read()
 					.unwrap()
-					.get_parent()
+					.parent()
 				{
 					LinkParent::KinematicTree(weak_tree) => weak_tree,
 					LinkParent::Joint(_) => panic!("This should not return a Joint Parent"),
@@ -242,7 +242,7 @@ mod tests {
 					.get_root_link()
 					.try_read()
 					.unwrap()
-					.get_parent()
+					.parent()
 				{
 					LinkParent::KinematicTree(weak_tree) => weak_tree,
 					LinkParent::Joint(_) => panic!("This should not return a Joint Parent"),
@@ -250,27 +250,27 @@ mod tests {
 			)
 		);
 		assert_ne!(
-			&tree.get_root_link().try_read().unwrap().get_parent(),
-			&cloned_tree.get_root_link().try_read().unwrap().get_parent()
+			&tree.get_root_link().try_read().unwrap().parent(),
+			&cloned_tree.get_root_link().try_read().unwrap().parent()
 		);
 
 		trace!(
 			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"tree->..->root_link->child_joints:        {:#?}",
-			&tree.get_root_link().try_read().unwrap().get_joints()
+			&tree.get_root_link().try_read().unwrap().joints()
 		);
 		trace!(
 			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"cloned_tree->..->root_link->child_joints: {:#?}\n",
-			&cloned_tree.get_root_link().try_read().unwrap().get_joints()
+			&cloned_tree.get_root_link().try_read().unwrap().joints()
 		);
 		assert_eq!(
-			tree.get_root_link().try_read().unwrap().get_joints().len(),
+			tree.get_root_link().try_read().unwrap().joints().len(),
 			cloned_tree
 				.get_root_link()
 				.try_read()
 				.unwrap()
-				.get_joints()
+				.joints()
 				.len()
 		);
 
@@ -331,20 +331,20 @@ mod tests {
 		trace!(
 			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"tree->..->root_link->child_joints:        {:#?}",
-			&tree.get_root_link().try_read().unwrap().get_joints()
+			&tree.get_root_link().try_read().unwrap().joints()
 		);
 		trace!(
 			target: "RDF-BUILDER-RS::test::KineTree::clone_single",
 			"cloned_tree->..->root_link->child_joints: {:#?}\n",
-			&cloned_tree.get_root_link().try_read().unwrap().get_joints()
+			&cloned_tree.get_root_link().try_read().unwrap().joints()
 		);
 		assert_eq!(
-			tree.get_root_link().try_read().unwrap().get_joints().len(),
+			tree.get_root_link().try_read().unwrap().joints().len(),
 			cloned_tree
 				.get_root_link()
 				.try_read()
 				.unwrap()
-				.get_joints()
+				.joints()
 				.len()
 		);
 
@@ -458,8 +458,8 @@ mod tests {
 				.as_ptr()
 		);
 		assert_eq!(
-			&tree.get_root_link().try_read().unwrap().get_name(),
-			&cloned_tree.get_root_link().try_read().unwrap().get_name()
+			&tree.get_root_link().try_read().unwrap().name(),
+			&cloned_tree.get_root_link().try_read().unwrap().name()
 		);
 
 		trace!(
@@ -485,7 +485,7 @@ mod tests {
 					.get_root_link()
 					.try_read()
 					.unwrap()
-					.get_parent()
+					.parent()
 				{
 					LinkParent::KinematicTree(weak_tree) => weak_tree,
 					LinkParent::Joint(_) => panic!("This should not return a Joint Parent"),
@@ -500,7 +500,7 @@ mod tests {
 					.get_root_link()
 					.try_read()
 					.unwrap()
-					.get_parent()
+					.parent()
 				{
 					LinkParent::KinematicTree(weak_tree) => weak_tree,
 					LinkParent::Joint(_) => panic!("This should not return a Joint Parent"),
@@ -508,8 +508,8 @@ mod tests {
 			)
 		);
 		assert_ne!(
-			&tree.get_root_link().try_read().unwrap().get_parent(),
-			&cloned_tree.get_root_link().try_read().unwrap().get_parent()
+			&tree.get_root_link().try_read().unwrap().parent(),
+			&cloned_tree.get_root_link().try_read().unwrap().parent()
 		);
 
 		trace!(
@@ -519,9 +519,9 @@ mod tests {
 				.get_root_link()
 				.try_read()
 				.unwrap()
-				.get_joints()
+				.joints()
 				.iter()
-				.map(|joint| joint.read().unwrap().get_name().clone())
+				.map(|joint| joint.read().unwrap().name().clone())
 				.collect::<Vec<String>>()
 		);
 		trace!(
@@ -531,18 +531,18 @@ mod tests {
 				.get_root_link()
 				.try_read()
 				.unwrap()
-				.get_joints()
+				.joints()
 				.iter()
-				.map(|joint| joint.read().unwrap().get_name().clone())
+				.map(|joint| joint.read().unwrap().name().clone())
 				.collect::<Vec<String>>()
 		);
 		assert_eq!(
-			tree.get_root_link().read().unwrap().get_joints().len(),
+			tree.get_root_link().read().unwrap().joints().len(),
 			cloned_tree
 				.get_root_link()
 				.try_read()
 				.unwrap()
-				.get_joints()
+				.joints()
 				.len()
 		);
 
@@ -618,20 +618,20 @@ mod tests {
 		trace!(
 			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"tree->..->root_link->child_joints:        {:#?}",
-			&tree.get_root_link().try_read().unwrap().get_joints()
+			&tree.get_root_link().try_read().unwrap().joints()
 		);
 		trace!(
 			target: "RDF-BUILDER-RS::test::KineTree::clone_multi",
 			"cloned_tree->..->root_link->child_joints: {:#?}\n",
-			&cloned_tree.get_root_link().try_read().unwrap().get_joints()
+			&cloned_tree.get_root_link().try_read().unwrap().joints()
 		);
 		assert_eq!(
-			tree.get_root_link().try_read().unwrap().get_joints().len(),
+			tree.get_root_link().try_read().unwrap().joints().len(),
 			cloned_tree
 				.get_root_link()
 				.try_read()
 				.unwrap()
-				.get_joints()
+				.joints()
 				.len()
 		);
 

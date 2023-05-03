@@ -14,8 +14,9 @@ impl CalibrationData {
 	/// It doesn't check if the some fields have the default value, since it can be format depended.
 	///
 	/// ## Example
-	/// ```--rust
-	/// # use rdf_builder_rs::joint::joint_data::CalibrationData;
+	///
+	/// ```
+	/// # use rdf_builder_rs::joint_data::CalibrationData;
 	/// assert!(CalibrationData {
 	///     rising: Some(1.),
 	///     falling: Some(2.)

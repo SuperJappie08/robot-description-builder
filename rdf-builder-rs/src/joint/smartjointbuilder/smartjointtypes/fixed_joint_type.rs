@@ -16,7 +16,7 @@ use crate::{
 	ArcLock, WeakLock,
 };
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub struct FixedType;
 
 impl From<FixedType> for JointType {

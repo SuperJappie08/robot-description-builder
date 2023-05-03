@@ -25,6 +25,7 @@ pub use robot::Robot;
 
 type PoisonWriteIndexError<'a, K, V> = PoisonError<RwLockWriteGuard<'a, HashMap<K, V>>>;
 
+/// TODO: MAYBE RENAME SOME FUNCTIONS to conform to convention
 pub trait KinematicInterface {
 	// NOTE: THIS IS NOT FINAL;
 
@@ -41,7 +42,7 @@ pub trait KinematicInterface {
 	///     JointBuilder::new("just a joint", JointType::Fixed)
 	/// ).unwrap();
 	///
-	/// assert_eq!(tree.get_root_link().try_read().unwrap().get_name(), "the root link")
+	/// assert_eq!(tree.get_root_link().try_read().unwrap().name(), "the root link")
 	/// ```
 	fn get_root_link(&self) -> ArcLock<Link>;
 
@@ -52,14 +53,14 @@ pub trait KinematicInterface {
 	/// # use rdf_builder_rs::{KinematicInterface, Link, JointBuilder, JointType, linkbuilding::LinkBuilder};
 	/// let tree = Link::builder("the root link").build_tree();
 	///
-	/// assert_eq!(tree.get_newest_link().try_read().unwrap().get_name(), "the root link");
+	/// assert_eq!(tree.get_newest_link().try_read().unwrap().name(), "the root link");
 	///
 	/// tree.get_newest_link().try_write().unwrap().try_attach_child(
 	///     LinkBuilder::new("his one and only child"),
 	///     JointBuilder::new("just a joint", JointType::Fixed)
 	/// ).unwrap();
 	///
-	/// assert_eq!(tree.get_newest_link().try_read().unwrap().get_name(), "his one and only child");
+	/// assert_eq!(tree.get_newest_link().try_read().unwrap().name(), "his one and only child");
 	///
 	/// let long_sub_tree = LinkBuilder::new("the other child").build_tree();
 	///
@@ -72,7 +73,7 @@ pub trait KinematicInterface {
 	///     JointBuilder::new("third joint", JointType::Fixed)
 	/// ).unwrap();
 	///
-	/// assert_eq!(tree.get_newest_link().try_read().unwrap().get_name(), "the latest child");
+	/// assert_eq!(tree.get_newest_link().try_read().unwrap().name(), "the latest child");
 	/// ```
 	fn get_newest_link(&self) -> ArcLock<Link>;
 

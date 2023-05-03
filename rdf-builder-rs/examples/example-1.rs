@@ -74,7 +74,7 @@ fn main() {
 	#[cfg(feature = "urdf")]
 	{
 		let mut buffer = to_urdf(
-			robot,
+			&robot,
 			URDFConfig {
 				xml_mode: XMLMode::Indent(' ', 4),
 				..Default::default()

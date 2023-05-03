@@ -1,3 +1,4 @@
+//! TODO: MODULE DOC?
 use itertools::Itertools;
 use nalgebra::{vector, Matrix3, Rotation3, Vector3};
 
@@ -7,12 +8,61 @@ use crate::to_rdf::to_urdf::ToURDF;
 use quick_xml::{events::attributes::Attribute, name::QName};
 
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
+/// A `Transform` type to represent the transform from the parent coordinate system to a new coordinate system.
+///
+/// TODO: EXPAND
 pub struct Transform {
+	/// The translation of origin of the new coordinate system in meters.
 	pub translation: Option<(f32, f32, f32)>,
+	/// The rotation of the new coordinate system in radians.
 	pub rotation: Option<(f32, f32, f32)>,
 }
 
 impl Transform {
+	/// Creates a new `Transform`.
+	///
+	/// Creates a new `Transform` from a tuple of cartesian coordinates in meters as `f32` and a tuple of roll-pitch-yaw angles in radians as `f32`.
+	///
+	/// # Example
+	///
+	/// ```
+	/// use rdf_builder_rs::Transform;
+	/// use std::f32::consts::PI;
+	/// let transform = Transform::new((1., 1000., 0.), (0., PI, 0.));
+	///
+	/// assert_eq!(
+	///     transform,
+	///     Transform {
+	///        translation: Some((1., 1000., 0.)),
+	///        rotation: Some((0., PI, 0.)),
+	///     }
+	/// )
+	/// ```
+	pub fn new(xyz: (f32, f32, f32), rpy: (f32, f32, f32)) -> Self {
+		Self {
+			translation: Some(xyz),
+			rotation: Some(rpy),
+		}
+	}
+
+	/// Creates a new `Transform` from cartesian x, y and z coordinates.
+	///
+	/// Creates a new `Transform` from a tuple of cartesian coordinates in meters as `f32` and leaves the other values at the default.
+	///
+	/// # Example
+	///
+	/// ```
+	/// use rdf_builder_rs::Transform;
+	/// let transform = Transform::new_translation( -0.6, 10., 900.);
+	///
+	/// assert_eq!(
+	///     transform,
+	///     Transform {
+	///        translation: Some((-0.6, 10., 900.)),
+	///        rotation: None,
+	///     }
+	/// )
+	/// ```
 	pub fn new_translation(x: f32, y: f32, z: f32) -> Self {
 		Self {
 			translation: Some((x, y, z)),
@@ -20,17 +70,29 @@ impl Transform {
 		}
 	}
 
+	/// Creates a new `Transform` from roll-pitch-yaw angles
+	///
+	/// Creates a new `Transform` from the roll-pitch-yaw angles in radians as `f32` and leaves the other values at the default.
+	///
+	/// # Example
+	///
+	/// ```
+	/// use rdf_builder_rs::Transform;
+	/// use std::f32::consts::PI;
+	/// let transform = Transform::new_rotation( 0., PI, 0.);
+	///
+	/// assert_eq!(
+	///     transform,
+	///     Transform {
+	///        translation: None,
+	///        rotation: Some((0., PI, 0.)),
+	///     }
+	/// )
+	/// ```
 	pub fn new_rotation(r: f32, p: f32, y: f32) -> Self {
 		Self {
 			rotation: Some((r, p, y)),
 			..Default::default()
-		}
-	}
-
-	pub fn new(xyz: (f32, f32, f32), rpy: (f32, f32, f32)) -> Self {
-		Self {
-			translation: Some(xyz),
-			rotation: Some(rpy),
 		}
 	}
 
@@ -96,10 +158,14 @@ impl Transform {
 	}
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+/// A `MirrorAxis` enum to represent a plane to mirror about.
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum MirrorAxis {
+	/// Mirror about to X = 0 plane.
 	X,
+	/// Mirror about to Y = 0 plane.
 	Y,
+	/// Mirror about to Z = 0 plane.
 	Z,
 }
 
@@ -154,13 +220,13 @@ impl From<Transform> for crate::joint::JointTransformMode {
 
 #[cfg(test)]
 mod tests {
-	use crate::transform_data::Transform;
+	use super::Transform;
 	use std::f32::consts::{FRAC_PI_2, FRAC_PI_4};
 	use test_log::test;
 
 	mod mirror {
 		use super::{test, *};
-		use crate::transform_data::MirrorAxis;
+		use crate::transform::MirrorAxis;
 		use nalgebra::{matrix, vector, Matrix3};
 
 		fn test_mirror(

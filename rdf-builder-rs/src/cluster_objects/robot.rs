@@ -3,16 +3,16 @@ use std::{
 	sync::{Arc, PoisonError, RwLockWriteGuard},
 };
 
+#[cfg(feature = "urdf")]
+use crate::to_rdf::to_urdf::{ToURDF, URDFConfig};
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
-#[cfg(feature = "urdf")]
-use crate::to_rdf::to_urdf::{ToURDF, URDFConfig};
+use super::{
+	kinematic_data_errors::AddTransmissionError, kinematic_data_tree::KinematicDataTree,
+	KinematicInterface,
+};
 use crate::{
-	cluster_objects::{
-		kinematic_data_errors::AddTransmissionError, kinematic_data_tree::KinematicDataTree,
-		KinematicInterface,
-	},
 	joint::Joint,
 	link::Link,
 	material_mod::{Material, MaterialData},
@@ -26,7 +26,7 @@ use crate::{
 #[derive(Debug)]
 pub struct Robot {
 	/// The name of the robot
-	pub name: String, //TODO: Temp Pub
+	name: String, //TODO: Temp Pub
 	data: Arc<KinematicDataTree>,
 }
 
@@ -47,9 +47,9 @@ impl Robot {
 	///     .build_tree()
 	///     .to_robot("my-robot-called-rob");
 	///
-	/// assert_eq!(robot.get_name(), "my-robot-called-rob")
+	/// assert_eq!(robot.name(), "my-robot-called-rob")
 	/// ```
-	pub fn get_name(&self) -> &String {
+	pub fn name(&self) -> &String {
 		&self.name
 	}
 }

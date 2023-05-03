@@ -15,12 +15,14 @@ impl<Builder> Chained<Builder>
 where
 	Builder: ChainableBuilder,
 {
-	pub fn get_builder(&self) -> &Builder {
+	/// TODO: Maybe deprecate
+	pub fn builder(&self) -> &Builder {
 		&self.0
 	}
 
 	/// FIXME: This is not very usefull since most JointBuilder Methods are consuming
-	pub fn get_builder_mut(&mut self) -> &mut Builder {
+	/// TODO: Maybe deprecate
+	pub fn builder_mut(&mut self) -> &mut Builder {
 		&mut self.0
 	}
 
@@ -47,6 +49,9 @@ where
 
 // To allow for calling functions on the internal builders
 // TODO: Figure out if builderfunctions do not free the internal builder from it `Chained<Builder>` Identifier
+// FIXME: but deref should theoretically only be implemented for smartpointers which do not add methods
+// https://rust-lang.github.io/api-guidelines/predictability.html?highlight=deref#only-smart-pointers-implement-deref-and-derefmut-c-deref
+// https://rust-lang.github.io/api-guidelines/predictability.html?highlight=deref#smart-pointers-do-not-add-inherent-methods-c-smart-ptr
 impl<Builder> Deref for Chained<Builder>
 where
 	Builder: ChainableBuilder,
@@ -59,6 +64,7 @@ where
 }
 
 // To allow for calling functions on the internal builders
+// TODO: See above
 impl<Builder> DerefMut for Chained<Builder>
 where
 	Builder: ChainableBuilder,
@@ -128,7 +134,7 @@ mod tests {
 
 		let mut mirrored_chain = builder_chain
 			.clone()
-			.mirror(crate::transform_data::MirrorAxis::X);
+			.mirror(crate::transform::MirrorAxis::X);
 		// TODO: Add chainable version?
 		mirrored_chain.change_group_id("R01").unwrap();
 

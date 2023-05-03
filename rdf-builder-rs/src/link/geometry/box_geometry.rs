@@ -1,9 +1,9 @@
-#[cfg(feature = "xml")]
-use quick_xml::{events::attributes::Attribute, name::QName};
+use super::{GeometryInterface, GeometryShapeContainer};
 
-use crate::link::geometry::{geometry_shape_data::GeometryShapeContainer, GeometryInterface};
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
+#[cfg(feature = "xml")]
+use quick_xml::{events::attributes::Attribute, name::QName};
 
 /// TODO: DOCS
 ///

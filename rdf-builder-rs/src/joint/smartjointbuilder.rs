@@ -1,13 +1,11 @@
 mod smartjointtypes;
+
 pub mod smartparams;
-
-use smartparams::{NoAxis, NoCalibration, NoDynamics, NoLimit, NoMimic, NoSafetyController};
-
 pub use smartjointtypes::{FixedType, NoType, RevoluteType};
 
-use crate::{
-	joint::joint_tranform_mode::JointTransformMode, link::LinkShapeData, transform_data::Transform,
-};
+use super::joint_tranform_mode::JointTransformMode;
+use crate::{link::LinkShapeData, transform::Transform};
+use smartparams::{NoAxis, NoCalibration, NoDynamics, NoLimit, NoMimic, NoSafetyController};
 
 use self::{
 	smartjointtypes::{ContinuousType, FloatingType, PlanarType, PrismaticType},
@@ -59,6 +57,7 @@ where
 impl
 	SmartJointBuilder<NoType, NoAxis, NoCalibration, NoDynamics, NoLimit, NoMimic, NoSafetyController>
 {
+	/// Created a new `JointType`-less `SmartJointBuilder`
 	pub fn new(
 		name: impl Into<String>,
 	) -> SmartJointBuilder<

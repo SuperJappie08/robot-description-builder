@@ -83,10 +83,7 @@ mod tests {
 		let tree = new_box_link("Zelda", 2f32, 3f32, 5f32).build_tree();
 
 		assert_eq!(tree.get_links().try_read().unwrap().len(), 1);
-		assert_eq!(
-			tree.get_newest_link().try_read().unwrap().get_name(),
-			"Zelda"
-		);
+		assert_eq!(tree.get_newest_link().try_read().unwrap().name(), "Zelda");
 		assert_eq!(tree.get_newest_link().try_read().unwrap().visuals.len(), 1);
 		assert_eq!(
 			tree.get_newest_link().try_read().unwrap().visuals[0].name,

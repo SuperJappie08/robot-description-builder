@@ -28,7 +28,7 @@ impl TransmissionActuator {
 		}
 	}
 
-	pub fn get_name(&self) -> &String {
+	pub fn name(&self) -> &String {
 		&self.name
 	}
 
@@ -37,11 +37,12 @@ impl TransmissionActuator {
 		self
 	}
 
-	pub fn get_mechanical_reduction(&self) -> Option<&f32> {
+	pub fn mechanical_reduction(&self) -> Option<&f32> {
 		self.mechanical_reduction.as_ref()
 	}
 
 	/// TODO: Maybe remove because of immutability
+	#[deprecated]
 	pub fn set_mechanical_reduction(&mut self, mechanical_reduction: f32) {
 		self.mechanical_reduction = Some(mechanical_reduction);
 	}
@@ -56,10 +57,10 @@ impl ToURDF for TransmissionActuator {
 	) -> Result<(), quick_xml::Error> {
 		let element = writer.create_element("actuator").with_attribute(Attribute {
 			key: QName(b"name"),
-			value: self.get_name().as_bytes().into(),
+			value: self.name().as_bytes().into(),
 		});
 
-		match self.get_mechanical_reduction() {
+		match self.mechanical_reduction() {
 			Some(reduction) => element.write_inner_content(|writer| {
 				writer
 					.create_element("mechanicalReduction")

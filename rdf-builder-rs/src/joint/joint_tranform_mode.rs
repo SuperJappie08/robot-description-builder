@@ -1,6 +1,6 @@
 use nalgebra::Matrix3;
 
-use crate::{link::LinkShapeData, transform_data::Transform};
+use crate::{link::LinkShapeData, transform::Transform};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum JointTransformMode {

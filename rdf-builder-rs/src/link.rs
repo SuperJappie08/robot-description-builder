@@ -42,15 +42,14 @@ use crate::to_rdf::to_urdf::ToURDF;
 use crate::{
 	chained::Chained,
 	cluster_objects::{
-		kinematic_data_errors::{AddJointError, AddMaterialError},
-		kinematic_data_tree::KinematicDataTree,
+		kinematic_data_errors::AddJointError, kinematic_data_tree::KinematicDataTree,
 	},
 	joint::{BuildJoint, BuildJointChain, Joint, JointBuilder},
 	link::{
 		builder::LinkBuilder, collision::Collision, inertial::InertialData,
 		link_parent::LinkParent, visual::Visual,
 	},
-	transform_data::Transform,
+	transform::Transform,
 	ArcLock, WeakLock,
 };
 
@@ -86,7 +85,7 @@ impl Link {
 		Weak::clone(&self.me)
 	}
 
-	pub fn get_parent(&self) -> &LinkParent {
+	pub fn parent(&self) -> &LinkParent {
 		&self.direct_parent
 	}
 
@@ -97,27 +96,23 @@ impl Link {
 	/// # use rdf_builder_rs::{KinematicInterface, linkbuilding::LinkBuilder};
 	/// let tree = LinkBuilder::new("my-link").build_tree();
 	///
-	/// assert_eq!(tree.get_root_link().try_read().unwrap().get_name(), "my-link")
+	/// assert_eq!(tree.get_root_link().try_read().unwrap().name(), "my-link")
 	/// ```
-	pub fn get_name(&self) -> &String {
+	pub fn name(&self) -> &String {
 		&self.name
 	}
 
 	/// Returns a reference to the joints of this [`Link`].
 	///
 	/// The vector contains all [`Joint`]s connected to this [`Link`], wrapped in a `Arc<RwLock<T>>`.
-	///
-	/// TODO: Maybe rename to `joints`
-	pub fn get_joints(&self) -> &Vec<ArcLock<Joint>> {
+	pub fn joints(&self) -> &Vec<ArcLock<Joint>> {
 		&self.child_joints
 	}
 
 	/// Returns a mutable reference to joints `Vec` of this [`Link`].
 	///
 	/// The vector contains all [`Joint`]s connected to this [`Link`], wrapped in a `Arc<RwLock<T>>`.
-	///
-	/// TODO: Maybe rename to `joints_mut`
-	pub(crate) fn get_joints_mut(&mut self) -> &mut Vec<ArcLock<Joint>> {
+	pub(crate) fn joints_mut(&mut self) -> &mut Vec<ArcLock<Joint>> {
 		&mut self.child_joints
 	}
 
@@ -179,37 +174,11 @@ impl Link {
 			.expect("KinematicDataTree should be initialized")
 			.try_add_joint(&joint)?;
 
-		self.get_joints_mut().push(joint);
+		self.joints_mut().push(joint);
 		Ok(())
 	}
 
-	#[deprecated]
-	pub fn add_visual(&mut self, visual: Visual) -> &mut Self {
-		self.try_add_visual(visual).unwrap()
-	}
-
-	#[deprecated]
-	pub fn try_add_visual(&mut self, mut visual: Visual) -> Result<&mut Self, AddMaterialError> {
-		if visual.material.is_some() {
-			let binding = self.tree.upgrade().unwrap();
-			let result = visual
-				.get_material_mut()
-				.map_or(Ok(()), |material| binding.try_add_material(material));
-			result?
-		}
-
-		self.visuals.push(visual);
-		Ok(self)
-	}
-
-	#[deprecated]
-	/// TODO:NOTE: Originally returned self for chaining, dont now if that is neccessary? so removed for now
-	pub fn add_collider(&mut self, collider: Collision) -> &mut Self {
-		self.colliders.push(collider);
-		self
-	}
-
-	pub fn get_inertial(&self) -> Option<&InertialData> {
+	pub fn inertial(&self) -> Option<&InertialData> {
 		self.inertial.as_ref()
 	}
 
@@ -217,15 +186,15 @@ impl Link {
 		self.end_point
 	}
 
-	pub fn get_visuals(&self) -> &Vec<Visual> {
+	pub fn visuals(&self) -> &Vec<Visual> {
 		&self.visuals
 	}
 
-	pub(crate) fn get_visuals_mut(&mut self) -> &mut Vec<Visual> {
+	pub(crate) fn visuals_mut(&mut self) -> &mut Vec<Visual> {
 		&mut self.visuals
 	}
 
-	pub fn get_colliders(&self) -> &Vec<Collision> {
+	pub fn colliders(&self) -> &Vec<Collision> {
 		&self.colliders
 	}
 
@@ -263,16 +232,16 @@ impl Link {
 	pub(crate) fn yank(&self) -> LinkBuilder {
 		let builder = self.rebuild_branch();
 
-		match self.get_parent() {
+		match self.parent() {
 			LinkParent::Joint(joint) => {
 				let joint = joint.upgrade().unwrap();
 				joint
 					.try_read()
 					.unwrap() // FIXME: Is unwrap Ok here?
-					.get_parent_link()
+					.parent_link()
 					.try_write()
 					.unwrap() //FIXME: Is unwrap Ok here?
-					.get_joints_mut()
+					.joints_mut()
 					.retain(|other_joint| Arc::ptr_eq(&joint, other_joint));
 			}
 			LinkParent::KinematicTree(_) => {
@@ -286,7 +255,7 @@ impl Link {
 
 	pub(crate) fn get_shape_data(&self) -> LinkShapeData {
 		LinkShapeData::new(
-			self.get_visuals()
+			self.visuals()
 				.iter()
 				.map(|visual| visual.get_geometry_data()),
 		)
@@ -302,10 +271,10 @@ impl ToURDF for Link {
 	) -> Result<(), quick_xml::Error> {
 		let element = writer.create_element("link").with_attribute(Attribute {
 			key: QName(b"name"),
-			value: self.get_name().as_bytes().into(),
+			value: self.name().as_bytes().into(),
 		});
 		element.write_inner_content(|writer| -> Result<(), quick_xml::Error> {
-			if let Some(inertial_data) = self.get_inertial() {
+			if let Some(inertial_data) = self.inertial() {
 				inertial_data.to_urdf(writer, urdf_config)?;
 			}
 
@@ -328,7 +297,7 @@ impl ToURDF for Link {
 
 		// Write joints
 		process_results(
-			self.get_joints()
+			self.joints()
 				.iter()
 				.map(|joint| joint.read().unwrap().to_urdf(writer, urdf_config)),
 			|iter| iter.collect(),
@@ -394,10 +363,7 @@ mod tests {
 		});
 
 		let newest_link = tree.get_newest_link();
-		assert_eq!(
-			newest_link.try_read().unwrap().get_name(),
-			root_link.get_name()
-		);
+		assert_eq!(newest_link.try_read().unwrap().name(), root_link.name());
 		assert!(Arc::ptr_eq(&newest_link, &binding));
 
 		assert_eq!(tree.get_links().try_read().unwrap().len(), 1);
@@ -419,12 +385,9 @@ mod tests {
 			Ok(())
 		);
 
+		assert_eq!(tree.get_root_link().try_read().unwrap().name(), "base_link");
 		assert_eq!(
-			tree.get_root_link().try_read().unwrap().get_name(),
-			"base_link"
-		);
-		assert_eq!(
-			tree.get_newest_link().try_read().unwrap().get_name(),
+			tree.get_newest_link().try_read().unwrap().name(),
 			"child_link"
 		);
 
@@ -445,10 +408,10 @@ mod tests {
 				.unwrap()
 				.try_read()
 				.unwrap()
-				.get_parent_link()
+				.parent_link()
 				.try_read()
 				.unwrap()
-				.get_name(),
+				.name(),
 			"base_link"
 		);
 		assert_eq!(
@@ -456,10 +419,10 @@ mod tests {
 				.unwrap()
 				.try_read()
 				.unwrap()
-				.get_child_link()
+				.child_link()
 				.try_read()
 				.unwrap()
-				.get_name(),
+				.name(),
 			"child_link"
 		);
 
@@ -502,7 +465,7 @@ mod tests {
 
 		//TODO: What should be the defined behavior?
 		assert_eq!(
-			tree.get_newest_link().try_read().unwrap().get_name(),
+			tree.get_newest_link().try_read().unwrap().name(),
 			"other_child_link"
 		);
 
@@ -512,8 +475,8 @@ mod tests {
 			.try_attach_child(tree_three, JointBuilder::new("joint-3", JointType::Fixed))
 			.unwrap();
 
-		assert_eq!(tree.get_root_link().try_read().unwrap().get_name(), "root");
-		assert_eq!(tree.get_newest_link().try_read().unwrap().get_name(), "3");
+		assert_eq!(tree.get_root_link().try_read().unwrap().name(), "root");
+		assert_eq!(tree.get_newest_link().try_read().unwrap().name(), "3");
 
 		{
 			let binding = tree.get_links();
@@ -542,27 +505,27 @@ mod tests {
 		);
 		assert_eq!(root_link.child_joints.len(), 2);
 		assert_eq!(
-			root_link.child_joints[0].try_read().unwrap().get_name(),
+			root_link.child_joints[0].try_read().unwrap().name(),
 			"initial_joint"
 		);
 		assert_eq!(
 			root_link.child_joints[0]
 				.try_read()
 				.unwrap()
-				.get_child_link()
+				.child_link()
 				.try_read()
 				.unwrap()
-				.get_name(),
+				.name(),
 			"other_root"
 		);
 		assert_eq!(
 			root_link.child_joints[0]
 				.try_read()
 				.unwrap()
-				.get_child_link()
+				.child_link()
 				.try_read()
 				.unwrap()
-				.get_joints()
+				.joints()
 				.len(),
 			1
 		);
@@ -570,71 +533,71 @@ mod tests {
 			root_link.child_joints[0]
 				.try_read()
 				.unwrap()
-				.get_child_link()
+				.child_link()
 				.try_read()
 				.unwrap()
-				.get_joints()[0]
+				.joints()[0]
 				.try_read()
 				.unwrap()
-				.get_name(),
+				.name(),
 			"other_joint"
 		);
 		assert_eq!(
 			root_link.child_joints[0]
 				.try_read()
 				.unwrap()
-				.get_child_link()
+				.child_link()
 				.try_read()
 				.unwrap()
-				.get_joints()[0]
+				.joints()[0]
 				.try_read()
 				.unwrap()
-				.get_child_link()
+				.child_link()
 				.read()
 				.unwrap()
-				.get_name(),
+				.name(),
 			"other_child_link"
 		);
 		assert_eq!(
 			root_link.child_joints[0]
 				.try_read()
 				.unwrap()
-				.get_child_link()
+				.child_link()
 				.try_read()
 				.unwrap()
-				.get_joints()[0]
+				.joints()[0]
 				.try_read()
 				.unwrap()
-				.get_child_link()
+				.child_link()
 				.try_read()
 				.unwrap()
-				.get_joints()
+				.joints()
 				.len(),
 			0
 		);
 
 		assert_eq!(
-			root_link.child_joints[1].try_read().unwrap().get_name(),
+			root_link.child_joints[1].try_read().unwrap().name(),
 			"joint-3"
 		);
 		assert_eq!(
 			root_link.child_joints[1]
 				.try_read()
 				.unwrap()
-				.get_child_link()
+				.child_link()
 				.try_read()
 				.unwrap()
-				.get_name(),
+				.name(),
 			"3"
 		);
 		assert_eq!(
 			root_link.child_joints[1]
 				.try_read()
 				.unwrap()
-				.get_child_link()
+				.child_link()
 				.try_read()
 				.unwrap()
-				.get_joints()
+				.joints()
 				.len(),
 			0
 		);

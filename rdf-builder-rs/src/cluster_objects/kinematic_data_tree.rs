@@ -18,8 +18,7 @@ use crate::{
 	ArcLock, WeakLock,
 };
 
-use super::PoisonWriteIndexError;
-use crate::cluster_objects::kinematic_data_errors::*;
+use super::{kinematic_data_errors::*, PoisonWriteIndexError};
 
 #[derive(Debug)]
 pub struct KinematicDataTree {
@@ -76,7 +75,7 @@ impl KinematicDataTree {
 		let name = link
 			.read()
 			.map_err(|_| errored_read_lock(link))?
-			.get_name()
+			.name()
 			.clone();
 
 		#[cfg(any(feature = "logging", test))]
@@ -109,9 +108,9 @@ impl KinematicDataTree {
 		process_results(
 			link.write()
 				.map_err(|_| errored_write_lock(link))?
-				.get_visuals_mut()
+				.visuals_mut()
 				.iter_mut()
-				.filter_map(|visual| visual.get_material_mut())
+				.filter_map(|visual| visual.material_mut())
 				.map(|material| self.try_add_material(material)),
 			|iter| iter.collect_vec(),
 		)?;
@@ -119,7 +118,7 @@ impl KinematicDataTree {
 		process_results(
 			link.read()
 				.map_err(|_| errored_read_lock(link))?
-				.get_joints()
+				.joints()
 				.iter()
 				.map(|joint| self.try_add_joint(joint)),
 			|iter| iter.collect_vec(),
@@ -133,7 +132,7 @@ impl KinematicDataTree {
 		let name = joint
 			.read()
 			.map_err(|_| errored_read_lock(joint))?
-			.get_name()
+			.name()
 			.clone();
 
 		#[cfg(any(feature = "logging", test))]
@@ -163,7 +162,7 @@ impl KinematicDataTree {
 			joint
 				.read()
 				.map_err(|_| errored_read_lock(joint))?
-				.get_child_link_ref(),
+				.child_link_ref(),
 		)
 		.map_err(Box::new)?;
 
@@ -174,7 +173,7 @@ impl KinematicDataTree {
 		&self,
 		transmission: TransmissionBuilder<WithJoints, WithActuator>,
 	) -> Result<(), AddTransmissionError> {
-		let name = transmission.get_name().clone();
+		let name = transmission.name().clone();
 
 		#[cfg(any(feature = "logging", test))]
 		log::debug!(target: "KinematicTreeData","Trying to attach Transmission: {}", name);
@@ -281,7 +280,7 @@ impl ToURDF for KinematicDataTree {
 						Material::new_named_inited(name.clone(), Arc::clone(arc_material_data))
 					}, // FIXME: This might be a bit weird to do it like this, a propper construction method would be nice
 				)
-				.sorted_by_cached_key(|material| material.get_name().unwrap().clone()) // TODO: Is it worth to make sorting optional?
+				.sorted_by_cached_key(|material| material.name().unwrap().clone()) // TODO: Is it worth to make sorting optional?
 				.map(|material: Material| {
 					material.to_urdf(
 						writer,
@@ -352,7 +351,7 @@ mod tests {
 		assert_eq!(tree.transmissions.try_read().unwrap().len(), 0);
 
 		assert!(tree.links.try_read().unwrap().contains_key("Linky"));
-		assert_eq!(tree.root_link.try_read().unwrap().get_name(), "Linky");
+		assert_eq!(tree.root_link.try_read().unwrap().name(), "Linky");
 		assert_eq!(
 			tree.newest_link
 				.read()
@@ -361,7 +360,7 @@ mod tests {
 				.unwrap()
 				.try_read()
 				.unwrap()
-				.get_name(),
+				.name(),
 			"Linky"
 		);
 
@@ -373,9 +372,9 @@ mod tests {
 			.root_link
 			.try_read()
 			.unwrap()
-			.get_parent()
+			.parent()
 			.is_valid_reference());
-		assert!(match tree.root_link.try_read().unwrap().get_parent() {
+		assert!(match tree.root_link.try_read().unwrap().parent() {
 			LinkParent::KinematicTree(_) => true,
 			_ => false,
 		});
@@ -422,10 +421,7 @@ mod tests {
 			vec!["other-child-joint", "other-joint", "three",]
 		);
 
-		assert_eq!(
-			tree.root_link.try_read().unwrap().get_name(),
-			"example-link"
-		);
+		assert_eq!(tree.root_link.try_read().unwrap().name(), "example-link");
 		assert_eq!(
 			tree.newest_link
 				.read()
@@ -434,7 +430,7 @@ mod tests {
 				.unwrap()
 				.try_read()
 				.unwrap()
-				.get_name(),
+				.name(),
 			"3"
 		);
 
@@ -442,9 +438,9 @@ mod tests {
 			.root_link
 			.try_read()
 			.unwrap()
-			.get_parent()
+			.parent()
 			.is_valid_reference());
-		assert!(match tree.root_link.try_read().unwrap().get_parent() {
+		assert!(match tree.root_link.try_read().unwrap().parent() {
 			LinkParent::KinematicTree(_) => true,
 			_ => false,
 		});
@@ -453,9 +449,9 @@ mod tests {
 			tree.root_link
 				.try_read()
 				.unwrap()
-				.get_joints()
+				.joints()
 				.iter()
-				.map(|joint| joint.try_read().unwrap().get_name().clone())
+				.map(|joint| joint.try_read().unwrap().name().clone())
 				.collect::<Vec<String>>(),
 			vec!["other-joint", "three"]
 		);
@@ -472,15 +468,15 @@ mod tests {
 				.upgrade()
 				.unwrap();
 
-			assert_eq!(joint.try_read().unwrap().get_name(), "other-joint");
+			assert_eq!(joint.try_read().unwrap().name(), "other-joint");
 			assert!(joint.try_read().unwrap().tree.upgrade().is_some());
 
 			assert!(Arc::ptr_eq(
-				&joint.try_read().unwrap().get_parent_link(),
+				&joint.try_read().unwrap().parent_link(),
 				&tree.root_link
 			));
 			assert!(Arc::ptr_eq(
-				&joint.try_read().unwrap().get_child_link(),
+				&joint.try_read().unwrap().child_link(),
 				&tree
 					.links
 					.try_read()
@@ -504,12 +500,12 @@ mod tests {
 				.upgrade()
 				.unwrap();
 
-			assert_eq!(link.try_read().unwrap().get_name(), "other-link");
+			assert_eq!(link.try_read().unwrap().name(), "other-link");
 			assert!(link.try_read().unwrap().tree.upgrade().is_some());
 
-			assert!(link.try_read().unwrap().get_parent().is_valid_reference());
+			assert!(link.try_read().unwrap().parent().is_valid_reference());
 			assert!(Weak::ptr_eq(
-				match link.try_read().unwrap().get_parent() {
+				match link.try_read().unwrap().parent() {
 					LinkParent::Joint(joint) => joint,
 					LinkParent::KinematicTree(_) => panic!("Not ok"),
 				},
@@ -519,9 +515,9 @@ mod tests {
 			assert_eq!(
 				link.try_read()
 					.unwrap()
-					.get_joints()
+					.joints()
 					.iter()
-					.map(|joint| joint.try_read().unwrap().get_name().clone())
+					.map(|joint| joint.try_read().unwrap().name().clone())
 					.collect::<Vec<String>>(),
 				vec!["other-child-joint"]
 			);
@@ -537,7 +533,7 @@ mod tests {
 				.upgrade()
 				.unwrap();
 
-			assert_eq!(joint.try_read().unwrap().get_name(), "other-child-joint");
+			assert_eq!(joint.try_read().unwrap().name(), "other-child-joint");
 			assert!(joint.try_read().unwrap().tree.upgrade().is_some());
 
 			assert!(Weak::ptr_eq(
@@ -546,7 +542,7 @@ mod tests {
 			));
 
 			assert!(Arc::ptr_eq(
-				&joint.try_read().unwrap().get_child_link(),
+				&joint.try_read().unwrap().child_link(),
 				&tree
 					.links
 					.try_read()
@@ -568,12 +564,12 @@ mod tests {
 				.upgrade()
 				.unwrap();
 
-			assert_eq!(link.try_read().unwrap().get_name(), "other-child");
+			assert_eq!(link.try_read().unwrap().name(), "other-child");
 			assert!(link.try_read().unwrap().tree.upgrade().is_some());
 
-			assert!(link.try_read().unwrap().get_parent().is_valid_reference());
+			assert!(link.try_read().unwrap().parent().is_valid_reference());
 			assert!(Weak::ptr_eq(
-				match link.try_read().unwrap().get_parent() {
+				match link.try_read().unwrap().parent() {
 					LinkParent::Joint(joint) => joint,
 					LinkParent::KinematicTree(_) => panic!("Not ok"),
 				},
@@ -588,9 +584,9 @@ mod tests {
 			assert_eq!(
 				link.try_read()
 					.unwrap()
-					.get_joints()
+					.joints()
 					.iter()
-					.map(|joint| joint.try_read().unwrap().get_name().clone())
+					.map(|joint| joint.try_read().unwrap().name().clone())
 					.count(),
 				0
 			);
@@ -607,15 +603,15 @@ mod tests {
 				.upgrade()
 				.unwrap();
 
-			assert_eq!(joint.try_read().unwrap().get_name(), "three");
+			assert_eq!(joint.try_read().unwrap().name(), "three");
 			assert!(joint.try_read().unwrap().tree.upgrade().is_some());
 
 			assert!(Arc::ptr_eq(
-				&joint.try_read().unwrap().get_parent_link(),
+				&joint.try_read().unwrap().parent_link(),
 				&tree.root_link
 			));
 			assert!(Arc::ptr_eq(
-				&joint.try_read().unwrap().get_child_link(),
+				&joint.try_read().unwrap().child_link(),
 				&tree
 					.links
 					.try_read()
@@ -637,12 +633,12 @@ mod tests {
 				.upgrade()
 				.unwrap();
 
-			assert_eq!(link.try_read().unwrap().get_name(), "3");
+			assert_eq!(link.try_read().unwrap().name(), "3");
 			assert!(link.try_read().unwrap().tree.upgrade().is_some());
 
-			assert!(link.try_read().unwrap().get_parent().is_valid_reference());
+			assert!(link.try_read().unwrap().parent().is_valid_reference());
 			assert!(Weak::ptr_eq(
-				match link.try_read().unwrap().get_parent() {
+				match link.try_read().unwrap().parent() {
 					LinkParent::Joint(joint) => joint,
 					LinkParent::KinematicTree(_) => panic!("Not ok"),
 				},
@@ -652,9 +648,9 @@ mod tests {
 			assert_eq!(
 				link.try_read()
 					.unwrap()
-					.get_joints()
+					.joints()
 					.iter()
-					.map(|joint| joint.try_read().unwrap().get_name().clone())
+					.map(|joint| joint.try_read().unwrap().name().clone())
 					.count(),
 				0
 			);
@@ -733,7 +729,7 @@ mod tests {
 						Visual::builder(geom_leg_l1.clone())
 							.tranformed(Transform::new_translation(0., 1.5, 0.))
 							.named("Leg_[L1]_l1_vis_1")
-							.material(material_l1.clone()),
+							.materialized(material_l1.clone()),
 					)
 					.add_collider(
 						Collision::builder(geom_leg_l1.clone())
@@ -755,7 +751,7 @@ mod tests {
 									(std::f32::consts::FRAC_PI_2, 0., 0.),
 								))
 								.named("Leg_[L1]_l2_vis_1")
-								.material(material_l2.clone()),
+								.materialized(material_l2.clone()),
 						)
 						.add_collider(
 							Collision::builder(geom_leg_l2.clone())

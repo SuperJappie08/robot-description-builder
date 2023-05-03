@@ -2,13 +2,12 @@ use std::sync::Weak;
 
 use nalgebra::Matrix3;
 
+use super::{ChainableBuilder, Chained};
 use crate::{
-	chained::{ChainableBuilder, Chained},
 	cluster_objects::kinematic_data_tree::KinematicDataTree,
 	joint::{BuildJointChain, Joint, JointBuilder},
-	link::{Link, LinkShapeData},
-	linkbuilding::LinkBuilder,
-	transform_data::MirrorAxis,
+	link::{builder::LinkBuilder, Link, LinkShapeData},
+	transform::MirrorAxis,
 	ArcLock, WeakLock,
 };
 
@@ -53,13 +52,13 @@ where
 
 #[cfg(test)]
 mod tests {
+	use super::{Chained, JointBuilder};
 	use std::f32::consts::FRAC_PI_2;
-
 	use test_log::test;
 
 	use crate::{
 		cluster_objects::KinematicInterface,
-		joint::{joint_data::LimitData, JointTransformMode},
+		joint::{joint_data::LimitData, JointTransformMode, JointType, SmartJointBuilder},
 		link::{
 			link_data::{
 				geometry::{BoxGeometry, CylinderGeometry},
@@ -69,8 +68,7 @@ mod tests {
 		},
 		linkbuilding::{CollisionBuilder, LinkBuilder, VisualBuilder},
 		material_mod::MaterialBuilder,
-		transform_data::MirrorAxis,
-		Chained, JointBuilder, JointType, SmartJointBuilder, Transform,
+		transform::{MirrorAxis, Transform},
 	};
 
 	#[test]
@@ -93,7 +91,7 @@ mod tests {
 							Visual::builder(geom_leg_l1.clone())
 								.tranformed(Transform::new_translation(0., 1.5, 0.))
 								.named("Leg_[L1]_l1_vis_1")
-								.material(material_l1.clone()),
+								.materialized(material_l1.clone()),
 						)
 						.add_collider(
 							Collision::builder(geom_leg_l1.clone())
@@ -114,7 +112,7 @@ mod tests {
 											(FRAC_PI_2, 0., 0.),
 										))
 										.named("Leg_[L1]_l2_vis_1")
-										.material(material_l2.clone()),
+										.materialized(material_l2.clone()),
 								)
 								.add_collider(
 									Collision::builder(geom_leg_l2.clone())

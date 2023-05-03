@@ -3,7 +3,9 @@ mod jointbuilder;
 mod smartjointbuilder;
 
 /// TODO: Pub(crate) for now
-pub(crate) mod joint_data;
+/// pub(crate)
+/// PUB FOR NOW FOR DOC TESTS????
+pub mod joint_data;
 
 pub use joint_tranform_mode::JointTransformMode;
 pub(crate) use jointbuilder::BuildJointChain;
@@ -17,7 +19,7 @@ use std::sync::{Arc, Weak};
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
 use crate::{
-	cluster_objects::kinematic_data_tree::KinematicDataTree, link::Link, transform_data::Transform,
+	cluster_objects::kinematic_data_tree::KinematicDataTree, link::Link, transform::Transform,
 	ArcLock, WeakLock,
 };
 
@@ -48,12 +50,11 @@ pub struct Joint {
 }
 
 impl Joint {
-	// impl JointInterface for Joint {
-	pub fn get_name(&self) -> &String {
+	pub fn name(&self) -> &String {
 		&self.name
 	}
 
-	pub fn get_jointtype(&self) -> JointType {
+	pub fn jointtype(&self) -> JointType {
 		self.joint_type
 	}
 
@@ -62,7 +63,7 @@ impl Joint {
 	/// TODO: ADD EXAMPLE
 	///
 	/// For now pub crate, this should maybe go to joint trait
-	pub fn get_parent_link(&self) -> ArcLock<Link> {
+	pub fn parent_link(&self) -> ArcLock<Link> {
 		// If this panics, the Joint is not initialized propperly.
 		self.parent_link
 			.upgrade()
@@ -71,23 +72,23 @@ impl Joint {
 
 	/// For now pub crate, this should maybe go to joint trait
 	/// Is this even necessary?
-	pub fn get_child_link(&self) -> ArcLock<Link> {
+	pub fn child_link(&self) -> ArcLock<Link> {
 		Arc::clone(&self.child_link)
 	}
 
 	/// FIXME: pub(crate) for now
-	pub(crate) fn get_child_link_ref(&self) -> &ArcLock<Link> {
+	pub(crate) fn child_link_ref(&self) -> &ArcLock<Link> {
 		&self.child_link
 	}
 
-	pub fn get_origin(&self) -> &Transform {
+	pub fn origin(&self) -> &Transform {
 		&self.origin
 	}
 
 	/// Make a `JointBuilder` to build a 'Clone' of the `Joint`
 	pub fn rebuild(&self) -> JointBuilder {
 		#[cfg(any(feature = "logging", test))]
-		log::info!(target: "JointBuilder","Rebuilding: {}", self.get_name());
+		log::info!(target: "JointBuilder","Rebuilding: {}", self.name());
 		JointBuilder {
 			name: self.name.clone(),
 			joint_type: self.joint_type,
@@ -105,7 +106,7 @@ impl Joint {
 	/// TODO: MAKE A PUBLIC VERSION WHICH RETURNS WRAPPED IN CHAINED
 	pub(crate) fn rebuild_branch(&self) -> JointBuilder {
 		#[cfg(any(feature = "logging", test))]
-		log::info!(target: "JointBuilder","Rebuilding: {}", self.get_name());
+		log::info!(target: "JointBuilder","Rebuilding: {}", self.name());
 		JointBuilder {
 			child: Some(self.child_link.read().unwrap().rebuild_branch()), // FIXME: Figure out if unwrap is Ok here?
 			..self.rebuild()
@@ -123,12 +124,12 @@ impl Joint {
 		let builder = self.rebuild_branch();
 
 		#[cfg(any(feature = "logging", test))]
-		log::info!("Yanked Joint \"{}\"", self.get_name());
+		log::info!("Yanked Joint \"{}\"", self.name());
 
-		self.get_parent_link()
+		self.parent_link()
 			.try_write()
 			.unwrap() // FIXME: UNWRAP NOT OK
-			.get_joints_mut()
+			.joints_mut()
 			.retain(|joint| !Arc::ptr_eq(&self.get_self(), joint));
 
 		*self.tree.upgrade().unwrap().newest_link.write().unwrap() = Weak::clone(&self.parent_link);
@@ -159,15 +160,15 @@ impl ToURDF for Joint {
 			.create_element("joint")
 			.with_attribute(Attribute {
 				key: QName(b"name"),
-				value: self.get_name().as_bytes().into(),
+				value: self.name().as_bytes().into(),
 			})
 			.with_attribute(Attribute {
 				key: QName(b"type"),
-				value: self.get_jointtype().into(),
+				value: self.jointtype().into(),
 			});
 
 		element.write_inner_content(|writer| {
-			let origin = self.get_origin();
+			let origin = self.origin();
 			if origin.contains_some() {
 				origin.to_urdf(writer, urdf_config)?;
 			}
@@ -177,10 +178,10 @@ impl ToURDF for Joint {
 				.with_attribute(Attribute {
 					key: QName(b"link"),
 					value: self
-						.get_parent_link()
+						.parent_link()
 						.read()
 						.unwrap() // FIXME: Is unwrap Ok HEre?
-						.get_name()
+						.name()
 						.as_bytes()
 						.into(),
 				})
@@ -191,10 +192,10 @@ impl ToURDF for Joint {
 				.with_attribute(Attribute {
 					key: QName(b"link"),
 					value: self
-						.get_child_link()
+						.child_link()
 						.read()
 						.unwrap() // FIXME: Is unwrap Ok HEre?
-						.get_name()
+						.name()
 						.as_bytes()
 						.into(),
 				})
@@ -221,7 +222,7 @@ impl ToURDF for Joint {
 			Ok(())
 		})?;
 
-		self.get_child_link()
+		self.child_link()
 			.read()
 			.unwrap() // FIXME: Is unwrap Ok HEre?
 			.to_urdf(writer, urdf_config)?;
@@ -229,6 +230,7 @@ impl ToURDF for Joint {
 	}
 }
 
+/// TODO: Are all fields covered?
 impl PartialEq for Joint {
 	fn eq(&self, other: &Self) -> bool {
 		Weak::ptr_eq(&self.me, &other.me)
@@ -289,7 +291,7 @@ mod tests {
 		},
 		linkbuilding::{CollisionBuilder, VisualBuilder},
 		material_mod::MaterialBuilder,
-		transform_data::Transform,
+		transform::Transform,
 	};
 	use test_log::test;
 
@@ -326,7 +328,7 @@ mod tests {
 		let tree = LinkBuilder::new("link-0")
 			.add_collider(CollisionBuilder::new(BoxGeometry::new(1.0, 2.0, 3.0)))
 			.add_visual(
-				Visual::builder(BoxGeometry::new(1.0, 2.0, 3.0)).material(material_red.clone()),
+				Visual::builder(BoxGeometry::new(1.0, 2.0, 3.0)).materialized(material_red.clone()),
 			)
 			.build_tree();
 
@@ -342,7 +344,7 @@ mod tests {
 					.add_visual(
 						Visual::builder(SphereGeometry::new(4.))
 							.tranformed(Transform::new_translation(2., 0., 0.))
-							.material(material_red.clone()),
+							.materialized(material_red.clone()),
 					),
 				SmartJointBuilder::new("joint-0")
 					.add_transform(Transform::new_translation(1.0, 0., 0.))
@@ -415,7 +417,8 @@ mod tests {
 			LinkBuilder::new("link-0")
 				.add_collider(CollisionBuilder::new(BoxGeometry::new(1.0, 2.0, 3.0)))
 				.add_visual(
-					Visual::builder(BoxGeometry::new(1.0, 2.0, 3.0)).material(material_red.clone()),
+					Visual::builder(BoxGeometry::new(1.0, 2.0, 3.0))
+						.materialized(material_red.clone()),
 				)
 				.build_tree()
 		};
@@ -433,7 +436,9 @@ mod tests {
 						.add_visual(
 							Visual::builder(SphereGeometry::new(4.))
 								.tranformed(Transform::new_translation(2., 0., 0.))
-								.material(MaterialBuilder::new_color(0., 0., 1., 1.).named("Blue")),
+								.materialized(
+									MaterialBuilder::new_color(0., 0., 1., 1.).named("Blue"),
+								),
 						)
 						.build_tree();
 
@@ -446,7 +451,7 @@ mod tests {
 								Visual::builder(CylinderGeometry::new(0.5, 18.))
 									.named("link-1-1-vis")
 									.tranformed(Transform::new_translation(9., 0.5, 0.))
-									.material(MaterialBuilder::new_color(0.5, 0.5, 0.5, 0.75)),
+									.materialized(MaterialBuilder::new_color(0.5, 0.5, 0.5, 0.75)),
 							),
 							SmartJointBuilder::new("joint-1-1")
 								.revolute()
@@ -479,14 +484,8 @@ mod tests {
 		assert_eq!(tree.get_joints().try_read().unwrap().len(), 3);
 		assert_eq!(tree.get_materials().try_read().unwrap().len(), 2);
 
-		assert_eq!(
-			tree.get_root_link().try_read().unwrap().get_name(),
-			"link-0"
-		);
-		assert_eq!(
-			tree.get_newest_link().try_read().unwrap().get_name(),
-			"link-2"
-		);
+		assert_eq!(tree.get_root_link().try_read().unwrap().name(), "link-0");
+		assert_eq!(tree.get_newest_link().try_read().unwrap().name(), "link-2");
 
 		{
 			let tree = tree.clone();
@@ -535,8 +534,8 @@ mod tests {
 				assert_eq!(material_keys, vec!["Blue", "Red"]);
 			}
 
-			assert_eq!(tree.get_root_link().read().unwrap().get_name(), "link-0");
-			assert_eq!(tree.get_newest_link().read().unwrap().get_name(), "link-0");
+			assert_eq!(tree.get_root_link().read().unwrap().name(), "link-0");
+			assert_eq!(tree.get_newest_link().read().unwrap().name(), "link-0");
 
 			assert_eq!(
 				yanked_branch.unwrap().0,
@@ -601,8 +600,8 @@ mod tests {
 				assert_eq!(material_keys, vec!["Blue", "Red"]);
 			}
 
-			assert_eq!(tree.get_root_link().read().unwrap().get_name(), "link-0");
-			assert_eq!(tree.get_newest_link().read().unwrap().get_name(), "link-1");
+			assert_eq!(tree.get_root_link().read().unwrap().name(), "link-0");
+			assert_eq!(tree.get_newest_link().read().unwrap().name(), "link-1");
 
 			assert_eq!(
 				yanked_branch.unwrap().0,
@@ -686,8 +685,8 @@ mod tests {
 				assert_eq!(material_keys, vec!["Blue", "Red"]);
 			}
 
-			assert_eq!(tree.get_root_link().read().unwrap().get_name(), "link-0");
-			assert_eq!(tree.get_newest_link().read().unwrap().get_name(), "link-0");
+			assert_eq!(tree.get_root_link().read().unwrap().name(), "link-0");
+			assert_eq!(tree.get_newest_link().read().unwrap().name(), "link-0");
 
 			assert_eq!(
 				yanked_branch.unwrap().0,

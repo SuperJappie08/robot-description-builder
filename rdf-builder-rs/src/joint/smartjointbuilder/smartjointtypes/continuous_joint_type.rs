@@ -11,7 +11,7 @@ use crate::{
 	ArcLock, WeakLock,
 };
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub struct ContinuousType;
 
 impl From<ContinuousType> for JointType {

@@ -14,7 +14,7 @@ use crate::{
 	ArcLock, WeakLock,
 };
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub struct PlanarType;
 
 impl From<PlanarType> for JointType {

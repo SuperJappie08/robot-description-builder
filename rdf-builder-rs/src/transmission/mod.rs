@@ -244,7 +244,7 @@ where
 	Actuators: TransmissionActuatorTrait,
 {
 	/// Gets a reference to the name of the current `TransmissionBuilder`.
-	pub(crate) fn get_name(&self) -> &String {
+	pub(crate) fn name(&self) -> &String {
 		&self.name
 	}
 }
@@ -265,28 +265,28 @@ pub struct Transmission {
 
 impl Transmission {
 	/// Gets a reference to the name of the current `Transmission`.
-	pub fn get_name(&self) -> &String {
+	pub fn name(&self) -> &String {
 		&self.name
 	}
 
 	/// Gets the `TransmissionType` of the current `Transmission`.
 	///
 	/// See [`TransmissionType`] for more details about the possible transmissiontypes.
-	pub fn get_transmission_type(&self) -> TransmissionType {
+	pub fn transmission_type(&self) -> TransmissionType {
 		self.transmission_type
 	}
 
 	/// Gets a refence to the vector containning all the joint data of this `Transmission`.
 	///
 	/// TODO: EXPLAIN SOMETHING ABOUT TRANSMISSIONJOINT
-	pub fn get_joints(&self) -> &Vec<TransmissionJoint> {
+	pub fn joints(&self) -> &Vec<TransmissionJoint> {
 		&self.joints
 	}
 
 	/// Gets a refence to the vector containning all the actuators of this `Transmission`.
 	///
 	/// TODO: EXPLAIN SOMETHING ABOUT [`TransmissionActuator`]
-	pub fn get_actuators(&self) -> &Vec<TransmissionActuator> {
+	pub fn actuators(&self) -> &Vec<TransmissionActuator> {
 		&self.actuators
 	}
 
@@ -317,13 +317,13 @@ impl ToURDF for Transmission {
 			.create_element("transmission")
 			.with_attribute(Attribute {
 				key: QName(b"name"),
-				value: self.get_name().as_bytes().into(),
+				value: self.name().as_bytes().into(),
 			})
 			.write_inner_content(|writer| {
-				self.get_transmission_type().to_urdf(writer, urdf_config)?;
+				self.transmission_type().to_urdf(writer, urdf_config)?;
 
 				process_results(
-					self.get_joints()
+					self.joints()
 						.iter()
 						.map(|transmission_joint| transmission_joint.to_urdf(writer, urdf_config)),
 					|iter| iter.collect_vec(),

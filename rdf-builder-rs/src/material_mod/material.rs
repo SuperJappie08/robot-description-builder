@@ -1,5 +1,7 @@
 use std::sync::{Arc, RwLock};
 
+#[cfg(feature = "urdf")]
+use crate::to_rdf::to_urdf::{ToURDF, URDFMaterialMode};
 #[cfg(feature = "xml")]
 use quick_xml::events::attributes::Attribute;
 
@@ -8,16 +10,12 @@ use crate::{
 		kinematic_data_errors::{errored_read_lock, errored_write_lock, AddMaterialError},
 		kinematic_data_tree::KinematicDataTree,
 	},
-	material_mod::MaterialData,
 	ArcLock,
 };
 
-#[cfg(feature = "urdf")]
-use crate::to_rdf::to_urdf::{ToURDF, URDFMaterialMode};
-
 use super::{
 	material_data_reference::MaterialDataReferenceWrapper, material_stage::MaterialStage,
-	MaterialBuilder,
+	MaterialBuilder, MaterialData,
 };
 
 /// TODO: DOCS
@@ -95,14 +93,14 @@ impl Material {
 		}
 	}
 
-	pub fn get_name(&self) -> Option<&String> {
+	pub fn name(&self) -> Option<&String> {
 		match &self.0 {
 			MaterialKind::Named { name, data: _ } => Some(name),
 			MaterialKind::Unamed(_) => None,
 		}
 	}
 
-	pub fn get_material_data(&self) -> MaterialDataReferenceWrapper {
+	pub fn material_data(&self) -> MaterialDataReferenceWrapper {
 		match &self.0 {
 			MaterialKind::Named { name: _, data } => data.get_data(),
 			MaterialKind::Unamed(data) => data.into(),
@@ -110,7 +108,7 @@ impl Material {
 	}
 
 	pub fn rebuild(&self) -> MaterialBuilder {
-		let builder = MaterialBuilder::new_data(self.get_material_data().try_into().unwrap()); //FIXME: Unwrap not OK
+		let builder = MaterialBuilder::new_data(self.material_data().try_into().unwrap()); //FIXME: Unwrap not OK
 		match &self.0 {
 			MaterialKind::Named { name, data: _ } => builder.named(name),
 			MaterialKind::Unamed(_) => builder,
@@ -133,7 +131,7 @@ impl ToURDF for Material {
 					key: quick_xml::name::QName(b"name"),
 					value: name.as_bytes().into(),
 				});
-				match (urdf_config.direct_material_ref, dbg!(data.get_used_count())) {
+				match (urdf_config.direct_material_ref, dbg!(data.used_count())) {
 					(URDFMaterialMode::Referenced, 2..) => element.write_empty()?,
 					(URDFMaterialMode::FullMaterial, _) | (URDFMaterialMode::Referenced, _) => {
 						element.write_inner_content(|writer| data.to_urdf(writer, urdf_config))?

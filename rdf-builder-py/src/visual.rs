@@ -23,16 +23,16 @@ impl PyVisual {
 	pub fn __repr__(&self) -> String {
 		let mut repr = String::from("Visual(name = ");
 
-		if let Some(name) = self.inner.get_name() {
+		if let Some(name) = self.inner.name() {
 			repr += format!("'{}'", name).as_str();
 		} else {
 			repr += "None"
 		}
 
 		// TODO: THIS ISN'T OK
-		repr += &format!(", {:?}", self.inner.get_geometry());
+		repr += &format!(", {:?}", self.inner.geometry());
 
-		if let Some(material) = self.inner.get_material() {
+		if let Some(material) = self.inner.material() {
 			todo!()
 			// repr += &format!(
 			// 	", material = {}",

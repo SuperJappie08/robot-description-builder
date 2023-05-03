@@ -27,7 +27,7 @@ impl crate::to_rdf::to_urdf::ToURDF for MimicData {
 				.unwrap() // FIXME: Is unwrap Ok here?
 				.read()
 				.unwrap() // FIXME: Is unwrap Ok here?
-				.get_name()
+				.name()
 				.clone()
 				.as_bytes()
 				.into(),
@@ -69,7 +69,7 @@ impl From<MimicData> for MimicBuilderData {
 				.unwrap() // FIXME: Is unwrap Ok?
 				.try_read()
 				.unwrap() // FIXME: Is unwrap Ok?
-				.get_name()
+				.name()
 				.clone(),
 			multiplier: value.multiplier,
 			offset: value.offset,

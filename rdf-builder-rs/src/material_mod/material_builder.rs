@@ -3,6 +3,13 @@ use crate::identifiers::GroupIDChanger;
 use super::{material::Material, MaterialData};
 
 /// FIXME: Name not final, maybe change to `MaterialDescriptor`
+///
+/// TODO: UPDATE
+/// When a `MaterialDescriptor` is constructed for a specific `KinematicDataTee`, the following steps happen:
+///  1. Check if the description of the `MaterialDescriptor` matches a pre-existing `Material` already in the tree.
+///     - If the a `Material` matches the description, the reference to that material is returned.
+///     - If no `Material` matches the desctiption, a new `Material` is constructed and inserted to the `material_index` of the `KinematicDataTree` and the reference is returned.
+///     - If only the `name` of the `Material` matches, an error is raised.
 #[derive(Debug, PartialEq, Clone)]
 pub struct MaterialBuilder {
 	name: Option<String>,
@@ -98,12 +105,12 @@ impl MaterialBuilder {
 	// ===== Non-Builder Methods ======
 
 	/// Gets the optional of the [`MaterialBuilder`] as a optional reference.
-	pub fn get_name(&self) -> Option<&String> {
+	pub fn name(&self) -> Option<&String> {
 		self.name.as_ref()
 	}
 
 	/// Gets a reference to the [`MaterialData`] of the [`MaterialBuilder`]
-	pub fn get_data(&self) -> &MaterialData {
+	pub fn data(&self) -> &MaterialData {
 		&self.data
 	}
 }

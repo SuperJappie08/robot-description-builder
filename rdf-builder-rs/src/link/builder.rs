@@ -1,8 +1,10 @@
 use std::sync::Weak;
 
+use super::{Link, LinkShapeData};
 use crate::{
-	cluster_objects::kinematic_data_tree::KinematicDataTree, link::Link, ArcLock, Joint,
-	KinematicTree, WeakLock,
+	cluster_objects::{kinematic_data_tree::KinematicDataTree, KinematicTree},
+	joint::Joint,
+	ArcLock, WeakLock,
 };
 
 mod collision_builder;
@@ -12,8 +14,6 @@ mod visual_builder;
 pub use collision_builder::CollisionBuilder;
 pub use linkbuilder::LinkBuilder;
 pub use visual_builder::VisualBuilder;
-
-use crate::link::link_shape_data::LinkShapeData;
 
 /// FIXME: Split the trait into multiple traits, because it does not make sense in all situations
 pub(crate) trait BuildLink {
@@ -40,6 +40,7 @@ pub(crate) trait BuildLink {
 		parent_joint: &WeakLock<Joint>,
 	) -> ArcLock<Link>;
 
+	/// TODO: Rename?
 	fn get_shape_data(&self) -> LinkShapeData;
 }
 

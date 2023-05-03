@@ -2,8 +2,7 @@ use nalgebra::Matrix3;
 
 use crate::{
 	identifiers::GroupIDChanger, link::geometry::GeometryInterface, link::visual::Visual,
-	link_data::geometry::GeometryShapeData, material_mod::MaterialBuilder,
-	transform_data::Transform,
+	link_data::geometry::GeometryShapeData, material_mod::MaterialBuilder, transform::Transform,
 };
 
 #[derive(Debug)]
@@ -53,7 +52,7 @@ impl VisualBuilder {
 		self
 	}
 
-	pub fn material(mut self, material_description: MaterialBuilder) -> Self {
+	pub fn materialized(mut self, material_description: MaterialBuilder) -> Self {
 		self.material_description = Some(material_description);
 		self
 	}

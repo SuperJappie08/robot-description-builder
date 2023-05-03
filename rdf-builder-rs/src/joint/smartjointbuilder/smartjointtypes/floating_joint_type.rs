@@ -36,7 +36,7 @@ use crate::{
 /// ## Extra sources:
 /// - [GitHub:URDF/issue/Support for other joint types](https://github.com/ros/urdf/issues/3)
 /// - [Gazebo uses KDL, so doesn't support Floating](https://get-help.robotigniteacademy.com/t/urdfs-floating-joint-not-working-in-gazebo/8864)
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub struct FloatingType;
 
 impl From<FloatingType> for JointType {

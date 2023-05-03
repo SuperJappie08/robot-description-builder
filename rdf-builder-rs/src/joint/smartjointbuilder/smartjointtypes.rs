@@ -5,7 +5,7 @@ mod planar_joint_type;
 mod prismatic_joint_type;
 mod revolute_joint_type;
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub struct NoType;
 
 pub use continuous_joint_type::ContinuousType;

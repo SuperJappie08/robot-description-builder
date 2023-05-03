@@ -17,7 +17,7 @@ use crate::{
 	ArcLock, WeakLock,
 };
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub struct RevoluteType;
 
 impl From<RevoluteType> for JointType {

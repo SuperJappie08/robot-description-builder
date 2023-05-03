@@ -47,15 +47,15 @@ impl TransmissionJointBuilder {
 		self
 	}
 
-	pub fn get_name(&self) -> &String {
+	pub fn name(&self) -> &String {
 		&self.joint_name
 	}
 
-	pub fn get_hw_interfaces(&self) -> &Vec<TransmissionHardwareInterface> {
+	pub fn hw_interfaces(&self) -> &Vec<TransmissionHardwareInterface> {
 		&self.hardware_interfaces
 	}
 
-	pub fn get_hw_interfaces_mut(&mut self) -> &mut Vec<TransmissionHardwareInterface> {
+	pub fn hw_interfaces_mut(&mut self) -> &mut Vec<TransmissionHardwareInterface> {
 		&mut self.hardware_interfaces
 	}
 
@@ -67,7 +67,7 @@ impl TransmissionJointBuilder {
 			.joints
 			.read()
 			.map_err(|_| errored_read_lock(&tree.joints))?
-			.get(self.get_name())
+			.get(self.name())
 			.map(Weak::clone)
 		{
 			Some(joint) => joint,
@@ -132,7 +132,7 @@ impl TransmissionJoint {
 				.unwrap() // This unwrap is Ok
 				.read()
 				.unwrap() // FIXME: This unwrap is not Ok
-				.get_name()
+				.name()
 				.clone(),
 			hardware_interfaces: self.hardware_interfaces.clone(),
 		}
@@ -156,7 +156,7 @@ impl ToURDF for TransmissionJoint {
 					.unwrap() // FIXME: Is UNWRAP OK?
 					.read()
 					.unwrap() // FIXME: Is UNWRAP OK?
-					.get_name()
+					.name()
 					.as_bytes()
 					.into(),
 			})

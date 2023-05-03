@@ -3,18 +3,14 @@ use std::sync::{Arc, RwLock, Weak};
 use itertools::process_results;
 use nalgebra::Matrix3;
 
+use super::{BuildLink, CollisionBuilder, VisualBuilder};
 use crate::{
-	cluster_objects::kinematic_data_tree::KinematicDataTree,
+	cluster_objects::{kinematic_data_tree::KinematicDataTree, KinematicTree},
 	identifiers::GroupIDChanger,
 	joint::{BuildJointChain, Joint, JointBuilder},
-	link::{
-		builder::{visual_builder::VisualBuilder, BuildLink},
-		link_data, Link, LinkParent, LinkShapeData,
-	},
-	ArcLock, KinematicTree, WeakLock,
+	link::{link_data, Link, LinkParent, LinkShapeData},
+	ArcLock, WeakLock,
 };
-
-use super::CollisionBuilder;
 
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct LinkBuilder {
@@ -55,23 +51,23 @@ impl LinkBuilder {
 
 	// ===== NON BUILDER METHODS =====
 
-	pub fn get_visuals(&self) -> &Vec<VisualBuilder> {
+	pub fn visuals(&self) -> &Vec<VisualBuilder> {
 		&self.visual_builders
 	}
 
-	pub fn get_visuals_mut(&mut self) -> &mut Vec<VisualBuilder> {
+	pub fn visuals_mut(&mut self) -> &mut Vec<VisualBuilder> {
 		&mut self.visual_builders
 	}
 
-	pub fn get_colliders(&self) -> &Vec<CollisionBuilder> {
+	pub fn colliders(&self) -> &Vec<CollisionBuilder> {
 		&self.colliders
 	}
 
-	pub fn get_colliders_mut(&mut self) -> &mut Vec<CollisionBuilder> {
+	pub fn colliders_mut(&mut self) -> &mut Vec<CollisionBuilder> {
 		&mut self.colliders
 	}
 
-	pub fn get_joints(&self) -> &Vec<JointBuilder> {
+	pub fn joints(&self) -> &Vec<JointBuilder> {
 		&self.joints
 	}
 
@@ -196,7 +192,7 @@ impl BuildLink for LinkBuilder {
 
 	fn get_shape_data(&self) -> LinkShapeData {
 		LinkShapeData::new(
-			self.get_visuals()
+			self.visuals()
 				.iter()
 				.map(|visual| visual.get_geometry_data()),
 		)
@@ -207,10 +203,10 @@ impl GroupIDChanger for LinkBuilder {
 	unsafe fn change_group_id_unchecked(&mut self, new_group_id: &str) {
 		self.name.change_group_id_unchecked(new_group_id);
 
-		self.get_visuals_mut()
+		self.visuals_mut()
 			.iter_mut()
 			.for_each(|visual_builder| visual_builder.change_group_id_unchecked(new_group_id));
-		self.get_colliders_mut()
+		self.colliders_mut()
 			.iter_mut()
 			.for_each(|collision_builder| {
 				collision_builder.change_group_id_unchecked(new_group_id)
@@ -224,10 +220,10 @@ impl GroupIDChanger for LinkBuilder {
 	fn apply_group_id(&mut self) {
 		self.name.apply_group_id();
 
-		self.get_visuals_mut()
+		self.visuals_mut()
 			.iter_mut()
 			.for_each(|visual_builder| visual_builder.apply_group_id());
-		self.get_colliders_mut()
+		self.colliders_mut()
 			.iter_mut()
 			.for_each(|collision_builder| collision_builder.apply_group_id());
 
@@ -246,7 +242,7 @@ mod tests {
 			geometry::{BoxGeometry, CylinderGeometry, GeometryShapeData, SphereGeometry},
 			link_shape_data::LinkShapeData,
 		},
-		transform_data::Transform,
+		transform::Transform,
 	};
 	use test_log::test;
 	//TODO: Write test

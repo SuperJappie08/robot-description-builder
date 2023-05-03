@@ -1,12 +1,10 @@
+#[cfg(feature = "urdf")]
+use crate::to_rdf::to_urdf::ToURDF;
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
-#[cfg(feature = "urdf")]
-use crate::to_rdf::to_urdf::ToURDF;
-use crate::{
-	link::{builder::CollisionBuilder, geometry::GeometryInterface},
-	transform_data::Transform,
-};
+use super::{builder::CollisionBuilder, geometry::GeometryInterface};
+use crate::transform::Transform;
 
 #[derive(Debug)]
 pub struct Collision {
@@ -25,15 +23,15 @@ impl Collision {
 		CollisionBuilder::new(geometry)
 	}
 
-	pub fn get_name(&self) -> Option<&String> {
+	pub fn name(&self) -> Option<&String> {
 		self.name.as_ref()
 	}
 
-	pub fn get_origin(&self) -> Option<&Transform> {
+	pub fn origin(&self) -> Option<&Transform> {
 		self.origin.as_ref()
 	}
 
-	pub fn get_geometry(&self) -> &Box<dyn GeometryInterface + Sync + Send> {
+	pub fn geometry(&self) -> &Box<dyn GeometryInterface + Sync + Send> {
 		&self.geometry
 	}
 
@@ -54,7 +52,7 @@ impl ToURDF for Collision {
 		urdf_config: &crate::to_rdf::to_urdf::URDFConfig,
 	) -> Result<(), quick_xml::Error> {
 		let mut element = writer.create_element("collision");
-		if let Some(name) = self.get_name() {
+		if let Some(name) = self.name() {
 			element = element.with_attribute(Attribute {
 				key: QName(b"name"),
 				value: name.as_bytes().into(),
@@ -62,11 +60,14 @@ impl ToURDF for Collision {
 		}
 
 		element.write_inner_content(|writer| {
-			if let Some(origin) = self.get_origin() {
+			if let Some(origin) = self.origin() {
 				origin.to_urdf(writer, urdf_config)?
 			}
 
-			self.get_geometry().to_urdf(writer, urdf_config)?;
+			self.geometry()
+				.try_get_shape()
+				.unwrap()
+				.to_urdf(writer, urdf_config)?;
 			Ok(())
 		})?;
 
@@ -101,7 +102,7 @@ mod tests {
 			collision::Collision,
 			geometry::{BoxGeometry, CylinderGeometry, SphereGeometry},
 		},
-		transform_data::Transform,
+		transform::Transform,
 	};
 
 	#[cfg(feature = "urdf")]

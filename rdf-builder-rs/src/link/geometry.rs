@@ -9,17 +9,14 @@ pub use sphere_geometry::SphereGeometry;
 
 pub use geometry_shape_data::GeometryShapeData;
 
-// #[cfg(feature = "xml")]
-// use quick_xml::{name::QName, events::attributes::Attribute};
-
 use std::fmt::Debug;
-
-// #[cfg(feature = "urdf")]
-use crate::to_rdf::to_urdf::ToURDF;
 
 use self::geometry_shape_data::GeometryShapeContainer;
 
-pub trait GeometryInterface: Debug + ToURDF {
+/// An interface for working with `Geometry`s generically.
+///
+/// LONGTERM-TODO: DECIDE IF `Box<dyn dyn GeometryInterface + Sync + Send>` shoudl be replaced with [`GeometryShapeContainer`]
+pub trait GeometryInterface: Debug {
 	fn volume(&self) -> f32;
 	fn surface_area(&self) -> f32;
 	fn boxed_clone(&self) -> Box<dyn GeometryInterface + Sync + Send>;
@@ -47,14 +44,4 @@ impl From<&(dyn GeometryInterface + Sync + Send)> for Box<dyn GeometryInterface 
 	fn from(value: &(dyn GeometryInterface + Sync + Send)) -> Self {
 		value.boxed_clone()
 	}
-}
-
-#[cfg(not(feature = "urdf"))]
-mod not_urdf {
-
-	use super::{BoxGeometry, CylinderGeometry, SphereGeometry, ToURDF};
-
-	impl ToURDF for BoxGeometry {}
-	impl ToURDF for CylinderGeometry {}
-	impl ToURDF for SphereGeometry {}
 }

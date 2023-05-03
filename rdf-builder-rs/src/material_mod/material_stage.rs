@@ -17,7 +17,7 @@ pub enum MaterialStage {
 impl MaterialStage {
 	/// Gets the Strong count of the `MaterialData`,
 	/// returns 0 if the `LocalMaterial` is not fully initialized yet.
-	pub fn get_used_count(&self) -> usize {
+	pub fn used_count(&self) -> usize {
 		match self {
 			MaterialStage::PreInit(_) => 0,
 			MaterialStage::Initialized(arc_data) => Arc::strong_count(arc_data),
@@ -33,6 +33,7 @@ impl MaterialStage {
 		}
 	}
 
+	/// TODO: WHAT TO DO WHIT NAME? with regards to convention
 	pub(crate) fn get_data(&self) -> MaterialDataReferenceWrapper {
 		match self {
 			MaterialStage::PreInit(data) => data.into(),

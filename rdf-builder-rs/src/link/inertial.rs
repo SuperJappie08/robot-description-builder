@@ -1,6 +1,6 @@
 use nalgebra::Matrix3;
 
-use crate::transform_data::Transform;
+use crate::transform::Transform;
 
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
@@ -74,7 +74,7 @@ impl ToURDF for InertialData {
 
 #[cfg(test)]
 mod tests {
-	use crate::link::inertial::InertialData;
+	use super::InertialData;
 	use test_log::test;
 
 	#[cfg(feature = "urdf")]
@@ -83,7 +83,7 @@ mod tests {
 
 		use crate::{
 			to_rdf::to_urdf::{ToURDF, URDFConfig},
-			transform_data::Transform,
+			transform::Transform,
 		};
 
 		use std::io::Seek;

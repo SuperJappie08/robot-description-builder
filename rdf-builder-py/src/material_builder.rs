@@ -120,7 +120,7 @@ impl PyMaterialBuilder {
 	}
 
 	fn __repr__(&self) -> String {
-		let mut repr: String = match self.inner.get_data() {
+		let mut repr: String = match self.inner.data() {
 			MaterialData::Color(red, green, blue, alpha) => format!(
 				"MaterialBuilder(rgba = ({}, {}, {}, {})",
 				red, green, blue, alpha
@@ -128,7 +128,7 @@ impl PyMaterialBuilder {
 			MaterialData::Texture(path) => format!("MaterialBuilder(path = \"{}\"", path),
 		};
 
-		if let Some(name) = self.inner.get_name() {
+		if let Some(name) = self.inner.name() {
 			repr.push_str(format!(", name=\"{}\"", name).as_str());
 		}
 
@@ -138,7 +138,7 @@ impl PyMaterialBuilder {
 
 	#[getter]
 	fn get_name(&self) -> Option<String> {
-		self.inner.get_name().map(String::clone)
+		self.inner.name().map(String::clone)
 	}
 
 	#[setter]
@@ -149,7 +149,7 @@ impl PyMaterialBuilder {
 
 	#[getter]
 	fn get_data(&self) -> Py<PyAny> {
-		Python::with_gil(|py| match self.inner.get_data() {
+		Python::with_gil(|py| match self.inner.data() {
 			MaterialData::Color(red, green, blue, alpha) => {
 				(*red, *green, *blue, *alpha).into_py(py)
 			}

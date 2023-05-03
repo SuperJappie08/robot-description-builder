@@ -1,7 +1,5 @@
-use crate::{
-	link::geometry::{GeometryShapeData, SphereGeometry},
-	transform_data::Transform,
-};
+use super::geometry::{GeometryShapeData, SphereGeometry};
+use crate::transform::Transform;
 
 /// Contains the main geometry (first occurance). and the rest for use in the closure
 #[derive(Debug, PartialEq, Clone)]

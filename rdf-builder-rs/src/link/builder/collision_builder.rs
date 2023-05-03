@@ -6,7 +6,7 @@ use crate::{
 		collision::Collision,
 		geometry::{GeometryInterface, GeometryShapeData},
 	},
-	transform_data::Transform,
+	transform::Transform,
 };
 
 #[derive(Debug)]
@@ -55,6 +55,7 @@ impl CollisionBuilder {
 		}
 	}
 
+	/// TODO: BETTER NAME
 	pub(crate) fn get_geometry_data(&self) -> GeometryShapeData {
 		GeometryShapeData {
 			origin: self.origin.unwrap_or_default(),

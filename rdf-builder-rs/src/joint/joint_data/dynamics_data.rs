@@ -13,8 +13,9 @@ impl DynamicsData {
 	/// It doesn't check if the some fields have the default value, since it can be format depended.
 	///
 	/// ## Example
-	/// ```--rust
-	/// # use rdf_builder_rs::joint::joint_data::DynamicsData;
+	///
+	/// ```
+	/// # use rdf_builder_rs::joint_data::DynamicsData;
 	/// assert!(DynamicsData {
 	///     damping: Some(1.),
 	///     friction: Some(2.)
