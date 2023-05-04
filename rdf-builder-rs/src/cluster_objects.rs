@@ -119,6 +119,9 @@ pub trait KinematicInterface {
 		&self,
 	) -> Result<(), PoisonWriteIndexError<String, ArcLock<Transmission>>>;
 
+	/// TODO: DOCS
+	///
+	/// NOTE: after yanking the joints parent link is the `newest_link`
 	fn yank_link(&self, name: &str) -> Option<Chained<LinkBuilder>> {
 		let builder = self
 			.get_link(name)

@@ -5,7 +5,7 @@ use pyo3::{
 };
 use rdf_builder_rs::{MaterialBuilder, MaterialData};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[pyclass(name = "MaterialBuilder")]
 pub struct PyMaterialBuilder {
 	inner: MaterialBuilder,

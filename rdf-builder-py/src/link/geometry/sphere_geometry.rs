@@ -2,7 +2,7 @@ use pyo3::{intern, prelude::*};
 
 use rdf_builder_rs::link_data::geometry::{GeometryInterface, SphereGeometry};
 
-use crate::geometry::PyGeometryBase;
+use super::PyGeometryBase;
 
 #[derive(Debug)]
 #[pyclass(name="SphereGeometry", extends=PyGeometryBase, module = "geometry")]

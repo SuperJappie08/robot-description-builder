@@ -91,6 +91,25 @@ impl VisualBuilder {
 	}
 }
 
+/// Non-builder methods
+impl VisualBuilder {
+	pub fn name(&self) -> Option<&String> {
+		self.name.as_ref()
+	}
+
+	pub fn origin(&self) -> Option<&Transform> {
+		self.origin.as_ref()
+	}
+
+	pub fn geometry(&self) -> &Box<dyn GeometryInterface + Sync + Send> {
+		&self.geometry
+	}
+
+	pub fn material(&self) -> Option<&MaterialBuilder> {
+		self.material_description.as_ref()
+	}
+}
+
 impl GroupIDChanger for VisualBuilder {
 	unsafe fn change_group_id_unchecked(&mut self, new_group_id: &str) {
 		if let Some(name) = self.name.as_mut() {

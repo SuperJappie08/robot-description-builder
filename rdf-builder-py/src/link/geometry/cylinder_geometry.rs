@@ -2,7 +2,7 @@ use pyo3::{intern, prelude::*};
 
 use rdf_builder_rs::link_data::geometry::{CylinderGeometry, GeometryInterface};
 
-use crate::geometry::PyGeometryBase;
+use super::PyGeometryBase;
 
 #[derive(Debug)]
 #[pyclass(name = "CylinderGeometry", extends = PyGeometryBase, module = "geometry")]

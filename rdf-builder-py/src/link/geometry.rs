@@ -9,11 +9,15 @@ pub use box_geometry::PyBoxGeometry;
 pub use cylinder_geometry::PyCylinderGeometry;
 pub use sphere_geometry::PySphereGeometry;
 
-pub(crate) fn init_module(module: &PyModule) -> PyResult<()> {
+pub(super) fn init_module(py: Python<'_>, parent_module: &PyModule) -> PyResult<()> {
+	let module = PyModule::new(py, "geometry")?;
+
 	module.add_class::<PyGeometryBase>()?;
 	module.add_class::<PyBoxGeometry>()?;
 	module.add_class::<PySphereGeometry>()?;
 	module.add_class::<PyCylinderGeometry>()?;
+
+	parent_module.add_submodule(module)?;
 
 	Ok(())
 }
@@ -32,6 +36,10 @@ impl PyGeometryBase {
 
 	fn surface_area(&self) -> f32 {
 		self.inner.surface_area()
+	}
+
+	pub fn __repr__(&self) -> String {
+		todo!()
 	}
 }
 
@@ -54,6 +62,12 @@ impl From<&(dyn GeometryInterface + Sync + Send)> for PyGeometryBase {
 		Self {
 			inner: value.into(),
 		}
+	}
+}
+
+impl From<PyGeometryBase> for Box<dyn GeometryInterface + Sync + Send> {
+	fn from(value: PyGeometryBase) -> Self {
+		value.inner
 	}
 }
 

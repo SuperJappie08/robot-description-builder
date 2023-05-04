@@ -1,47 +1,9 @@
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, Weak};
 
 use pyo3::prelude::*;
 use rdf_builder_rs::{Joint, JointBuilder, JointType};
 
-use crate::PyLink;
-
-#[derive(Debug)]
-#[pyclass(name = "Joint")]
-pub struct PyJoint {
-	inner: Arc<RwLock<Joint>>,
-}
-
-#[pymethods]
-impl PyJoint {
-	// #[new]
-	// fn build_a_joint() ->
-
-	#[getter]
-	fn name(&self) -> String {
-		self.inner.try_read().unwrap().name().clone() // TODO: Figure out if unwrap is Ok here?
-	}
-
-	#[getter]
-	fn parent_link(&self) -> PyLink {
-		self.inner.try_read().unwrap().parent_link().into() // TODO: Figure out if unwrap is Ok here?
-	}
-
-	#[getter]
-	fn child_link(&self) -> PyLink {
-		self.inner.try_read().unwrap().child_link().into() // TODO: Figure out if unwrap is Ok here?
-	}
-
-	#[getter]
-	fn origin(&self) -> (f32, f32, f32) {
-		todo!()
-	}
-}
-
-impl From<Arc<RwLock<Joint>>> for PyJoint {
-	fn from(value: Arc<RwLock<Joint>>) -> Self {
-		Self { inner: value }
-	}
-}
+use crate::link::PyLink;
 
 #[derive(Debug, Clone)]
 #[pyclass(name = "JointBuilder")]
@@ -57,10 +19,10 @@ impl PyJointBuilder {
 		JointBuilder::new(name, joint_type.into()).into()
 	}
 
-	/// TEMP implementation
-	fn add_origin_offset(&mut self, x: f32, y: f32, z: f32) {
-		self.inner = self.inner.clone().add_origin_offset((x, y, z));
-	}
+	// /// TEMP implementation
+	// fn add_origin_offset(&mut self, x: f32, y: f32, z: f32) {
+	// 	self.inner = self.inner.clone().add_origin_offset((x, y, z));
+	// }
 }
 
 impl From<JointBuilder> for PyJointBuilder {
@@ -72,6 +34,74 @@ impl From<JointBuilder> for PyJointBuilder {
 impl From<PyJointBuilder> for JointBuilder {
 	fn from(value: PyJointBuilder) -> Self {
 		value.inner
+	}
+}
+
+#[derive(Debug)]
+#[pyclass(name = "Joint", frozen)]
+pub struct PyJoint {
+	inner: Weak<RwLock<Joint>>,
+	/// Python weakref to the python parent tree
+	tree: PyObject,
+}
+
+impl PyJoint {
+	fn try_internal(&self) -> PyResult<Arc<RwLock<Joint>>> {
+		match self.inner.upgrade() {
+			Some(l) => Ok(l),
+			None => Err(pyo3::exceptions::PyReferenceError::new_err(
+				"Joint already collected",
+			)),
+		}
+	}
+}
+
+#[pymethods]
+impl PyJoint {
+	#[getter]
+	fn name(&self) -> PyResult<String> {
+		Ok(self.try_internal()?.read().unwrap().name().clone()) // TODO: Figure out if unwrap is Ok here?
+	}
+
+	#[getter]
+	fn parent_link(&self) -> PyResult<PyLink> {
+		Ok((
+			self.try_internal()?.read().unwrap().parent_link(),
+			self.tree.clone(),
+		)
+			.into()) // TODO: Figure out if unwrap is Ok here?
+	}
+
+	#[getter]
+	fn child_link(&self) -> PyResult<PyLink> {
+		Ok((
+			self.try_internal()?.read().unwrap().child_link(),
+			self.tree.clone(),
+		)
+			.into()) // TODO: Figure out if unwrap is Ok here?
+	}
+
+	// #[getter]
+	// fn origin(&self) -> (f32, f32, f32) {
+	// 	todo!()
+	// }
+}
+
+impl From<(Weak<RwLock<Joint>>, PyObject)> for PyJoint {
+	fn from(value: (Weak<RwLock<Joint>>, PyObject)) -> Self {
+		Self {
+			inner: value.0,
+			tree: value.1,
+		}
+	}
+}
+
+impl From<(Arc<RwLock<Joint>>, PyObject)> for PyJoint {
+	fn from(value: (Arc<RwLock<Joint>>, PyObject)) -> Self {
+		Self {
+			inner: Arc::downgrade(&value.0),
+			tree: value.1,
+		}
 	}
 }
 

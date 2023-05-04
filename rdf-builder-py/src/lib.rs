@@ -1,23 +1,20 @@
-mod geometry;
 mod joint;
+mod link;
 mod material;
 mod material_builder;
-mod visual;
-mod visual_builder;
+mod transform;
+mod utils;
 
-use joint::*;
-use material::*;
-use material_builder::PyMaterialBuilder;
-use visual::*;
-
-use std::sync::{Arc, RwLock};
+use std::sync::Weak;
 
 use itertools::Itertools;
-use pyo3::prelude::*;
+use joint::*;
+use link::*;
+use material_builder::PyMaterialBuilder;
 
-use rdf_builder_rs::{
-	linkbuilding::LinkBuilder, JointBuilder, KinematicInterface, KinematicTree, Link, Robot,
-};
+use pyo3::{intern, prelude::*};
+
+use rdf_builder_rs::{KinematicInterface, KinematicTree, Robot};
 
 #[derive(Debug)]
 #[pyclass(name = "Robot")]
@@ -41,21 +38,45 @@ impl From<Robot> for PyRobot {
 }
 
 #[derive(Debug, Clone)]
-#[pyclass(name = "KinematicTree")]
+#[pyclass(name = "KinematicTree", weakref)]
 struct PyKinematicTree {
 	inner: KinematicTree,
+	/// Python weakref to self
+	me: PyObject,
+}
+
+impl PyKinematicTree {
+	pub(crate) fn create(tree: KinematicTree) -> PyResult<Py<PyKinematicTree>> {
+		Python::with_gil(|py| {
+			let weakref = py.import(intern!(py, "weakref")).unwrap();
+			let tree: Py<PyKinematicTree> = PyKinematicTree {
+				inner: tree,
+				me: py.None(),
+			}
+			.into_py(py)
+			.extract(py)?;
+
+			weakref
+				.getattr("proxy")?
+				.call1((&tree,))?
+				.to_object(py)
+				.clone_into(&mut tree.borrow_mut(py).me);
+
+			Ok(tree)
+		})
+	}
 }
 
 #[pymethods]
 impl PyKinematicTree {
 	#[getter]
 	fn root_link(&self) -> PyLink {
-		self.inner.get_root_link().into()
+		(self.inner.get_root_link(), self.me.clone()).into()
 	}
 
 	#[getter]
 	fn newest_link(&self) -> PyLink {
-		self.inner.get_newest_link().into()
+		(self.inner.get_newest_link(), self.me.clone()).into()
 	}
 
 	// #[getter] // get_links
@@ -76,139 +97,80 @@ impl PyKinematicTree {
 	// }
 
 	fn get_link(&self, name: String) -> Option<PyLink> {
-		self.inner.get_link(&name).map(Into::into)
+		self.inner
+			.get_link(&name)
+			.map(|link| (link, self.me.clone()).into())
 	}
 
 	fn get_joint(&self, name: String) -> Option<PyJoint> {
-		self.inner.get_joint(&name).map(Into::into)
+		self.inner
+			.get_joint(&name)
+			.map(|joint| (joint, self.me.clone()).into())
 	}
 
-	pub fn __repr__(&self) -> String {
-		format!(
+	fn yank_link(&self, name: String) -> Option<PyLinkBuilder> {
+		self.inner
+			.yank_link(&name)
+			.map(|link_builder| link_builder.builder().clone().into())
+	}
+
+	pub fn __repr__(&self) -> PyResult<String> {
+		Ok(format!(
 			"KinematicTree(root_link = {}, ...)",
-			self.root_link().__repr__()
-		)
+			self.root_link().__repr__()?
+		))
+	}
+
+	/// FOR DEBUG
+	fn print_refs(&self) -> String {
+		self.inner
+			.get_links()
+			.read()
+			.unwrap()
+			.iter()
+			.sorted_by_key(|(k, _)| k.clone())
+			.map(|(name, link)| {
+				format!(
+					"{}: Strong {}, Weak: {}",
+					name,
+					Weak::strong_count(link),
+					Weak::strong_count(link)
+				)
+			})
+			.join("\n")
 	}
 }
 
-impl From<KinematicTree> for PyKinematicTree {
-	fn from(value: KinematicTree) -> Self {
-		Self { inner: value }
-	}
-}
+// impl From<KinematicTree> for PyResult<Py<PyKinematicTree>> {
+// 	fn from(value: KinematicTree) -> PyResult<Py<PyKinematicTree>> {
+// 		Python::with_gil(|py| {
+// 			let weakref = py.import(intern!(py, "weakref")).unwrap();
+// 			let mut tree = PyKinematicTree {
+// 				inner: value,
+// 				me: py.None(),
+// 			};
+// 			// tree.me = weakref
+// 			// 	.getattr("proxy")
+// 			// 	.unwrap()
+// 			// 	.call1((tree,))
+// 			// 	.unwrap()
+// 			// 	.into();
+// 			weakref
+// 				.getattr("proxy")
+// 				.unwrap()
+// 				.call1((tree.clone(),))
+// 				.unwrap()
+// 				.to_object(py)
+// 				.clone_into(&mut tree.me);
+
+// 			tree
+// 		})
+// 	}
+// }
 
 impl From<PyKinematicTree> for KinematicTree {
 	fn from(value: PyKinematicTree) -> Self {
 		value.inner
-	}
-}
-
-#[derive(Debug)]
-#[pyclass(name = "Link")]
-struct PyLink {
-	inner: Arc<RwLock<Link>>,
-}
-
-#[pymethods]
-impl PyLink {
-	#[staticmethod]
-	/// TODO: EXPAND
-	fn new(
-		name: String,
-		visuals: Option<Vec<PyVisual>>,
-		colliders: Option<Vec<PyVisual>>,
-	) -> PyKinematicTree {
-		// Link::new(name).into()
-		let mut builder = LinkBuilder::new(name);
-		// builder.get_visuals_mut().append(
-		// 	&mut visuals
-		// 		.unwrap_or_default()
-		// 		.iter()
-		// 		.map(|visual| visual.clone().into())
-		// 		.collect(),
-		// );
-		if visuals.is_some() {
-			panic!("Not IMPLEMENTED YET")
-		}
-
-		if colliders.is_some() {
-			panic!("Not IMPLEMENTED YET")
-		}
-
-		builder.build_tree().into()
-	}
-
-	#[getter]
-	fn name(&self) -> String {
-		self.inner.try_read().unwrap().name().clone() // TODO: Figure out if unwrap is Ok here?
-	}
-
-	///TODO: Joint Type Selection
-	fn try_attach_child(&self, tree: PyKinematicTree, joint_builder: PyJointBuilder) {
-		// FIXME: Need to do somethign with error
-		self.inner
-			.try_write()
-			.unwrap() // TODO: Figure out if unwrap is Ok here?
-			.try_attach_child(
-				Into::<KinematicTree>::into(tree),
-				Into::<JointBuilder>::into(joint_builder),
-			)
-			.unwrap() // TODO: Figure out if unwrap is Ok here?
-	}
-
-	fn __repr__(&self) -> String {
-		let link = self.inner.read().unwrap(); // FIXME: Unwrap ok?
-		let mut repr = format!("Link('{}'", link.name());
-
-		{
-			let visuals = link.visuals();
-			if !visuals.is_empty() {
-				repr += ", visuals = [";
-				// repr += &visuals.iter().map(|visual| PyVisual::from(visual.clone()).__repr__()).collect::<Vec<String>>().join(", ");
-				repr += visuals
-					.iter()
-					.map(|visual| PyVisual::from(visual.clone()).__repr__())
-					.join(", ")
-					.as_str();
-				repr += "]";
-			}
-		}
-		// TODO: EXPAND
-
-		repr += ", ...)";
-		repr
-	}
-}
-
-impl From<Arc<RwLock<Link>>> for PyLink {
-	fn from(value: Arc<RwLock<Link>>) -> Self {
-		Self { inner: value }
-	}
-}
-
-#[derive(Debug)]
-#[pyclass(name = "LinkBuilder")]
-struct PyLinkBuilder {
-	inner: LinkBuilder,
-}
-
-#[pymethods]
-impl PyLinkBuilder {
-	#[new]
-	fn new(name: String) -> Self {
-		LinkBuilder::new(name).into()
-	}
-
-	/// Maybe direct construction
-	fn build(&self) -> PyKinematicTree {
-		// FIXME: NOT OK
-		self.inner.clone().build_tree().into()
-	}
-}
-
-impl From<LinkBuilder> for PyLinkBuilder {
-	fn from(value: LinkBuilder) -> Self {
-		Self { inner: value }
 	}
 }
 
@@ -228,19 +190,15 @@ fn rdf_builder_py(py: Python, m: &PyModule) -> PyResult<()> {
 	m.add_class::<PyRobot>()?;
 	m.add_class::<PyKinematicTree>()?;
 
-	m.add_class::<PyLink>()?;
-	m.add_class::<PyLinkBuilder>()?;
+	let link = PyModule::new(py, "link")?;
 
-	m.add_class::<PyMaterial>()?;
+	link::init_module(py, link)?;
+	m.add_submodule(link)?;
+
+	transform::init_module(py, m)?;
+
+	// m.add_class::<PyMaterial>()?;
 	m.add_class::<PyMaterialBuilder>()?;
-
-	m.add_class::<PyVisual>()?;
-
-	let geometry = PyModule::new(py, "geometry")?;
-	// Inits the python geometry module with the the init_module function from the rust geometry module
-	// Lots of packages do it like this and I don't know why, they do not do it like in the [PyO3 book](https://pyo3.rs/main/module#python-submodules)
-	geometry::init_module(geometry)?;
-	m.add_submodule(geometry)?;
 
 	m.add_class::<PyJoint>()?;
 	m.add_class::<PyJointBuilder>()?;

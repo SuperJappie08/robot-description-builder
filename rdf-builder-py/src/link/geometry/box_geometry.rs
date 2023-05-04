@@ -2,7 +2,7 @@ use pyo3::{intern, prelude::*};
 
 use rdf_builder_rs::link_data::geometry::{BoxGeometry, GeometryInterface};
 
-use crate::geometry::PyGeometryBase;
+use super::PyGeometryBase;
 
 #[pyclass(name = "BoxGeometry", extends = PyGeometryBase, module = "geometry")]
 pub struct PyBoxGeometry {

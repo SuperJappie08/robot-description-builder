@@ -235,14 +235,18 @@ impl Link {
 		match self.parent() {
 			LinkParent::Joint(joint) => {
 				let joint = joint.upgrade().unwrap();
-				joint
-					.try_read()
-					.unwrap() // FIXME: Is unwrap Ok here?
-					.parent_link()
+				let parent_link = &joint.try_read().unwrap().parent_link; // FIXME: Is unwrap Ok here?
+
+				*self.tree.upgrade().unwrap().newest_link.write().unwrap() =
+					Weak::clone(parent_link);
+
+				parent_link
+					.upgrade()
+					.unwrap() // This unwrap is Ok since the parent_link on a Joint is initialized while adding to the tree.
 					.try_write()
 					.unwrap() //FIXME: Is unwrap Ok here?
 					.joints_mut()
-					.retain(|other_joint| Arc::ptr_eq(&joint, other_joint));
+					.retain(|other_joint| !Arc::ptr_eq(&joint, other_joint));
 			}
 			LinkParent::KinematicTree(_) => {
 				#[cfg(any(feature = "logging", test))]

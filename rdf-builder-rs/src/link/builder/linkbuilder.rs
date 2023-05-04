@@ -44,6 +44,7 @@ impl LinkBuilder {
 		self
 	}
 
+	/// TODO: Naming not inline with convention
 	pub fn intertial(mut self, inertial: link_data::InertialData) -> Self {
 		self.intertial = Some(inertial);
 		self

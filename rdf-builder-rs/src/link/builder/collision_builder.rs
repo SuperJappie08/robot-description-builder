@@ -75,6 +75,21 @@ impl CollisionBuilder {
 	}
 }
 
+/// Non-builder methods
+impl CollisionBuilder {
+	pub fn name(&self) -> Option<&String> {
+		self.name.as_ref()
+	}
+
+	pub fn origin(&self) -> Option<&Transform> {
+		self.origin.as_ref()
+	}
+
+	pub fn geometry(&self) -> &Box<dyn GeometryInterface + Sync + Send> {
+		&self.geometry
+	}
+}
+
 impl GroupIDChanger for CollisionBuilder {
 	unsafe fn change_group_id_unchecked(&mut self, new_group_id: &str) {
 		if let Some(name) = self.name.as_mut() {
