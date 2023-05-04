@@ -6,7 +6,7 @@ use crate::to_rdf::to_urdf::ToURDF;
 use crate::{
 	link::{builder::VisualBuilder, geometry::GeometryInterface},
 	link_data::geometry::GeometryShapeData,
-	material_mod::Material,
+	material::Material,
 	transform::Transform,
 };
 
@@ -162,7 +162,7 @@ mod tests {
 	mod to_urdf {
 		use super::{test, *};
 		use crate::{
-			material_mod::MaterialBuilder,
+			material::MaterialDescriptor,
 			to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialReferences},
 		};
 		use std::io::Seek;
@@ -219,7 +219,7 @@ mod tests {
 		fn no_name_no_origin_material() {
 			test_to_urdf_visual(
 				Visual::builder(CylinderGeometry::new(4.5, 75.35)).materialized(
-					MaterialBuilder::new_color(0.5, 0.55, 0.6, 1.).named("material_name"),
+					MaterialDescriptor::new_color(0.5, 0.55, 0.6, 1.).named("material_name"),
 				),
 				String::from(
 					r#"<visual><geometry><cylinder radius="4.5" length="75.35"/></geometry><material name="material_name"><color rgba="0.5 0.55 0.6 1"/></material></visual>"#,
@@ -237,7 +237,7 @@ mod tests {
 				Visual::builder(CylinderGeometry::new(4.5, 75.35))
 					.named("some_col")
 					.tranformed(Transform::new_translation(5.4, 9.1, 7.8))
-					.materialized(MaterialBuilder::new_color(0.75, 0.5, 1., 1.)),
+					.materialized(MaterialDescriptor::new_color(0.75, 0.5, 1., 1.)),
 				String::from(
 					r#"<visual name="some_col"><origin xyz="5.4 9.1 7.8"/><geometry><cylinder radius="4.5" length="75.35"/></geometry><material><color rgba="0.75 0.5 1 1"/></material></visual>"#,
 				),

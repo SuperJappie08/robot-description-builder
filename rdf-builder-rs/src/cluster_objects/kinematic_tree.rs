@@ -10,12 +10,12 @@ use crate::{
 	},
 	joint::Joint,
 	link::Link,
-	material_mod::Material,
+	material::{data::MaterialData, Material},
 	transmission::{
 		transmission_builder_state::{WithActuator, WithJoints},
 		Transmission, TransmissionBuilder,
 	},
-	ArcLock, MaterialData, WeakLock,
+	ArcLock, WeakLock,
 };
 
 #[derive(Debug)]

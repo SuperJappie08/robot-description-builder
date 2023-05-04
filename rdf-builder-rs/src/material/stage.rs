@@ -1,16 +1,19 @@
+// Internal module
 use std::sync::Arc;
 
-use crate::{ArcLock, MaterialData};
+use crate::ArcLock;
 
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
 
-use super::material_data_reference::MaterialDataReferenceWrapper;
+use super::data::{MaterialData, MaterialDataReferenceWrapper};
 
-/// FIXME: TEMP PUB
+/// Internal type for describing the stage of the initialization process the current [`MaterialKind::Named`](super::MaterialKind::Named) material is in.
 #[derive(Debug)]
-pub enum MaterialStage {
+pub(super) enum MaterialStage {
+	/// Pre-Initialization stage, occurs after creation of the [`Material`](super::Material) from [`MaterialDescriptor`](super::MaterialDescriptor), but before initilization.
 	PreInit(MaterialData),
+	/// Post-Initialization stage, occurs when the [`Material`](super::Material) is fully initialized.
 	Initialized(ArcLock<MaterialData>),
 }
 
@@ -24,6 +27,7 @@ impl MaterialStage {
 		}
 	}
 
+	/// Used to initilize this [`MaterialStage`], it is safe to be call multiple times.
 	pub(crate) fn initialize(&mut self, material_data: ArcLock<MaterialData>) {
 		match self {
 			MaterialStage::PreInit(_) => *self = MaterialStage::Initialized(material_data),

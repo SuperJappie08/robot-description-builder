@@ -3,16 +3,16 @@ use pyo3::{
 	prelude::*,
 	types::{PyDict, PyTuple},
 };
-use rdf_builder_rs::{MaterialBuilder, MaterialData};
+use rdf_builder_rs::material::{data::MaterialData, MaterialDescriptor};
 
 #[derive(Debug, Clone)]
-#[pyclass(name = "MaterialBuilder")]
-pub struct PyMaterialBuilder {
-	inner: MaterialBuilder,
+#[pyclass(name = "MaterialDescriptor")]
+pub struct PyMaterialDescriptor {
+	inner: MaterialDescriptor,
 }
 
 #[pymethods]
-impl PyMaterialBuilder {
+impl PyMaterialDescriptor {
 	/// TODO: Fix signature so name migth be picked up automagically? or not
 	#[new]
 	#[pyo3(signature = (*py_args, name=None, **py_kwargs))]
@@ -20,7 +20,7 @@ impl PyMaterialBuilder {
 		py_args: &PyTuple,
 		name: Option<String>,
 		py_kwargs: Option<&PyDict>,
-	) -> PyResult<PyMaterialBuilder> {
+	) -> PyResult<PyMaterialDescriptor> {
 		// TODO: Take String and do path
 		// TODO: Take Color and do Colours.
 		if (py_args.is_empty() || py_args.is_none())
@@ -42,26 +42,26 @@ impl PyMaterialBuilder {
 					.count() > 0
 			}) {
 			return Err(pyo3::exceptions::PyValueError::new_err(
-				"None value was given for MaterialBuilder construction",
+				"None value was given for MaterialDescriptor construction",
 			));
 		}
 
-		let mut material_builder: MaterialBuilder = if py_args.is_empty() || py_args.is_none() {
+		let mut material_builder: MaterialDescriptor = if py_args.is_empty() || py_args.is_none() {
 			// If we got here py_kwargs is not empty
 			let kwargs = py_kwargs.unwrap();
 
 			if let Some(Ok(path)) = kwargs.get_item("path").map(PyAny::extract::<String>) {
-				MaterialBuilder::new_texture(path)
+				MaterialDescriptor::new_texture(path)
 			} else if let Some(Ok((red, green, blue, alpha))) = kwargs
 				.get_item("rgba")
 				.map(PyAny::extract::<(f32, f32, f32, f32)>)
 			{
-				MaterialBuilder::new_color(red, green, blue, alpha)
+				MaterialDescriptor::new_color(red, green, blue, alpha)
 			} else if let Some(Ok((red, green, blue))) = kwargs
 				.get_item("rgb")
 				.map(PyAny::extract::<(f32, f32, f32)>)
 			{
-				MaterialBuilder::new_color(red, green, blue, 1.)
+				MaterialDescriptor::new_color(red, green, blue, 1.)
 			} else {
 				todo!()
 			}
@@ -70,15 +70,15 @@ impl PyMaterialBuilder {
 
 			// Should always be some
 			if let Ok(path) = args.first().unwrap().extract::<String>() {
-				MaterialBuilder::new_texture(path)
+				MaterialDescriptor::new_texture(path)
 			} else if let Ok((red, green, blue, alpha)) =
 				args.first().unwrap().extract::<(f32, f32, f32, f32)>()
 			{
-				MaterialBuilder::new_color(red, green, blue, alpha)
+				MaterialDescriptor::new_color(red, green, blue, alpha)
 			} else if let Ok((red, green, blue)) =
 				args.first().unwrap().extract::<(f32, f32, f32)>()
 			{
-				MaterialBuilder::new_color(red, green, blue, 1.)
+				MaterialDescriptor::new_color(red, green, blue, 1.)
 			} else if let Some((Ok(red), Ok(green), Ok(blue), Ok(alpha))) = args
 				.iter()
 				.next_tuple::<(_, _, _, _)>()
@@ -90,7 +90,7 @@ impl PyMaterialBuilder {
 						alpha.extract::<f32>(),
 					)
 				}) {
-				MaterialBuilder::new_color(red, green, blue, alpha)
+				MaterialDescriptor::new_color(red, green, blue, alpha)
 			} else if let Some((Ok(red), Ok(green), Ok(blue))) = args
 				.iter()
 				.next_tuple::<(_, _, _)>()
@@ -101,7 +101,7 @@ impl PyMaterialBuilder {
 						blue.extract::<f32>(),
 					)
 				}) {
-				MaterialBuilder::new_color(red, green, blue, 1.)
+				MaterialDescriptor::new_color(red, green, blue, 1.)
 			} else {
 				// TODO: Improve error
 				return Err(pyo3::exceptions::PyValueError::new_err(
@@ -122,10 +122,10 @@ impl PyMaterialBuilder {
 	fn __repr__(&self) -> String {
 		let mut repr: String = match self.inner.data() {
 			MaterialData::Color(red, green, blue, alpha) => format!(
-				"MaterialBuilder(rgba = ({}, {}, {}, {})",
+				"MaterialDescriptor(rgba = ({}, {}, {}, {})",
 				red, green, blue, alpha
 			),
-			MaterialData::Texture(path) => format!("MaterialBuilder(path = \"{}\"", path),
+			MaterialData::Texture(path) => format!("MaterialDescriptor(path = \"{}\"", path),
 		};
 
 		if let Some(name) = self.inner.name() {
@@ -161,7 +161,7 @@ impl PyMaterialBuilder {
 	// /// TODO: DECIDE IF THIS SHOULD BE ALLOWED, since it normally is not
 	// fn set_data(&mut self, value: &PyAny) {
 	// 	if let Ok(path) = value.extract::<String>() {
-	// 		self.inner = MaterialBuilder {
+	// 		self.inner = MaterialDescriptor {
 	// 			data: MaterialData::Texture(path)
 	// 			..self.inner.clone()
 	// 		}
@@ -169,14 +169,14 @@ impl PyMaterialBuilder {
 	// }
 }
 
-impl From<MaterialBuilder> for PyMaterialBuilder {
-	fn from(value: MaterialBuilder) -> Self {
+impl From<MaterialDescriptor> for PyMaterialDescriptor {
+	fn from(value: MaterialDescriptor) -> Self {
 		Self { inner: value }
 	}
 }
 
-impl From<PyMaterialBuilder> for MaterialBuilder {
-	fn from(value: PyMaterialBuilder) -> Self {
+impl From<PyMaterialDescriptor> for MaterialDescriptor {
+	fn from(value: PyMaterialDescriptor) -> Self {
 		value.inner
 	}
 }

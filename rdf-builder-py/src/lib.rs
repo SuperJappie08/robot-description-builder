@@ -1,7 +1,7 @@
 mod joint;
 mod link;
 mod material;
-mod material_builder;
+mod material_descriptor;
 mod transform;
 mod utils;
 
@@ -10,7 +10,7 @@ use std::sync::Weak;
 use itertools::Itertools;
 use joint::*;
 use link::*;
-use material_builder::PyMaterialBuilder;
+use material_descriptor::PyMaterialDescriptor;
 
 use pyo3::{intern, prelude::*};
 
@@ -198,7 +198,7 @@ fn rdf_builder_py(py: Python, m: &PyModule) -> PyResult<()> {
 	transform::init_module(py, m)?;
 
 	// m.add_class::<PyMaterial>()?;
-	m.add_class::<PyMaterialBuilder>()?;
+	m.add_class::<PyMaterialDescriptor>()?;
 
 	m.add_class::<PyJoint>()?;
 	m.add_class::<PyJointBuilder>()?;

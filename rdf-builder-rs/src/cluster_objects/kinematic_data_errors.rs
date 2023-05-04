@@ -8,7 +8,7 @@ use std::{
 use crate::{
 	joint::Joint,
 	link::Link,
-	material_mod::MaterialData,
+	material::data::MaterialData,
 	transmission::{BuildTransmissionError, Transmission},
 	ArcLock, WeakLock,
 };

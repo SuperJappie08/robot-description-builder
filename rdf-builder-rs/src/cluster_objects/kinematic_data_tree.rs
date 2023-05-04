@@ -10,7 +10,7 @@ use crate::to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialMode, URDFMaterialR
 use crate::{
 	joint::Joint,
 	link::{builder::BuildLink, Link},
-	material_mod::{Material, MaterialData},
+	material::{data::MaterialData, Material},
 	transmission::{
 		transmission_builder_state::{WithActuator, WithJoints},
 		Transmission, TransmissionBuilder,
@@ -680,11 +680,12 @@ mod tests {
 				Collision, Visual,
 			},
 			link::Link,
+			material::MaterialDescriptor,
 			to_rdf::{
 				to_urdf::{ToURDF, URDFConfig},
 				XMLMode,
 			},
-			MaterialBuilder, SmartJointBuilder, Transform,
+			SmartJointBuilder, Transform,
 		};
 
 		fn test_to_urdf_kinematic_data_tree(
@@ -718,8 +719,8 @@ mod tests {
 		///
 		/// tl;dr: We are checking for weird behavior, but atleast the tested behavior is compliant.
 		fn material_as_matrials() {
-			let material_l1 = MaterialBuilder::new_rgb(1., 0., 0.).named("Leg_l1");
-			let material_l2 = MaterialBuilder::new_rgb(0., 1., 0.).named("Leg_l2");
+			let material_l1 = MaterialDescriptor::new_rgb(1., 0., 0.).named("Leg_l1");
+			let material_l2 = MaterialDescriptor::new_rgb(0., 1., 0.).named("Leg_l2");
 			let geom_leg_l1 = BoxGeometry::new(2., 3., 1.);
 			let geom_leg_l2 = CylinderGeometry::new(1., 10.);
 

@@ -14,7 +14,7 @@
 // 	// 	#[new]
 // 	// 	/// TODO: FINIS
 // 	// 	fn new(name: Option<String>) -> Self {
-// 	// 		// Arc::new(RwLock::new(MaterialBuilder::new_color(1., 1., 1., 1.).named(name).build())).into()
+// 	// 		// Arc::new(RwLock::new(MaterialDescriptor::new_color(1., 1., 1., 1.).named(name).build())).into()
 // 	// 	}
 
 // 	// 	pub fn __repr__(&self) -> String {

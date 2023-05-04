@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use rdf_builder_rs::{link_data, linkbuilding::VisualBuilder};
 
 use super::geometry::PyGeometryBase;
-use crate::{material_builder::PyMaterialBuilder, transform::PyTransform};
+use crate::{material_descriptor::PyMaterialDescriptor, transform::PyTransform};
 
 pub(super) fn init_module(py: Python<'_>, parent_module: &PyModule) -> PyResult<()> {
 	let module = PyModule::new(py, "visual")?;
@@ -27,7 +27,7 @@ impl PyVisualBuilder {
 		geometry: &PyGeometryBase,
 		name: Option<String>,
 		origin: Option<PyTransform>,
-		material: Option<PyMaterialBuilder>,
+		material: Option<PyMaterialDescriptor>,
 	) -> PyVisualBuilder {
 		Self(VisualBuilder::new_full(
 			name,
@@ -63,12 +63,12 @@ impl PyVisualBuilder {
 	}
 
 	#[getter]
-	fn get_material(&self) -> Option<PyMaterialBuilder> {
+	fn get_material(&self) -> Option<PyMaterialDescriptor> {
 		self.0.material().cloned().map(Into::into)
 	}
 
 	#[setter]
-	fn set_material(&mut self, material_description: PyMaterialBuilder) {
+	fn set_material(&mut self, material_description: PyMaterialDescriptor) {
 		self.0 = self.0.clone().materialized(material_description.into())
 	}
 }

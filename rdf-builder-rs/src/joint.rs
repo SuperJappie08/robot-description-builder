@@ -290,7 +290,7 @@ mod tests {
 			},
 		},
 		linkbuilding::{CollisionBuilder, VisualBuilder},
-		material_mod::MaterialBuilder,
+		material::MaterialDescriptor,
 		transform::Transform,
 	};
 	use test_log::test;
@@ -323,7 +323,7 @@ mod tests {
 
 	#[test]
 	fn yank_simple() {
-		let material_red = MaterialBuilder::new_color(1., 0., 0., 1.).named("Red");
+		let material_red = MaterialDescriptor::new_color(1., 0., 0., 1.).named("Red");
 
 		let tree = LinkBuilder::new("link-0")
 			.add_collider(CollisionBuilder::new(BoxGeometry::new(1.0, 2.0, 3.0)))
@@ -412,7 +412,7 @@ mod tests {
 	#[test]
 	fn yank_less_simple() {
 		let tree = {
-			let material_red = MaterialBuilder::new_color(1., 0., 0., 1.).named("Red");
+			let material_red = MaterialDescriptor::new_color(1., 0., 0., 1.).named("Red");
 
 			LinkBuilder::new("link-0")
 				.add_collider(CollisionBuilder::new(BoxGeometry::new(1.0, 2.0, 3.0)))
@@ -437,7 +437,7 @@ mod tests {
 							Visual::builder(SphereGeometry::new(4.))
 								.tranformed(Transform::new_translation(2., 0., 0.))
 								.materialized(
-									MaterialBuilder::new_color(0., 0., 1., 1.).named("Blue"),
+									MaterialDescriptor::new_color(0., 0., 1., 1.).named("Blue"),
 								),
 						)
 						.build_tree();
@@ -451,7 +451,9 @@ mod tests {
 								Visual::builder(CylinderGeometry::new(0.5, 18.))
 									.named("link-1-1-vis")
 									.tranformed(Transform::new_translation(9., 0.5, 0.))
-									.materialized(MaterialBuilder::new_color(0.5, 0.5, 0.5, 0.75)),
+									.materialized(MaterialDescriptor::new_color(
+										0.5, 0.5, 0.5, 0.75,
+									)),
 							),
 							SmartJointBuilder::new("joint-1-1")
 								.revolute()
@@ -622,7 +624,7 @@ mod tests {
 								..Default::default()
 							}),
 							CylinderGeometry::new(0.5, 18.),
-							Some(MaterialBuilder::new_color(0.5, 0.5, 0.5, 0.75))
+							Some(MaterialDescriptor::new_color(0.5, 0.5, 0.5, 0.75))
 						)],
 						..Default::default()
 					}),
@@ -706,7 +708,7 @@ mod tests {
 								..Default::default()
 							}),
 							SphereGeometry::new(4.),
-							Some(MaterialBuilder::new_color(0., 0., 1., 1.,).named("Blue"))
+							Some(MaterialDescriptor::new_color(0., 0., 1., 1.,).named("Blue"))
 						)],
 						colliders: vec![CollisionBuilder::new(SphereGeometry::new(4.))
 							.tranformed(Transform::new_translation(2., 0., 0.))],
@@ -727,7 +729,7 @@ mod tests {
 										..Default::default()
 									}),
 									CylinderGeometry::new(0.5, 18.),
-									Some(MaterialBuilder::new_color(0.5, 0.5, 0.5, 0.75))
+									Some(MaterialDescriptor::new_color(0.5, 0.5, 0.5, 0.75))
 								)],
 								..Default::default()
 							}),

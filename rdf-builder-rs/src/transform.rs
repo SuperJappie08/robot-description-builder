@@ -1,4 +1,5 @@
-//! TODO: MODULE DOC?
+//! INTERNALDOC: This contains module [`Transform`], [`MirrorAxis`] and the core mirror logic.
+// User docs finished
 use itertools::Itertools;
 use nalgebra::{vector, Matrix3, Rotation3, Vector3};
 
@@ -10,7 +11,14 @@ use quick_xml::{events::attributes::Attribute, name::QName};
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
 /// A `Transform` type to represent the transform from the parent coordinate system to a new coordinate system.
 ///
-/// TODO: EXPAND
+/// A transform starts from the origin of the parent element and first translates to the origin of the child element,
+///  after which a new coordinate system gets by rotating the parent coordinate system over the specified `roll`, `pitch` and `yaw` angles.
+///
+/// The `translation` is applied first and uses the axes of the parent coordinate system. The translation is specified in meters.
+///
+/// The `rotation` is applied next and rotates the parent axes with the specified `roll`, `pitch` and yaw` `angles in radians
+///
+/// In URDF this element is often refered to as `origin`.
 pub struct Transform {
 	/// The translation of origin of the new coordinate system in meters.
 	pub translation: Option<(f32, f32, f32)>,

@@ -2,7 +2,7 @@ use nalgebra::Matrix3;
 
 use crate::{
 	identifiers::GroupIDChanger, link::geometry::GeometryInterface, link::visual::Visual,
-	link_data::geometry::GeometryShapeData, material_mod::MaterialBuilder, transform::Transform,
+	link_data::geometry::GeometryShapeData, material::MaterialDescriptor, transform::Transform,
 };
 
 #[derive(Debug)]
@@ -14,7 +14,7 @@ pub struct VisualBuilder {
 	/// Figure out if this needs to be public or not
 	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
 	/// Not sure about refCell
-	pub(crate) material_description: Option<MaterialBuilder>,
+	pub(crate) material_description: Option<MaterialDescriptor>,
 }
 
 impl VisualBuilder {
@@ -32,7 +32,7 @@ impl VisualBuilder {
 		name: Option<String>,
 		origin: Option<Transform>,
 		geometry: impl Into<Box<dyn GeometryInterface + Sync + Send>>,
-		material_description: Option<MaterialBuilder>,
+		material_description: Option<MaterialDescriptor>,
 	) -> Self {
 		Self {
 			name,
@@ -52,7 +52,7 @@ impl VisualBuilder {
 		self
 	}
 
-	pub fn materialized(mut self, material_description: MaterialBuilder) -> Self {
+	pub fn materialized(mut self, material_description: MaterialDescriptor) -> Self {
 		self.material_description = Some(material_description);
 		self
 	}
@@ -105,7 +105,7 @@ impl VisualBuilder {
 		&self.geometry
 	}
 
-	pub fn material(&self) -> Option<&MaterialBuilder> {
+	pub fn material(&self) -> Option<&MaterialDescriptor> {
 		self.material_description.as_ref()
 	}
 }

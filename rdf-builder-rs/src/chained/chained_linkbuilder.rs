@@ -92,15 +92,15 @@ mod tests {
 			Link,
 		},
 		linkbuilding::{CollisionBuilder, LinkBuilder, VisualBuilder},
-		material_mod::MaterialBuilder,
+		material::MaterialDescriptor,
 		transform::MirrorAxis,
 		Chained, JointBuilder, JointType, SmartJointBuilder, Transform,
 	};
 
 	#[test]
 	fn mirror_simple_1() {
-		let material_l1 = MaterialBuilder::new_rgb(1., 0., 0.).named("Leg_l1");
-		let material_l2 = MaterialBuilder::new_rgb(0., 1., 0.).named("Leg_l2");
+		let material_l1 = MaterialDescriptor::new_rgb(1., 0., 0.).named("Leg_l1");
+		let material_l2 = MaterialDescriptor::new_rgb(0., 1., 0.).named("Leg_l2");
 		let geom_leg_l1 = BoxGeometry::new(2., 3., 1.);
 		let geom_leg_l2 = CylinderGeometry::new(1., 10.);
 
