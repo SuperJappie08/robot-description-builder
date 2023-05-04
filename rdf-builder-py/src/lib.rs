@@ -128,7 +128,7 @@ impl PyKinematicTree {
 			.read()
 			.unwrap()
 			.iter()
-			.sorted_by_key(|(k, _)| k.clone())
+			.sorted_by_key(|(k, _)| (*k).clone())
 			.map(|(name, link)| {
 				format!(
 					"{}: Strong {}, Weak: {}",
