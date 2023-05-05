@@ -4,6 +4,7 @@ use crate::{
 	cluster_objects::{
 		kinematic_data_errors::errored_read_lock, kinematic_data_tree::KinematicDataTree,
 	},
+	identifiers::GroupID,
 	joint::Joint,
 	WeakLock,
 };
@@ -157,6 +158,7 @@ impl ToURDF for TransmissionJoint {
 					.read()
 					.unwrap() // FIXME: Is UNWRAP OK?
 					.name()
+					.display()
 					.as_bytes()
 					.into(),
 			})

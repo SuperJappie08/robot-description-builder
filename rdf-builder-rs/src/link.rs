@@ -44,6 +44,7 @@ use crate::{
 	cluster_objects::{
 		kinematic_data_errors::AddJointError, kinematic_data_tree::KinematicDataTree,
 	},
+	identifiers::GroupID,
 	joint::{BuildJoint, BuildJointChain, Joint, JointBuilder},
 	link::{
 		builder::LinkBuilder, collision::Collision, inertial::InertialData,
@@ -159,7 +160,6 @@ impl Link {
 	/// Attach a `Chained<JointBuilder>` to the position set in the root `JointBuilder`
 	///
 	/// ## TODO:
-	///  - Implement
 	///  - Test
 	///  - Doctest
 	pub fn attach_joint_chain(
@@ -216,12 +216,12 @@ impl Link {
 	/// Rebuilds everything below this aswell
 	///
 	/// TODO: FINISH
-	pub(crate) fn rebuild_branch(&self) -> LinkBuilder {
+	pub(crate) fn rebuild_branch_continued(&self) -> LinkBuilder {
 		LinkBuilder {
 			joints: self
 				.child_joints
 				.iter()
-				.map(|joint| joint.read().unwrap().rebuild_branch()) // FIXME: Figure out if unwrap is Ok here?
+				.map(|joint| joint.read().unwrap().rebuild_branch_continued()) // FIXME: Figure out if unwrap is Ok here?
 				.collect(),
 			..self.rebuild()
 		}
@@ -229,8 +229,16 @@ impl Link {
 
 	/// TODO: DOCS:
 	/// TODO: TEST
+	pub fn rebuild_branch(&self) -> Chained<LinkBuilder> {
+		#[cfg(any(feature = "logging", test))]
+		log::info!(target: "LinkBuilder","Starting Branch Rebuilding: {}", self.name());
+		Chained(self.rebuild_branch_continued())
+	}
+
+	/// TODO: DOCS:
+	/// TODO: TEST
 	pub(crate) fn yank(&self) -> LinkBuilder {
-		let builder = self.rebuild_branch();
+		let builder = self.rebuild_branch_continued();
 
 		match self.parent() {
 			LinkParent::Joint(joint) => {
@@ -275,7 +283,7 @@ impl ToURDF for Link {
 	) -> Result<(), quick_xml::Error> {
 		let element = writer.create_element("link").with_attribute(Attribute {
 			key: QName(b"name"),
-			value: self.name().as_bytes().into(),
+			value: self.name().display().as_bytes().into(),
 		});
 		element.write_inner_content(|writer| -> Result<(), quick_xml::Error> {
 			if let Some(inertial_data) = self.inertial() {

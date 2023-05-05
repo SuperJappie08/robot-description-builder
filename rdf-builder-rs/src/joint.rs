@@ -19,8 +19,8 @@ use std::sync::{Arc, Weak};
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
 use crate::{
-	cluster_objects::kinematic_data_tree::KinematicDataTree, link::Link, transform::Transform,
-	ArcLock, WeakLock,
+	chained::Chained, cluster_objects::kinematic_data_tree::KinematicDataTree,
+	identifiers::GroupID, link::Link, transform::Transform, ArcLock, WeakLock,
 };
 
 #[cfg(any(feature = "xml"))]
@@ -104,13 +104,19 @@ impl Joint {
 	}
 
 	/// TODO: MAKE A PUBLIC VERSION WHICH RETURNS WRAPPED IN CHAINED
-	pub(crate) fn rebuild_branch(&self) -> JointBuilder {
+	pub(crate) fn rebuild_branch_continued(&self) -> JointBuilder {
 		#[cfg(any(feature = "logging", test))]
 		log::info!(target: "JointBuilder","Rebuilding: {}", self.name());
 		JointBuilder {
-			child: Some(self.child_link.read().unwrap().rebuild_branch()), // FIXME: Figure out if unwrap is Ok here?
+			child: Some(self.child_link.read().unwrap().rebuild_branch_continued()), // FIXME: Figure out if unwrap is Ok here?
 			..self.rebuild()
 		}
+	}
+
+	pub fn rebuild_branch(&self) -> Chained<JointBuilder> {
+		#[cfg(any(feature = "logging", test))]
+		log::info!(target: "JointBuilder","Starting Branch Rebuilding: {}", self.name());
+		Chained(self.rebuild_branch_continued())
 	}
 
 	/// TODO:Find a way to make these builders special?
@@ -121,7 +127,7 @@ impl Joint {
 	/// NOTE: you must get the link from the rep by cloning.
 	/// TODO: Maybe add a `first` argument to only set the `newest_link` if it is the first in the call stack
 	pub(crate) fn yank(&self) -> JointBuilder {
-		let builder = self.rebuild_branch();
+		let builder = self.rebuild_branch_continued();
 
 		#[cfg(any(feature = "logging", test))]
 		log::info!("Yanked Joint \"{}\"", self.name());
@@ -160,7 +166,7 @@ impl ToURDF for Joint {
 			.create_element("joint")
 			.with_attribute(Attribute {
 				key: QName(b"name"),
-				value: self.name().as_bytes().into(),
+				value: self.name().display().as_bytes().into(),
 			})
 			.with_attribute(Attribute {
 				key: QName(b"type"),
@@ -182,6 +188,7 @@ impl ToURDF for Joint {
 						.read()
 						.unwrap() // FIXME: Is unwrap Ok HEre?
 						.name()
+						.display()
 						.as_bytes()
 						.into(),
 				})
@@ -196,12 +203,21 @@ impl ToURDF for Joint {
 						.read()
 						.unwrap() // FIXME: Is unwrap Ok HEre?
 						.name()
+						.display()
 						.as_bytes()
 						.into(),
 				})
 				.write_empty()?;
 
-			//TODO: AXIS
+			if let Some((x, y, z)) = &self.axis {
+				writer
+					.create_element("axis")
+					.with_attribute(Attribute {
+						key: QName(b"xyz"),
+						value: format!("{} {} {}", x, y, z).as_bytes().into(),
+					})
+					.write_empty()?;
+			}
 
 			self.calibration.to_urdf(writer, urdf_config)?;
 			self.dynamics.to_urdf(writer, urdf_config)?;
@@ -261,7 +277,7 @@ impl ToString for JointType {
 		match self {
 			JointType::Fixed => String::from("fixed"),
 			JointType::Revolute => String::from("revolute"),
-			JointType::Continuous => String::from("Continuous"),
+			JointType::Continuous => String::from("continuous"),
 			JointType::Prismatic => String::from("prismatic"),
 			JointType::Floating => String::from("floating"),
 			JointType::Planar => String::from("planar"),

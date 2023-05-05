@@ -13,6 +13,7 @@ use super::{
 	KinematicInterface,
 };
 use crate::{
+	identifiers::GroupID,
 	joint::Joint,
 	link::Link,
 	material::{data::MaterialData, Material},
@@ -157,7 +158,7 @@ impl ToURDF for Robot {
 	) -> Result<(), quick_xml::Error> {
 		let element = writer.create_element("robot").with_attribute(Attribute {
 			key: QName(b"name"),
-			value: self.name.as_bytes().into(),
+			value: self.name.display().as_bytes().into(),
 		});
 		element.write_inner_content(|writer| self.data.to_urdf(writer, urdf_config))?;
 		Ok(())

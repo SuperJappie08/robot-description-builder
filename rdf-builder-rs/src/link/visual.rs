@@ -4,6 +4,7 @@ use quick_xml::{events::attributes::Attribute, name::QName};
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
 use crate::{
+	identifiers::GroupID,
 	link::{builder::VisualBuilder, geometry::GeometryInterface},
 	link_data::geometry::GeometryShapeData,
 	material::Material,
@@ -93,7 +94,7 @@ impl ToURDF for Visual {
 		if let Some(name) = self.name() {
 			element = element.with_attribute(Attribute {
 				key: QName(b"name"),
-				value: name.as_bytes().into(),
+				value: name.display().as_bytes().into(),
 			});
 		}
 		element.write_inner_content(|writer| {

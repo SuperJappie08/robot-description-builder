@@ -1,3 +1,4 @@
+use crate::identifiers::GroupID;
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
 #[cfg(feature = "xml")]
@@ -57,7 +58,7 @@ impl ToURDF for TransmissionActuator {
 	) -> Result<(), quick_xml::Error> {
 		let element = writer.create_element("actuator").with_attribute(Attribute {
 			key: QName(b"name"),
-			value: self.name().as_bytes().into(),
+			value: self.name().display().as_bytes().into(),
 		});
 
 		match self.mechanical_reduction() {

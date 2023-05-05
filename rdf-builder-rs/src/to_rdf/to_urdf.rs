@@ -23,6 +23,7 @@ pub struct URDFConfig {
 	pub xml_mode: XMLMode,
 }
 
+/// TODO: ADD FULL MATERIALS EVERYWHERE MODE
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub enum URDFMaterialReferences {
 	#[default]

@@ -88,6 +88,7 @@ impl JointBuilder {
 		self.origin = origin.into();
 	}
 
+	/// TODO: HAS A CONFUSING NAME WITH SmartJointBuilder::with_axis, which consumes
 	#[inline]
 	pub fn with_axis(&mut self, axis: (f32, f32, f32)) {
 		self.axis = Some(axis);
@@ -135,7 +136,7 @@ impl JointBuilder {
 			axis: match (self.joint_type, self.axis) {
 				(JointType::Fixed | JointType::Floating, _) => None, // TODO: Figure out if this clause should be moved down to allow for Fixed and Floating with axis if desired?
 				(_, Some((x, y, z))) => Some(
-					(new_mirror_matrix * vector![x, y, z])
+					(new_mirror_matrix * vector![x, y, z] * -1.)
 						.normalize() // Theoretically not necessary, but float rounding errors are a thing | TODO: Figure out if this improves the situation or makes it worse
 						.iter()
 						.copied()
@@ -149,7 +150,7 @@ impl JointBuilder {
 					| JointType::Planar,
 					None,
 				) => Some(
-					(new_mirror_matrix * vector![1., 0., 0.])
+					(new_mirror_matrix * vector![1., 0., 0.] * -1.)
 						.normalize() // Theoretically not necessary, but float rounding errors are a thing | TODO: Figure out if this improves the situation or makes it worse
 						.iter()
 						.copied()

@@ -15,7 +15,7 @@ pub use chained::Chained;
 pub use cluster_objects::{KinematicInterface, KinematicTree, Robot};
 pub use joint::{joint_data, Joint, JointBuilder, JointType, SmartJointBuilder};
 pub use link::{helper_functions, link_data, Link};
-pub use transform::Transform;
+pub use transform::{MirrorAxis, Transform};
 
 pub mod linkbuilding {
 	use super::link;

@@ -9,7 +9,7 @@ mod transmission_type;
 
 use std::sync::Weak;
 
-use crate::cluster_objects::kinematic_data_tree::KinematicDataTree;
+use crate::{cluster_objects::kinematic_data_tree::KinematicDataTree, identifiers::GroupID};
 
 use itertools::process_results;
 
@@ -317,7 +317,7 @@ impl ToURDF for Transmission {
 			.create_element("transmission")
 			.with_attribute(Attribute {
 				key: QName(b"name"),
-				value: self.name().as_bytes().into(),
+				value: self.name().display().as_bytes().into(),
 			})
 			.write_inner_content(|writer| {
 				self.transmission_type().to_urdf(writer, urdf_config)?;

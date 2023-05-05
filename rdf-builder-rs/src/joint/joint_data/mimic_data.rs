@@ -3,7 +3,10 @@ use std::sync::Weak;
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
-use crate::{cluster_objects::kinematic_data_tree::KinematicDataTree, joint::Joint, WeakLock};
+use crate::{
+	cluster_objects::kinematic_data_tree::KinematicDataTree, identifiers::GroupID, joint::Joint,
+	WeakLock,
+};
 
 #[derive(Debug, Clone)]
 pub struct MimicData {
@@ -28,7 +31,7 @@ impl crate::to_rdf::to_urdf::ToURDF for MimicData {
 				.read()
 				.unwrap() // FIXME: Is unwrap Ok here?
 				.name()
-				.clone()
+				.display()
 				.as_bytes()
 				.into(),
 		});

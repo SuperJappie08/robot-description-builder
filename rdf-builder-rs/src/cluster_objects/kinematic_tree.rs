@@ -127,7 +127,11 @@ impl KinematicInterface for KinematicTree {
 
 impl Clone for KinematicTree {
 	fn clone(&self) -> Self {
-		let root_link = self.get_root_link().read().unwrap().rebuild_branch(); // FIXME: UNWRAP MIGHTN NOT BE OK HERE
+		let root_link = self
+			.get_root_link()
+			.read()
+			.unwrap()
+			.rebuild_branch_continued(); // FIXME: UNWRAP MIGHTN NOT BE OK HERE
 
 		root_link.build_tree()
 	}

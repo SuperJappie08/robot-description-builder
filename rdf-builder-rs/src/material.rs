@@ -2,7 +2,6 @@
 // DOCS TODO:
 //  - Module
 //  - Material
-//  - MaterialKind
 //  - MaterialDescriptor
 mod descriptor;
 pub(crate) mod stage;
@@ -22,6 +21,7 @@ use crate::{
 		kinematic_data_errors::{errored_read_lock, errored_write_lock, AddMaterialError},
 		kinematic_data_tree::KinematicDataTree,
 	},
+	identifiers::GroupID,
 	ArcLock,
 };
 
@@ -151,7 +151,7 @@ impl ToURDF for Material {
 			MaterialKind::Named { name, data } => {
 				element = element.with_attribute(Attribute {
 					key: quick_xml::name::QName(b"name"),
-					value: name.as_bytes().into(),
+					value: name.display().as_bytes().into(),
 				});
 				match (urdf_config.direct_material_ref, data.used_count()) {
 					(URDFMaterialMode::Referenced, 2..) => element.write_empty()?,
@@ -177,10 +177,17 @@ impl From<(String, ArcLock<MaterialData>)> for Material {
 	}
 }
 
-/// TODO: DOCS
+/// An enum to unify named and unnamed `Material` into a single type
 #[derive(Debug, PartialEq)]
 enum MaterialKind {
+	/// A variant to represent a named [`Material`]
+	///
+	/// It keeps track of the `name` of the [`Material`] and its data which needs to be initialized.
+	/// This is ensured via [`MaterialStage`].
 	Named { name: String, data: MaterialStage },
+	/// A variant to represent unnamed [`Material`].
+	///
+	/// Tt holds [`MaterialData`].
 	Unnamed(MaterialData),
 }
 

@@ -296,7 +296,21 @@ impl ToURDF for KinematicDataTree {
 		self.root_link
 			.read()
 			.unwrap() // FIXME: Is unwrap ok here?
-			.to_urdf(writer, urdf_config)?;
+			.to_urdf(
+				writer,
+				&URDFConfig {
+					direct_material_ref: {
+						// TODO: Added this for future ALL MATERIALS
+						use URDFMaterialReferences::*;
+						match urdf_config.material_references {
+							AllNamedMaterialOnTop | OnlyMultiUseMaterials => {
+								URDFMaterialMode::Referenced
+							}
+						}
+					},
+					..urdf_config.clone()
+				},
+			)?;
 
 		process_results(
 			self.transmissions
@@ -784,9 +798,7 @@ mod tests {
 		<geometry>
 			<box size="2 3 1"/>
 		</geometry>
-		<material name="Leg_l1">
-			<color rgba="1 0 0 1"/>
-		</material>
+		<material name="Leg_l1"/>
 	</visual>
 	<collision name="Leg_[L1]_l1_col_1">
 		<origin xyz="0 1.5 0"/>
@@ -806,9 +818,7 @@ mod tests {
 		<geometry>
 			<cylinder radius="1" length="10"/>
 		</geometry>
-		<material name="Leg_l2">
-			<color rgba="0 1 0 1"/>
-		</material>
+		<material name="Leg_l2"/>
 	</visual>
 	<collision name="Leg_[L1]_l2_col_1">
 		<origin xyz="0 5 0" rpy="{} 0 0"/>

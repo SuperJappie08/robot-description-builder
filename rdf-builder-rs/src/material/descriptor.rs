@@ -74,7 +74,7 @@ impl MaterialDescriptor {
 
 	/// Creates a new [`MaterialDescriptor`] with a texture.
 	///
-	/// `texture_path` should be a valid package path (e.g. `"package://robot_description/textures/{texture}"`). You are on your own here.
+	/// `texture_path` should be a valid package path (e.g. `"package://NAME_OF_PACKAGE/path/{texture}"`). You are on your own here.
 	///
 	/// # Example
 	///

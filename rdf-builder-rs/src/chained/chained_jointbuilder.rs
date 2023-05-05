@@ -152,7 +152,7 @@ mod tests {
 					effort: 0.1,
 					velocity: 100.
 				}),
-				axis: Some((0., 1., 0.)),
+				axis: Some((0., -1., 0.)),
 				child: Some(LinkBuilder {
 					name: "Leg_[L1]_l1".into(),
 					visual_builders: vec![VisualBuilder {
@@ -224,7 +224,7 @@ mod tests {
 					effort: 0.1,
 					velocity: 100.
 				}),
-				axis: Some((0., -1., 0.)),
+				axis: Some((0., 1., 0.)),
 				child: Some(LinkBuilder {
 					name: "Leg_[L1]_l1".into(),
 					visual_builders: vec![VisualBuilder {
@@ -296,7 +296,7 @@ mod tests {
 					effort: 0.1,
 					velocity: 100.
 				}),
-				axis: Some((0., 1., 0.)),
+				axis: Some((0., -1., 0.)),
 				child: Some(LinkBuilder {
 					name: "Leg_[L1]_l1".into(),
 					visual_builders: vec![VisualBuilder {

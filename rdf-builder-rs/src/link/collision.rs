@@ -4,7 +4,7 @@ use crate::to_rdf::to_urdf::ToURDF;
 use quick_xml::{events::attributes::Attribute, name::QName};
 
 use super::{builder::CollisionBuilder, geometry::GeometryInterface};
-use crate::transform::Transform;
+use crate::{identifiers::GroupID, transform::Transform};
 
 #[derive(Debug)]
 pub struct Collision {
@@ -55,7 +55,7 @@ impl ToURDF for Collision {
 		if let Some(name) = self.name() {
 			element = element.with_attribute(Attribute {
 				key: QName(b"name"),
-				value: name.as_bytes().into(),
+				value: name.display().as_bytes().into(),
 			});
 		}
 
