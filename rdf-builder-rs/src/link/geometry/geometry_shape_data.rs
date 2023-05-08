@@ -1,4 +1,6 @@
-use super::{BoxGeometry, CylinderGeometry, GeometryInterface, SphereGeometry};
+use super::{
+	mesh_geometry::MeshGeometry, BoxGeometry, CylinderGeometry, GeometryInterface, SphereGeometry,
+};
 use crate::transform::Transform;
 
 #[cfg(feature = "urdf")]
@@ -17,6 +19,7 @@ impl GeometryShapeData {
 			GeometryShapeContainer::Box(g) => g.bounding_box(),
 			GeometryShapeContainer::Cylinder(g) => g.bounding_box(),
 			GeometryShapeContainer::Sphere(g) => g.bounding_box(),
+			GeometryShapeContainer::Mesh(g) => g.bounding_box(),
 		}
 	}
 }
@@ -28,6 +31,7 @@ pub enum GeometryShapeContainer {
 	Cylinder(CylinderGeometry),
 	Sphere(SphereGeometry),
 	// Capsule(String),
+	Mesh(MeshGeometry),
 }
 
 #[cfg(feature = "urdf")]
@@ -44,6 +48,9 @@ impl ToURDF for GeometryShapeContainer {
 			}
 			GeometryShapeContainer::Sphere(sphere_geometry) => {
 				sphere_geometry.to_urdf(writer, urdf_config)
+			}
+			GeometryShapeContainer::Mesh(mesh_geometry) => {
+				mesh_geometry.to_urdf(writer, urdf_config)
 			}
 		}
 	}
@@ -64,5 +71,11 @@ impl From<CylinderGeometry> for GeometryShapeContainer {
 impl From<SphereGeometry> for GeometryShapeContainer {
 	fn from(value: SphereGeometry) -> Self {
 		Self::Sphere(value)
+	}
+}
+
+impl From<MeshGeometry> for GeometryShapeContainer {
+	fn from(value: MeshGeometry) -> Self {
+		Self::Mesh(value)
 	}
 }

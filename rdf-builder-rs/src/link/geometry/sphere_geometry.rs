@@ -1,4 +1,5 @@
 use super::{GeometryInterface, GeometryShapeContainer};
+use crate::transform::Mirror;
 use std::f32::consts::{FRAC_PI_3, PI};
 
 #[cfg(feature = "urdf")]
@@ -17,6 +18,35 @@ pub struct SphereGeometry {
 impl SphereGeometry {
 	pub fn new(radius: f32) -> Self {
 		Self { radius }
+	}
+}
+
+impl GeometryInterface for SphereGeometry {
+	fn volume(&self) -> f32 {
+		4f32 * FRAC_PI_3 * self.radius * self.radius * self.radius
+	}
+
+	fn surface_area(&self) -> f32 {
+		4f32 * PI * self.radius * self.radius
+	}
+
+	fn boxed_clone(&self) -> Box<dyn GeometryInterface + Sync + Send> {
+		Box::new(self.clone())
+	}
+
+	fn bounding_box(&self) -> (f32, f32, f32) {
+		let diameter = 2. * self.radius;
+		(diameter, diameter, diameter)
+	}
+
+	fn shape_container(&self) -> GeometryShapeContainer {
+		self.clone().into()
+	}
+}
+
+impl Mirror for SphereGeometry {
+	fn mirrored(&self, _mirror_matrix: &nalgebra::Matrix3<f32>) -> Self {
+		self.clone()
 	}
 }
 
@@ -39,29 +69,6 @@ impl ToURDF for SphereGeometry {
 			Ok(())
 		})?;
 		Ok(())
-	}
-}
-
-impl GeometryInterface for SphereGeometry {
-	fn volume(&self) -> f32 {
-		4f32 * FRAC_PI_3 * self.radius * self.radius * self.radius
-	}
-
-	fn surface_area(&self) -> f32 {
-		4f32 * PI * self.radius * self.radius
-	}
-
-	fn boxed_clone(&self) -> Box<dyn GeometryInterface + Sync + Send> {
-		Box::new(self.clone())
-	}
-
-	fn bounding_box(&self) -> (f32, f32, f32) {
-		let diameter = 2. * self.radius;
-		(diameter, diameter, diameter)
-	}
-
-	fn try_get_shape(&self) -> Result<GeometryShapeContainer, ()> {
-		Ok(self.clone().into())
 	}
 }
 
@@ -139,22 +146,22 @@ mod tests {
 	}
 
 	#[test]
-	fn try_get_shape() {
+	fn get_shape() {
 		assert_eq!(
-			SphereGeometry::new(1.0).try_get_shape(),
-			Ok(GeometryShapeContainer::Sphere(SphereGeometry::new(1.0)))
+			SphereGeometry::new(1.0).shape_container(),
+			GeometryShapeContainer::Sphere(SphereGeometry::new(1.0))
 		);
 		assert_eq!(
-			SphereGeometry::new(2.0).try_get_shape(),
-			Ok(GeometryShapeContainer::Sphere(SphereGeometry::new(2.0)))
+			SphereGeometry::new(2.0).shape_container(),
+			GeometryShapeContainer::Sphere(SphereGeometry::new(2.0))
 		);
 		assert_eq!(
-			SphereGeometry::new(9.0).try_get_shape(),
-			Ok(GeometryShapeContainer::Sphere(SphereGeometry::new(9.0)))
+			SphereGeometry::new(9.0).shape_container(),
+			GeometryShapeContainer::Sphere(SphereGeometry::new(9.0))
 		);
 		assert_eq!(
-			SphereGeometry::new(75.35).try_get_shape(),
-			Ok(GeometryShapeContainer::Sphere(SphereGeometry::new(75.35)))
+			SphereGeometry::new(75.35).shape_container(),
+			GeometryShapeContainer::Sphere(SphereGeometry::new(75.35))
 		);
 	}
 

@@ -134,58 +134,40 @@ impl Transform {
 	pub fn contains_some(&self) -> bool {
 		self.translation.is_some() || self.rotation.is_some()
 	}
+}
 
-	pub(crate) fn mirror(&self, mirror_matrix: &Matrix3<f32>) -> (Self, Matrix3<f32>) {
-		(
-			Transform {
-				translation: self.translation.as_ref().map(|(x, y, z)| {
-					let old_translation = vector![*x, *y, *z];
-					(mirror_matrix * old_translation)
-						.component_mul(&Vector3::from_iterator(old_translation.iter().map(|val| {
-							if val.is_normal() {
-								1.
-							} else {
-								0.
-							}
-						}))) // TODO: Perfomance enhancements are probably possible.
-						.iter()
-						.copied()
-						.collect_tuple()
-						.unwrap() // Unwrapping here to ensure that we collect to a Tuple3 | TODO: Change to expect? or remove
-				}),
-				rotation: self.rotation,
-			},
-			match self.rotation.as_ref() {
-				Some(rpy) => {
-					Rotation3::from_euler_angles(rpy.0, rpy.1, rpy.2)
-						* mirror_matrix * Rotation3::from_euler_angles(rpy.0, rpy.1, rpy.2).inverse()
-				}
-				None => *mirror_matrix,
-			},
-		)
+impl Mirror for Transform {
+	fn mirrored(&self, mirror_matrix: &Matrix3<f32>) -> Self {
+		Transform {
+			translation: self.translation.as_ref().map(|(x, y, z)| {
+				let old_translation = vector![*x, *y, *z];
+				(mirror_matrix * old_translation)
+					.component_mul(&Vector3::from_iterator(old_translation.iter().map(|val| {
+						if val.is_normal() {
+							1.
+						} else {
+							0.
+						}
+					}))) // TODO: Perfomance enhancements are probably possible.
+					.iter()
+					.copied()
+					.collect_tuple()
+					.unwrap() // Unwrapping here to ensure that we collect to a Tuple3 | TODO: Change to expect? or remove
+			}),
+			rotation: self.rotation,
+		}
 	}
 }
 
-/// A `MirrorAxis` enum to represent a plane to mirror about.
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum MirrorAxis {
-	/// Mirror about to X = 0 plane.
-	X,
-	/// Mirror about to Y = 0 plane.
-	Y,
-	/// Mirror about to Z = 0 plane.
-	Z,
-}
-
-impl From<MirrorAxis> for Matrix3<f32> {
-	fn from(value: MirrorAxis) -> Self {
-		let diag = match value {
-			MirrorAxis::X => (-1., 1., 1.),
-			MirrorAxis::Y => (1., -1., 1.),
-			MirrorAxis::Z => (1., 1., -1.),
-		};
-
-		Matrix3::from_diagonal(&Vector3::new(diag.0, diag.1, diag.2))
+impl MirrorUpdater for Transform {
+	fn update_mirror_matrix(&self, mirror_matrix: &Matrix3<f32>) -> Matrix3<f32> {
+		match self.rotation.as_ref() {
+			Some(rpy) => {
+				Rotation3::from_euler_angles(rpy.0, rpy.1, rpy.2)
+					* mirror_matrix * Rotation3::from_euler_angles(rpy.0, rpy.1, rpy.2).inverse()
+			}
+			None => *mirror_matrix,
+		}
 	}
 }
 
@@ -226,6 +208,44 @@ impl From<Transform> for crate::joint::JointTransformMode {
 	}
 }
 
+/// A `MirrorAxis` enum to represent a plane to mirror about.
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum MirrorAxis {
+	/// Mirror about to X = 0 plane.
+	X,
+	/// Mirror about to Y = 0 plane.
+	Y,
+	/// Mirror about to Z = 0 plane.
+	Z,
+}
+
+impl From<MirrorAxis> for Matrix3<f32> {
+	fn from(value: MirrorAxis) -> Self {
+		let diag = match value {
+			MirrorAxis::X => (-1., 1., 1.),
+			MirrorAxis::Y => (1., -1., 1.),
+			MirrorAxis::Z => (1., 1., -1.),
+		};
+
+		Matrix3::from_diagonal(&Vector3::new(diag.0, diag.1, diag.2))
+	}
+}
+
+pub(crate) trait Mirror {
+	fn mirrored(&self, mirror_matrix: &Matrix3<f32>) -> Self;
+}
+
+pub(crate) trait MirrorUpdater: Sized + Mirror {
+	fn update_mirror_matrix(&self, mirror_matrix: &Matrix3<f32>) -> Matrix3<f32>;
+
+	fn mirrored_update_matrix(&self, mirror_matrix: &Matrix3<f32>) -> (Self, Matrix3<f32>) {
+		(
+			self.mirrored(mirror_matrix),
+			self.update_mirror_matrix(mirror_matrix),
+		)
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::Transform;
@@ -234,7 +254,7 @@ mod tests {
 
 	mod mirror {
 		use super::{test, *};
-		use crate::transform::MirrorAxis;
+		use crate::transform::{MirrorAxis, MirrorUpdater};
 		use nalgebra::{matrix, vector, Matrix3};
 
 		fn test_mirror(
@@ -242,7 +262,10 @@ mod tests {
 			mirror_axis: MirrorAxis,
 			result: (Transform, Matrix3<f32>),
 		) {
-			assert_eq!(transform.mirror(&mirror_axis.into()), result)
+			assert_eq!(
+				transform.mirrored_update_matrix(&mirror_axis.into()),
+				result
+			)
 		}
 
 		fn test_all_mirrors(transform: Transform, results: [(Transform, Matrix3<f32>); 3]) {

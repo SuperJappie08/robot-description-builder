@@ -1,4 +1,5 @@
 use super::{GeometryInterface, GeometryShapeContainer};
+use crate::transform::Mirror;
 
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
@@ -27,6 +28,34 @@ impl BoxGeometry {
 	}
 }
 
+impl GeometryInterface for BoxGeometry {
+	fn volume(&self) -> f32 {
+		self.side1 * self.side2 * self.side3
+	}
+
+	fn surface_area(&self) -> f32 {
+		2f32 * (self.side1 * self.side2 + self.side1 * self.side3 + self.side2 * self.side3)
+	}
+
+	fn boxed_clone(&self) -> Box<dyn GeometryInterface + Sync + Send> {
+		Box::new(self.clone())
+	}
+
+	fn bounding_box(&self) -> (f32, f32, f32) {
+		(self.side1, self.side2, self.side3)
+	}
+
+	fn shape_container(&self) -> GeometryShapeContainer {
+		self.clone().into()
+	}
+}
+
+impl Mirror for BoxGeometry {
+	fn mirrored(&self, _mirror_matrix: &nalgebra::Matrix3<f32>) -> Self {
+		self.clone()
+	}
+}
+
 #[cfg(feature = "urdf")]
 impl ToURDF for BoxGeometry {
 	fn to_urdf(
@@ -48,28 +77,6 @@ impl ToURDF for BoxGeometry {
 			Ok(())
 		})?;
 		Ok(())
-	}
-}
-
-impl GeometryInterface for BoxGeometry {
-	fn volume(&self) -> f32 {
-		self.side1 * self.side2 * self.side3
-	}
-
-	fn surface_area(&self) -> f32 {
-		2f32 * (self.side1 * self.side2 + self.side1 * self.side3 + self.side2 * self.side3)
-	}
-
-	fn boxed_clone(&self) -> Box<dyn GeometryInterface + Sync + Send> {
-		Box::new(self.clone())
-	}
-
-	fn bounding_box(&self) -> (f32, f32, f32) {
-		(self.side1, self.side2, self.side3)
-	}
-
-	fn try_get_shape(&self) -> Result<GeometryShapeContainer, ()> {
-		Ok(self.clone().into())
 	}
 }
 
@@ -148,26 +155,22 @@ mod tests {
 	}
 
 	#[test]
-	fn try_get_shape() {
+	fn get_shape() {
 		assert_eq!(
-			BoxGeometry::new(1.0, 1.0, 1.0).try_get_shape(),
-			Ok(GeometryShapeContainer::Box(BoxGeometry::new(1.0, 1.0, 1.0)))
+			BoxGeometry::new(1.0, 1.0, 1.0).shape_container(),
+			GeometryShapeContainer::Box(BoxGeometry::new(1.0, 1.0, 1.0))
 		);
 		assert_eq!(
-			BoxGeometry::new(1.0, 2.0, 3.0).try_get_shape(),
-			Ok(GeometryShapeContainer::Box(BoxGeometry::new(1.0, 2.0, 3.0)))
+			BoxGeometry::new(1.0, 2.0, 3.0).shape_container(),
+			GeometryShapeContainer::Box(BoxGeometry::new(1.0, 2.0, 3.0))
 		);
 		assert_eq!(
-			BoxGeometry::new(9.0, 20.0, 100.0).try_get_shape(),
-			Ok(GeometryShapeContainer::Box(BoxGeometry::new(
-				9.0, 20.0, 100.0
-			)))
+			BoxGeometry::new(9.0, 20.0, 100.0).shape_container(),
+			GeometryShapeContainer::Box(BoxGeometry::new(9.0, 20.0, 100.0))
 		);
 		assert_eq!(
-			BoxGeometry::new(4.5, 20.0, 100.0).try_get_shape(),
-			Ok(GeometryShapeContainer::Box(BoxGeometry::new(
-				4.5, 20.0, 100.0
-			)))
+			BoxGeometry::new(4.5, 20.0, 100.0).shape_container(),
+			GeometryShapeContainer::Box(BoxGeometry::new(4.5, 20.0, 100.0))
 		);
 	}
 

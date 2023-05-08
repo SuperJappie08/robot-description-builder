@@ -3,6 +3,7 @@ use std::f32::consts::{PI, TAU};
 
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
+use crate::transform::Mirror;
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
@@ -18,6 +19,34 @@ pub struct CylinderGeometry {
 impl CylinderGeometry {
 	pub fn new(radius: f32, length: f32) -> Self {
 		Self { radius, length }
+	}
+}
+
+impl GeometryInterface for CylinderGeometry {
+	fn volume(&self) -> f32 {
+		self.radius * self.radius * PI * self.length
+	}
+
+	fn surface_area(&self) -> f32 {
+		2f32 * (self.radius * self.radius * PI) + self.length * self.radius * TAU
+	}
+
+	fn boxed_clone(&self) -> Box<dyn GeometryInterface + Sync + Send> {
+		Box::new(self.clone())
+	}
+
+	fn bounding_box(&self) -> (f32, f32, f32) {
+		(2. * self.radius, 2. * self.radius, self.length)
+	}
+
+	fn shape_container(&self) -> GeometryShapeContainer {
+		self.clone().into()
+	}
+}
+
+impl Mirror for CylinderGeometry {
+	fn mirrored(&self, _mirror_matrix: &nalgebra::Matrix3<f32>) -> Self {
+		self.clone()
 	}
 }
 
@@ -44,28 +73,6 @@ impl ToURDF for CylinderGeometry {
 			Ok(())
 		})?;
 		Ok(())
-	}
-}
-
-impl GeometryInterface for CylinderGeometry {
-	fn volume(&self) -> f32 {
-		self.radius * self.radius * PI * self.length
-	}
-
-	fn surface_area(&self) -> f32 {
-		2f32 * (self.radius * self.radius * PI) + self.length * self.radius * TAU
-	}
-
-	fn boxed_clone(&self) -> Box<dyn GeometryInterface + Sync + Send> {
-		Box::new(self.clone())
-	}
-
-	fn bounding_box(&self) -> (f32, f32, f32) {
-		(2. * self.radius, 2. * self.radius, self.length)
-	}
-
-	fn try_get_shape(&self) -> Result<GeometryShapeContainer, ()> {
-		Ok(self.clone().into())
 	}
 }
 
@@ -150,30 +157,22 @@ mod tests {
 	}
 
 	#[test]
-	fn try_get_shape() {
+	fn get_shape() {
 		assert_eq!(
-			CylinderGeometry::new(1.0, 1.0).try_get_shape(),
-			Ok(GeometryShapeContainer::Cylinder(CylinderGeometry::new(
-				1.0, 1.0
-			)))
+			CylinderGeometry::new(1.0, 1.0).shape_container(),
+			GeometryShapeContainer::Cylinder(CylinderGeometry::new(1.0, 1.0))
 		);
 		assert_eq!(
-			CylinderGeometry::new(2.0, 3.0).try_get_shape(),
-			Ok(GeometryShapeContainer::Cylinder(CylinderGeometry::new(
-				2.0, 3.0
-			)))
+			CylinderGeometry::new(2.0, 3.0).shape_container(),
+			GeometryShapeContainer::Cylinder(CylinderGeometry::new(2.0, 3.0))
 		);
 		assert_eq!(
-			CylinderGeometry::new(9.0, 20.0).try_get_shape(),
-			Ok(GeometryShapeContainer::Cylinder(CylinderGeometry::new(
-				9.0, 20.0
-			)))
+			CylinderGeometry::new(9.0, 20.0).shape_container(),
+			GeometryShapeContainer::Cylinder(CylinderGeometry::new(9.0, 20.0))
 		);
 		assert_eq!(
-			CylinderGeometry::new(4.5, 75.35).try_get_shape(),
-			Ok(GeometryShapeContainer::Cylinder(CylinderGeometry::new(
-				4.5, 75.35
-			)))
+			CylinderGeometry::new(4.5, 75.35).shape_container(),
+			GeometryShapeContainer::Cylinder(CylinderGeometry::new(4.5, 75.35))
 		);
 	}
 

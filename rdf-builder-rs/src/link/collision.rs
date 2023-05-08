@@ -65,8 +65,7 @@ impl ToURDF for Collision {
 			}
 
 			self.geometry()
-				.try_get_shape()
-				.unwrap()
+				.shape_container()
 				.to_urdf(writer, urdf_config)?;
 			Ok(())
 		})?;

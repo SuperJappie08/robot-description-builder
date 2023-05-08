@@ -1,6 +1,6 @@
 use nalgebra::Matrix3;
 
-use crate::transform::Transform;
+use crate::transform::{Mirror, Transform};
 
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
@@ -20,13 +20,13 @@ pub struct InertialData {
 	pub izz: f32,
 }
 
-impl InertialData {
-	pub(crate) fn mirror(&self, mirror_matrix: &Matrix3<f32>) -> Self {
+impl Mirror for InertialData {
+	fn mirrored(&self, mirror_matrix: &Matrix3<f32>) -> Self {
 		Self {
 			origin: self
 				.origin
 				.as_ref()
-				.map(|transform| transform.mirror(mirror_matrix).0),
+				.map(|transform| transform.mirrored(mirror_matrix)),
 			..self.clone()
 		}
 	}

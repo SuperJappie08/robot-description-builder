@@ -78,7 +78,7 @@ impl Visual {
 	pub(crate) fn get_geometry_data(&self) -> GeometryShapeData {
 		GeometryShapeData {
 			origin: self.origin.unwrap_or_default(),
-			geometry: self.geometry.try_get_shape().unwrap(), // FIXME: Is unwrap OK?, for now Ok until Mesh gets supported
+			geometry: self.geometry.shape_container(),
 		}
 	}
 }
@@ -104,8 +104,7 @@ impl ToURDF for Visual {
 			}
 
 			self.geometry()
-				.try_get_shape()
-				.unwrap()
+				.shape_container()
 				.to_urdf(writer, urdf_config)?;
 			if let Some(material) = self.material() {
 				material.to_urdf(writer, urdf_config)?;

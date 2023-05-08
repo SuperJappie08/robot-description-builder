@@ -10,7 +10,7 @@ use crate::{
 		builder::{BuildLink, LinkBuilder},
 		Link,
 	},
-	transform::MirrorAxis,
+	transform::{Mirror, MirrorAxis},
 	ArcLock, WeakLock,
 };
 
@@ -19,7 +19,7 @@ impl Chained<LinkBuilder> {
 	/// TODO: DOC
 	pub fn mirror(&self, axis: MirrorAxis) -> Chained<LinkBuilder> {
 		let mirror_matrix: Matrix3<_> = axis.into();
-		Chained(self.0.mirror(&mirror_matrix))
+		Chained(self.0.mirrored(&mirror_matrix))
 	}
 }
 

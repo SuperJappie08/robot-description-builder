@@ -7,7 +7,7 @@ use crate::{
 	cluster_objects::kinematic_data_tree::KinematicDataTree,
 	joint::{BuildJointChain, Joint, JointBuilder},
 	link::{builder::LinkBuilder, Link, LinkShapeData},
-	transform::MirrorAxis,
+	transform::{Mirror, MirrorAxis},
 	ArcLock, WeakLock,
 };
 
@@ -16,7 +16,7 @@ impl Chained<JointBuilder> {
 	/// TODO: DOC
 	pub fn mirror(&self, axis: MirrorAxis) -> Chained<JointBuilder> {
 		let mirror_matrix: Matrix3<_> = axis.into();
-		Chained(self.0.mirror(&mirror_matrix))
+		Chained(self.0.mirrored(&mirror_matrix))
 	}
 }
 

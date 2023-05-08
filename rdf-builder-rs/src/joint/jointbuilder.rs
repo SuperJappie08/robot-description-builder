@@ -11,6 +11,7 @@ use crate::{
 		builder::{BuildLink, LinkBuilder},
 		Link, LinkShapeData,
 	},
+	transform::{Mirror, MirrorUpdater},
 	ArcLock, WeakLock,
 };
 
@@ -122,9 +123,11 @@ impl JointBuilder {
 	) {
 		self.safety_controller = Some(safety_controller_data);
 	}
+}
 
-	pub(crate) fn mirror(&self, mirror_matrix: &Matrix3<f32>) -> Self {
-		let (origin, new_mirror_matrix) = self.origin.mirror(mirror_matrix);
+impl Mirror for JointBuilder {
+	fn mirrored(&self, mirror_matrix: &Matrix3<f32>) -> Self {
+		let (origin, new_mirror_matrix) = self.origin.mirrored_update_matrix(mirror_matrix);
 		Self {
 			name: self.name.clone(), // FIXME: Rename
 			joint_type: self.joint_type,
@@ -132,7 +135,7 @@ impl JointBuilder {
 			child: self
 				.child
 				.as_ref()
-				.map(|link_builder| link_builder.mirror(&new_mirror_matrix)),
+				.map(|link_builder| link_builder.mirrored(&new_mirror_matrix)),
 			axis: match (self.joint_type, self.axis) {
 				(JointType::Fixed | JointType::Floating, _) => None, // TODO: Figure out if this clause should be moved down to allow for Fixed and Floating with axis if desired?
 				(_, Some((x, y, z))) => Some(

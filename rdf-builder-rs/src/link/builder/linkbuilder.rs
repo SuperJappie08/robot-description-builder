@@ -9,6 +9,7 @@ use crate::{
 	identifiers::GroupIDChanger,
 	joint::{BuildJointChain, Joint, JointBuilder},
 	link::{link_data, Link, LinkParent, LinkShapeData},
+	transform::Mirror,
 	ArcLock, WeakLock,
 };
 
@@ -81,28 +82,30 @@ impl LinkBuilder {
 	pub fn build_tree(self) -> KinematicTree {
 		BuildLink::build_tree(self)
 	}
+}
 
-	pub(crate) fn mirror(&self, mirror_matrix: &Matrix3<f32>) -> Self {
+impl Mirror for LinkBuilder {
+	fn mirrored(&self, mirror_matrix: &Matrix3<f32>) -> Self {
 		Self {
 			name: self.name.clone(), // TODO: rename mirrored
 			visual_builders: self
 				.visual_builders
 				.iter()
-				.map(|visual_builder| visual_builder.mirror(mirror_matrix))
+				.map(|visual_builder| visual_builder.mirrored(mirror_matrix))
 				.collect(),
 			colliders: self
 				.colliders
 				.iter()
-				.map(|collider_builder| collider_builder.mirror(mirror_matrix))
+				.map(|collider_builder| collider_builder.mirrored(mirror_matrix))
 				.collect(),
 			intertial: self
 				.intertial
 				.as_ref()
-				.map(|intertial_data| intertial_data.mirror(mirror_matrix)),
+				.map(|intertial_data| intertial_data.mirrored(mirror_matrix)),
 			joints: self
 				.joints
 				.iter()
-				.map(|joint_builder| joint_builder.mirror(mirror_matrix))
+				.map(|joint_builder| joint_builder.mirrored(mirror_matrix))
 				.collect(),
 		}
 	}
