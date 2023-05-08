@@ -1,5 +1,5 @@
 [workspace]
 members = [
-    "rdf-builder-rs",
-    "rdf-builder-py"
+    "robot-description-builder",
+    "robot-description-builder-py"
 ]

@@ -1,0 +1,28 @@
+[package]
+name = "robot-description-builder"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# [lib]
+# crate-type = ["cdylib"]
+
+[dependencies]
+itertools = "0.10.5"
+log = { version = "0.4.*", optional = true, features = ["std"] }
+quick-xml = { version = "0.28.2", optional = true }
+thiserror = "1.0.40"
+nalgebra = "0.32.2"
+
+[dev-dependencies]
+log = { version = "0.4.*", features = ["std"] }
+test-log = "*"
+env_logger = "0.10.*"
+
+[features]
+default = ["urdf"]
+xml = ["dep:quick-xml"]
+urdf = ["xml"]
+sdf = ["xml"]
+logging = ["dep:log"]

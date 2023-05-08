@@ -1,0 +1,19 @@
+[build-system]
+requires = ["maturin>=0.14,<0.15"]
+build-backend = "maturin"
+
+[project]
+# Maybe change remove py from python package name
+name = "robot-description-builder"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+# Is this necessary? OBJECTIVE: Fix Importing? I think  it migth be fixed
+# module-name = "rdf_builder_py._rdf_builder_py"
