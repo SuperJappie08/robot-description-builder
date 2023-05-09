@@ -1,5 +1,6 @@
 [package]
 name = "robot-description-builder"
+description = "A libary to create (valid) Robot descriptions"
 version = "0.0.1"
 edition = "2021"
 license = "MIT"
