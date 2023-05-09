@@ -182,7 +182,7 @@ fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
 
 /// A Python module implemented in Rust.
 #[pymodule]
-#[pyo3(name = "robot_description_builder")]
+#[pyo3(name = "_internal")]
 fn rdf_builder_py(py: Python, m: &PyModule) -> PyResult<()> {
 	m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
 
@@ -190,10 +190,9 @@ fn rdf_builder_py(py: Python, m: &PyModule) -> PyResult<()> {
 	m.add_class::<PyRobot>()?;
 	m.add_class::<PyKinematicTree>()?;
 
-	let link = PyModule::new(py, "link")?;
-
-	link::init_module(py, link)?;
-	m.add_submodule(link)?;
+	// PyO3 + Maturin can only generate a python module, not a convienent package
+	// As a result it is easier to export everything flat
+	link::init_module(py, m)?;
 
 	transform::init_module(py, m)?;
 

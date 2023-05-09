@@ -4,7 +4,7 @@ use robot_description_builder::link_data::geometry::{BoxGeometry, GeometryInterf
 
 use super::PyGeometryBase;
 
-#[pyclass(name = "BoxGeometry", extends = PyGeometryBase, module = "geometry")]
+#[pyclass(name = "BoxGeometry", extends = PyGeometryBase, module="robot_description_builder.link.geometry")]
 pub struct PyBoxGeometry {
 	inner: BoxGeometry,
 }
@@ -27,10 +27,10 @@ impl PyBoxGeometry {
 	}
 
 	fn __repr__(slf: &PyCell<Self>) -> PyResult<String> {
-		let module_name = slf
-			.get_type()
-			.getattr(intern!(slf.py(), "__module__"))?
-			.extract::<&str>()?;
+		// let module_name = slf
+		// 	.get_type()
+		// 	.getattr(intern!(slf.py(), "__module__"))?
+		// 	.extract::<&str>()?;
 		let class_name = slf
 			.get_type()
 			.getattr(intern!(slf.py(), "__qualname__"))?
@@ -39,8 +39,13 @@ impl PyBoxGeometry {
 		let box_ref = slf.try_borrow()?;
 
 		Ok(format!(
-			"{}.{}({}, {}, {})",
-			module_name, class_name, box_ref.inner.side1, box_ref.inner.side2, box_ref.inner.side3
+			// "{}.{}({}, {}, {})",
+			"{}({}, {}, {})",
+			// module_name,
+			class_name,
+			box_ref.inner.side1,
+			box_ref.inner.side2,
+			box_ref.inner.side3
 		))
 	}
 

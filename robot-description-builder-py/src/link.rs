@@ -7,7 +7,9 @@ use std::sync::{Arc, RwLock, Weak};
 
 use itertools::Itertools;
 use pyo3::prelude::*;
-use robot_description_builder::{link_data::LinkParent, linkbuilding::LinkBuilder, JointBuilder, Link};
+use robot_description_builder::{
+	link_data::LinkParent, linkbuilding::LinkBuilder, JointBuilder, Link,
+};
 
 use collision::{PyCollision, PyCollisionBuilder};
 use inertial::PyInertial;
@@ -21,7 +23,6 @@ use crate::{
 pub(super) fn init_module(py: Python<'_>, module: &PyModule) -> PyResult<()> {
 	module.add_class::<PyLink>()?;
 	module.add_class::<PyLinkBuilder>()?;
-	// module.add_class::<PyLinkParent>()?;
 
 	collision::init_module(py, module)?;
 	visual::init_module(py, module)?;
@@ -34,7 +35,7 @@ pub(super) fn init_module(py: Python<'_>, module: &PyModule) -> PyResult<()> {
 }
 
 #[derive(Debug, Clone)]
-#[pyclass(name = "LinkBuilder")]
+#[pyclass(name = "LinkBuilder", module = "robot_description_builder.link")]
 pub struct PyLinkBuilder(LinkBuilder);
 
 #[pymethods]
@@ -82,7 +83,12 @@ impl From<PyLinkBuilder> for LinkBuilder {
 /// TODO: THINK COULD CHANGE TO WEAK AND RETURN ATTRIBUTE ERROR JUST LIKE WEAKREFF.PROXY
 /// OR AQUIRE GIL TO MAKE A WEAKREFF.PROXY
 #[derive(Debug)]
-#[pyclass(name = "Link", weakref, frozen)]
+#[pyclass(
+	name = "Link",
+	module = "robot_description_builder.link",
+	weakref,
+	frozen
+)]
 pub struct PyLink {
 	inner: Weak<RwLock<Link>>,
 	/// Python weakref to the python parent tree
@@ -102,12 +108,16 @@ impl PyLink {
 
 #[pymethods]
 impl PyLink {
+	/// The name or identifier of the `Link`
 	#[getter]
 	fn get_name(&self) -> PyResult<String> {
 		Ok(self.try_internal()?.read().unwrap().name().clone()) // TODO: Figure out if unwrap is Ok here?
 	}
 
 	#[getter]
+	/// The parent of the `Link`
+	/// 
+	/// This can be either a `KinematicTree` or a `Joint` depending if this `Link` is the root of a tree or not.  
 	fn get_parent(slf: PyRef<'_, Self>) -> PyResult<Py<PyAny>> {
 		match slf.try_internal()?.read().unwrap().parent() {
 			LinkParent::KinematicTree(_) => Ok(slf.tree.clone()),

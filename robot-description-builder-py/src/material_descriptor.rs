@@ -119,7 +119,7 @@ impl PyMaterialDescriptor {
 		})
 	}
 
-	fn __repr__(&self) -> String {
+	pub fn __repr__(&self) -> String {
 		let mut repr: String = match self.inner.data() {
 			MaterialData::Color(red, green, blue, alpha) => format!(
 				"MaterialDescriptor(rgba = ({}, {}, {}, {})",

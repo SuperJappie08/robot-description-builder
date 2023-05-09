@@ -5,7 +5,7 @@ use robot_description_builder::link_data::geometry::{CylinderGeometry, GeometryI
 use super::PyGeometryBase;
 
 #[derive(Debug)]
-#[pyclass(name = "CylinderGeometry", extends = PyGeometryBase, module = "geometry")]
+#[pyclass(name = "CylinderGeometry", extends = PyGeometryBase, module="robot_description_builder.link.geometry")]
 pub struct PyCylinderGeometry {
 	inner: CylinderGeometry,
 }
@@ -27,10 +27,10 @@ impl PyCylinderGeometry {
 	}
 
 	fn __repr__(slf: &PyCell<Self>) -> PyResult<String> {
-		let module_name = slf
-			.get_type()
-			.getattr(intern!(slf.py(), "__module__"))?
-			.extract::<&str>()?;
+		// let module_name = slf
+		// 	.get_type()
+		// 	.getattr(intern!(slf.py(), "__module__"))?
+		// 	.extract::<&str>()?;
 		let class_name = slf
 			.get_type()
 			.getattr(intern!(slf.py(), "__qualname__"))?
@@ -39,8 +39,10 @@ impl PyCylinderGeometry {
 		let cylinder = slf.try_borrow()?;
 
 		Ok(format!(
-			"{}.{}({}, {})",
-			module_name, class_name, cylinder.inner.radius, cylinder.inner.length
+			// "{}.{}({}, {})",
+			"{}({}, {})",
+			// module_name,
+			 class_name, cylinder.inner.radius, cylinder.inner.length
 		))
 	}
 

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use pyo3::prelude::*;
 
 use robot_description_builder::{link_data, linkbuilding::VisualBuilder};
@@ -5,18 +7,21 @@ use robot_description_builder::{link_data, linkbuilding::VisualBuilder};
 use super::geometry::PyGeometryBase;
 use crate::{material_descriptor::PyMaterialDescriptor, transform::PyTransform};
 
-pub(super) fn init_module(py: Python<'_>, parent_module: &PyModule) -> PyResult<()> {
-	let module = PyModule::new(py, "visual")?;
+pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
+	// let module = PyModule::new(py, "visual")?;
 
 	module.add_class::<PyVisual>()?;
 	module.add_class::<PyVisualBuilder>()?;
 
-	parent_module.add_submodule(module)?;
+	// parent_module.add_submodule(module)?;
 	Ok(())
 }
 
 #[derive(Debug, Clone)]
-#[pyclass(name = "VisualBuilder")]
+#[pyclass(
+	name = "VisualBuilder",
+	module = "robot_description_builder.link.visual"
+)]
 pub struct PyVisualBuilder(VisualBuilder);
 
 #[pymethods]
@@ -87,7 +92,7 @@ impl From<PyVisualBuilder> for VisualBuilder {
 
 /// Don't know if CLone is a good idea?
 #[derive(Debug, Clone)]
-#[pyclass(name = "Visual")]
+#[pyclass(name = "Visual", module = "robot_description_builder.link.visual")]
 pub struct PyVisual {
 	inner: link_data::Visual,
 }
@@ -110,11 +115,12 @@ impl PyVisual {
 		);
 
 		if let Some(material) = self.inner.material() {
-			todo!()
-			// repr += &format!(
-			// 	", material = {}",
-			// 	Into::<PyMaterial>::into(Arc::clone(material)).__repr__()
-			// );
+			// todo!()
+			repr += &format!(
+				", material = {}",
+				// TODO: Figure out if this should be `PyMaterial` or `PyMaterialDescriptor`
+				Into::<PyMaterialDescriptor>::into(material.rebuild()).__repr__()
+			);
 		}
 
 		repr += ")";

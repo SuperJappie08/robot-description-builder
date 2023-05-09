@@ -15,5 +15,6 @@ classifiers = [
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
+python-source = "python"
 # Is this necessary? OBJECTIVE: Fix Importing? I think  it migth be fixed
-# module-name = "rdf_builder_py._rdf_builder_py"
+module-name = "robot_description_builder._internal"

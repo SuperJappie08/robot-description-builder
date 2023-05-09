@@ -9,3 +9,6 @@ http://wiki.ros.org/urdf/Tutorials/Building%20a%20Visual%20Robot%20Model%20with%
 URDF Pysical http://wiki.ros.org/urdf/Tutorials/Adding%20Physical%20and%20Collision%20Properties%20to%20a%20URDF%20Model
 
 Maybe add flip axes function to builder
+
+Add Mirroring delimiter to GroupID
+Add Incrementable delimiter to GroupID

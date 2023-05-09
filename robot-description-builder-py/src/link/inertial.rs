@@ -3,18 +3,23 @@ use robot_description_builder::link_data::InertialData;
 
 use crate::transform::PyTransform;
 
-pub(super) fn init_module(py: Python<'_>, parent_module: &PyModule) -> PyResult<()> {
-	let module = PyModule::new(py, "inertial")?;
+pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
+	// let module = PyModule::new(py, "inertial")?;
 
 	module.add_class::<PyInertial>()?;
 
-	parent_module.add_submodule(module)?;
+	// parent_module.add_submodule(module)?;
 	Ok(())
 }
 
 /// TODO: Maybe easier to make a python version?
 #[derive(Debug, PartialEq, Clone, Default)]
-#[pyclass(name = "Inertial", frozen, get_all)] // Is set_all ok, since we would need to send the data back to the tree which is weird, immutability is also an option, set_all)]
+#[pyclass(
+	name = "Inertial",
+	module = "robot_description_builder.link",
+	frozen,
+	get_all
+)] // Is set_all ok, since we would need to send the data back to the tree which is weird, immutability is also an option, set_all)]
 pub struct PyInertial {
 	pub origin: Option<PyTransform>,
 	pub mass: f32,
@@ -54,10 +59,10 @@ impl PyInertial {
 
 	/// TODO: Figure this out propperly
 	pub fn __repr__(slf: &PyCell<Self>) -> PyResult<String> {
-		let module_name = slf
-			.get_type()
-			.getattr(intern!(slf.py(), "__module__"))?
-			.extract::<&str>()?;
+		// let module_name = slf
+		// 	.get_type()
+		// 	.getattr(intern!(slf.py(), "__module__"))?
+		// 	.extract::<&str>()?;
 		let class_name = slf
 			.get_type()
 			.getattr(intern!(slf.py(), "__qualname__"))?
@@ -66,8 +71,9 @@ impl PyInertial {
 		let binding = slf.borrow();
 
 		let mut repr = format!(
-			"{}.{}(mass = {}, ixx = {}, ixy = {}, ixz = {}, iyy = {}, iyz = {}, izz = {}",
-			module_name,
+			// "{}.{}(mass = {}, ixx = {}, ixy = {}, ixz = {}, iyy = {}, iyz = {}, izz = {}",
+			"{}(mass = {}, ixx = {}, ixy = {}, ixz = {}, iyy = {}, iyz = {}, izz = {}",
+			// module_name,
 			class_name,
 			binding.mass,
 			binding.ixx,

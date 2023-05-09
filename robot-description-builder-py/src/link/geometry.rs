@@ -9,20 +9,24 @@ pub use box_geometry::PyBoxGeometry;
 pub use cylinder_geometry::PyCylinderGeometry;
 pub use sphere_geometry::PySphereGeometry;
 
-pub(super) fn init_module(py: Python<'_>, parent_module: &PyModule) -> PyResult<()> {
-	let module = PyModule::new(py, "geometry")?;
+pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
+	// let module = PyModule::new(py, "geometry")?;
 
 	module.add_class::<PyGeometryBase>()?;
 	module.add_class::<PyBoxGeometry>()?;
 	module.add_class::<PySphereGeometry>()?;
 	module.add_class::<PyCylinderGeometry>()?;
 
-	parent_module.add_submodule(module)?;
+	// parent_module.add_submodule(module)?;
 
 	Ok(())
 }
 
-#[pyclass(name = "GeometryBase", subclass)]
+#[pyclass(
+	name = "GeometryBase",
+	module = "robot_description_builder.link.geometry",
+	subclass
+)]
 #[derive(Debug)]
 pub struct PyGeometryBase {
 	inner: Box<dyn GeometryInterface + Send + Sync>,
@@ -36,6 +40,10 @@ impl PyGeometryBase {
 
 	fn surface_area(&self) -> f32 {
 		self.inner.surface_area()
+	}
+
+	fn bounding_box(&self) -> (f32, f32, f32) {
+		self.inner.bounding_box()
 	}
 
 	pub fn __repr__(&self) -> String {

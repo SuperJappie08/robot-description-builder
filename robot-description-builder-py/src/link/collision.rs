@@ -1,13 +1,13 @@
 use pyo3::prelude::*;
 use robot_description_builder::{link_data::Collision, linkbuilding::CollisionBuilder, Transform};
 
-pub(super) fn init_module(py: Python<'_>, parent_module: &PyModule) -> PyResult<()> {
-	let module = PyModule::new(py, "collision")?;
+pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
+	// let module = PyModule::new(py, "collision")?;
 
 	module.add_class::<PyCollision>()?;
 	module.add_class::<PyCollisionBuilder>()?;
 
-	parent_module.add_submodule(module)?;
+	// parent_module.add_submodule(module)?;
 
 	Ok(())
 }
@@ -17,7 +17,10 @@ use crate::transform::PyTransform;
 
 /// TODO: Considering skipping the wrapping here and doing it manually
 #[derive(Debug, PartialEq, Clone)]
-#[pyclass(name = "CollisionBuilder")]
+#[pyclass(
+	name = "CollisionBuilder",
+	module = "robot_description_builder.link.collision"
+)]
 pub struct PyCollisionBuilder(CollisionBuilder);
 
 #[pymethods]
@@ -74,7 +77,10 @@ impl From<CollisionBuilder> for PyCollisionBuilder {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-#[pyclass(name = "Collision")]
+#[pyclass(
+	name = "Collision",
+	module = "robot_description_builder.link.collision"
+)]
 pub struct PyCollision {
 	inner: Collision,
 }
