@@ -198,6 +198,14 @@ pub trait GroupID {
 	///  - [`DELIMITER_ESCAPED_OPEN_GROUPID`] with [`DELIMITER_OPEN_GROUPID`]
 	///  - [`DELIMITER_ESCAPED_CLOSE_GROUPID`] with [`DELIMITER_CLOSE_GROUPID`]
 	fn display(&self) -> String;
+
+	/// Maybe wrong place. TODO: Consider moving to `GroupIDChanger`
+	///
+	/// TODO:
+	/// - Move?
+	/// - Document
+	/// - Test
+	fn get_group_id(&self) -> Option<&str>;
 }
 
 impl GroupID for String {
@@ -208,6 +216,16 @@ impl GroupID for String {
 	fn display(&self) -> String {
 		replace_group_id_delimiters(self)
 	}
+
+	/// Maybe wrong place. TODO: Consider moving to `GroupIDChanger`
+	fn get_group_id(&self) -> Option<&str> {
+		self.split_once(DELIMITER_OPEN_GROUPID)
+			.and_then(|(_, near_group_id)| {
+				near_group_id
+					.rsplit_once(DELIMITER_CLOSE_GROUPID)
+					.map(|(group_id, _)| group_id)
+			})
+	}
 }
 
 impl GroupID for &str {
@@ -217,6 +235,16 @@ impl GroupID for &str {
 
 	fn display(&self) -> String {
 		replace_group_id_delimiters(self)
+	}
+
+	/// Maybe wrong place. TODO: Consider moving to `GroupIDChanger`
+	fn get_group_id(&self) -> Option<&str> {
+		self.split_once(DELIMITER_OPEN_GROUPID)
+			.and_then(|(_, near_group_id)| {
+				near_group_id
+					.rsplit_once(DELIMITER_CLOSE_GROUPID)
+					.map(|(group_id, _)| group_id)
+			})
 	}
 }
 

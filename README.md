@@ -1,7 +1,8 @@
 # robot-description-builder \[rs\]
 
-# Semi Hi Prio Todo
-- [x] Change some writes and reads to try version because of instant erroring.
+This is a temporary read me for the full project.
+This will be cleaned up and improved soon.
+
 
 ## Roadmap:
 - [x] Implement geometries
@@ -15,7 +16,7 @@
   - [x] Implementation
   - [ ] Documentation
 - [ ] Wrap to python
-- [ ] Add LICENSE
+- [x] Add LICENSE
 
 ### Long term:
 - [ ] Learn how to generate python typesubs
