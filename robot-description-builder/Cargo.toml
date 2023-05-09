@@ -12,15 +12,15 @@ license = "MIT"
 
 [dependencies]
 itertools = "0.10.5"
-log = { version = "0.4.*", optional = true, features = ["std"] }
+log = { version = "0.4.17", optional = true, features = ["std"] }
 quick-xml = { version = "0.28.2", optional = true }
 thiserror = "1.0.40"
 nalgebra = "0.32.2"
 
 [dev-dependencies]
-log = { version = "0.4.*", features = ["std"] }
-test-log = "*"
-env_logger = "0.10.*"
+log = { version = "0.4.17", features = ["std"] }
+test-log = "0.2.11"
+env_logger = "0.10.0"
 
 [features]
 default = ["urdf"]
