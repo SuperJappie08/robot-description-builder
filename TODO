@@ -12,3 +12,6 @@ Maybe add flip axes function to builder
 
 Add Mirroring delimiter to GroupID
 Add Incrementable delimiter to GroupID
+
+Update CI-PYTHON to build for multiple python versions
+ - Maybe don't support Python3.7 since it is nearly EOL [(2023-06-27)](https://devguide.python.org/versions/) 

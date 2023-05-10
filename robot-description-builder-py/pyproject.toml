@@ -6,7 +6,7 @@ build-backend = "maturin"
 # Maybe change remove py from python package name
 name = "robot-description-builder"
 version = "0.0.1"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 license = { text = "MIT" }
 classifiers = [
     "Programming Language :: Rust",
