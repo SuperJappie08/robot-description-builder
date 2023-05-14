@@ -18,8 +18,7 @@ pub use link::{helper_functions, link_data, Link};
 pub use transform::{MirrorAxis, Transform};
 
 pub mod linkbuilding {
-	use super::link;
-	pub use link::builder::*;
+	pub use super::link::builder::*;
 }
 
 /// TODO: Docs

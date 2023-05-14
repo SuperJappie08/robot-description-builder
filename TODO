@@ -1,7 +1,5 @@
 Addhere to https://rust-lang.github.io/api-guidelines/naming.html#getter-names-follow-rust-convention-c-getter
 
-[X] !!! TODO: Set a New newest link after yank
-
 A lot of builder functions on the `JointBuilder`
 
 http://wiki.ros.org/urdf/Tutorials/Building%20a%20Visual%20Robot%20Model%20with%20URDF%20from%20Scratch#:~:text=The%20meshes%20here%20were%20borrowed%20from%20the%20PR2.%20They%20are%20separate%20files%20which%20you%20have%20to%20specify%20the%20path%20for.%20You%20should%20use%20the%20package%3A//NAME_OF_PACKAGE/path%20notation.%20The%20meshes%20for%20this%20tutorial%20are%20located%20within%20the%20urdf_tutorial%20package%2C%20in%20a%20folder%20called%20meshes.

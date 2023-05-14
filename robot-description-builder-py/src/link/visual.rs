@@ -42,7 +42,7 @@ impl PyVisualBuilder {
 
 	#[getter]
 	fn get_name(&self) -> Option<String> {
-		self.0.name().map(Clone::clone)
+		self.0.name().cloned()
 	}
 
 	#[setter]
@@ -156,14 +156,12 @@ impl PyVisual {
 			repr += "None"
 		}
 
-		// TODO: THIS ISN'T OK
 		repr += &format!(
-			", {}",
+			", geometry = {}",
 			Into::<PyGeometryBase>::into(self.inner.geometry().boxed_clone()).__repr__(py)?
 		);
 
 		if let Some(material) = self.inner.material() {
-			// todo!()
 			repr += &format!(
 				", material = {}",
 				// TODO: Figure out if this should be `PyMaterial` or `PyMaterialDescriptor`

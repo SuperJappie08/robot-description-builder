@@ -54,12 +54,8 @@ impl LinkBuilder {
 		self
 	}
 
-	// pub(crate) fn build(self, tree: ArcLock<KinematicTreeData>) -> ArcLock<Link> {
-	//     // Not sure How i wanna do this yet,
-	//     // Maybe with colliders and visuals, stacking and calculating the always calculating the endpoint or not?
-	// }
-
 	/// FIXME: This is temporary, since BuildLink is now a private trait
+	/// I think this might be fine
 	pub fn build_tree(self) -> KinematicTree {
 		BuildLink::build_tree(self)
 	}
@@ -147,7 +143,6 @@ impl BuildLink for LinkBuilder {
 					.into_iter()
 					.map(|collision_builder| collision_builder.build())
 					.collect(),
-				end_point: None, //TODO:
 				me: Weak::clone(me),
 			})
 		})
@@ -200,7 +195,6 @@ impl BuildLink for LinkBuilder {
 					.into_iter()
 					.map(|collider_builder| collider_builder.build())
 					.collect(),
-				end_point: None, // FIXME: Fix this
 				me: Weak::clone(me),
 			})
 		})

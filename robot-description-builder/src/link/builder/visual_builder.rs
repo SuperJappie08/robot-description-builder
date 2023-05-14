@@ -62,7 +62,7 @@ impl VisualBuilder {
 		self
 	}
 
-	/// FIXME: Propper Error
+	/// FIXME: Propper Error, Which error?
 	pub(crate) fn build(self) -> Result<Visual, String> {
 		let material = self
 			.material_description
@@ -87,12 +87,12 @@ impl VisualBuilder {
 impl Mirror for VisualBuilder {
 	fn mirrored(&self, mirror_matrix: &Matrix3<f32>) -> Self {
 		Self {
-			name: self.name.as_ref().map(Clone::clone), // TODO: Fix
+			name: self.name.as_ref().cloned(), // TODO: Fix
 			origin: self
 				.origin
 				.as_ref()
 				.map(|transform| transform.mirrored(mirror_matrix)),
-			geometry: self.geometry.boxed_mirrored(mirror_matrix), // TODO: this only works on non-chiral geometries, FIX described in `CollisionBuilder`
+			geometry: self.geometry.boxed_mirrored(mirror_matrix).into(), // TODO: this only works on non-chiral geometries, FIX described in `CollisionBuilder`
 			material_description: self.material_description.clone(),
 		}
 	}
@@ -153,7 +153,7 @@ impl Clone for VisualBuilder {
 		Self {
 			name: self.name.clone(),
 			origin: self.origin,
-			geometry: self.geometry.boxed_clone(),
+			geometry: self.geometry.boxed_clone().into(),
 			material_description: self.material_description.clone(),
 		}
 	}

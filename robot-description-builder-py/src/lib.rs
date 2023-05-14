@@ -14,7 +14,9 @@ use material_descriptor::PyMaterialDescriptor;
 
 use pyo3::{intern, prelude::*};
 
-use robot_description_builder::{KinematicInterface, KinematicTree, Robot};
+use robot_description_builder::{
+	linkbuilding::LinkBuilder, KinematicInterface, KinematicTree, Robot,
+};
 
 #[derive(Debug)]
 #[pyclass(name = "Robot")]
@@ -111,7 +113,7 @@ impl PyKinematicTree {
 	fn yank_link(&self, name: String) -> Option<PyLinkBuilder> {
 		self.inner
 			.yank_link(&name)
-			.map(|link_builder| link_builder.builder().clone().into())
+			.map(|link_builder| LinkBuilder::clone(&*link_builder).into())
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {

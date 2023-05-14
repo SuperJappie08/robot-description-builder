@@ -109,7 +109,7 @@ fn main() {
 		.attach_joint_chain(right_back_wheel)
 		.unwrap();
 
-	let mut right_leg = right_leg.yank_link("[\\[right]\\]_leg").unwrap();
+	let mut right_leg = right_leg.yank_root();
 	right_leg.apply_group_id();
 
 	let base_right_leg_joint = SmartJointBuilder::new_fixed("base_to_[[right]]_leg")
@@ -188,7 +188,7 @@ fn main() {
 		.write()
 		.unwrap()
 		.try_attach_child(
-			left_gripper.yank_link("[[left]]_gripper").unwrap(),
+			left_gripper.yank_root(),
 			SmartJointBuilder::new_fixed("[[left]]_gripper_joint")
 				.add_transform(Transform::new_translation(0.2, 0.01, 0.)),
 		)
@@ -216,7 +216,7 @@ fn main() {
 		.write()
 		.unwrap()
 		.try_attach_child(
-			gripper_pole.yank_link("gripper_pole").unwrap(),
+			gripper_pole.yank_root(),
 			SmartJointBuilder::new_fixed("gripper_extension")
 				.add_transform(Transform::new_translation(0.19, 0., 0.2)),
 		)

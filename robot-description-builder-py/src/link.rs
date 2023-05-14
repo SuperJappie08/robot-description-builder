@@ -122,9 +122,8 @@ impl PyLinkBuilder {
 		self.clone()
 	}
 
-	// /// Maybe direct construction
 	fn build(&self) -> PyResult<Py<PyKinematicTree>> {
-		// FIXME: NOT OK
+		// Not the nicest way, but it works
 		PyKinematicTree::create(self.0.clone().build_tree())
 	}
 }
@@ -141,8 +140,6 @@ impl From<PyLinkBuilder> for LinkBuilder {
 	}
 }
 
-/// TODO: THINK COULD CHANGE TO WEAK AND RETURN ATTRIBUTE ERROR JUST LIKE WEAKREFF.PROXY
-/// OR AQUIRE GIL TO MAKE A WEAKREFF.PROXY
 #[derive(Debug)]
 #[pyclass(
 	name = "Link",
@@ -260,6 +257,7 @@ impl PyLink {
 				Into::<LinkBuilder>::into(link_builder),
 				Into::<JointBuilder>::into(joint_builder),
 			)
+			// TODO: ERROR
 			.map_err(|_| pyo3::exceptions::PyKeyError::new_err("???"))?;
 		Ok(())
 	}
@@ -282,7 +280,6 @@ impl PyLink {
 			let visuals = link.visuals();
 			if !visuals.is_empty() {
 				repr += ", visuals = [";
-				// repr += &visuals.iter().map(|visual| PyVisual::from(visual.clone()).__repr__()).collect::<Vec<String>>().join(", ");
 				repr += process_results(
 					visuals
 						.iter()
@@ -293,9 +290,30 @@ impl PyLink {
 				repr += "]";
 			}
 		}
-		// TODO: EXPAND
 
-		repr += ", ...)";
+		{
+			let colliders = link.colliders();
+			if !colliders.is_empty() {
+				repr += ", colliders = [";
+				repr += process_results(
+					colliders
+						.iter()
+						.map(|collider| PyCollision::from(collider.clone()).__repr__(py)),
+					|mut iter| iter.join(", "),
+				)?
+				.as_str();
+				repr += "]";
+			}
+		}
+
+		{
+			if let Some(inertial) = link.inertial() {
+				repr += ", inertial = ";
+				repr += PyInertial::from(*inertial).__repr__(py)?.as_str();
+			}
+		}
+
+		repr += ")";
 		Ok(repr)
 	}
 }

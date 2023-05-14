@@ -25,13 +25,9 @@ This will be cleaned up and improved soon.
 - [ ] Support URDF Gazebo Extension
 - [ ] Support URDF Drake Extension
 
-## To Figure out
-- Maybe change name to `Robot-Description-Builder`?
-  - This might be clearer and easier to find online 
-
 See Obsidian
 
 ## Might be nice to look into
  - [`nalgebra`](https://nalgebra.org/docs/user_guide/getting_started#usage-and-cargo-features) supports `arbitrary` feature which allows for randomized propperty testing using [`quickcheck`](https://crates.io/crates/quickcheck)
    - `quick-xml` also has a feature for it
- - A feature flag for free types for `JointType` `TransmissionType` and `TransmissionHardwareInterface` etc.
+ - A feature flag for Customizable types for `JointType` `TransmissionType` and `TransmissionHardwareInterface` etc.

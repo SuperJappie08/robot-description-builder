@@ -1,4 +1,4 @@
-use pyo3::prelude::*;
+use pyo3::{intern, prelude::*};
 use robot_description_builder::{link_data::Collision, linkbuilding::CollisionBuilder, Transform};
 
 pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
@@ -103,6 +103,32 @@ impl From<CollisionBuilder> for PyCollisionBuilder {
 )]
 pub struct PyCollision {
 	inner: Collision,
+}
+
+#[pymethods]
+impl PyCollision {
+	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
+		let mut repr = format!(
+			"{}(name = ",
+			py.get_type::<Self>()
+				.getattr(intern!(py, "__qualname__"))?
+				.extract::<&str>()?
+		);
+
+		if let Some(name) = self.inner.name() {
+			repr += format!("'{}'", name).as_str();
+		} else {
+			repr += "None"
+		}
+
+		repr += &format!(
+			", geometry = {}",
+			Into::<PyGeometryBase>::into(self.inner.geometry().boxed_clone()).__repr__(py)?
+		);
+
+		repr += ")";
+		Ok(repr)
+	}
 }
 
 impl From<Collision> for PyCollision {

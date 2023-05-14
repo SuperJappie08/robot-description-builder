@@ -67,7 +67,7 @@ impl CollisionBuilder {
 impl Mirror for CollisionBuilder {
 	fn mirrored(&self, mirror_matrix: &Matrix3<f32>) -> Self {
 		Self {
-			name: self.name.as_ref().map(Clone::clone), // FIXME: NAME
+			name: self.name.as_ref().cloned(), // FIXME: NAME
 			origin: self
 				.origin
 				.as_ref()

@@ -26,31 +26,15 @@ impl PyCylinderGeometry {
 		Self::new(radius, length)
 	}
 
-	// pub fn __repr__(&self) -> String {
-	// 	format!(
-	// 		"CylinderGeometry({}, {})",
-	// 		self.inner.radius, self.inner.length
-	// 	)
-	// }
-
-	// TODO: This is not nestable
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		// let module_name = slf
-		// 	.get_type()
-		// 	.getattr(intern!(slf.py(), "__module__"))?
-		// 	.extract::<&str>()?;
 		let class_name = py
 			.get_type::<Self>()
 			.getattr(intern!(py, "__qualname__"))?
 			.extract::<&str>()?;
 
 		Ok(format!(
-			// "{}.{}({}, {})",
 			"{}({}, {})",
-			// module_name,
-			class_name,
-			self.inner.radius,
-			self.inner.length
+			class_name, self.inner.radius, self.inner.length
 		))
 	}
 

@@ -39,12 +39,11 @@ pub(crate) trait BuildJointChain {
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct JointBuilder {
 	pub(crate) name: String,
-	pub(crate) joint_type: JointType, // TODO: FINISH ME
+	pub(crate) joint_type: JointType,
 	/// TODO: Maybe add a Figure it out???
 	pub(crate) origin: JointTransformMode,
 	pub(crate) child: Option<LinkBuilder>,
 
-	/// TODO: DO SOMETHING WITH THIS
 	/// TODO: MAYBE CHANGE TO Vec3D Or something
 	pub(crate) axis: Option<(f32, f32, f32)>,
 	pub(crate) calibration: joint_data::CalibrationData,
@@ -167,11 +166,13 @@ impl Mirror for JointBuilder {
 				(JointType::Fixed | JointType::Floating, _) => None, // TODO: Figure out if this clause should be moved down to allow for Fixed and Floating with axis if desired?
 				(_, Some((x, y, z))) => Some(
 					(new_mirror_matrix * vector![x, y, z] * -1.)
-						.normalize() // Theoretically not necessary, but float rounding errors are a thing | TODO: Figure out if this improves the situation or makes it worse
+						// Theoretically not necessary, but float rounding errors are a thing | TODO: Figure out if this improves the situation or makes it worse
+						.normalize()
 						.iter()
 						.copied()
 						.collect_tuple()
-						.unwrap(), // Unwrapping here to ensure that we collect to a Tuple3 | TODO: Change to expect? or remove
+						// Unwrapping here to ensure that we collect to a Tuple3 | TODO: Change to expect? or remove
+						.unwrap(),
 				),
 				(
 					JointType::Revolute
@@ -188,11 +189,11 @@ impl Mirror for JointBuilder {
 						.unwrap(), // Unwrapping here to ensure that we collect to a Tuple3 | TODO: Change to expect? or remove
 				),
 			},
-			calibration: self.calibration,                // TODO: Is this Correct?
-			dynamics: self.dynamics,                      // TODO: Is this Correct?
-			limit: self.limit,                            // TODO: Is this Correct?
-			mimic: self.mimic.as_ref().map(Clone::clone), // TODO: Is this Correct?
-			safety_controller: self.safety_controller,    // TODO: Is this Correct?
+			calibration: self.calibration,             // TODO: Is this Correct?
+			dynamics: self.dynamics,                   // TODO: Is this Correct?
+			limit: self.limit,                         // TODO: Is this Correct?
+			mimic: self.mimic.as_ref().cloned(),       // TODO: Is this Correct?
+			safety_controller: self.safety_controller, // TODO: Is this Correct?
 		}
 	}
 }

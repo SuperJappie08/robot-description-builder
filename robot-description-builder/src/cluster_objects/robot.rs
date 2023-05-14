@@ -164,9 +164,3 @@ impl ToURDF for Robot {
 		Ok(())
 	}
 }
-
-impl From<Robot> for Box<dyn KinematicInterface> {
-	fn from(value: Robot) -> Self {
-		Box::new(value)
-	}
-}

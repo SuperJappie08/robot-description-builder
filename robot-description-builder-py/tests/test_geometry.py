@@ -1,9 +1,6 @@
 from robot_description_builder.link.geometry import BoxGeometry, CylinderGeometry, SphereGeometry
 
-# TODO:
-# def test_box_geometry():
-#     raise NotImplementedError
-
+# TODO: Add more tests
 
 def test_box_geometry_repr():
     assert repr(BoxGeometry(3, 4, 6)) == "BoxGeometry(3, 4, 6)"

@@ -124,7 +124,7 @@ impl Material {
 
 	pub fn material_data(&self) -> MaterialDataReferenceWrapper {
 		match &self.0 {
-			MaterialKind::Named { name: _, data } => data.get_data(),
+			MaterialKind::Named { name: _, data } => data.data(),
 			MaterialKind::Unnamed(data) => data.into(),
 		}
 	}

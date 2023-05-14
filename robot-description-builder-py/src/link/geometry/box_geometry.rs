@@ -27,32 +27,15 @@ impl PyBoxGeometry {
 		Self::new(width, length, height)
 	}
 
-	// pub fn __repr__(&self) -> String {
-	// 	format!(
-	// 		"BoxGeometry({}, {}, {})",
-	// 		self.inner.side1, self.inner.side2, self.inner.side3
-	// 	)
-	// }
-
-	// TODO: This repr is not nestable.
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		// let module_name = slf
-		// 	.get_type()
-		// 	.getattr(intern!(slf.py(), "__module__"))?
-		// 	.extract::<&str>()?;
 		let class_name = py
 			.get_type::<Self>()
 			.getattr(intern!(py, "__qualname__"))?
 			.extract::<&str>()?;
 
 		Ok(format!(
-			// "{}.{}({}, {}, {})",
 			"{}({}, {}, {})",
-			// module_name,
-			class_name,
-			self.inner.side1,
-			self.inner.side2,
-			self.inner.side3
+			class_name, self.inner.side1, self.inner.side2, self.inner.side3
 		))
 	}
 

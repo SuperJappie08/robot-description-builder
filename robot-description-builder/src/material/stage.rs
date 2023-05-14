@@ -37,11 +37,13 @@ impl MaterialStage {
 		}
 	}
 
-	/// TODO: WHAT TO DO WHIT NAME? with regards to convention
-	pub(crate) fn get_data(&self) -> MaterialDataReferenceWrapper {
+	/// Gets the data wrapped in a `MaterialDataReferenceWrapper`
+	///
+	/// TODO: Name could also be `get`
+	pub(crate) fn data(&self) -> MaterialDataReferenceWrapper {
 		match self {
 			MaterialStage::PreInit(data) => data.into(),
-			MaterialStage::Initialized(arc_data) => Arc::clone(arc_data).into(), //Unwrap not Ok
+			MaterialStage::Initialized(arc_data) => Arc::clone(arc_data).into(),
 		}
 	}
 }

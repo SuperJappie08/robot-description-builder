@@ -84,7 +84,7 @@ where
 		value.axis.simplify(&mut joint_builder);
 		value.calibration.simplify(&mut joint_builder);
 		value.dynamics.simplify(&mut joint_builder);
-		value.limit.simplify(&mut joint_builder, true); // FIXME: Is it contiuos tho?
+		value.limit.simplify(&mut joint_builder, true); // FIXME: Is it continous?
 		value.mimic.simplify(&mut joint_builder);
 		value.safety_controller.simplify(&mut joint_builder);
 

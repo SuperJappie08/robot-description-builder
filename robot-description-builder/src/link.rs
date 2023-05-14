@@ -24,15 +24,15 @@ pub mod link_data {
 		pub use crate::link::geometry::*;
 	}
 
-	/// TODO: Depricate or Implement?
-	#[derive(Debug, PartialEq, Eq, Clone)]
-	pub enum ConnectionPoint {
-		/// Point at Link connection point (Link Origin without translation)
-		Begin,
-		CenterOfVolume,
-		CenterOfMass,
-		End,
-	}
+	// /// TODO: Depricate or Implement?
+	// #[derive(Debug, PartialEq, Eq, Clone)]
+	// pub enum ConnectionPoint {
+	// 	/// Point at Link connection point (Link Origin without translation)
+	// 	Begin,
+	// 	CenterOfVolume,
+	// 	CenterOfMass,
+	// 	End,
+	// }
 }
 
 use std::sync::{Arc, Weak};
@@ -57,16 +57,16 @@ use crate::{
 /// TODO: Make Builder For Link
 #[derive(Debug)]
 pub struct Link {
-	pub(crate) name: String,
+	name: String,
 	pub(crate) tree: Weak<KinematicDataTree>,
 	direct_parent: link_data::LinkParent,
 	child_joints: Vec<ArcLock<Joint>>,
 	inertial: Option<InertialData>,
 	visuals: Vec<link_data::Visual>,
 	colliders: Vec<link_data::Collision>,
-	/// TODO: Maybe array, or thing
-	/// Or calculate when necessary
-	end_point: Option<(f32, f32, f32)>,
+	// /// TODO: Maybe array, or thing
+	// /// Or calculate when necessary
+	// end_point: Option<(f32, f32, f32)>,
 	me: WeakLock<Self>,
 }
 
@@ -182,9 +182,9 @@ impl Link {
 		self.inertial.as_ref()
 	}
 
-	pub fn get_end_point(&self) -> Option<(f32, f32, f32)> {
-		self.end_point
-	}
+	// pub fn get_end_point(&self) -> Option<(f32, f32, f32)> {
+	// 	self.end_point
+	// }
 
 	pub fn visuals(&self) -> &Vec<Visual> {
 		&self.visuals
@@ -198,7 +198,6 @@ impl Link {
 		&self.colliders
 	}
 
-	/// TODO: EXPAND
 	pub fn rebuild(&self) -> LinkBuilder {
 		LinkBuilder {
 			name: self.name.clone(),
@@ -208,14 +207,14 @@ impl Link {
 				.iter()
 				.map(|collision| collision.rebuild())
 				.collect(),
-			intertial: self.inertial.clone(),
+			intertial: self.inertial,
 			..Default::default()
 		}
 	}
 
 	/// Rebuilds everything below this aswell
 	///
-	/// TODO: FINISH
+	/// TODO: DOCS
 	pub(crate) fn rebuild_branch_continued(&self) -> LinkBuilder {
 		LinkBuilder {
 			joints: self
@@ -251,7 +250,7 @@ impl Link {
 				parent_link
 					.upgrade()
 					.unwrap() // This unwrap is Ok since the parent_link on a Joint is initialized while adding to the tree.
-					.try_write()
+					.write()
 					.unwrap() //FIXME: Is unwrap Ok here?
 					.joints_mut()
 					.retain(|other_joint| !Arc::ptr_eq(&joint, other_joint));

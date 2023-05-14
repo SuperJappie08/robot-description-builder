@@ -28,28 +28,13 @@ impl PySphereGeometry {
 		Self::new(radius)
 	}
 
-	// pub fn __repr__(&self) -> String {
-	// 	format!("SphereGeometry({})", self.inner.radius)
-	// }
-
-	// TODO: NOT OK SEE PyBoxGeometry
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		// let module_name = slf
-		// 	.get_type()
-		// 	.getattr(intern!(slf.py(), "__module__"))?
-		// 	.extract::<&str>()?;
 		let class_name = py
 			.get_type::<Self>()
 			.getattr(intern!(py, "__qualname__"))?
 			.extract::<&str>()?;
 
-		Ok(format!(
-			// "{}.{}({})",
-			"{}({})",
-			// module_name,
-			class_name,
-			self.inner.radius
-		))
+		Ok(format!("{}({})", class_name, self.inner.radius))
 	}
 
 	// Might be excessive due to also being implemented on super class

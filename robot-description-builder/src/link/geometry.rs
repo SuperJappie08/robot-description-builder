@@ -70,7 +70,6 @@ impl PartialEq for (dyn GeometryInterface + Sync + Send) {
 	}
 }
 
-// TODO: Is this ever used?
 impl From<&(dyn GeometryInterface + Sync + Send)> for Box<dyn GeometryInterface + Sync + Send> {
 	fn from(value: &(dyn GeometryInterface + Sync + Send)) -> Self {
 		value.boxed_clone()

@@ -108,7 +108,6 @@ impl Joint {
 		}
 	}
 
-	/// TODO: MAKE A PUBLIC VERSION WHICH RETURNS WRAPPED IN CHAINED
 	pub(crate) fn rebuild_branch_continued(&self) -> JointBuilder {
 		#[cfg(any(feature = "logging", test))]
 		log::info!(target: "JointBuilder","Rebuilding: {}", self.name());
@@ -251,7 +250,7 @@ impl ToURDF for Joint {
 	}
 }
 
-/// TODO: Are all fields covered?
+/// TODO: Maybe remove some fields from check, since it will always match if name and tree are true
 impl PartialEq for Joint {
 	fn eq(&self, other: &Self) -> bool {
 		Weak::ptr_eq(&self.me, &other.me)
@@ -261,6 +260,13 @@ impl PartialEq for Joint {
 			&& Arc::ptr_eq(&self.child_link, &other.child_link)
 			&& self.joint_type == other.joint_type
 			&& self.origin == other.origin
+			&& self.axis() == other.axis()
+			&& self.calibration == other.calibration
+			&& self.dynamics == other.dynamics
+			&& self.limit == other.limit
+			&& self.mimic == other.mimic
+			&& self.safety_controller == other.safety_controller
+		// `self.me` field is not covered however if they are on the same tree it is impossible to not match `self.me` while matching all the other fields
 	}
 }
 
@@ -426,7 +432,6 @@ mod tests {
 			}
 		);
 
-		// todo!("FINISH TEST 'lib::joint::test::yank_simple'")
 		// TODO: Maybe the test is to simple
 	}
 

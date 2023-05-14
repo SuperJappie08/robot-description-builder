@@ -55,7 +55,7 @@ impl KinematicDataTree {
 			log::trace!("Attempting to register tree data to index");
 
 			// 1st Unwrapping is Ok here, since we just made the KinematicDataTree
-			data.try_add_link(&data.root_link).unwrap(); //FIXME: 2nd Unwrap Ok?
+			data.try_add_link(&data.root_link).unwrap(); //FIXME: is Unwrap Ok? No Link could contain conflicting materials
 		}
 		data
 	}

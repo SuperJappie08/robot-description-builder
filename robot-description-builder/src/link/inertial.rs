@@ -27,7 +27,7 @@ impl Mirror for InertialData {
 				.origin
 				.as_ref()
 				.map(|transform| transform.mirrored(mirror_matrix)),
-			..self.clone()
+			..*self
 		}
 	}
 }

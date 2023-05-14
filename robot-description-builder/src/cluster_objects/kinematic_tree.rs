@@ -130,16 +130,10 @@ impl Clone for KinematicTree {
 		let root_link = self
 			.get_root_link()
 			.read()
-			.unwrap()
-			.rebuild_branch_continued(); // FIXME: UNWRAP MIGHTN NOT BE OK HERE
+			.unwrap() // FIXME: UNWRAP MIGHTN NOT BE OK HERE
+			.rebuild_branch_continued();
 
 		root_link.build_tree()
-	}
-}
-
-impl From<KinematicTree> for Box<dyn KinematicInterface> {
-	fn from(value: KinematicTree) -> Self {
-		Box::new(value)
 	}
 }
 
@@ -191,7 +185,7 @@ mod tests {
 		trace!(
 			target: "RDB-RS::test::KineTree::clone_single",
 			"tree->..->root_link->name        | ptr: {:#?}",
-			&tree.get_root_link().try_read().unwrap().name.as_ptr()
+			&tree.get_root_link().try_read().unwrap().name().as_ptr()
 		);
 		trace!(
 			target: "RDB-RS::test::KineTree::clone_single",
@@ -200,7 +194,7 @@ mod tests {
 				.get_root_link()
 				.try_read()
 				.unwrap()
-				.name
+				.name()
 				.as_ptr()
 		);
 		assert_eq!(
@@ -449,7 +443,7 @@ mod tests {
 		trace!(
 			target: "RDB-RS::test::KineTree::clone_multi",
 			"tree->..->root_link->name        | ptr: {:#?}",
-			&tree.get_root_link().try_read().unwrap().name.as_ptr()
+			&tree.get_root_link().try_read().unwrap().name().as_ptr()
 		);
 		trace!(
 			target: "RDB-RS::test::KineTree::clone_multi",
@@ -458,7 +452,7 @@ mod tests {
 				.get_root_link()
 				.try_read()
 				.unwrap()
-				.name
+				.name()
 				.as_ptr()
 		);
 		assert_eq!(

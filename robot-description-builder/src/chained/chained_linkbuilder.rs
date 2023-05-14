@@ -70,8 +70,7 @@ where
 {
 	fn from(value: KI) -> Self {
 		// FIXME: Is unwrap Ok Here?
-		// FIXME: Maybe use the non-blocking read, for production?
-		Self(value.get_root_link().try_read().unwrap().yank())
+		Self(value.get_root_link().read().unwrap().yank())
 	}
 }
 

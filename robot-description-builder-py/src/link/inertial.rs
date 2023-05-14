@@ -12,7 +12,6 @@ pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
 	Ok(())
 }
 
-/// TODO: Maybe easier to make a python version?
 #[derive(Debug, PartialEq, Clone, Default)]
 #[pyclass(
 	name = "Inertial",
@@ -57,37 +56,19 @@ impl PyInertial {
 		}
 	}
 
-	/// TODO: Figure this out propperly
-	pub fn __repr__(slf: &PyCell<Self>) -> PyResult<String> {
-		// let module_name = slf
-		// 	.get_type()
-		// 	.getattr(intern!(slf.py(), "__module__"))?
-		// 	.extract::<&str>()?;
-		let class_name = slf
-			.get_type()
-			.getattr(intern!(slf.py(), "__qualname__"))?
+	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
+		let class_name = py
+			.get_type::<Self>()
+			.getattr(intern!(py, "__qualname__"))?
 			.extract::<&str>()?;
 
-		let binding = slf.borrow();
-
 		let mut repr = format!(
-			// "{}.{}(mass = {}, ixx = {}, ixy = {}, ixz = {}, iyy = {}, iyz = {}, izz = {}",
 			"{}(mass = {}, ixx = {}, ixy = {}, ixz = {}, iyy = {}, iyz = {}, izz = {}",
-			// module_name,
-			class_name,
-			binding.mass,
-			binding.ixx,
-			binding.ixy,
-			binding.ixz,
-			binding.iyy,
-			binding.iyz,
-			binding.izz
+			class_name, self.mass, self.ixx, self.ixy, self.ixz, self.iyy, self.iyz, self.izz
 		);
 
-		if let Some(transform) = binding.origin {
-			repr.push_str(
-				", Whoops Something is confusion about repr", // format!(", origin = {}", transform.).as_str()
-			);
+		if let Some(transform) = self.origin {
+			repr.push_str(format!(", origin = {}", transform.__repr__(py)?).as_str());
 		}
 
 		repr.push(')');

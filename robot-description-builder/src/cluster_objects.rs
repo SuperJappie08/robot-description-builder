@@ -25,8 +25,7 @@ pub use robot::Robot;
 
 type PoisonWriteIndexError<'a, K, V> = PoisonError<RwLockWriteGuard<'a, HashMap<K, V>>>;
 
-/// TODO: MAYBE RENAME SOME FUNCTIONS to conform to convention
-pub trait KinematicInterface {
+pub trait KinematicInterface: Sized {
 	// NOTE: THIS IS NOT FINAL;
 
 	/// Returns the root link of the Kinematic Tree
@@ -95,8 +94,6 @@ pub trait KinematicInterface {
 		transmission: TransmissionBuilder<WithJoints, WithActuator>,
 	) -> Result<(), AddTransmissionError>;
 
-	// TODO: Expand
-
 	/// Cleans up orphaned/broken `Link` entries from the `links` HashMap.
 	///
 	/// This mostly happens automatically, but is exposed for use in other methods.
@@ -132,6 +129,27 @@ pub trait KinematicInterface {
 		builder
 	}
 
+	/// Cosumes the `KinematicInterface` implementor and creates a `Chained<LinkBuilder>` to rebuild it.
+	///
+	/// This has the same result as yanking the `root_link`, with the additional effect that the current tree is consumed.
+	///
+	/// # Example
+	///
+	/// ```
+	/// # use robot_description_builder::{prelude::*, Link};
+	///
+	/// let builder = Link::builder("root-link");
+	///
+	/// assert_eq!(*builder.clone().build_tree().yank_root(), builder);
+	///
+	/// /// It is equivalent to yanking the "root_link"
+	/// assert_eq!(builder.clone().build_tree().yank_root(), builder.build_tree().yank_link("root-link").unwrap())
+	/// ```
+	fn yank_root(self) -> Chained<LinkBuilder> {
+		let builder = self.get_root_link().read().unwrap().yank();
+		Chained(builder)
+	}
+
 	fn yank_joint(&self, name: &str) -> Option<Chained<JointBuilder>> {
 		let builder = self
 			.get_joint(name)
@@ -142,5 +160,5 @@ pub trait KinematicInterface {
 		builder
 	}
 
-	// TODO: MAYBE yank_root or a rebuild?
+	// TODO: or a rebuild?
 }

@@ -25,7 +25,7 @@ pub struct TransmissionJointBuilder {
 }
 
 impl TransmissionJointBuilder {
-	/// TODO: MAKE PUBLIC ?????
+	/// TODO: DOC
 	///
 	/// The minum hardware interfaces is 1 so I require one at creation
 	pub fn new(

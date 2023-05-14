@@ -7,9 +7,6 @@ license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-# [lib]
-# crate-type = ["cdylib"]
-
 [dependencies]
 itertools = "0.10.5"
 log = { version = "0.4.17", optional = true, features = ["std"] }

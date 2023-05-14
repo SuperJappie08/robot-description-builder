@@ -76,8 +76,7 @@ impl
 		}
 	}
 
-	/// TODO: Maybe do it like this
-	/// I Like it...
+	/// Creates a new `SmartJointBuilder` with `JointType::Revolute`
 	pub fn new_revolute(
 		name: impl Into<String>,
 	) -> SmartJointBuilder<
@@ -92,6 +91,7 @@ impl
 		Self::new(name).revolute()
 	}
 
+	/// Creates a new `SmartJointBuilder` of type `Continuous`
 	pub fn new_continuous(
 		name: impl Into<String>,
 	) -> SmartJointBuilder<
@@ -106,6 +106,7 @@ impl
 		Self::new(name).continuous()
 	}
 
+	/// Creates a new `SmartJointBuilder` of type `Prismatic`
 	pub fn new_prismatic(
 		name: impl Into<String>,
 	) -> SmartJointBuilder<
@@ -120,6 +121,7 @@ impl
 		Self::new(name).prismatic()
 	}
 
+	/// Creates a new `SmartJointBuilder` of type `Fixed`
 	pub fn new_fixed(
 		name: impl Into<String>,
 	) -> SmartJointBuilder<
@@ -134,6 +136,7 @@ impl
 		Self::new(name).fixed()
 	}
 
+	/// Creates a new `SmartJointBuilder` of type `Floating`
 	pub fn new_floating(
 		name: impl Into<String>,
 	) -> SmartJointBuilder<
@@ -148,6 +151,7 @@ impl
 		Self::new(name).floating()
 	}
 
+	/// Creates a new `SmartJointBuilder` of type `Planar`
 	pub fn new_planar(
 		name: impl Into<String>,
 	) -> SmartJointBuilder<
