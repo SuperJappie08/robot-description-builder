@@ -1,9 +1,10 @@
-use pyo3::{intern, prelude::*};
+use pyo3::{basic::CompareOp, intern, prelude::*};
 
 use robot_description_builder::link_data::geometry::{BoxGeometry, GeometryInterface};
 
 use super::PyGeometryBase;
 
+#[derive(Debug, Clone)]
 #[pyclass(name = "BoxGeometry", extends = PyGeometryBase, module="robot_description_builder.link.geometry")]
 pub struct PyBoxGeometry {
 	inner: BoxGeometry,
@@ -26,27 +27,43 @@ impl PyBoxGeometry {
 		Self::new(width, length, height)
 	}
 
-	fn __repr__(slf: &PyCell<Self>) -> PyResult<String> {
+	// pub fn __repr__(&self) -> String {
+	// 	format!(
+	// 		"BoxGeometry({}, {}, {})",
+	// 		self.inner.side1, self.inner.side2, self.inner.side3
+	// 	)
+	// }
+
+	// TODO: This repr is not nestable.
+	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
 		// let module_name = slf
 		// 	.get_type()
 		// 	.getattr(intern!(slf.py(), "__module__"))?
 		// 	.extract::<&str>()?;
-		let class_name = slf
-			.get_type()
-			.getattr(intern!(slf.py(), "__qualname__"))?
+		let class_name = py
+			.get_type::<Self>()
+			.getattr(intern!(py, "__qualname__"))?
 			.extract::<&str>()?;
-
-		let box_ref = slf.try_borrow()?;
 
 		Ok(format!(
 			// "{}.{}({}, {}, {})",
 			"{}({}, {}, {})",
 			// module_name,
 			class_name,
-			box_ref.inner.side1,
-			box_ref.inner.side2,
-			box_ref.inner.side3
+			self.inner.side1,
+			self.inner.side2,
+			self.inner.side3
 		))
+	}
+
+	// Might be excessive due to also being implemented on super class
+	fn __richcmp__(&self, other: &Self, op: CompareOp, py: Python<'_>) -> PyObject {
+		match op {
+			CompareOp::Eq => (self.inner == other.inner).into_py(py),
+			CompareOp::Ne => (self.inner != other.inner).into_py(py),
+			// TODO: Consider implementing Gt and Lt based on volume?
+			_ => py.NotImplemented(),
+		}
 	}
 
 	#[getter]
@@ -64,5 +81,11 @@ impl PyBoxGeometry {
 
 		let mut super_class = slf.into_super();
 		super_class.inner = data;
+	}
+}
+
+impl From<BoxGeometry> for PyBoxGeometry {
+	fn from(value: BoxGeometry) -> Self {
+		Self { inner: value }
 	}
 }

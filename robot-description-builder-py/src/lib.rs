@@ -114,10 +114,10 @@ impl PyKinematicTree {
 			.map(|link_builder| link_builder.builder().clone().into())
 	}
 
-	pub fn __repr__(&self) -> PyResult<String> {
+	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
 		Ok(format!(
 			"KinematicTree(root_link = {}, ...)",
-			self.root_link().__repr__()?
+			self.root_link().__repr__(py)?
 		))
 	}
 
@@ -199,9 +199,7 @@ fn rdf_builder_py(py: Python, m: &PyModule) -> PyResult<()> {
 	// m.add_class::<PyMaterial>()?;
 	m.add_class::<PyMaterialDescriptor>()?;
 
-	m.add_class::<PyJoint>()?;
-	m.add_class::<PyJointBuilder>()?;
-	m.add_class::<PyJointType>()?;
+	joint::init_module(py, m)?;
 
 	Ok(())
 }

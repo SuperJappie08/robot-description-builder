@@ -1,10 +1,10 @@
-use pyo3::{intern, prelude::*};
+use pyo3::{basic::CompareOp, intern, prelude::*};
 
 use robot_description_builder::link_data::geometry::{GeometryInterface, SphereGeometry};
 
 use super::PyGeometryBase;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[pyclass(name="SphereGeometry", extends=PyGeometryBase, module="robot_description_builder.link.geometry")]
 pub struct PySphereGeometry {
 	inner: SphereGeometry,
@@ -28,14 +28,19 @@ impl PySphereGeometry {
 		Self::new(radius)
 	}
 
-	fn __repr__(slf: &PyCell<Self>) -> PyResult<String> {
+	// pub fn __repr__(&self) -> String {
+	// 	format!("SphereGeometry({})", self.inner.radius)
+	// }
+
+	// TODO: NOT OK SEE PyBoxGeometry
+	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
 		// let module_name = slf
 		// 	.get_type()
 		// 	.getattr(intern!(slf.py(), "__module__"))?
 		// 	.extract::<&str>()?;
-		let class_name = slf
-			.get_type()
-			.getattr(intern!(slf.py(), "__qualname__"))?
+		let class_name = py
+			.get_type::<Self>()
+			.getattr(intern!(py, "__qualname__"))?
 			.extract::<&str>()?;
 
 		Ok(format!(
@@ -43,8 +48,18 @@ impl PySphereGeometry {
 			"{}({})",
 			// module_name,
 			class_name,
-			slf.try_borrow()?.inner.radius
+			self.inner.radius
 		))
+	}
+
+	// Might be excessive due to also being implemented on super class
+	fn __richcmp__(&self, other: &Self, op: CompareOp, py: Python<'_>) -> PyObject {
+		match op {
+			CompareOp::Eq => (self.inner == other.inner).into_py(py),
+			CompareOp::Ne => (self.inner != other.inner).into_py(py),
+			// TODO: Consider implementing Gt and Lt based on volume?
+			_ => py.NotImplemented(),
+		}
 	}
 
 	#[getter]
@@ -60,5 +75,11 @@ impl PySphereGeometry {
 
 		let mut super_class = slf.into_super();
 		super_class.inner = data;
+	}
+}
+
+impl From<SphereGeometry> for PySphereGeometry {
+	fn from(value: SphereGeometry) -> Self {
+		Self { inner: value }
 	}
 }

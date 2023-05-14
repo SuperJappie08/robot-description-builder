@@ -54,7 +54,7 @@ impl Joint {
 		&self.name
 	}
 
-	pub fn jointtype(&self) -> JointType {
+	pub fn joint_type(&self) -> JointType {
 		self.joint_type
 	}
 
@@ -83,6 +83,11 @@ impl Joint {
 
 	pub fn origin(&self) -> &Transform {
 		&self.origin
+	}
+
+	pub fn axis(&self) -> Option<(f32, f32, f32)> {
+		// This is fine since it implements Copy
+		self.axis
 	}
 
 	/// Make a `JointBuilder` to build a 'Clone' of the `Joint`
@@ -170,7 +175,7 @@ impl ToURDF for Joint {
 			})
 			.with_attribute(Attribute {
 				key: QName(b"type"),
-				value: self.jointtype().into(),
+				value: self.joint_type().into(),
 			});
 
 		element.write_inner_content(|writer| {

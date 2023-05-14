@@ -12,11 +12,14 @@ pub use sphere_geometry::SphereGeometry;
 
 pub use geometry_shape_data::GeometryShapeData;
 
+// TODO: Maybe only exported for `wrapping` feature
+pub use geometry_shape_data::GeometryShapeContainer;
+
 use std::fmt::Debug;
 
 use crate::transform::Mirror;
 
-use self::geometry_shape_data::GeometryShapeContainer;
+// use self::geometry_shape_data::GeometryShapeContainer;
 
 pub trait BoxedMirror {
 	fn boxed_mirrored(

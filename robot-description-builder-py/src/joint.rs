@@ -1,9 +1,20 @@
 use std::sync::{Arc, RwLock, Weak};
 
-use pyo3::prelude::*;
+use pyo3::{intern, prelude::*};
 use robot_description_builder::{Joint, JointBuilder, JointType};
 
-use crate::link::PyLink;
+use crate::{
+	link::{PyLink, PyLinkBuilder},
+	transform::PyTransform,
+};
+
+pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
+	module.add_class::<PyJoint>()?;
+	module.add_class::<PyJointBuilder>()?;
+	module.add_class::<PyJointType>()?;
+
+	Ok(())
+}
 
 #[derive(Debug, Clone)]
 #[pyclass(name = "JointBuilder")]
@@ -17,6 +28,45 @@ impl PyJointBuilder {
 	fn new(name: String, joint_type: PyJointType) -> PyJointBuilder {
 		// ODDITY: use `Joint::new` because `JointBuilder::new` is private to the crate
 		JointBuilder::new(name, joint_type.into()).into()
+	}
+
+	#[getter]
+	fn get_name(&self) -> String {
+		self.inner.name().clone()
+	}
+
+	#[getter]
+	fn get_joint_type(&self) -> PyJointType {
+		(*self.inner.joint_type()).into()
+	}
+
+	// TODO: Origin
+
+	#[getter]
+	fn get_child(&self) -> Option<PyLinkBuilder> {
+		self.inner.child().cloned().map(Into::into)
+	}
+
+	#[getter]
+	fn get_axis(&self) -> Option<(f32, f32, f32)> {
+		self.inner.axis()
+	}
+
+	#[setter]
+	fn set_axis(&mut self, axis: Option<(f32, f32, f32)>) {
+		match (axis, self.inner.axis().is_some()) {
+			(Some(axis), _) => self.inner.with_axis(axis),
+			(None, true) => {
+				// This would be easier
+				// self.inner = JointBuilder{
+				// 	axis: None,
+				// 	..self.inner.clone()
+				// }
+				// TODO: This is a lot of work, it is easier to change the Rust libary
+				todo!()
+			}
+			(None, false) => (),
+		}
 	}
 
 	// /// TEMP implementation
@@ -59,12 +109,17 @@ impl PyJoint {
 #[pymethods]
 impl PyJoint {
 	#[getter]
-	fn name(&self) -> PyResult<String> {
+	fn get_name(&self) -> PyResult<String> {
 		Ok(self.try_internal()?.read().unwrap().name().clone()) // TODO: Figure out if unwrap is Ok here?
 	}
 
 	#[getter]
-	fn parent_link(&self) -> PyResult<PyLink> {
+	fn get_joint_type(&self) -> PyResult<PyJointType> {
+		Ok(self.try_internal()?.read().unwrap().joint_type().into()) // TODO: Figure out if unwrap is Ok here?
+	}
+
+	#[getter]
+	fn get_parent_link(&self) -> PyResult<PyLink> {
 		Ok((
 			self.try_internal()?.read().unwrap().parent_link(),
 			self.tree.clone(),
@@ -73,7 +128,7 @@ impl PyJoint {
 	}
 
 	#[getter]
-	fn child_link(&self) -> PyResult<PyLink> {
+	fn get_child_link(&self) -> PyResult<PyLink> {
 		Ok((
 			self.try_internal()?.read().unwrap().child_link(),
 			self.tree.clone(),
@@ -81,10 +136,37 @@ impl PyJoint {
 			.into()) // TODO: Figure out if unwrap is Ok here?
 	}
 
-	// #[getter]
-	// fn origin(&self) -> (f32, f32, f32) {
-	// 	todo!()
-	// }
+	#[getter]
+	fn get_origin(&self) -> PyResult<Option<PyTransform>> {
+		let origin = *self.try_internal()?.read().unwrap().origin(); // TODO: Figure out if unwrap is Ok here?
+		match origin.contains_some() {
+			true => Ok(Some(origin.into())),
+			false => Ok(None),
+		}
+	}
+
+	#[getter]
+	fn get_axis(&self) -> PyResult<Option<(f32, f32, f32)>> {
+		// TODO: Figure out if unwrap is Ok here?
+		Ok(self.try_internal()?.read().unwrap().axis())
+	}
+
+	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
+		let binding = self.try_internal()?;
+		let joint = binding.read().unwrap(); // FIXME: Unwrap ok?
+		let mut repr = format!(
+			"{}('{}'",
+			py.get_type::<Self>()
+				.getattr(intern!(py, "__qualname__"))?
+				.extract::<&str>()?,
+			joint.name()
+		);
+
+		// TODO: EXPAND
+
+		repr += ", ...)";
+		Ok(repr)
+	}
 }
 
 impl From<(Weak<RwLock<Joint>>, PyObject)> for PyJoint {

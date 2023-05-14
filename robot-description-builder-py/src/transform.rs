@@ -1,4 +1,4 @@
-use pyo3::{intern, prelude::*};
+use pyo3::{basic::CompareOp, intern, prelude::*};
 use robot_description_builder::Transform;
 
 const NONE_STR: &str = "None";
@@ -8,7 +8,12 @@ pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
 	Ok(())
 }
 
-#[pyclass(name = "Transform", get_all, set_all)]
+#[pyclass(
+	name = "Transform",
+	get_all,
+	set_all,
+	module = "robot_description_builder"
+)]
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
 pub struct PyTransform {
 	x: Option<f32>,
@@ -40,34 +45,64 @@ impl PyTransform {
 		}
 	}
 
-	pub fn __repr__(slf: &PyCell<Self>) -> PyResult<String> {
-		let module_name = slf
-			.get_type()
-			.getattr(intern!(slf.py(), "__module__"))?
-			.extract::<&str>()?;
-		let class_name = slf
-			.get_type()
-			.getattr(intern!(slf.py(), "__qualname__"))?
+	// pub fn __repr__(&self) -> PyResult<String> {
+	// 	// This is a valid repr since it would recreate the object if the thing is imported to root
+	// 	let translation: Option<String> = match self.is_some_translation() {
+	// 		true => Some(format!(
+	// 			"x={}, y={}, z={}",
+	// 			self.x.map_or(NONE_STR.into(), |x| x.to_string()),
+	// 			self.y.map_or(NONE_STR.into(), |y| y.to_string()),
+	// 			self.z.map_or(NONE_STR.into(), |z| z.to_string())
+	// 		)),
+	// 		false => None,
+	// 	};
+
+	// 	let rotation: Option<String> = match self.is_some_rotation() {
+	// 		true => Some(format!(
+	// 			"roll={}, pitch={}, yaw={}",
+	// 			self.roll.map_or(NONE_STR.into(), |r| r.to_string()),
+	// 			self.pitch.map_or(NONE_STR.into(), |p| p.to_string()),
+	// 			self.yaw.map_or(NONE_STR.into(), |y| y.to_string())
+	// 		)),
+	// 		false => None,
+	// 	};
+
+	// 	let total = match (translation, rotation) {
+	// 		(Some(translation), Some(rotation)) => format!("{}, {}", translation, rotation),
+	// 		(None, Some(rotation)) => rotation,
+	// 		(Some(translation), None) => translation,
+	// 		(None, None) => String::new(),
+	// 	};
+
+	// 	Ok(format!("Transform({})", total))
+	// }
+
+	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
+		// let module_name = py
+		// 	.get_type()
+		// 	.getattr(intern!(py, "__module__"))?
+		// 	.extract::<&str>()?;
+		let class_name = py
+			.get_type::<Self>()
+			.getattr(intern!(py, "__qualname__"))?
 			.extract::<&str>()?;
 
-		let transform = slf.try_borrow()?;
-
-		let translation: Option<String> = match transform.is_some_translation() {
+		let translation: Option<String> = match self.is_some_translation() {
 			true => Some(format!(
 				"x={}, y={}, z={}",
-				transform.x.map_or(NONE_STR.into(), |x| x.to_string()),
-				transform.y.map_or(NONE_STR.into(), |y| y.to_string()),
-				transform.z.map_or(NONE_STR.into(), |z| z.to_string())
+				self.x.map_or(NONE_STR.into(), |x| x.to_string()),
+				self.y.map_or(NONE_STR.into(), |y| y.to_string()),
+				self.z.map_or(NONE_STR.into(), |z| z.to_string())
 			)),
 			false => None,
 		};
 
-		let rotation: Option<String> = match transform.is_some_rotation() {
+		let rotation: Option<String> = match self.is_some_rotation() {
 			true => Some(format!(
 				"roll={}, pitch={}, yaw={}",
-				transform.roll.map_or(NONE_STR.into(), |r| r.to_string()),
-				transform.pitch.map_or(NONE_STR.into(), |p| p.to_string()),
-				transform.yaw.map_or(NONE_STR.into(), |y| y.to_string())
+				self.roll.map_or(NONE_STR.into(), |r| r.to_string()),
+				self.pitch.map_or(NONE_STR.into(), |p| p.to_string()),
+				self.yaw.map_or(NONE_STR.into(), |y| y.to_string())
 			)),
 			false => None,
 		};
@@ -79,7 +114,16 @@ impl PyTransform {
 			(None, None) => String::new(),
 		};
 
-		Ok(format!("{}.{}({})", module_name, class_name, total))
+		// Ok(format!("{}.{}({})", module_name, class_name, total))
+		Ok(format!("{}({})", class_name, total))
+	}
+
+	fn __richcmp__(&self, other: &Self, op: CompareOp, py: Python<'_>) -> PyObject {
+		match op {
+			CompareOp::Eq => (self == other).into_py(py),
+			CompareOp::Ne => (self != other).into_py(py),
+			_ => py.NotImplemented(),
+		}
 	}
 
 	fn __bool__(&self) -> bool {

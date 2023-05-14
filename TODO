@@ -15,3 +15,12 @@ Add Incrementable delimiter to GroupID
 
 Update CI-PYTHON to build for multiple python versions
  - Maybe don't support Python3.7 since it is nearly EOL [(2023-06-27)](https://devguide.python.org/versions/) 
+
+https://github.com/python/mypy for stub testing and generation?
+Or https://monkeytype.readthedocs.io/en/latest/
+
+BROKEN:
+ - [?] (ALL) `thread '<unnamed>' panicked at 'not yet implemented', robot-description-builder-py/src/link/geometry.rs:50:9`
+    - `__repr__` on `PyGeometryBase` is called
+
+joint_state_publisher requires both upper and lower limit for all now continous or fixed types

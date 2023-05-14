@@ -22,7 +22,7 @@ pub struct PrismaticType;
 
 impl From<PrismaticType> for JointType {
 	fn from(_value: PrismaticType) -> Self {
-		JointType::Continuous
+		JointType::Prismatic
 	}
 }
 

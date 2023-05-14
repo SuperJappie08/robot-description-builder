@@ -1,3 +1,6 @@
+/// If an argument is supplied no meshes are used.
+///
+/// This has been done to prevent allow for the use of an online viewer and the usage of WSL without setting some OpenGL settings.
 use std::{
 	f32::consts::FRAC_PI_2,
 	io::{Read, Seek},
@@ -36,6 +39,11 @@ fn to_urdf_string(robot: &Robot) -> String {
 
 /// [Building a Movable Robot Model with URDF](http://wiki.ros.org/urdf/Tutorials/Building%20a%20Movable%20Robot%20Model%20with%20URDF)
 fn main() {
+	// Check if we are using meshes, by default meshes are used
+	let args: Vec<String> = std::env::args().collect();
+
+	let use_meshes = args.get(1).is_none();
+
 	/* === Material Descriptions === */
 	let blue_material = MaterialDescriptor::new_rgb(0., 0., 0.8).named("blue");
 	let black_material = MaterialDescriptor::new_rgb(0., 0., 0.).named("black");
@@ -141,7 +149,91 @@ fn main() {
 		.unwrap();
 
 	/* === Defining the gripper ==== */
-	// TODO: Meshes
+	let gripper_pole = Link::builder("gripper_pole")
+		.add_visual(
+			Visual::builder(CylinderGeometry::new(0.01, 0.2))
+				.tranformed(Transform::new((0.1, 0., 0.), (0., FRAC_PI_2, 0.))),
+		)
+		.build_tree();
+
+	let left_gripper = Link::builder("[[left]]_gripper")
+		.add_visual(Visual::builder(match use_meshes {
+			true => MeshGeometry::new(
+				"package://urdf_tutorial/meshes/l_finger.dae",
+				(0.1, 0.05, 0.06),
+				None,
+			)
+			.boxed_clone(),
+			false => BoxGeometry::new(0.1, 0.05, 0.06).boxed_clone(),
+		}))
+		.build_tree();
+
+	left_gripper
+		.get_root_link()
+		.write()
+		.unwrap()
+		.try_attach_child(
+			Link::builder("[[left]]_tip").add_visual(
+				Visual::builder(match use_meshes {
+					true => MeshGeometry::new(
+						"package://urdf_tutorial/meshes/l_finger_tip.dae",
+						(0.06, 0.04, 0.02),
+						None,
+					)
+					.boxed_clone(),
+					false => BoxGeometry::new(0.06, 0.04, 0.02).boxed_clone(),
+				})
+				.tranformed(Transform::new_translation(0.09137, 0.00495, 0.)),
+			),
+			SmartJointBuilder::new_fixed("[[left]]_tip_joint"),
+		)
+		.unwrap();
+
+	gripper_pole
+		.get_root_link()
+		.write()
+		.unwrap()
+		.try_attach_child(
+			left_gripper.yank_link("[[left]]_gripper").unwrap(),
+			SmartJointBuilder::new_revolute("[[left]]_gripper_joint")
+				.with_axis((0., 0., 1.))
+				.with_limit(1000., 0.5)
+				.set_upper_limit(0.548)
+				.set_lower_limit(0.)
+				.add_transform(Transform::new_translation(0.2, 0.01, 0.)),
+		)
+		.unwrap();
+
+	let mut right_gripper = gripper_pole
+		.get_joint("[[left]]_gripper_joint")
+		.unwrap()
+		.read()
+		.unwrap()
+		.rebuild_branch()
+		.mirror(MirrorAxis::Y);
+
+	right_gripper.change_group_id("right").unwrap();
+
+	gripper_pole
+		.get_root_link()
+		.write()
+		.unwrap()
+		.attach_joint_chain(right_gripper)
+		.unwrap();
+
+	model
+		.get_root_link()
+		.write()
+		.unwrap()
+		.try_attach_child(
+			gripper_pole.yank_link("gripper_pole").unwrap(),
+			SmartJointBuilder::new_prismatic("gripper_extension")
+				.with_limit(1000., 0.5)
+				.set_lower_limit(-0.38)
+				.set_upper_limit(0.)
+				.add_transform(Transform::new_translation(0.19, 0., 0.2)),
+		)
+		.unwrap();
 
 	/* ===== Defining the head ===== */
 	let head_link = Link::builder("head").add_visual(

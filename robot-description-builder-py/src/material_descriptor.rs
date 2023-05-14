@@ -1,5 +1,6 @@
 use itertools::Itertools;
 use pyo3::{
+	intern,
 	prelude::*,
 	types::{PyDict, PyTuple},
 };
@@ -14,6 +15,7 @@ pub struct PyMaterialDescriptor {
 #[pymethods]
 impl PyMaterialDescriptor {
 	/// TODO: Fix signature so name migth be picked up automagically? or not
+	/// Maybe change this to an other signature
 	#[new]
 	#[pyo3(signature = (*py_args, name=None, **py_kwargs))]
 	fn new(
@@ -119,13 +121,17 @@ impl PyMaterialDescriptor {
 		})
 	}
 
-	pub fn __repr__(&self) -> String {
+	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
+		let class_name = py
+			.get_type::<Self>()
+			.getattr(intern!(py, "__qualname__"))?
+			.extract::<&str>()?;
 		let mut repr: String = match self.inner.data() {
 			MaterialData::Color(red, green, blue, alpha) => format!(
-				"MaterialDescriptor(rgba = ({}, {}, {}, {})",
-				red, green, blue, alpha
+				"{}(rgba = ({}, {}, {}, {})",
+				class_name, red, green, blue, alpha
 			),
-			MaterialData::Texture(path) => format!("MaterialDescriptor(path = \"{}\"", path),
+			MaterialData::Texture(path) => format!("{}(path = \"{}\"", class_name, path),
 		};
 
 		if let Some(name) = self.inner.name() {
@@ -133,7 +139,7 @@ impl PyMaterialDescriptor {
 		}
 
 		repr.push(')');
-		repr
+		Ok(repr)
 	}
 
 	#[getter]

@@ -54,6 +54,7 @@ pub struct JointBuilder {
 	pub(crate) safety_controller: Option<joint_data::SafetyControllerData>,
 }
 
+/// TODO: maybe add new_full ? or make fields public
 impl JointBuilder {
 	pub fn new(name: impl Into<String>, joint_type: JointType) -> Self {
 		Self {
@@ -122,6 +123,32 @@ impl JointBuilder {
 		safety_controller_data: joint_data::SafetyControllerData,
 	) {
 		self.safety_controller = Some(safety_controller_data);
+	}
+}
+
+// Mostly for Python Wrapper
+/// Non Builder functions
+impl JointBuilder {
+	pub fn name(&self) -> &String {
+		&self.name
+	}
+
+	pub fn joint_type(&self) -> &JointType {
+		&self.joint_type
+	}
+
+	// TODO: ORIGIN
+
+	pub fn child(&self) -> Option<&LinkBuilder> {
+		self.child.as_ref()
+	}
+
+	pub fn axis(&self) -> Option<(f32, f32, f32)> {
+		self.axis
+	}
+
+	pub fn axis_mut(&mut self) -> Option<&mut (f32, f32, f32)> {
+		self.axis.as_mut()
 	}
 }
 

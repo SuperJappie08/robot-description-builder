@@ -7,7 +7,7 @@ use crate::to_rdf::to_urdf::ToURDF;
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
-#[derive(Debug, PartialEq, Clone, Default)]
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
 /// TODO: Figure out if things should be private or not?
 pub struct InertialData {
 	pub origin: Option<Transform>,

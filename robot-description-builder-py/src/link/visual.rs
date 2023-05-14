@@ -1,6 +1,4 @@
-use std::sync::Arc;
-
-use pyo3::prelude::*;
+use pyo3::{intern, prelude::*};
 
 use robot_description_builder::{link_data, linkbuilding::VisualBuilder};
 
@@ -48,8 +46,19 @@ impl PyVisualBuilder {
 	}
 
 	#[setter]
-	fn set_name(&mut self, name: String) {
-		self.0 = self.0.clone().named(name);
+	fn set_name(&mut self, name: Option<String>) {
+		match (name, self.0.name().is_some()) {
+			(Some(name), _) => self.0 = self.0.clone().named(name),
+			(None, true) => {
+				self.0 = VisualBuilder::new_full(
+					None,
+					self.0.origin().copied(),
+					self.0.geometry().boxed_clone(),
+					self.0.material().cloned(),
+				)
+			}
+			(None, false) => (),
+		}
 	}
 
 	#[getter]
@@ -63,8 +72,19 @@ impl PyVisualBuilder {
 	}
 
 	#[setter]
-	fn set_origin(&mut self, transform: PyTransform) {
-		self.0 = self.0.clone().tranformed(transform.into());
+	fn set_origin(&mut self, transform: Option<PyTransform>) {
+		match (transform, self.0.origin().is_some()) {
+			(Some(transform), _) => self.0 = self.0.clone().tranformed(transform.into()),
+			(None, true) => {
+				self.0 = VisualBuilder::new_full(
+					self.0.name().cloned(),
+					None,
+					self.0.geometry().boxed_clone(),
+					self.0.material().cloned(),
+				)
+			}
+			(None, false) => (),
+		}
 	}
 
 	#[getter]
@@ -73,8 +93,21 @@ impl PyVisualBuilder {
 	}
 
 	#[setter]
-	fn set_material(&mut self, material_description: PyMaterialDescriptor) {
-		self.0 = self.0.clone().materialized(material_description.into())
+	fn set_material(&mut self, material_description: Option<PyMaterialDescriptor>) {
+		match (material_description, self.0.material().is_some()) {
+			(Some(material_description), _) => {
+				self.0 = self.0.clone().materialized(material_description.into())
+			}
+			(None, true) => {
+				self.0 = VisualBuilder::new_full(
+					self.0.name().cloned(),
+					self.0.origin().copied(),
+					self.0.geometry().boxed_clone(),
+					None,
+				)
+			}
+			(None, false) => (),
+		}
 	}
 }
 
@@ -99,8 +132,23 @@ pub struct PyVisual {
 
 #[pymethods]
 impl PyVisual {
-	pub fn __repr__(&self) -> String {
-		let mut repr = String::from("Visual(name = ");
+	#[getter]
+	fn get_name(&self) -> Option<String> {
+		self.inner.name().cloned()
+	}
+
+	#[getter]
+	fn get_origin(&self) -> Option<PyTransform> {
+		self.inner.origin().copied().map(Into::into)
+	}
+
+	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
+		let mut repr = format!(
+			"{}(name = ",
+			py.get_type::<Self>()
+				.getattr(intern!(py, "__qualname__"))?
+				.extract::<&str>()?
+		);
 
 		if let Some(name) = self.inner.name() {
 			repr += format!("'{}'", name).as_str();
@@ -110,8 +158,8 @@ impl PyVisual {
 
 		// TODO: THIS ISN'T OK
 		repr += &format!(
-			", {:?}",
-			Into::<PyGeometryBase>::into(self.inner.geometry().boxed_clone()).__repr__()
+			", {}",
+			Into::<PyGeometryBase>::into(self.inner.geometry().boxed_clone()).__repr__(py)?
 		);
 
 		if let Some(material) = self.inner.material() {
@@ -119,12 +167,12 @@ impl PyVisual {
 			repr += &format!(
 				", material = {}",
 				// TODO: Figure out if this should be `PyMaterial` or `PyMaterialDescriptor`
-				Into::<PyMaterialDescriptor>::into(material.rebuild()).__repr__()
+				Into::<PyMaterialDescriptor>::into(material.rebuild()).__repr__(py)?
 			);
 		}
 
 		repr += ")";
-		repr
+		Ok(repr)
 	}
 }
 

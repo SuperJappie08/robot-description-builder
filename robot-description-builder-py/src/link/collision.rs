@@ -44,8 +44,18 @@ impl PyCollisionBuilder {
 	}
 
 	#[setter]
-	fn set_name(&mut self, name: String) {
-		self.0 = self.0.clone().named(name)
+	fn set_name(&mut self, name: Option<String>) {
+		match (name, self.0.name().is_some()) {
+			(Some(name), _) => self.0 = self.0.clone().named(name),
+			(None, true) => {
+				self.0 = CollisionBuilder::new_full(
+					None,
+					self.0.origin().copied(),
+					self.0.geometry().boxed_clone(),
+				);
+			}
+			(None, false) => (),
+		}
 	}
 
 	#[getter]
@@ -54,8 +64,18 @@ impl PyCollisionBuilder {
 	}
 
 	#[setter]
-	fn set_origin(&mut self, origin: PyTransform) {
-		self.0 = self.0.clone().tranformed(origin.into())
+	fn set_origin(&mut self, origin: Option<PyTransform>) {
+		match (origin, self.0.origin().is_some()) {
+			(Some(origin), _) => self.0 = self.0.clone().tranformed(origin.into()),
+			(None, true) => {
+				self.0 = CollisionBuilder::new_full(
+					self.0.name().cloned(),
+					None,
+					self.0.geometry().boxed_clone(),
+				)
+			}
+			(None, false) => (),
+		}
 	}
 
 	#[getter]

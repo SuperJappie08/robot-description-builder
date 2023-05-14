@@ -2,8 +2,8 @@ mod box_geometry;
 mod cylinder_geometry;
 mod sphere_geometry;
 
-use pyo3::prelude::*;
-use robot_description_builder::link_data::geometry::GeometryInterface;
+use pyo3::{basic::CompareOp, prelude::*};
+use robot_description_builder::link_data::geometry::{GeometryInterface, GeometryShapeContainer};
 
 pub use box_geometry::PyBoxGeometry;
 pub use cylinder_geometry::PyCylinderGeometry;
@@ -46,8 +46,29 @@ impl PyGeometryBase {
 		self.inner.bounding_box()
 	}
 
-	pub fn __repr__(&self) -> String {
-		todo!()
+	fn __richcmp__(&self, other: &Self, op: CompareOp, py: Python<'_>) -> PyObject {
+		match op {
+			// TODO: Consider using GeometryContainer as a medium to do this
+			CompareOp::Eq => (*self.inner == *other.inner).into_py(py),
+			CompareOp::Ne => (*self.inner != *other.inner).into_py(py),
+			_ => py.NotImplemented(),
+		}
+	}
+
+	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
+		match self.inner.shape_container() {
+			GeometryShapeContainer::Box(geometry) => {
+				Into::<PyBoxGeometry>::into(geometry).__repr__(py)
+			}
+			GeometryShapeContainer::Cylinder(geometry) => {
+				Into::<PyCylinderGeometry>::into(geometry).__repr__(py)
+			}
+
+			GeometryShapeContainer::Sphere(geometry) => {
+				Into::<PySphereGeometry>::into(geometry).__repr__(py)
+			}
+			_ => todo!(),
+		}
 	}
 }
 

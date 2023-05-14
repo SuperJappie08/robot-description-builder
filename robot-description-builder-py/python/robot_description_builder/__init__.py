@@ -1,9 +1,18 @@
-from ._internal import KinematicTree, Joint, JointBuilder, JointType, Transform, Robot, MaterialDescriptor
-from . import link
+from ._internal import KinematicTree, Transform, Robot
+from . import link, joint, material
 
 __doc__ = _internal.__doc__
-if hasattr(_internal, "__all__"):
-    __all__ = _internal.__all__
+del _internal
+# if hasattr(_internal, "__all__"):
+#     __all__ = _internal.__all__
+__all__ = [
+    "link",
+    "joint",
+    "material",
+    "KinematicTree",
+    "Transform",
+    "Robot",
+]
 
 # from . import _robot_description_builder
 

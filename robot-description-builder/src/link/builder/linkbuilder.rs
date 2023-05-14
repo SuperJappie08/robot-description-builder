@@ -18,6 +18,8 @@ pub struct LinkBuilder {
 	// All fields are pub(crate) so I can struct initialize in rebuild
 	pub(crate) name: String,
 	/// TODO: Figure out if we make this immutable on a `Link` and only allow editting throug the builder.
+	///
+	/// TODO: Change name or change name of `colliders` make them consitent
 	pub(crate) visual_builders: Vec<VisualBuilder>,
 	pub(crate) colliders: Vec<CollisionBuilder>,
 	/// TODO: Calulate InertialData?
@@ -46,12 +48,28 @@ impl LinkBuilder {
 	}
 
 	/// TODO: Naming not inline with convention
-	pub fn intertial(mut self, inertial: link_data::InertialData) -> Self {
+	/// Not happy with the added `add_` but otherwise name colliding with getter
+	pub fn add_intertial(mut self, inertial: link_data::InertialData) -> Self {
 		self.intertial = Some(inertial);
 		self
 	}
 
-	// ===== NON BUILDER METHODS =====
+	// pub(crate) fn build(self, tree: ArcLock<KinematicTreeData>) -> ArcLock<Link> {
+	//     // Not sure How i wanna do this yet,
+	//     // Maybe with colliders and visuals, stacking and calculating the always calculating the endpoint or not?
+	// }
+
+	/// FIXME: This is temporary, since BuildLink is now a private trait
+	pub fn build_tree(self) -> KinematicTree {
+		BuildLink::build_tree(self)
+	}
+}
+
+/// Non-builder methods
+impl LinkBuilder {
+	pub fn name(&self) -> &String {
+		&self.name
+	}
 
 	pub fn visuals(&self) -> &Vec<VisualBuilder> {
 		&self.visual_builders
@@ -73,14 +91,8 @@ impl LinkBuilder {
 		&self.joints
 	}
 
-	// pub(crate) fn build(self, tree: ArcLock<KinematicTreeData>) -> ArcLock<Link> {
-	//     // Not sure How i wanna do this yet,
-	//     // Maybe with colliders and visuals, stacking and calculating the always calculating the endpoint or not?
-	// }
-
-	/// FIXME: This is temporary, since BuildLink is now a private trait
-	pub fn build_tree(self) -> KinematicTree {
-		BuildLink::build_tree(self)
+	pub fn inertial(&self) -> Option<&link_data::InertialData> {
+		self.intertial.as_ref()
 	}
 }
 

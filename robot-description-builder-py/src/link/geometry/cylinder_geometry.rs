@@ -1,10 +1,10 @@
-use pyo3::{intern, prelude::*};
+use pyo3::{basic::CompareOp, intern, prelude::*};
 
 use robot_description_builder::link_data::geometry::{CylinderGeometry, GeometryInterface};
 
 use super::PyGeometryBase;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[pyclass(name = "CylinderGeometry", extends = PyGeometryBase, module="robot_description_builder.link.geometry")]
 pub struct PyCylinderGeometry {
 	inner: CylinderGeometry,
@@ -26,24 +26,42 @@ impl PyCylinderGeometry {
 		Self::new(radius, length)
 	}
 
-	fn __repr__(slf: &PyCell<Self>) -> PyResult<String> {
+	// pub fn __repr__(&self) -> String {
+	// 	format!(
+	// 		"CylinderGeometry({}, {})",
+	// 		self.inner.radius, self.inner.length
+	// 	)
+	// }
+
+	// TODO: This is not nestable
+	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
 		// let module_name = slf
 		// 	.get_type()
 		// 	.getattr(intern!(slf.py(), "__module__"))?
 		// 	.extract::<&str>()?;
-		let class_name = slf
-			.get_type()
-			.getattr(intern!(slf.py(), "__qualname__"))?
+		let class_name = py
+			.get_type::<Self>()
+			.getattr(intern!(py, "__qualname__"))?
 			.extract::<&str>()?;
-
-		let cylinder = slf.try_borrow()?;
 
 		Ok(format!(
 			// "{}.{}({}, {})",
 			"{}({}, {})",
 			// module_name,
-			 class_name, cylinder.inner.radius, cylinder.inner.length
+			class_name,
+			self.inner.radius,
+			self.inner.length
 		))
+	}
+
+	// Might be excessive due to also being implemented on super class
+	fn __richcmp__(&self, other: &Self, op: CompareOp, py: Python<'_>) -> PyObject {
+		match op {
+			CompareOp::Eq => (self.inner == other.inner).into_py(py),
+			CompareOp::Ne => (self.inner != other.inner).into_py(py),
+			// TODO: Consider implementing Gt and Lt based on volume?
+			_ => py.NotImplemented(),
+		}
 	}
 
 	/// TODO: Maybe change to dict? or remove
@@ -93,4 +111,10 @@ impl PyCylinderGeometry {
 	//     let mut super_class = self_.into_super();
 	//     super_class.inner = data;
 	// }
+}
+
+impl From<CylinderGeometry> for PyCylinderGeometry {
+	fn from(value: CylinderGeometry) -> Self {
+		Self { inner: value }
+	}
 }
