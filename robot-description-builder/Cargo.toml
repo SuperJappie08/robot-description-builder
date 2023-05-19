@@ -3,7 +3,11 @@ name = "robot-description-builder"
 description = "A libary to create (valid) Robot descriptions"
 version = "0.0.1"
 edition = "2021"
+homepage = "https://github.com/SuperJappie08/robot-description-builder"
+repository = "https://github.com/SuperJappie08/robot-description-builder/tree/master/robot-description-builder"
 license = "MIT"
+keywords = ["urdf", "robotics"]
+categories = ["science::robotics", "data-structures", "simulation"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

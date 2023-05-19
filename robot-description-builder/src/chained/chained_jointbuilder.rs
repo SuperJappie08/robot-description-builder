@@ -354,4 +354,23 @@ mod tests {
 
 		assert_eq!(left_leg_builder, right_leg_builder_z.mirror(MirrorAxis::Z));
 	}
+
+	// #[test]
+	// fn chained_escaping() {
+	// 	let tree = Link::builder("root-link").build_tree();
+
+	// 	tree.get_root_link()
+	// 		.try_write()
+	// 		.unwrap()
+	// 		.try_attach_child(
+	// 			Link::builder("child-link")
+	// 				.add_visual(Visual::builder(BoxGeometry::new(3., 4., 5.))),
+	// 			SmartJointBuilder::new_continuous("jointy"),
+	// 		)
+	// 		.unwrap();
+
+	// 	let mut builder = tree.yank_root();
+
+	// 	builder.add_visual(Visual::builder(BoxGeometry::new(2.,3.,4.)));
+	// }
 }

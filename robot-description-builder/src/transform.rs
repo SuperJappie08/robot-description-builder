@@ -1,5 +1,6 @@
 //! INTERNALDOC: This contains module [`Transform`], [`MirrorAxis`] and the core mirror logic.
 // User docs finished
+// TODO: MirrorDocs 
 use itertools::Itertools;
 use nalgebra::{vector, Matrix3, Rotation3, Vector3};
 
@@ -231,13 +232,26 @@ impl From<MirrorAxis> for Matrix3<f32> {
 	}
 }
 
+/// A mirrorable type
+///
+/// Types implementing `Mirror` are able to be [`mirrored`](Mirror::mirrored), given an `mirror_matrix`.
 pub(crate) trait Mirror {
+	/// Returns a mirrored clone of itself
+	///
+	/// TODO: EXAMPLE
 	fn mirrored(&self, mirror_matrix: &Matrix3<f32>) -> Self;
 }
 
+/// A type which can change the `mirror_matrix` for its children.
+///
+/// TODO: IMPROVE/FINISH DOCS
+///
+/// Types implementing `MirrorUpdater` can be [`mirrored`](Mirror::mirrored). As a result of this mirror the `mirror_matrix` changes.
 pub(crate) trait MirrorUpdater: Sized + Mirror {
+	/// Get the updated `mirror_matrix` which should be used for all children.
 	fn update_mirror_matrix(&self, mirror_matrix: &Matrix3<f32>) -> Matrix3<f32>;
 
+	/// Return a mirrored clone of itself and the updated `mirror_matrix`.
 	fn mirrored_update_matrix(&self, mirror_matrix: &Matrix3<f32>) -> (Self, Matrix3<f32>) {
 		(
 			self.mirrored(mirror_matrix),

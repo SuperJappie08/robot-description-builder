@@ -1,3 +1,5 @@
+//! The `Material` System
+//! 
 //! TODO: MODULE DOC
 // DOCS TODO:
 //  - Module
@@ -65,7 +67,9 @@ impl Material {
 		})
 	}
 
-	/// TODO: DOCS
+	/// Register the `Material` in the `KinematicDataTree`.
+	/// 
+	/// TODO: EXPAND
 	pub(crate) fn initialize(&mut self, tree: &KinematicDataTree) -> Result<(), AddMaterialError> {
 		match &mut self.0 {
 			// An unnamed Material does not have to be initialized.
@@ -115,6 +119,9 @@ impl Material {
 		}
 	}
 
+	/// The `name` of the `Material` if any.
+	/// 
+	/// Returns the `Some(name)` for a named [`Material`] and `None` for an unamed [`Material`].
 	pub fn name(&self) -> Option<&String> {
 		match &self.0 {
 			MaterialKind::Named { name, data: _ } => Some(name),
@@ -122,6 +129,10 @@ impl Material {
 		}
 	}
 
+	/// get a refeence to the `MaterialData` as a `MaterialDataReferenceWrapper`
+	/// 
+	/// TODO: EXPAND
+	/// TODO: Consider removing Wrapper for name of MaterialDataReferenceWrapper.	
 	pub fn material_data(&self) -> MaterialDataReferenceWrapper {
 		match &self.0 {
 			MaterialKind::Named { name: _, data } => data.data(),
@@ -129,6 +140,7 @@ impl Material {
 		}
 	}
 
+	/// Reconstructs the builder of the `Material`.
 	pub fn rebuild(&self) -> MaterialDescriptor {
 		let builder = MaterialDescriptor::new_data(self.material_data().try_into().unwrap()); //FIXME: Unwrap not OK
 		match &self.0 {

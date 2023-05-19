@@ -22,3 +22,5 @@ BROKEN:
     - `__repr__` on `PyGeometryBase` is called
 
 joint_state_publisher requires both upper and lower limit for all now continous or fixed types
+
+FOR PYTHON DOCS: https://docs.readthedocs.io/en/stable/tutorial/

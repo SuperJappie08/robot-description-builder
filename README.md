@@ -1,5 +1,19 @@
-# robot-description-builder \[rs\]
+# Robot-description-builder
+> **A way to create (valid) Robot descriptions**
 
+![Lines of code](https://img.shields.io/tokei/lines/github/SuperJappie08/robot-description-builder)
+[![GitHub](https://img.shields.io/github/license/SuperJappie08/robot-description-builder)](LICENSE)
+![Sourcegraph for Repo Reference Count](https://img.shields.io/sourcegraph/rrc/github.com/SuperJappie08/robot-description-builder)
+
+<!-- TODO: ADD DOC LINKS -->
+| Rust 🦀 | Python 🐍 |
+|:-------:|:----------:|
+| ![Crates.io](https://img.shields.io/crates/v/robot-description-builder) ![Crates.io](https://img.shields.io/crates/dr/robot-description-builder) [![Crates.io](https://img.shields.io/crates/l/robot-description-builder)](robot-description-builder/LICENSE) | ![PyPI](https://img.shields.io/pypi/v/robot-description-builder) ![PyPI - Downloads](https://img.shields.io/pypi/dm/robot-description-builder)[![PyPI - License](https://img.shields.io/pypi/l/robot-description-builder)](robot-description-builder-py/LICENSE)|
+
+
+
+---
+# OLD
 This is a temporary read me for the full project.
 This will be cleaned up and improved soon.
 

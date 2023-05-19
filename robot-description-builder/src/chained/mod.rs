@@ -49,6 +49,10 @@ pub struct Chained<Builder: ChainableBuilder>(pub(crate) Builder);
 
 // To allow for calling functions on the internal builders
 // TODO: Figure out if builderfunctions do not free the internal builder from it `Chained<Builder>` Identifier
+//
+// UPDATE: We do not escape however, the functions that consume can not be called either, see test chained::chained_joint_builder::test::chained escaping
+// TODO: Solution?: Add inplace methods???
+//
 // FIXME: but deref should theoretically only be implemented for smartpointers which do not add methods
 // https://rust-lang.github.io/api-guidelines/predictability.html?highlight=deref#only-smart-pointers-implement-deref-and-derefmut-c-deref
 // https://rust-lang.github.io/api-guidelines/predictability.html?highlight=deref#smart-pointers-do-not-add-inherent-methods-c-smart-ptr
