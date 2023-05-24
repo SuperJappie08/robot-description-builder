@@ -45,43 +45,7 @@ impl PyTransform {
 		}
 	}
 
-	// pub fn __repr__(&self) -> PyResult<String> {
-	// 	// This is a valid repr since it would recreate the object if the thing is imported to root
-	// 	let translation: Option<String> = match self.is_some_translation() {
-	// 		true => Some(format!(
-	// 			"x={}, y={}, z={}",
-	// 			self.x.map_or(NONE_STR.into(), |x| x.to_string()),
-	// 			self.y.map_or(NONE_STR.into(), |y| y.to_string()),
-	// 			self.z.map_or(NONE_STR.into(), |z| z.to_string())
-	// 		)),
-	// 		false => None,
-	// 	};
-
-	// 	let rotation: Option<String> = match self.is_some_rotation() {
-	// 		true => Some(format!(
-	// 			"roll={}, pitch={}, yaw={}",
-	// 			self.roll.map_or(NONE_STR.into(), |r| r.to_string()),
-	// 			self.pitch.map_or(NONE_STR.into(), |p| p.to_string()),
-	// 			self.yaw.map_or(NONE_STR.into(), |y| y.to_string())
-	// 		)),
-	// 		false => None,
-	// 	};
-
-	// 	let total = match (translation, rotation) {
-	// 		(Some(translation), Some(rotation)) => format!("{}, {}", translation, rotation),
-	// 		(None, Some(rotation)) => rotation,
-	// 		(Some(translation), None) => translation,
-	// 		(None, None) => String::new(),
-	// 	};
-
-	// 	Ok(format!("Transform({})", total))
-	// }
-
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		// let module_name = py
-		// 	.get_type()
-		// 	.getattr(intern!(py, "__module__"))?
-		// 	.extract::<&str>()?;
 		let class_name = py
 			.get_type::<Self>()
 			.getattr(intern!(py, "__qualname__"))?
@@ -114,7 +78,6 @@ impl PyTransform {
 			(None, None) => String::new(),
 		};
 
-		// Ok(format!("{}.{}({})", module_name, class_name, total))
 		Ok(format!("{}({})", class_name, total))
 	}
 

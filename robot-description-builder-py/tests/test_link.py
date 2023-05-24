@@ -11,6 +11,7 @@ def test_link_builder_new():
     assert len(link_builder.colliders) == 0
     assert link_builder.inertial is None
     assert len(link_builder.joints) == 0
+    assert repr(link_builder) == "LinkBuilder(\'First-Name\', joints=[])"
 
 # def test_link_new():
 #     tree = rdb.Link.new("TestName")

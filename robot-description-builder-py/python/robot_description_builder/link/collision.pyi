@@ -15,7 +15,7 @@ class CollisionBuilder[Geometry]:
 
     def __new__(cls, geometry: Geometry, name: Optional[str] = None,
                 origin: Optional[Transform] = None) -> CollisionBuilder[Geometry]: ...
-
+    def __repr__(self) -> str: ...
     # TODO: EXPAND
 
 class Collision[Geometry]:
@@ -24,4 +24,5 @@ class Collision[Geometry]:
     geometry: Final[Geometry]
     origin: Final[Optional[Transform]]
     
+    def __repr__(self) -> str: ...
     # TODO: EXPAND

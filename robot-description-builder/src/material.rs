@@ -1,5 +1,5 @@
 //! The `Material` System
-//! 
+//!
 //! TODO: MODULE DOC
 // DOCS TODO:
 //  - Module
@@ -68,7 +68,7 @@ impl Material {
 	}
 
 	/// Register the `Material` in the `KinematicDataTree`.
-	/// 
+	///
 	/// TODO: EXPAND
 	pub(crate) fn initialize(&mut self, tree: &KinematicDataTree) -> Result<(), AddMaterialError> {
 		match &mut self.0 {
@@ -120,8 +120,8 @@ impl Material {
 	}
 
 	/// The `name` of the `Material` if any.
-	/// 
-	/// Returns the `Some(name)` for a named [`Material`] and `None` for an unamed [`Material`].
+	///
+	/// Returns the `Some(name)` for a named [`Material`] and `None` for an unnamed [`Material`].
 	pub fn name(&self) -> Option<&String> {
 		match &self.0 {
 			MaterialKind::Named { name, data: _ } => Some(name),
@@ -130,9 +130,9 @@ impl Material {
 	}
 
 	/// get a refeence to the `MaterialData` as a `MaterialDataReferenceWrapper`
-	/// 
+	///
 	/// TODO: EXPAND
-	/// TODO: Consider removing Wrapper for name of MaterialDataReferenceWrapper.	
+	/// TODO: Consider removing Wrapper for name of MaterialDataReferenceWrapper.
 	pub fn material_data(&self) -> MaterialDataReferenceWrapper {
 		match &self.0 {
 			MaterialKind::Named { name: _, data } => data.data(),
@@ -140,12 +140,14 @@ impl Material {
 		}
 	}
 
-	/// Reconstructs the builder of the `Material`.
-	pub fn rebuild(&self) -> MaterialDescriptor {
-		let builder = MaterialDescriptor::new_data(self.material_data().try_into().unwrap()); //FIXME: Unwrap not OK
+	/// Describes the `Material` to reform a `MaterialDescriptor`.
+	///
+	/// TODO: Expand
+	pub fn describe(&self) -> MaterialDescriptor {
+		let descriptor = MaterialDescriptor::new_data(self.material_data().try_into().unwrap()); //FIXME: Unwrap not OK
 		match &self.0 {
-			MaterialKind::Named { name, data: _ } => builder.named(name),
-			MaterialKind::Unnamed(_) => builder,
+			MaterialKind::Named { name, data: _ } => descriptor.named(name),
+			MaterialKind::Unnamed(_) => descriptor,
 		}
 	}
 }

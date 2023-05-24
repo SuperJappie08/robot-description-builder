@@ -1,6 +1,6 @@
 //! INTERNALDOC: This contains module [`Transform`], [`MirrorAxis`] and the core mirror logic.
 // User docs finished
-// TODO: MirrorDocs 
+// TODO: MirrorDocs
 use itertools::Itertools;
 use nalgebra::{vector, Matrix3, Rotation3, Vector3};
 

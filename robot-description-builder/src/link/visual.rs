@@ -71,7 +71,7 @@ impl Visual {
 			name: self.name.clone(),
 			origin: self.origin,
 			geometry: self.geometry.boxed_clone(),
-			material_description: self.material.as_ref().map(|material| material.rebuild()), // UNWRAP???
+			material_description: self.material.as_ref().map(|material| material.describe()),
 		}
 	}
 

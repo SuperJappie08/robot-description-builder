@@ -72,7 +72,7 @@ impl Mirror for CollisionBuilder {
 				.origin
 				.as_ref()
 				.map(|transform| transform.mirrored(mirror_matrix)),
-			geometry: self.geometry.boxed_mirrored(mirror_matrix), // TODO: this only works on non-chiral geometries, non chiral meshes could maybe be scaled to neg
+			geometry: self.geometry.boxed_mirrored(mirror_matrix),
 		}
 	}
 }

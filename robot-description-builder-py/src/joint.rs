@@ -17,45 +17,42 @@ pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
 }
 
 #[derive(Debug, Clone)]
-#[pyclass(name = "JointBuilder")]
-pub struct PyJointBuilder {
-	inner: JointBuilder,
-}
+#[pyclass(name = "JointBuilder", module = "robot_description_builder.joint")]
+pub struct PyJointBuilder(JointBuilder);
 
 #[pymethods]
 impl PyJointBuilder {
 	#[new]
-	fn new(name: String, joint_type: PyJointType) -> PyJointBuilder {
-		// ODDITY: use `Joint::new` because `JointBuilder::new` is private to the crate
-		JointBuilder::new(name, joint_type.into()).into()
+	fn new(name: String, joint_type: PyJointType) -> Self {
+		Self(JointBuilder::new(name, joint_type.into()))
 	}
 
 	#[getter]
 	fn get_name(&self) -> String {
-		self.inner.name().clone()
+		self.0.name().clone()
 	}
 
 	#[getter]
 	fn get_joint_type(&self) -> PyJointType {
-		(*self.inner.joint_type()).into()
+		(*self.0.joint_type()).into()
 	}
 
 	// TODO: Origin
 
 	#[getter]
 	fn get_child(&self) -> Option<PyLinkBuilder> {
-		self.inner.child().cloned().map(Into::into)
+		self.0.child().cloned().map(Into::into)
 	}
 
 	#[getter]
 	fn get_axis(&self) -> Option<(f32, f32, f32)> {
-		self.inner.axis()
+		self.0.axis()
 	}
 
 	#[setter]
 	fn set_axis(&mut self, axis: Option<(f32, f32, f32)>) {
-		match (axis, self.inner.axis().is_some()) {
-			(Some(axis), _) => self.inner.with_axis(axis),
+		match (axis, self.0.axis().is_some()) {
+			(Some(axis), _) => self.0.with_axis(axis),
 			(None, true) => {
 				// This would be easier
 				// self.inner = JointBuilder{
@@ -73,22 +70,35 @@ impl PyJointBuilder {
 	// fn add_origin_offset(&mut self, x: f32, y: f32, z: f32) {
 	// 	self.inner = self.inner.clone().add_origin_offset((x, y, z));
 	// }
+
+	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
+		let class_name = py
+			.get_type::<Self>()
+			.getattr(intern!(py, "__qualname__"))?
+			.extract::<&str>()?;
+		// TODO: EXPAND
+		Ok(format!(
+			"{class_name}({}, {}, ...)",
+			self.get_name(),
+			self.get_joint_type().__pyo3__repr__()
+		))
+	}
 }
 
 impl From<JointBuilder> for PyJointBuilder {
 	fn from(value: JointBuilder) -> Self {
-		Self { inner: value }
+		Self(value)
 	}
 }
 
 impl From<PyJointBuilder> for JointBuilder {
 	fn from(value: PyJointBuilder) -> Self {
-		value.inner
+		value.0
 	}
 }
 
 #[derive(Debug)]
-#[pyclass(name = "Joint", frozen)]
+#[pyclass(name = "Joint", frozen, module = "robot_description_builder.joint")]
 pub struct PyJoint {
 	inner: Weak<RwLock<Joint>>,
 	/// Python weakref to the python parent tree
@@ -155,11 +165,12 @@ impl PyJoint {
 		let binding = self.try_internal()?;
 		let joint = binding.read().unwrap(); // FIXME: Unwrap ok?
 		let mut repr = format!(
-			"{}('{}'",
+			"{}('{}', {}",
 			py.get_type::<Self>()
 				.getattr(intern!(py, "__qualname__"))?
 				.extract::<&str>()?,
-			joint.name()
+			joint.name(),
+			Into::<PyJointType>::into(joint.joint_type()).__pyo3__repr__()
 		);
 
 		// TODO: EXPAND
@@ -188,7 +199,7 @@ impl From<(Arc<RwLock<Joint>>, PyObject)> for PyJoint {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-#[pyclass(name = "JointType")]
+#[pyclass(name = "JointType", module = "robot_description_builder.joint")]
 pub enum PyJointType {
 	Fixed,
 	Revolute,

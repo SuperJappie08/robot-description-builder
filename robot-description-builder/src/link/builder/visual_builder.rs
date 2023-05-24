@@ -92,7 +92,7 @@ impl Mirror for VisualBuilder {
 				.origin
 				.as_ref()
 				.map(|transform| transform.mirrored(mirror_matrix)),
-			geometry: self.geometry.boxed_mirrored(mirror_matrix).into(), // TODO: this only works on non-chiral geometries, FIX described in `CollisionBuilder`
+			geometry: self.geometry.boxed_mirrored(mirror_matrix),
 			material_description: self.material_description.clone(),
 		}
 	}
@@ -153,7 +153,7 @@ impl Clone for VisualBuilder {
 		Self {
 			name: self.name.clone(),
 			origin: self.origin,
-			geometry: self.geometry.boxed_clone().into(),
+			geometry: self.geometry.boxed_clone(),
 			material_description: self.material_description.clone(),
 		}
 	}

@@ -126,6 +126,56 @@ impl PyLinkBuilder {
 		// Not the nicest way, but it works
 		PyKinematicTree::create(self.0.clone().build_tree())
 	}
+
+	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
+		let class_name = py
+			.get_type::<Self>()
+			.getattr(intern!(py, "__qualname__"))?
+			.extract::<&str>()?;
+
+		let mut data = format!("'{}'", self.0.name());
+
+		data += ", joints=[";
+		data += process_results(
+			self.get_joints()
+				.into_iter()
+				.map(|joint_builder| joint_builder.__repr__(py)),
+			|mut iter| iter.join(", "),
+		)?
+		.as_str();
+		data += "]";
+
+		if let Some(inertial) = self.get_inertial() {
+			data += ", inertial=";
+			data += inertial.__repr__(py)?.as_str();
+		}
+
+		if !self.0.visuals().is_empty() {
+			data += ", visuals=[";
+			data += process_results(
+				self.get_visuals()
+					.into_iter()
+					.map(|visual_builder| visual_builder.__repr__(py)),
+				|mut iter| iter.join(", "),
+			)?
+			.as_str();
+			data += "]";
+		}
+
+		if !self.0.colliders().is_empty() {
+			data += ", colliders=[";
+			data += process_results(
+				self.get_colliders()
+					.into_iter()
+					.map(|collision_builder| collision_builder.__repr__(py)),
+				|mut iter| iter.join(", "),
+			)?
+			.as_str();
+			data += "]";
+		}
+
+		Ok(format!("{class_name}({data})"))
+	}
 }
 
 impl From<LinkBuilder> for PyLinkBuilder {
@@ -265,6 +315,7 @@ impl PyLink {
 	// TODO: Add rebuild_chain but the API does not support it yey
 	// TODO: Add attach chain methods
 
+	/// TODO: Maybe rewrite
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
 		let binding = self.try_internal()?;
 		let link = binding.read().unwrap(); // FIXME: Unwrap ok?
@@ -279,7 +330,7 @@ impl PyLink {
 		{
 			let visuals = link.visuals();
 			if !visuals.is_empty() {
-				repr += ", visuals = [";
+				repr += ", visuals=[";
 				repr += process_results(
 					visuals
 						.iter()
@@ -294,7 +345,7 @@ impl PyLink {
 		{
 			let colliders = link.colliders();
 			if !colliders.is_empty() {
-				repr += ", colliders = [";
+				repr += ", colliders=[";
 				repr += process_results(
 					colliders
 						.iter()
@@ -308,7 +359,7 @@ impl PyLink {
 
 		{
 			if let Some(inertial) = link.inertial() {
-				repr += ", inertial = ";
+				repr += ", inertial=";
 				repr += PyInertial::from(*inertial).__repr__(py)?.as_str();
 			}
 		}

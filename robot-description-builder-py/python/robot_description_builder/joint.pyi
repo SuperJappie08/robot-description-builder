@@ -23,8 +23,11 @@ class JointBuilder:
     # TODO: safety_controller: Any # TODO: IMPLEMENT
 
     def __new__(cls, name: str, type: JointType) -> JointBuilder: ...
+    def __repr__(self) -> str: ...
 
 # TODO: mark as frozen
+
+
 class Joint:
     name: Final[str]
     joint_type: Final[JointType]
@@ -38,7 +41,8 @@ class Joint:
     # TODO: limit: Any # TODO: IMPLEMENT
     # TODO: mimic: Any # TODO: IMPLEMENT
     # TODO: safety_controller: Any # TODO: IMPLEMENT
-    pass
+
+    def __repr__(self) -> str: ...
 
 
 class JointType(Enum):

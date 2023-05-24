@@ -82,6 +82,28 @@ impl PyCollisionBuilder {
 	fn get_geometry(&self) -> PyGeometryBase {
 		self.0.geometry().boxed_clone().into()
 	}
+
+	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
+		let class_name = py
+			.get_type::<Self>()
+			.getattr(intern!(py, "__qualname__"))?
+			.extract::<&str>()?;
+
+		let mut data = match self.0.name() {
+			Some(name) => format!("name='{name}', "),
+			None => String::new(),
+		};
+
+		data += "geometry=";
+		data += self.get_geometry().__repr__(py)?.as_str();
+
+		if let Some(transform) = self.get_origin() {
+			data += ", origin=";
+			data += transform.__repr__(py)?.as_str();
+		}
+
+		Ok(format!("{class_name}({data})"))
+	}
 }
 
 impl From<PyCollisionBuilder> for CollisionBuilder {
@@ -107,27 +129,41 @@ pub struct PyCollision {
 
 #[pymethods]
 impl PyCollision {
-	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		let mut repr = format!(
-			"{}(name = ",
-			py.get_type::<Self>()
-				.getattr(intern!(py, "__qualname__"))?
-				.extract::<&str>()?
-		);
+	#[getter]
+	fn get_name(&self) -> Option<String> {
+		self.inner.name().cloned()
+	}
 
-		if let Some(name) = self.inner.name() {
-			repr += format!("'{}'", name).as_str();
-		} else {
-			repr += "None"
+	#[getter]
+	fn get_geometry(&self) -> PyGeometryBase {
+		self.inner.geometry().boxed_clone().into()
+	}
+
+	#[getter]
+	fn get_origin(&self) -> Option<PyTransform> {
+		self.inner.origin().copied().map(Into::into)
+	}
+
+	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
+		let class_name = py
+			.get_type::<Self>()
+			.getattr(intern!(py, "__qualname__"))?
+			.extract::<&str>()?;
+
+		let mut data = match self.inner.name() {
+			Some(name) => format!("name='{name}', "),
+			None => String::new(),
+		};
+
+		data += "geometry=";
+		data += self.get_geometry().__repr__(py)?.as_str();
+
+		if let Some(transform) = self.get_origin() {
+			data += ", origin=";
+			data += transform.__repr__(py)?.as_str();
 		}
 
-		repr += &format!(
-			", geometry = {}",
-			Into::<PyGeometryBase>::into(self.inner.geometry().boxed_clone()).__repr__(py)?
-		);
-
-		repr += ")";
-		Ok(repr)
+		Ok(format!("{class_name}({data})"))
 	}
 }
 

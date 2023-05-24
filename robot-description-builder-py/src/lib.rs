@@ -1,7 +1,6 @@
 mod joint;
 mod link;
 mod material;
-mod material_descriptor;
 mod transform;
 mod utils;
 
@@ -10,7 +9,7 @@ use std::sync::Weak;
 use itertools::Itertools;
 use joint::*;
 use link::*;
-use material_descriptor::PyMaterialDescriptor;
+use material::PyMaterial;
 
 use pyo3::{intern, prelude::*};
 
@@ -110,6 +109,10 @@ impl PyKinematicTree {
 			.map(|joint| (joint, self.me.clone()).into())
 	}
 
+	fn get_material(&self, name: String) -> Option<PyMaterial> {
+		self.inner.get_material(&name).map(Into::into)
+	}
+
 	fn yank_link(&self, name: String) -> Option<PyLinkBuilder> {
 		self.inner
 			.yank_link(&name)
@@ -198,8 +201,7 @@ fn rdf_builder_py(py: Python, m: &PyModule) -> PyResult<()> {
 
 	transform::init_module(py, m)?;
 
-	// m.add_class::<PyMaterial>()?;
-	m.add_class::<PyMaterialDescriptor>()?;
+	material::init_module(py, m)?;
 
 	joint::init_module(py, m)?;
 

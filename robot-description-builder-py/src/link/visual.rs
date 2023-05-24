@@ -3,7 +3,10 @@ use pyo3::{intern, prelude::*};
 use robot_description_builder::{link_data, linkbuilding::VisualBuilder};
 
 use super::geometry::PyGeometryBase;
-use crate::{material_descriptor::PyMaterialDescriptor, transform::PyTransform};
+use crate::{
+	material::{PyMaterial, PyMaterialDescriptor},
+	transform::PyTransform,
+};
 
 pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
 	// let module = PyModule::new(py, "visual")?;
@@ -109,6 +112,33 @@ impl PyVisualBuilder {
 			(None, false) => (),
 		}
 	}
+
+	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
+		let class_name = py
+			.get_type::<Self>()
+			.getattr(intern!(py, "__qualname__"))?
+			.extract::<&str>()?;
+
+		let mut data = match self.0.name() {
+			Some(name) => format!("name='{name}', "),
+			None => String::new(),
+		};
+
+		data += "geometry=";
+		data += self.get_geometry().__repr__(py)?.as_str();
+
+		if let Some(transform) = self.get_origin() {
+			data += ", origin=";
+			data += transform.__repr__(py)?.as_str();
+		}
+
+		if let Some(material_descriptor) = self.get_material() {
+			data += ", material=";
+			data += material_descriptor.__repr__(py)?.as_str();
+		}
+
+		Ok(format!("{class_name}({data})"))
+	}
 }
 
 impl From<VisualBuilder> for PyVisualBuilder {
@@ -125,7 +155,11 @@ impl From<PyVisualBuilder> for VisualBuilder {
 
 /// Don't know if CLone is a good idea?
 #[derive(Debug, Clone)]
-#[pyclass(name = "Visual", module = "robot_description_builder.link.visual")]
+#[pyclass(
+	name = "Visual",
+	module = "robot_description_builder.link.visual",
+	frozen
+)]
 pub struct PyVisual {
 	inner: link_data::Visual,
 }
@@ -138,39 +172,45 @@ impl PyVisual {
 	}
 
 	#[getter]
+	fn get_geometry(&self) -> PyGeometryBase {
+		self.inner.geometry().boxed_clone().into()
+	}
+
+	#[getter]
 	fn get_origin(&self) -> Option<PyTransform> {
 		self.inner.origin().copied().map(Into::into)
 	}
 
+	#[getter]
+	fn get_material(&self) -> Option<PyMaterial> {
+		self.inner.material().cloned().map(Into::into)
+	}
+
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		let mut repr = format!(
-			"{}(name = ",
-			py.get_type::<Self>()
-				.getattr(intern!(py, "__qualname__"))?
-				.extract::<&str>()?
-		);
+		let class_name = py
+			.get_type::<Self>()
+			.getattr(intern!(py, "__qualname__"))?
+			.extract::<&str>()?;
 
-		if let Some(name) = self.inner.name() {
-			repr += format!("'{}'", name).as_str();
-		} else {
-			repr += "None"
+		let mut data = match self.inner.name() {
+			Some(name) => format!("name='{name}', "),
+			None => String::new(),
+		};
+
+		data += "geometry=";
+		data += self.get_geometry().__repr__(py)?.as_str();
+
+		if let Some(transform) = self.get_origin() {
+			data += ", origin=";
+			data += transform.__repr__(py)?.as_str();
 		}
 
-		repr += &format!(
-			", geometry = {}",
-			Into::<PyGeometryBase>::into(self.inner.geometry().boxed_clone()).__repr__(py)?
-		);
-
-		if let Some(material) = self.inner.material() {
-			repr += &format!(
-				", material = {}",
-				// TODO: Figure out if this should be `PyMaterial` or `PyMaterialDescriptor`
-				Into::<PyMaterialDescriptor>::into(material.rebuild()).__repr__(py)?
-			);
+		if let Some(material) = self.get_material() {
+			data += ", material=";
+			data += material.__repr__(py)?.as_str();
 		}
 
-		repr += ")";
-		Ok(repr)
+		Ok(format!("{class_name}({data})"))
 	}
 }
 

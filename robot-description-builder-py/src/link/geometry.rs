@@ -2,7 +2,7 @@ mod box_geometry;
 mod cylinder_geometry;
 mod sphere_geometry;
 
-use pyo3::{basic::CompareOp, prelude::*};
+use pyo3::{basic::CompareOp, exceptions::PyNotImplementedError, prelude::*};
 use robot_description_builder::link_data::geometry::{GeometryInterface, GeometryShapeContainer};
 
 pub use box_geometry::PyBoxGeometry;
@@ -63,11 +63,12 @@ impl PyGeometryBase {
 			GeometryShapeContainer::Cylinder(geometry) => {
 				Into::<PyCylinderGeometry>::into(geometry).__repr__(py)
 			}
-
 			GeometryShapeContainer::Sphere(geometry) => {
 				Into::<PySphereGeometry>::into(geometry).__repr__(py)
 			}
-			_ => todo!(),
+			other => Err(PyNotImplementedError::new_err(format!(
+				"__repr__ for {other:?} via GeometryBase is not implemented yet."
+			))),
 		}
 	}
 }
