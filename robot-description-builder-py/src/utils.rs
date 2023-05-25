@@ -1,47 +1,47 @@
-// use std::sync::{PoisonError, RwLock, Arc, Weak};
+use std::sync::{PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
-// use pyo3::PyErr;
+use pyo3::{PyErr, PyResult};
 
-// #[derive(Debug)]
-// pub struct ErroredRead<T>(pub T);
+pub trait PoisonErrorHandler<T>: Into<Result<T, PoisonError<T>>> {
+	fn to_pyerr(self) -> Result<T, PyErr>;
+}
 
-// #[inline]
-// pub(crate) fn errored_read_lock<T>(
-// 	errored_lock: &Arc<RwLock<T>>,
-// ) -> PoisonError<ErroredRead<Arc<RwLock<T>>>> {
-// 	PoisonError::new(ErroredRead(Arc::clone(errored_lock)))
-// }
+impl<'a, T> PoisonErrorHandler<RwLockReadGuard<'a, T>>
+	for Result<RwLockReadGuard<'a, T>, PoisonError<RwLockReadGuard<'a, T>>>
+{
+	fn to_pyerr(self) -> Result<RwLockReadGuard<'a, T>, PyErr> {
+		self.map_err(|_| {
+			// pyo3::exceptions::PyAttributeError::new_err("Lock Poisoned")
+			pyo3::exceptions::PyRuntimeError::new_err(
+				"Tried to read a Lock, which poissoned by a panic.", //, in this Rust version this is unrecoverable.",
+			)
+		})
+	}
+}
 
-// impl<T> PartialEq for ErroredRead<Arc<T>> {
-// 	fn eq(&self, other: &Self) -> bool {
-// 		Arc::ptr_eq(&self.0, &other.0)
-// 	}
-// }
+impl<'a, T> PoisonErrorHandler<RwLockWriteGuard<'a, T>>
+	for Result<RwLockWriteGuard<'a, T>, PoisonError<RwLockWriteGuard<'a, T>>>
+{
+	fn to_pyerr(self) -> Result<RwLockWriteGuard<'a, T>, PyErr> {
+		self.map_err(|_| {
+			pyo3::exceptions::PyRuntimeError::new_err(
+				"Tried to write to Lock, which poissoned by a panic.", //, in this Rust version this is unrecoverable.",
+			)
+		})
+	}
+}
 
-// impl<T> PartialEq for ErroredRead<Weak<T>> {
-// 	fn eq(&self, other: &Self) -> bool {
-// 		Weak::ptr_eq(&self.0, &other.0)
-// 	}
-// }
+pub trait PyReadWriteable<T> {
+	fn py_read(&self) -> PyResult<RwLockReadGuard<'_, T>>;
+	fn py_write(&self) -> PyResult<RwLockWriteGuard<'_, T>>;
+}
 
-// #[derive(Debug)]
-// pub struct ErroredWrite<T>(pub T);
+impl<T> PyReadWriteable<T> for RwLock<T> {
+	fn py_read(&self) -> PyResult<RwLockReadGuard<'_, T>> {
+		self.read().to_pyerr()
+	}
 
-// #[inline]
-// pub(crate) fn errored_write_lock<T>(
-// 	errored_lock: &Arc<RwLock<T>>,
-// ) -> PoisonError<ErroredWrite<Arc<RwLock<T>>>> {
-// 	PoisonError::new(ErroredWrite(Arc::clone(errored_lock)))
-// }
-
-// impl<T> PartialEq for ErroredWrite<Arc<T>> {
-// 	fn eq(&self, other: &Self) -> bool {
-// 		Arc::ptr_eq(&self.0, &other.0)
-// 	}
-// }
-
-// impl<T> PartialEq for ErroredWrite<Weak<T>> {
-// 	fn eq(&self, other: &Self) -> bool {
-// 		Weak::ptr_eq(&self.0, &other.0)
-// 	}
-// }
+	fn py_write(&self) -> PyResult<RwLockWriteGuard<'_, T>> {
+		self.write().to_pyerr()
+	}
+}

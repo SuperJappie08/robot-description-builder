@@ -11,6 +11,10 @@ use quick_xml::events::BytesText;
 /// <https://github.com/ros-controls/ros_control/wiki/hardware_interface#hardware-interfaces>
 ///
 /// TODO: Maybe add other variant with argument
+///
+/// <https://github.com/ros-controls/ros_control/wiki/hardware_interface>
+///
+/// `gazebo_ros_control` does not support multiple HardwareInterfaces for a Joint in one transmission <https://answers.ros.org/question/235040/gazebo_ros_control-lwa4p/>
 #[non_exhaustive]
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum TransmissionHardwareInterface {

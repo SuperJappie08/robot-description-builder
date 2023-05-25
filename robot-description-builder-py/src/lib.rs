@@ -2,6 +2,7 @@ mod joint;
 mod link;
 mod material;
 mod transform;
+mod transmission;
 mod utils;
 
 use std::sync::Weak;
@@ -16,6 +17,8 @@ use pyo3::{intern, prelude::*};
 use robot_description_builder::{
 	linkbuilding::LinkBuilder, KinematicInterface, KinematicTree, Robot,
 };
+use transmission::PyTransmission;
+use utils::PyReadWriteable;
 
 #[derive(Debug)]
 #[pyclass(name = "Robot")]
@@ -113,6 +116,12 @@ impl PyKinematicTree {
 		self.inner.get_material(&name).map(Into::into)
 	}
 
+	fn get_transmission(&self, name: String) -> Option<PyTransmission> {
+		self.inner
+			.get_transmission(&name)
+			.map(|transmission| (transmission, self.me.clone()).into())
+	}
+
 	fn yank_link(&self, name: String) -> Option<PyLinkBuilder> {
 		self.inner
 			.yank_link(&name)
@@ -127,11 +136,11 @@ impl PyKinematicTree {
 	}
 
 	/// FOR DEBUG
-	fn print_refs(&self) -> String {
-		self.inner
+	fn print_refs(&self) -> PyResult<String> {
+		Ok(self
+			.inner
 			.get_links()
-			.read()
-			.unwrap()
+			.py_read()?
 			.iter()
 			.sorted_by_key(|(k, _)| (*k).clone())
 			.map(|(name, link)| {
@@ -142,7 +151,7 @@ impl PyKinematicTree {
 					Weak::strong_count(link)
 				)
 			})
-			.join("\n")
+			.join("\n"))
 	}
 }
 
@@ -204,6 +213,8 @@ fn rdf_builder_py(py: Python, m: &PyModule) -> PyResult<()> {
 	material::init_module(py, m)?;
 
 	joint::init_module(py, m)?;
+
+	transmission::init_module(py, m)?;
 
 	Ok(())
 }

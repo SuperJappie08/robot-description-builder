@@ -17,6 +17,7 @@ use visual::{PyVisual, PyVisualBuilder};
 
 use crate::{
 	joint::{PyJoint, PyJointBuilder},
+	utils::PyReadWriteable,
 	PyKinematicTree,
 };
 
@@ -219,7 +220,7 @@ impl PyLink {
 	/// The name or identifier of the `Link`
 	#[getter]
 	fn get_name(&self) -> PyResult<String> {
-		Ok(self.try_internal()?.read().unwrap().name().clone()) // TODO: Figure out if unwrap is Ok here?
+		Ok(self.try_internal()?.py_read()?.name().clone())
 	}
 
 	#[getter]
@@ -227,7 +228,7 @@ impl PyLink {
 	///
 	/// This can be either a `KinematicTree` or a `Joint` depending if this `Link` is the root of a tree or not.  
 	fn get_parent(slf: PyRef<'_, Self>) -> PyResult<Py<PyAny>> {
-		match slf.try_internal()?.read().unwrap().parent() {
+		match slf.try_internal()?.py_read()?.parent() {
 			LinkParent::KinematicTree(_) => Ok(slf.tree.clone()),
 			LinkParent::Joint(joint) => Ok(Into::<PyJoint>::into((
 				Weak::upgrade(joint).unwrap(),
@@ -239,11 +240,9 @@ impl PyLink {
 
 	#[getter]
 	fn get_joints(&self) -> PyResult<Vec<PyJoint>> {
-		// TODO: Still some unwraps?
 		Ok(self
 			.try_internal()?
-			.read()
-			.unwrap()
+			.py_read()?
 			.joints()
 			.iter()
 			.map(|joint| Into::<PyJoint>::into((Arc::downgrade(joint), self.tree.clone())))
@@ -254,8 +253,7 @@ impl PyLink {
 	fn get_inertial(&self) -> PyResult<Option<PyInertial>> {
 		Ok(self
 			.try_internal()?
-			.read()
-			.unwrap()
+			.py_read()?
 			.inertial()
 			.cloned()
 			.map(Into::into))
@@ -263,11 +261,9 @@ impl PyLink {
 
 	#[getter]
 	fn get_visuals(&self) -> PyResult<Vec<PyVisual>> {
-		// TODO: Still some unwraps?
 		Ok(self
 			.try_internal()?
-			.read()
-			.unwrap()
+			.py_read()?
 			.visuals()
 			.iter()
 			.cloned()
@@ -277,11 +273,9 @@ impl PyLink {
 
 	#[getter]
 	fn get_colliders(&self) -> PyResult<Vec<PyCollision>> {
-		// TODO: Still some unwraps?
 		Ok(self
 			.try_internal()?
-			.read()
-			.unwrap()
+			.py_read()?
 			.colliders()
 			.iter()
 			.cloned()
@@ -291,8 +285,7 @@ impl PyLink {
 
 	/// Not Chained
 	fn rebuild(&self) -> PyResult<PyLinkBuilder> {
-		// TODO: Unwrap?
-		Ok(self.try_internal()?.read().unwrap().rebuild().into())
+		Ok(self.try_internal()?.py_read()?.rebuild().into())
 	}
 
 	fn try_attach_child(
@@ -301,8 +294,7 @@ impl PyLink {
 		joint_builder: PyJointBuilder,
 	) -> PyResult<()> {
 		self.try_internal()?
-			.write()
-			.map_err(|_| pyo3::exceptions::PyAttributeError::new_err("Lock Poisoned"))?
+			.py_write()?
 			.try_attach_child(
 				Into::<LinkBuilder>::into(link_builder),
 				Into::<JointBuilder>::into(joint_builder),
@@ -318,7 +310,7 @@ impl PyLink {
 	/// TODO: Maybe rewrite
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
 		let binding = self.try_internal()?;
-		let link = binding.read().unwrap(); // FIXME: Unwrap ok?
+		let link = binding.py_read()?;
 		let mut repr = format!(
 			"{}('{}'",
 			py.get_type::<Self>()

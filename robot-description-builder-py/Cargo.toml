@@ -13,4 +13,4 @@ crate-type = ["cdylib"]
 [dependencies]
 itertools = "0.10.5"
 pyo3 = "0.18.3"
-robot-description-builder = { path = "../robot-description-builder" }
+robot-description-builder = { path = "../robot-description-builder", features=["wrapper"] }

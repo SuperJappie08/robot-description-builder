@@ -48,8 +48,8 @@ class Joint:
 class JointType(Enum):
     """FIXME: This does not work like build in enum but is is clear for the typechecking"""
     Fixed = auto()
-    Revolute = auto(),
-    Continuous = auto(),
-    Prismatic = auto(),
-    Floating = auto(),
-    Planar = auto(),
+    Revolute = auto()
+    Continuous = auto()
+    Prismatic = auto()
+    Floating = auto()
+    Planar = auto()

@@ -6,6 +6,7 @@ use robot_description_builder::{Joint, JointBuilder, JointType};
 use crate::{
 	link::{PyLink, PyLinkBuilder},
 	transform::PyTransform,
+	utils::PyReadWriteable,
 };
 
 pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
@@ -120,35 +121,35 @@ impl PyJoint {
 impl PyJoint {
 	#[getter]
 	fn get_name(&self) -> PyResult<String> {
-		Ok(self.try_internal()?.read().unwrap().name().clone()) // TODO: Figure out if unwrap is Ok here?
+		Ok(self.try_internal()?.py_read()?.name().clone())
 	}
 
 	#[getter]
 	fn get_joint_type(&self) -> PyResult<PyJointType> {
-		Ok(self.try_internal()?.read().unwrap().joint_type().into()) // TODO: Figure out if unwrap is Ok here?
+		Ok(self.try_internal()?.py_read()?.joint_type().into())
 	}
 
 	#[getter]
 	fn get_parent_link(&self) -> PyResult<PyLink> {
 		Ok((
-			self.try_internal()?.read().unwrap().parent_link(),
+			self.try_internal()?.py_read()?.parent_link(),
 			self.tree.clone(),
 		)
-			.into()) // TODO: Figure out if unwrap is Ok here?
+			.into())
 	}
 
 	#[getter]
 	fn get_child_link(&self) -> PyResult<PyLink> {
 		Ok((
-			self.try_internal()?.read().unwrap().child_link(),
+			self.try_internal()?.py_read()?.child_link(),
 			self.tree.clone(),
 		)
-			.into()) // TODO: Figure out if unwrap is Ok here?
+			.into())
 	}
 
 	#[getter]
 	fn get_origin(&self) -> PyResult<Option<PyTransform>> {
-		let origin = *self.try_internal()?.read().unwrap().origin(); // TODO: Figure out if unwrap is Ok here?
+		let origin = *self.try_internal()?.py_read()?.origin();
 		match origin.contains_some() {
 			true => Ok(Some(origin.into())),
 			false => Ok(None),
@@ -157,13 +158,12 @@ impl PyJoint {
 
 	#[getter]
 	fn get_axis(&self) -> PyResult<Option<(f32, f32, f32)>> {
-		// TODO: Figure out if unwrap is Ok here?
-		Ok(self.try_internal()?.read().unwrap().axis())
+		Ok(self.try_internal()?.py_read()?.axis())
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
 		let binding = self.try_internal()?;
-		let joint = binding.read().unwrap(); // FIXME: Unwrap ok?
+		let joint = binding.py_read()?;
 		let mut repr = format!(
 			"{}('{}', {}",
 			py.get_type::<Self>()

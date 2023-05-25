@@ -4,6 +4,8 @@ use robot_description_builder::material::{
 	Material, MaterialDescriptor,
 };
 
+use crate::utils::PyReadWriteable;
+
 pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
 	module.add_class::<PyMaterial>()?;
 	module.add_class::<PyMaterialDescriptor>()?;
@@ -136,36 +138,11 @@ impl PyMaterial {
 
 	#[getter]
 	fn get_data<'py>(&self, py: Python<'py>) -> PyResult<&'py PyAny> {
-		// let data = match self.0.material_data() {
-		// 	MaterialDataReferenceWrapper::Direct(data) => data.clone(),
-		// 	MaterialDataReferenceWrapper::Global(arc_data) => arc_data
-		// 		.read()
-		// 		.map_err(|_| pyo3::exceptions::PyAttributeError::new_err("Lock Poisoned"))?
-		// 		.clone(),
-		// };
-
-		// let material_module = py.import(intern!(py, "robot_description_builder.material"))?;
-
-		// match data {
-		// 	MaterialData::Color(r, g, b, a) => {
-		// 		let color = material_module.getattr(intern!(py, "Color"))?;
-		// 		color.call_method1(intern!(py, "__new__"), (color, r, g, b, a))
-		// 	}
-		// 	MaterialData::Texture(filename) => {
-		// 		let path = material_module.getattr(intern!(py, "TexturePath"))?;
-		// 		path.call1((filename,))
-		// 	}
-		// }
-
 		match self.0.material_data() {
 			MaterialDataReferenceWrapper::Direct(data) => material_data2py_object(data, py),
-			MaterialDataReferenceWrapper::Global(arc_data) => material_data2py_object(
-				&arc_data
-					.read()
-					.map_err(|_| pyo3::exceptions::PyAttributeError::new_err("Lock Poisoned"))?
-					.clone(),
-				py,
-			),
+			MaterialDataReferenceWrapper::Global(arc_data) => {
+				material_data2py_object(&arc_data.py_read()?.clone(), py)
+			}
 		}
 	}
 
@@ -184,11 +161,9 @@ impl PyMaterial {
 		data += "data=";
 		data += match self.0.material_data() {
 			MaterialDataReferenceWrapper::Direct(data) => repr_material_data(data),
-			MaterialDataReferenceWrapper::Global(arc_data) => repr_material_data(
-				&*arc_data
-					.read()
-					.map_err(|_| pyo3::exceptions::PyAttributeError::new_err("Lock Poisoned"))?,
-			),
+			MaterialDataReferenceWrapper::Global(arc_data) => {
+				repr_material_data(&*arc_data.py_read()?)
+			}
 		}
 		.as_str();
 

@@ -72,10 +72,13 @@ pub(crate) mod transmission_builder_state {
 	}
 }
 
-use transmission_builder_state::{
-	NoActuator, NoJoints, TransmissionActuatorTrait, TransmissionJointTrait, WithActuator,
-	WithJoints,
-};
+#[cfg(feature = "wrapper")]
+pub use transmission_builder_state::{NoActuator, NoJoints, WithActuator, WithJoints};
+
+#[cfg(not(feature = "wrapper"))]
+use transmission_builder_state::{NoActuator, NoJoints, WithActuator, WithJoints};
+
+use transmission_builder_state::{TransmissionActuatorTrait, TransmissionJointTrait};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct TransmissionBuilder<Joints, Actuators>

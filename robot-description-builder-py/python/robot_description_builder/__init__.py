@@ -1,5 +1,5 @@
-from ._internal import KinematicTree, Transform, Robot
-from . import link, joint, material
+from . import joint, link, material, transmission
+from ._internal import KinematicTree, Robot, Transform
 
 __doc__ = _internal.__doc__
 del _internal
@@ -9,6 +9,7 @@ __all__ = [
     "link",
     "joint",
     "material",
+    "transmission",
     "KinematicTree",
     "Transform",
     "Robot",
