@@ -24,3 +24,5 @@ BROKEN:
 joint_state_publisher requires both upper and lower limit for all now continous or fixed types
 
 FOR PYTHON DOCS: https://docs.readthedocs.io/en/stable/tutorial/
+
+Transmission Rewrite, due to not documentation of URDF being incorrect https://github.com/ros-controls/ros_control/blob/noetic-devel/transmission_interface/src/simple_transmission_loader.cpp#L42

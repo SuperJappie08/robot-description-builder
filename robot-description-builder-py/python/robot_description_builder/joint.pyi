@@ -1,12 +1,12 @@
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Final, Optional, Tuple
+from typing import TYPE_CHECKING, Final, Optional, Tuple
 
 # Need to use typing.Tuple instead of tuple because Python 3.8 is supported (Supported since Python 3.9)
 # Can not use typing.Self until python 3.11
 
 if TYPE_CHECKING:
     from robot_description_builder import Transform
-    from robot_description_builder.link import LinkBuilder, Link
+    from robot_description_builder.link import Link, LinkBuilder
 
 
 class JointBuilder:

@@ -29,7 +29,7 @@ impl PyJointBuilder {
 	}
 
 	#[getter]
-	fn get_name(&self) -> String {
+	pub fn get_name(&self) -> String {
 		self.0.name().clone()
 	}
 
@@ -98,8 +98,8 @@ impl From<PyJointBuilder> for JointBuilder {
 	}
 }
 
-#[derive(Debug)]
-#[pyclass(name = "Joint", frozen, module = "robot_description_builder.joint")]
+#[derive(Debug, Clone)]
+#[pyclass(name = "Joint", module = "robot_description_builder.joint", frozen)]
 pub struct PyJoint {
 	inner: Weak<RwLock<Joint>>,
 	/// Python weakref to the python parent tree
@@ -120,7 +120,7 @@ impl PyJoint {
 #[pymethods]
 impl PyJoint {
 	#[getter]
-	fn get_name(&self) -> PyResult<String> {
+	pub fn get_name(&self) -> PyResult<String> {
 		Ok(self.try_internal()?.py_read()?.name().clone())
 	}
 

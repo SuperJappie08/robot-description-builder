@@ -5,6 +5,21 @@ mod transform;
 mod transmission;
 mod utils;
 
+#[macro_export]
+macro_rules! impl_into_py_callback {
+	($type:ty) => {
+		impl pyo3::callback::IntoPyCallbackOutput<*mut pyo3::ffi::PyObject> for $type
+		where
+			$type: Sized + $crate::utils::TryIntoRefPyAny + $crate::utils::TryIntoPy<PyObject>,
+		{
+			#[inline]
+			fn convert(self, py: Python<'_>) -> PyResult<*mut pyo3::ffi::PyObject> {
+				Ok($crate::utils::TryIntoPy::<PyObject>::try_into_py(self, py)?.into_ptr())
+			}
+		}
+	};
+}
+
 use std::sync::Weak;
 
 use itertools::Itertools;

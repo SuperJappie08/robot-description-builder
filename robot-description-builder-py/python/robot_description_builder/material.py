@@ -5,10 +5,12 @@ from ._internal import Material, MaterialDescriptor
 
 class Color(NamedTuple):
     """TODO: DOCS"""
+
     r: float
     g: float
     b: float
-    a: float = 1.
+    a: float = 1.0
+
 
 # TODO: Maybe move to actual file in order to support this
 # Maybe this one could also be a type alias
@@ -18,15 +20,13 @@ class Color(NamedTuple):
 
 class TexturePath(NamedTuple):
     """TODO: is this better? than NewType"""
+
     path: str
 
     def __repr__(self) -> str:
         return self.__class__.__name__ + f"('{self.path}')"
 
 
-__all__ = [
-    "Material",
-    "MaterialDescriptor",
-    "Color",
-    "TexturePath"
-]
+del NamedTuple
+
+__all__ = ["Material", "MaterialDescriptor", "Color", "TexturePath"]

@@ -1,10 +1,13 @@
-use pyo3::{exceptions::PyTypeError, intern, prelude::*};
+use pyo3::{intern, prelude::*};
 use robot_description_builder::material::{
 	data::{MaterialData, MaterialDataReferenceWrapper},
 	Material, MaterialDescriptor,
 };
 
-use crate::utils::PyReadWriteable;
+use crate::{
+	impl_into_py_callback,
+	utils::{PyReadWriteable, TryIntoRefPyAny},
+};
 
 pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
 	module.add_class::<PyMaterial>()?;
@@ -19,17 +22,71 @@ fn repr_material_data(data: &MaterialData) -> String {
 	}
 }
 
-fn material_data2py_object<'py>(data: &MaterialData, py: Python<'py>) -> PyResult<&'py PyAny> {
-	let material_module = py.import(intern!(py, "robot_description_builder.material"))?;
+#[derive(Debug, Clone, FromPyObject)]
+enum PyMaterialData {
+	#[pyo3(annotation = "Color")]
+	Color(f32, f32, f32, f32),
+	#[pyo3(annotation = "TexturePath")]
+	TexturePath { path: String },
+}
 
-	match data {
-		MaterialData::Color(r, g, b, a) => {
-			let color = material_module.getattr(intern!(py, "Color"))?;
-			color.call_method1(intern!(py, "__new__"), (color, *r, *g, *b, *a))
+// impl IntoPy<PyObject> for PyMaterialData {
+// 	fn into_py(self, py: Python<'_>) -> PyObject {
+// 		// Can unwrap, the things should be there
+// 		let module = py
+// 			.import(intern!(py, "robot_description_builder.material"))
+// 			.unwrap();
+
+// 		match self {
+// 			PyMaterialData::Color(red, green, blue, alpha) => {
+// 				let py_color = module.getattr(intern!(py, "Color")).unwrap();
+// 				py_color
+// 					.call_method1(intern!(py, "__new__"), (py_color, red, green, blue, alpha))
+// 					.unwrap()
+// 					.to_object(py)
+// 			}
+// 			PyMaterialData::TexturePath { path } => {
+// 				let py_texture_path = module.getattr(intern!(py, "TexturePath")).unwrap();
+// 				py_texture_path
+// 					.call_method1(intern!(py, "__new__"), (py_texture_path, path))
+// 					.unwrap()
+// 					.to_object(py)
+// 			}
+// 		}
+// 	}
+// }
+
+impl TryIntoRefPyAny for PyMaterialData {
+	fn try_into_py_ref(self, py: Python<'_>) -> PyResult<&PyAny> {
+		let module = py.import(intern!(py, "robot_description_builder.material"))?;
+
+		match self {
+			PyMaterialData::Color(red, green, blue, alpha) => {
+				let py_color = module.getattr(intern!(py, "Color"))?;
+				py_color.call_method1(intern!(py, "__new__"), (py_color, red, green, blue, alpha))
+			}
+			PyMaterialData::TexturePath { path } => {
+				let py_texture_path = module.getattr(intern!(py, "TexturePath"))?;
+				py_texture_path.call_method1(intern!(py, "__new__"), (py_texture_path, path))
+			}
 		}
-		MaterialData::Texture(filename) => {
-			let texture_path = material_module.getattr(intern!(py, "TexturePath"))?;
-			texture_path.call1((filename,))
+	}
+}
+
+// impl IntoPy<PyObject> for PyMaterialData {
+// 	fn into_py(self, py: Python<'_>) -> PyObject {
+// 		// It should not be able to panic??
+// 		self.try_into_py(py).unwrap()
+// 	}
+// }
+
+impl_into_py_callback!(PyMaterialData);
+
+impl From<MaterialData> for PyMaterialData {
+	fn from(value: MaterialData) -> Self {
+		match value {
+			MaterialData::Color(r, g, b, a) => Self::Color(r, g, b, a),
+			MaterialData::Texture(path) => Self::TexturePath { path },
 		}
 	}
 }
@@ -38,46 +95,27 @@ fn material_data2py_object<'py>(data: &MaterialData, py: Python<'py>) -> PyResul
 #[pyclass(
 	name = "MaterialDescriptor",
 	module = "robot_description_builder.material",
-	text_signature = "(data: typing.Union[Color, TexturePath], name = typing.Optional[str], /)"
+	text_signature = "(data, name = None, /)" // Text signatures may not include types
 )]
 pub struct PyMaterialDescriptor(MaterialDescriptor);
 
 #[pymethods]
 impl PyMaterialDescriptor {
 	#[new]
-	#[pyo3(signature=(data, name=None, /))]
-	fn py_new(data: PyObject, name: Option<String>, py: Python<'_>) -> PyResult<Self> {
-		let material_mod = py.import(intern!(py, "robot_description_builder.material"))?;
-		let py_color = material_mod.getattr(intern!(py, "Color"))?;
-		let py_texture_path = material_mod.getattr(intern!(py, "TexturePath"))?;
-
-		let mut material_description = if data.as_ref(py).is_instance(py_color)? {
-			Ok(MaterialDescriptor::new_color(
-				data.getattr(py, intern!(py, "r"))?.extract(py)?,
-				data.getattr(py, intern!(py, "g"))?.extract(py)?,
-				data.getattr(py, intern!(py, "b"))?.extract(py)?,
-				data.getattr(py, intern!(py, "a"))?.extract(py)?,
-			))
-		} else if data.as_ref(py).is_instance(py_texture_path)? {
-			/*FOR NewType} else if data.as_ref(py).is_instance_of::<PyString>()? {
-			// This excepts all string types, but there is no better way,
-			// without changing Python's `TexturePath` to a class which is only possible starting from Python3.10
-			Ok(MaterialDescriptor::new_texture(data.extract::<String>(py)?)) */
-			Ok(MaterialDescriptor::new_texture(
-				data.getattr(py, intern!(py, "path"))?
-					.extract::<String>(py)?,
-			))
-		} else {
-			Err(PyTypeError::new_err(
-				"'data' is not a Color or a TexturePath",
-			))
-		}?;
+	// #[pyo3(signature=(data, name=None, /))]
+	fn py_new(data: PyMaterialData, name: Option<String>) -> Self {
+		let mut material_description = match data {
+			PyMaterialData::Color(red, green, blue, alpha) => {
+				MaterialDescriptor::new_color(red, green, blue, alpha)
+			}
+			PyMaterialData::TexturePath { path } => MaterialDescriptor::new_texture(path),
+		};
 
 		if let Some(name) = name {
 			material_description = material_description.named(name);
 		}
 
-		Ok(Self(material_description))
+		Self(material_description)
 	}
 
 	#[getter]
@@ -86,8 +124,8 @@ impl PyMaterialDescriptor {
 	}
 
 	#[getter]
-	fn get_data<'py>(&self, py: Python<'py>) -> PyResult<&'py PyAny> {
-		material_data2py_object(self.0.data(), py)
+	fn get_data(&self) -> PyResult<PyMaterialData> {
+		Ok(self.0.data().clone().into())
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
@@ -102,7 +140,11 @@ impl PyMaterialDescriptor {
 		};
 
 		data += "data=";
-		data += self.get_data(py)?.repr()?.extract::<&str>()?;
+		data += self
+			.get_data()?
+			.try_into_py_ref(py)?
+			.repr()?
+			.extract::<&str>()?;
 
 		Ok(format!("{class_name}({data})"))
 	}
@@ -137,11 +179,11 @@ impl PyMaterial {
 	}
 
 	#[getter]
-	fn get_data<'py>(&self, py: Python<'py>) -> PyResult<&'py PyAny> {
+	fn get_data(&self) -> PyResult<PyMaterialData> {
 		match self.0.material_data() {
-			MaterialDataReferenceWrapper::Direct(data) => material_data2py_object(data, py),
+			MaterialDataReferenceWrapper::Direct(data) => Ok(data.clone().into()),
 			MaterialDataReferenceWrapper::Global(arc_data) => {
-				material_data2py_object(&arc_data.py_read()?.clone(), py)
+				Ok(arc_data.py_read()?.clone().into())
 			}
 		}
 	}

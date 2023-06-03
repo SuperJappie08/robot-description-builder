@@ -123,52 +123,7 @@ where
 			actuators: self.actuators,
 		}
 	}
-}
 
-// impl<Actuator> TransmissionBuilder<NoJoints, Actuator>
-// where
-// 	Actuator: TransmissionActuatorTrait,
-// {
-// 	pub fn add_joint(
-// 		self,
-// 		joint_name: impl Into<String>,
-// 		hardware_interface: TransmissionHardwareInterface,
-// 	) -> TransmissionBuilder<WithJoints, Actuator> {
-// 		TransmissionBuilder {
-// 			name: self.name,
-// 			transmission_type: self.transmission_type,
-// 			joints: WithJoints(vec![TransmissionJointBuilder::new(
-// 				joint_name,
-// 				hardware_interface,
-// 			)]),
-// 			actuators: self.actuators,
-// 		}
-// 	}
-// }
-
-// impl<Actuator> TransmissionBuilder<WithJoints, Actuator>
-// where
-// 	Actuator: TransmissionActuatorTrait,
-// {
-// 	pub fn add_joint(
-// 		mut self,
-// 		joint_name: impl Into<String>,
-// 		hardware_interface: TransmissionHardwareInterface,
-// 	) -> TransmissionBuilder<WithJoints, Actuator> {
-// 		self.joints.0.push(TransmissionJointBuilder::new(
-// 			joint_name,
-// 			hardware_interface,
-// 		));
-
-// 		self
-// 	}
-// }
-
-impl<Joints, Actuators> TransmissionBuilder<Joints, Actuators>
-where
-	Joints: TransmissionJointTrait,
-	Actuators: TransmissionActuatorTrait,
-{
 	pub fn add_actuator(
 		self,
 		transmission_actuator: TransmissionActuator,
@@ -184,38 +139,52 @@ where
 			actuators: WithActuator(actuators),
 		}
 	}
+
+	/// Gets a reference to the name of the current `TransmissionBuilder`.
+	pub fn name(&self) -> &String {
+		&self.name
+	}
+
+	pub fn transmission_type(&self) -> &TransmissionType {
+		&self.transmission_type
+	}
 }
 
-// impl<Joints> TransmissionBuilder<Joints, NoActuator>
-// where
-// 	Joints: TransmissionJointTrait,
-// {
-// 	pub fn add_actuator(
-// 		self,
-// 		transmission_actuator: TransmissionActuator,
-// 	) -> TransmissionBuilder<Joints, WithActuator> {
-// 		TransmissionBuilder {
-// 			name: self.name,
-// 			transmission_type: self.transmission_type,
-// 			joints: self.joints,
-// 			actuators: WithActuator(vec![transmission_actuator]),
-// 		}
-// 	}
-// }
+impl<Actuators> TransmissionBuilder<WithJoints, Actuators>
+where
+	Actuators: TransmissionActuatorTrait,
+{
+	pub fn joints(&self) -> Option<&Vec<TransmissionJointBuilder>> {
+		Some(&self.joints.0)
+	}
+}
 
-// impl<Joints> TransmissionBuilder<Joints, WithActuator>
-// where
-// 	Joints: TransmissionJointTrait,
-// {
-// 	pub fn add_actuator(
-// 		mut self,
-// 		transmission_actuator: TransmissionActuator,
-// 	) -> TransmissionBuilder<Joints, WithActuator> {
-// 		self.actuators.0.push(transmission_actuator);
+impl<Actuators> TransmissionBuilder<NoJoints, Actuators>
+where
+	Actuators: TransmissionActuatorTrait,
+{
+	pub fn joints(&self) -> Option<&Vec<TransmissionJointBuilder>> {
+		None
+	}
+}
 
-// 		self
-// 	}
-// }
+impl<Joints> TransmissionBuilder<Joints, WithActuator>
+where
+	Joints: TransmissionJointTrait,
+{
+	pub fn actuators(&self) -> Option<&Vec<TransmissionActuator>> {
+		Some(&self.actuators.0)
+	}
+}
+
+impl<Joints> TransmissionBuilder<Joints, NoActuator>
+where
+	Joints: TransmissionJointTrait,
+{
+	pub fn actuators(&self) -> Option<&Vec<TransmissionActuator>> {
+		None
+	}
+}
 
 impl TransmissionBuilder<WithJoints, WithActuator> {
 	pub(crate) fn build(
@@ -238,17 +207,6 @@ impl TransmissionBuilder<WithJoints, WithActuator> {
 			)?,
 			actuators: self.actuators.0,
 		})
-	}
-}
-
-impl<Joints, Actuators> TransmissionBuilder<Joints, Actuators>
-where
-	Joints: TransmissionJointTrait,
-	Actuators: TransmissionActuatorTrait,
-{
-	/// Gets a reference to the name of the current `TransmissionBuilder`.
-	pub(crate) fn name(&self) -> &String {
-		&self.name
 	}
 }
 
