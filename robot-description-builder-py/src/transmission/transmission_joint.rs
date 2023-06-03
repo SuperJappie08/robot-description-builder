@@ -25,8 +25,8 @@ fn get_name_from_joint_or_name(obj: &PyAny) -> PyResult<String> {
 
 // This needs a rewrite anyway, so it will be a bit weird for now
 #[pyclass(
-    name="TransmissionJointBuilder",
-    module="robot_description_builder.transmission",
+	name = "TransmissionJointBuilder",
+	module = "robot_description_builder.transmission"
 )]
 #[derive(Debug, Clone)]
 pub struct PyTransmissionJointBuilder {
@@ -50,20 +50,20 @@ impl PyTransmissionJointBuilder {
 		}
 	}
 
-    #[getter]
-    fn get_name(&self) -> String {
-        self.name.clone()
-    }
+	#[getter]
+	fn get_name(&self) -> String {
+		self.name.clone()
+	}
 
-    #[setter]
-    fn set_name(&mut self, new_name: String) {
-        self.name = new_name;
-    }
+	#[setter]
+	fn set_name(&mut self, new_name: String) {
+		self.name = new_name;
+	}
 
-    #[getter]
-    fn get_hardware_interfaces(&self) -> Vec<PyTransmissionHardwareInterface> {
-        self.hardware_interfaces.to_vec()
-    }
+	#[getter]
+	fn get_hardware_interfaces(&self) -> Vec<PyTransmissionHardwareInterface> {
+		self.hardware_interfaces.to_vec()
+	}
 }
 
 impl From<PyTransmissionJointBuilder> for TransmissionJointBuilder {

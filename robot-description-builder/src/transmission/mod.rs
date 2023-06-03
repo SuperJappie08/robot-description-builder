@@ -1,4 +1,10 @@
 //! TODO: MODULE DOC
+//! This needs a rewrite, since the system is very different then on first inspection.
+//!
+//! struct Transmission {
+//!     name: String
+//!     data: TransmissionType/dyn impl TransmissionInterface
+//! }
 //!
 
 mod build_transmission_error;

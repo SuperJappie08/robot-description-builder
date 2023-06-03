@@ -1,3 +1,6 @@
+"""
+The transmission system is not fully correct. No Checking available as of NOW.
+"""
 from typing import List, NamedTuple, Optional, Union
 
 from robot_description_builder.joint import Joint

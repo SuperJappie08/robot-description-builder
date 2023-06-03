@@ -107,6 +107,13 @@ pub struct PyJoint {
 }
 
 impl PyJoint {
+	pub(crate) fn new_weak(joint: &Weak<RwLock<Joint>>, tree: &PyObject) -> Self {
+		Self {
+			inner: Weak::clone(joint),
+			tree: tree.clone(),
+		}
+	}
+
 	fn try_internal(&self) -> PyResult<Arc<RwLock<Joint>>> {
 		match self.inner.upgrade() {
 			Some(l) => Ok(l),

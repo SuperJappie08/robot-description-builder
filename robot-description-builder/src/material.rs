@@ -182,6 +182,7 @@ impl ToURDF for Material {
 	}
 }
 
+#[cfg(feature = "wrapper")]
 impl From<(String, ArcLock<MaterialData>)> for Material {
 	fn from(value: (String, ArcLock<MaterialData>)) -> Self {
 		let name = value.0;

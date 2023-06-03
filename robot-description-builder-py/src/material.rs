@@ -94,7 +94,7 @@ impl From<MaterialData> for PyMaterialData {
 #[derive(Debug, PartialEq, Clone)]
 #[pyclass(
 	name = "MaterialDescriptor",
-	module = "robot_description_builder.material",
+	module = "robot_description_builder.material"
 )]
 pub struct PyMaterialDescriptor(MaterialDescriptor);
 

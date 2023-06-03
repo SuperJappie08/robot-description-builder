@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Final, List, Optional, Union
 # Need to use typing.Union instead `|` because `|` (Supported since Python 3.10)
 
 if TYPE_CHECKING:
-    from robot_description_builder import KinematicTree
+    from robot_description_builder.cluster_objects import KinematicTree
     from robot_description_builder.joint import Joint, JointBuilder
     from robot_description_builder.link.collision import (Collision,
                                                           CollisionBuilder)

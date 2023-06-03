@@ -1,7 +1,7 @@
 use std::sync::{PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use itertools::process_results;
-use pyo3::{prelude::*, types::PyList, PyTypeInfo};
+use pyo3::{prelude::*, pyclass_init::PyObjectInit, types::PyList, PyClass, PyTypeInfo};
 
 pub trait PoisonErrorHandler<T>: Into<Result<T, PoisonError<T>>> {
 	fn to_pyerr(self) -> Result<T, PyErr>;
@@ -116,6 +116,22 @@ where
 	#[cfg(feature = "experimental-inspect")]
 	fn type_output() -> TypeInfo {
 		TypeInfo::list_of(T::type_output())
+	}
+}
+
+/// WARNING the PyClassInitializer must be complete
+pub fn init_pyclass_initializer<T>(
+	initializer: PyClassInitializer<T>,
+	py: Python<'_>,
+) -> PyResult<Py<T>>
+where
+	T: PyClass,
+{
+	unsafe {
+		Ok(Py::from_owned_ptr(
+			py,
+			initializer.into_new_object(py, py.get_type::<T>().as_type_ptr())?,
+		))
 	}
 }
 

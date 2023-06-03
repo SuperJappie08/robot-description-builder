@@ -105,7 +105,7 @@ impl KinematicInterface for Robot {
 			.unwrap() // FIXME: Unwrapping might not be ok
 			.get(name)
 			.map(Arc::clone)
-			.map(|data| (name.to_string(), data).into())
+			.map(|data| Material::new_named_inited(name, data))
 	}
 
 	fn get_transmission(&self, name: &str) -> Option<ArcLock<Transmission>> {

@@ -1,3 +1,6 @@
+"""
+The transmission system is not fully correct. No Checking available as of NOW.
+"""
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Final, List, NamedTuple, Optional, Union
 

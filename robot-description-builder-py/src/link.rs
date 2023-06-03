@@ -16,9 +16,9 @@ use inertial::PyInertial;
 use visual::{PyVisual, PyVisualBuilder};
 
 use crate::{
+	cluster_objects::PyKinematicTree,
 	joint::{PyJoint, PyJointBuilder},
 	utils::PyReadWriteable,
-	PyKinematicTree,
 };
 
 pub(super) fn init_module(py: Python<'_>, module: &PyModule) -> PyResult<()> {
@@ -123,9 +123,8 @@ impl PyLinkBuilder {
 		self.clone()
 	}
 
-	fn build(&self) -> PyResult<Py<PyKinematicTree>> {
-		// Not the nicest way, but it works
-		PyKinematicTree::create(self.0.clone().build_tree())
+	fn build(&self, py: Python<'_>) -> PyResult<Py<PyKinematicTree>> {
+		PyKinematicTree::create(self.0.clone().build_tree(), py)
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
@@ -205,6 +204,13 @@ pub struct PyLink {
 }
 
 impl PyLink {
+	pub(crate) fn new_weak(link: &Weak<RwLock<Link>>, tree: &PyObject) -> Self {
+		Self {
+			inner: link.clone(),
+			tree: tree.clone(),
+		}
+	}
+
 	fn try_internal(&self) -> PyResult<Arc<RwLock<Link>>> {
 		match self.inner.upgrade() {
 			Some(l) => Ok(l),
