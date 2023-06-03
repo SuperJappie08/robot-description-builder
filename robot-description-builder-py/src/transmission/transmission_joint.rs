@@ -9,11 +9,11 @@ use crate::joint::{PyJoint, PyJointBuilder};
 use super::PyTransmissionHardwareInterface;
 
 fn get_name_from_joint_or_name(obj: &PyAny) -> PyResult<String> {
-	if obj.is_instance_of::<PyJoint>()? {
+	if obj.is_instance_of::<PyJoint>() {
 		obj.extract::<PyJoint>()?.get_name()
-	} else if obj.is_instance_of::<PyJointBuilder>()? {
+	} else if obj.is_instance_of::<PyJointBuilder>() {
 		Ok(obj.extract::<PyJointBuilder>()?.get_name())
-	} else if obj.is_instance_of::<PyString>()? {
+	} else if obj.is_instance_of::<PyString>() {
 		obj.extract()
 	} else {
 		Err(pyo3::exceptions::PyTypeError::new_err(format!(

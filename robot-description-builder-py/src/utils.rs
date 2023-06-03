@@ -137,9 +137,9 @@ pub fn one_or_list<'source, T>(obj: &'source PyAny) -> PyResult<Vec<T>>
 where
 	T: PyTypeInfo + FromPyObject<'source>,
 {
-	if obj.is_instance_of::<PyList>()? {
+	if obj.is_instance_of::<PyList>() {
 		non_empty(obj)
-	} else if obj.is_instance_of::<T>()? {
+	} else if obj.is_instance_of::<T>() {
 		Ok(vec![obj.extract()?])
 	} else {
 		let py = obj.py();

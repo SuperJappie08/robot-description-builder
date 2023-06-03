@@ -95,14 +95,13 @@ impl From<MaterialData> for PyMaterialData {
 #[pyclass(
 	name = "MaterialDescriptor",
 	module = "robot_description_builder.material",
-	text_signature = "(data, name = None, /)" // Text signatures may not include types
 )]
 pub struct PyMaterialDescriptor(MaterialDescriptor);
 
 #[pymethods]
 impl PyMaterialDescriptor {
 	#[new]
-	// #[pyo3(signature=(data, name=None, /))]
+	#[pyo3(signature=(data, name=None, /))]
 	fn py_new(data: PyMaterialData, name: Option<String>) -> Self {
 		let mut material_description = match data {
 			PyMaterialData::Color(red, green, blue, alpha) => {
