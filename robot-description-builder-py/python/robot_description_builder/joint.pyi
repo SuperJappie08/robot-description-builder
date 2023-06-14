@@ -13,7 +13,7 @@ class JointBuilder:
     name: Final[str]
     """TODO: Final for now as a result of design"""
     joint_type: Final[JointType]
-    # TODO: origin: Any # TODO: HOW?
+    transform: Optional[Transform]
     child: Final[Optional[LinkBuilder]]
     axis: Optional[Tuple[float, float, float]]
     # TODO: calibration: Any # TODO: IMPLEMENT
@@ -22,7 +22,10 @@ class JointBuilder:
     # TODO: mimic: Any # TODO: IMPLEMENT
     # TODO: safety_controller: Any # TODO: IMPLEMENT
 
-    def __new__(cls, name: str, type: JointType) -> JointBuilder: ...
+    def __new__(cls, name: str, type: JointType, **kwargs) -> JointBuilder: ...
+    """
+    kwargs: transform, axis
+    """
     def __repr__(self) -> str: ...
 
 # TODO: mark as frozen

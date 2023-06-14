@@ -11,7 +11,7 @@ use crate::{
 		builder::{BuildLink, LinkBuilder},
 		Link, LinkShapeData,
 	},
-	transform::{Mirror, MirrorUpdater},
+	transform::{Transform, Mirror, MirrorUpdater},
 	ArcLock, WeakLock,
 };
 
@@ -63,6 +63,7 @@ impl JointBuilder {
 		}
 	}
 
+	/// TODO: rename transform
 	pub fn add_origin_offset(mut self, offset: (f32, f32, f32)) -> Self {
 		match &mut self.origin {
 			JointTransformMode::Direct(transform) => transform.translation = Some(offset),
@@ -71,6 +72,7 @@ impl JointBuilder {
 		self
 	}
 
+	/// TODO: rename transform
 	pub fn add_origin_rotation(mut self, rotation: (f32, f32, f32)) -> Self {
 		match &mut self.origin {
 			JointTransformMode::Direct(tranform) => tranform.rotation = Some(rotation),
@@ -79,6 +81,11 @@ impl JointBuilder {
 		self
 	}
 
+	pub fn set_transform_simple(&mut self, transform: Transform) {
+		self.origin = JointTransformMode::Direct(transform);
+	}
+
+	/// TODO: rename transform
 	/// Nominated for Deprication
 	/// Maybe Not??
 	#[inline]
@@ -134,6 +141,28 @@ impl JointBuilder {
 
 	pub fn joint_type(&self) -> &JointType {
 		&self.joint_type
+	}
+
+	pub fn transform(&self) -> Option<&Transform> {
+		// TODO: Maybe add a advanced mode for figure it out?
+		match &self.origin {
+			JointTransformMode::Direct(transform) => match transform.contains_some() {
+				true => Some(transform),
+				false => None,
+			},
+			JointTransformMode::FigureItOut(_) => todo!("?"),
+		}
+	}
+
+	pub fn transform_mut(&mut self) -> Option<&mut Transform> {
+		// TODO: Maybe add a advanced mode for figure it out?
+		match &mut self.origin {
+			JointTransformMode::Direct(transform) => match transform.contains_some() {
+				true => Some(transform),
+				false => None,
+			},
+			JointTransformMode::FigureItOut(_) => todo!("?"),
+		}
 	}
 
 	// TODO: ORIGIN

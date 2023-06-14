@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock, Weak};
 
-use pyo3::{intern, prelude::*};
+use pyo3::{exceptions::PyTypeError, intern, prelude::*, types::PyDict};
 use robot_description_builder::{Joint, JointBuilder, JointType};
 
 use crate::{
@@ -19,41 +19,96 @@ pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
 
 #[derive(Debug, Clone)]
 #[pyclass(name = "JointBuilder", module = "robot_description_builder.joint")]
-pub struct PyJointBuilder(JointBuilder);
+pub struct PyJointBuilder {
+	builder: JointBuilder,
+	transform: Option<Py<PyTransform>>,
+}
+
+impl PyJointBuilder {
+	/// Internal new
+	pub(crate) fn new(name: String, joint_type: PyJointType) -> Self {
+		Self {
+			builder: JointBuilder::new(name, joint_type.into()),
+			transform: None,
+		}
+	}
+}
 
 #[pymethods]
 impl PyJointBuilder {
 	#[new]
-	fn new(name: String, joint_type: PyJointType) -> Self {
-		Self(JointBuilder::new(name, joint_type.into()))
+	#[pyo3(signature = (name, joint_type, **kwds))]
+	fn py_new(
+		name: String,
+		joint_type: PyJointType,
+		kwds: Option<&PyDict>,
+		py: Python<'_>,
+	) -> PyResult<Self> {
+		let mut result = Self::new(name, joint_type);
+
+		if let Some(kwds) = kwds {
+			if let Some(transform) = kwds
+				.get_item(intern!(py, "transform"))
+				.map(FromPyObject::extract)
+			{
+				result.transform = transform?;
+				kwds.del_item(intern!(py, "transform"))?;
+			}
+
+			if !kwds.is_empty() {
+				let qual_name = py
+					.get_type::<Self>()
+					.getattr(intern!(py, "__new__"))?
+					.getattr(intern!(py, "__qualname__"))?;
+				return Err(PyTypeError::new_err(format!(
+					"{}() got an unexpected keyword argument {}",
+					qual_name,
+					kwds.keys()
+						.get_item(0)
+						.expect("The dict should not have been empty")
+						.repr()?
+				)));
+			}
+		}
+
+		Ok(result)
 	}
 
 	#[getter]
 	pub fn get_name(&self) -> String {
-		self.0.name().clone()
+		self.builder.name().clone()
 	}
 
 	#[getter]
 	fn get_joint_type(&self) -> PyJointType {
-		(*self.0.joint_type()).into()
+		(*self.builder.joint_type()).into()
 	}
 
-	// TODO: Origin
+	#[getter]
+	fn get_transform(&self) -> Option<Py<PyTransform>> {
+		self.transform.clone()
+	}
+
+	#[setter]
+	fn set_transform(&mut self, transform: Option<Py<PyTransform>>) {
+		self.transform = transform
+	}
+	// TODO: transform advanced
 
 	#[getter]
 	fn get_child(&self) -> Option<PyLinkBuilder> {
-		self.0.child().cloned().map(Into::into)
+		self.builder.child().cloned().map(Into::into)
 	}
 
 	#[getter]
 	fn get_axis(&self) -> Option<(f32, f32, f32)> {
-		self.0.axis()
+		self.builder.axis()
 	}
 
 	#[setter]
 	fn set_axis(&mut self, axis: Option<(f32, f32, f32)>) {
-		match (axis, self.0.axis().is_some()) {
-			(Some(axis), _) => self.0.with_axis(axis),
+		match (axis, self.builder.axis().is_some()) {
+			(Some(axis), _) => self.builder.with_axis(axis),
 			(None, true) => {
 				// This would be easier
 				// self.inner = JointBuilder{
@@ -77,6 +132,7 @@ impl PyJointBuilder {
 			.get_type::<Self>()
 			.getattr(intern!(py, "__qualname__"))?
 			.extract::<&str>()?;
+
 		// TODO: EXPAND
 		Ok(format!(
 			"{class_name}({}, {}, ...)",
@@ -88,13 +144,28 @@ impl PyJointBuilder {
 
 impl From<JointBuilder> for PyJointBuilder {
 	fn from(value: JointBuilder) -> Self {
-		Self(value)
+		Self {
+			transform: Python::with_gil(|py| {
+				value
+					.transform()
+					.copied()
+					.map(Into::into)
+					.map(|transform: PyTransform| transform.into_py(py).extract(py).unwrap())
+			}),
+			builder: value,
+		}
 	}
 }
 
 impl From<PyJointBuilder> for JointBuilder {
-	fn from(value: PyJointBuilder) -> Self {
-		value.0
+	fn from(mut value: PyJointBuilder) -> Self {
+		if let Some(py_transform) = value.transform {
+			value.builder.set_transform_simple(Python::with_gil(|py| {
+				py_transform.borrow_mut(py).clone().into()
+			}))
+		}
+
+		value.builder
 	}
 }
 

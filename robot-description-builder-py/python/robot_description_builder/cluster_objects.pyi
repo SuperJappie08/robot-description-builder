@@ -18,6 +18,8 @@ class KinematicTree(KinematicBase):
     """The Root Link of KinematicTree. All other links are connected to this one"""
     newest_link: Final[Link]
 
+    def to_robot(self, name: str) -> Robot: ...
+
 class Robot(KinematicBase):
     root_link: Final[Link]
     """The Root Link of Robot. All other links are connected to this one"""
