@@ -11,7 +11,7 @@ use crate::{
 		builder::{BuildLink, LinkBuilder},
 		Link, LinkShapeData,
 	},
-	transform::{Transform, Mirror, MirrorUpdater},
+	transform::{Mirror, MirrorUpdater, Transform},
 	ArcLock, WeakLock,
 };
 

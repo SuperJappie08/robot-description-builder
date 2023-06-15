@@ -2,7 +2,7 @@
 from math import pi
 
 import robot_description_builder as rdb
-from robot_description_builder import Transform
+from robot_description_builder import Transform, MirrorAxis
 from robot_description_builder.joint import JointBuilder, JointType
 from robot_description_builder.link import LinkBuilder
 from robot_description_builder.link.geometry import BoxGeometry, CylinderGeometry
@@ -13,9 +13,8 @@ from robot_description_builder.material import Color, MaterialDescriptor
 def main():
     # ==== Material Descriptions ==== #
     blue_material = MaterialDescriptor(Color(0, 0, 0.8), "blue")
-    black_material = MaterialDescriptor(name="black", data=Color(0, 0, 0))
-    white_material = MaterialDescriptor(Color(1, 1, 1))
-    white_material.name = "white"
+    black_material = MaterialDescriptor(Color(0, 0, 0), "black")
+    white_material = MaterialDescriptor(Color(1, 1, 1), "white")
 
     # =========== Step 1 ============ #
     base_link = LinkBuilder("base_link").add_visual(
@@ -54,7 +53,7 @@ def main():
     )
 
     right_front_wheel_joint = JointBuilder(
-        "[\\[right]\\]_[[front]]_wheel_joint",
+        r"[\[right]\]_[[front]]_wheel_joint",
         JointType.Fixed,
         transform=Transform(x=0.133333333333, z=-0.085),
     )
@@ -63,9 +62,11 @@ def main():
         right_front_wheel_link, right_front_wheel_joint
     )
 
-    # TODO:
-    # right_back_wheel =  right_leg.joints["[\\[right]\\]_[[front]]_wheel_joint"]
+    right_back_wheel =  right_leg.joints["[\\[right]\\]_[[front]]_wheel_joint"].rebuild_branch().mirror(MirrorAxis.X)
     
+    # TODO:
+    # right_back_wheel
+
     print(blue_material)
 
 

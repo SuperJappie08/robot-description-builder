@@ -78,6 +78,17 @@ where
 	}
 }
 
+#[cfg(feature = "wrapper")]
+impl<Builder> Chained<Builder>
+where
+	Builder: ChainableBuilder,
+{
+	/// Create a Chained Builder, needs to be a chain.
+	pub unsafe fn new(builder: Builder) -> Self {
+		Chained(builder)
+	}
+}
+
 pub trait ChainableBuilder: Debug + PartialEq + Clone + GroupIDChanger {
 	/// Returns `true` if the builder has a chain/one or more childeren.
 	fn has_chain(&self) -> bool;

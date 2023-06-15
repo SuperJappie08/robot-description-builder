@@ -1,5 +1,5 @@
 from . import cluster_objects, joint, link, material, transmission
-from ._internal import Transform
+from ._internal import Transform, MirrorAxis
 
 __doc__ = _internal.__doc__
 del _internal
@@ -12,4 +12,5 @@ __all__ = [
     "material",
     "transmission",
     "Transform",
+    "MirrorAxis"
 ]

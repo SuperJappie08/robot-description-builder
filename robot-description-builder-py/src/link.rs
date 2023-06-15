@@ -8,7 +8,7 @@ use std::sync::{Arc, RwLock, Weak};
 use itertools::{process_results, Itertools};
 use pyo3::{intern, prelude::*};
 use robot_description_builder::{
-	link_data::LinkParent, linkbuilding::LinkBuilder, JointBuilder, Link,
+	link_data::LinkParent, linkbuilding::LinkBuilder, Chained, JointBuilder, Link,
 };
 
 use collision::{PyCollision, PyCollisionBuilder};
@@ -18,12 +18,14 @@ use visual::{PyVisual, PyVisualBuilder};
 use crate::{
 	cluster_objects::PyKinematicTree,
 	joint::{PyJoint, PyJointBuilder},
-	utils::PyReadWriteable,
+	transform::PyMirrorAxis,
+	utils::{init_pyclass_initializer, PyReadWriteable, TryIntoPy},
 };
 
 pub(super) fn init_module(py: Python<'_>, module: &PyModule) -> PyResult<()> {
 	module.add_class::<PyLink>()?;
 	module.add_class::<PyLinkBuilder>()?;
+	module.add_class::<PyLinkBuilderChain>()?;
 
 	collision::init_module(py, module)?;
 	visual::init_module(py, module)?;
@@ -36,7 +38,11 @@ pub(super) fn init_module(py: Python<'_>, module: &PyModule) -> PyResult<()> {
 }
 
 #[derive(Debug, Clone)]
-#[pyclass(name = "LinkBuilder", module = "robot_description_builder.link")]
+#[pyclass(
+	name = "LinkBuilder",
+	module = "robot_description_builder.link",
+	subclass
+)]
 pub struct PyLinkBuilder(LinkBuilder);
 
 #[pymethods]
@@ -190,6 +196,48 @@ impl From<PyLinkBuilder> for LinkBuilder {
 	}
 }
 
+#[derive(Debug, Clone)]
+#[pyclass(name = "LinkBuilderChain", module = "robot_description_builder.link", extends=PyLinkBuilder)]
+pub struct PyLinkBuilderChain;
+
+impl PyLinkBuilderChain {
+	fn from_chained(chained: Chained<LinkBuilder>) -> PyClassInitializer<Self> {
+		(Self, Into::<PyLinkBuilder>::into((*chained).clone())).into()
+	}
+
+	fn as_chained(slf: PyRef<'_, Self>) -> Chained<LinkBuilder> {
+		unsafe { Chained::new(slf.into_super().0.clone()) }
+	}
+}
+
+#[pymethods]
+impl PyLinkBuilderChain {
+	fn mirror(slf: PyRef<'_, Self>, axis: PyMirrorAxis) -> PyResult<Py<Self>> {
+		let py = slf.py();
+		init_pyclass_initializer(
+			Self::from_chained(Self::as_chained(slf).mirror(axis.into())),
+			py,
+		)
+	}
+
+	fn __repr__(slf: PyRef<'_, Self>) -> PyResult<String> {
+		let class_name = slf
+			.py()
+			.get_type::<Self>()
+			.getattr(intern!(slf.py(), "__qualname__"))?
+			.extract::<&str>()?;
+
+		// TODO: EXPAND
+		Ok(format!("{class_name}({}, ...)", slf.as_ref().get_name(),))
+	}
+}
+
+impl TryIntoPy<Py<PyLinkBuilderChain>> for Chained<LinkBuilder> {
+	fn try_into_py(self, py: Python<'_>) -> PyResult<Py<PyLinkBuilderChain>> {
+		init_pyclass_initializer(PyLinkBuilderChain::from_chained(self), py)
+	}
+}
+
 #[derive(Debug)]
 #[pyclass(
 	name = "Link",
@@ -292,6 +340,13 @@ impl PyLink {
 	/// Not Chained
 	fn rebuild(&self) -> PyResult<PyLinkBuilder> {
 		Ok(self.try_internal()?.py_read()?.rebuild().into())
+	}
+
+	fn rebuild_branch(&self, py: Python<'_>) -> PyResult<Py<PyLinkBuilderChain>> {
+		self.try_internal()?
+			.py_read()?
+			.rebuild_branch()
+			.try_into_py(py)
 	}
 
 	fn try_attach_child(

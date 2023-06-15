@@ -1,15 +1,15 @@
 use pyo3::{intern, prelude::*, PyClassInitializer};
 
-use robot_description_builder::{linkbuilding::LinkBuilder, KinematicInterface, KinematicTree};
+use robot_description_builder::{KinematicInterface, KinematicTree};
 
 use super::{robot::PyRobot, PyKinematicBase};
 
 use crate::{
-	joint::PyJoint,
-	link::{PyLink, PyLinkBuilder},
+	joint::{PyJoint, PyJointBuilderChain},
+	link::{PyLink, PyLinkBuilderChain},
 	material::PyMaterial,
 	transmission::PyTransmission,
-	utils,
+	utils::{self, TryIntoPy},
 };
 
 #[derive(Debug, Clone)]
@@ -102,11 +102,35 @@ impl PyKinematicTree {
 			.map(|transmission| (transmission, self.get_weak()).into())
 	}
 
+	/* TODO: This migth need to not return a Optional */
 	/* TODO: Should become chained builder */
-	fn yank_link(&self, name: String) -> Option<PyLinkBuilder> {
-		self.inner
+	fn yank_link(&self, name: String, py: Python<'_>) -> PyResult<Option<Py<PyLinkBuilderChain>>> {
+		match self
+			.inner
 			.yank_link(&name)
-			.map(|link_builder| LinkBuilder::clone(&*link_builder).into())
+			.map(|link_builder| link_builder.try_into_py(py))
+		{
+			Some(Ok(chained_linkbuilder)) => Ok(Some(chained_linkbuilder)),
+			Some(Err(err)) => Err(err),
+			None => Ok(None),
+		}
+	}
+
+	/* TODO: This migth need to not return a Optional */
+	fn yank_joint(
+		&self,
+		name: String,
+		py: Python<'_>,
+	) -> PyResult<Option<Py<PyJointBuilderChain>>> {
+		match self
+			.inner
+			.yank_joint(&name)
+			.map(|joint_builder| joint_builder.try_into_py(py))
+		{
+			Some(Ok(chained_jointbuilder)) => Ok(Some(chained_jointbuilder)),
+			Some(Err(err)) => Err(err),
+			None => Ok(None),
+		}
 	}
 
 	fn to_robot(slf: Py<Self>, name: String, py: Python<'_>) -> PyResult<Py<PyRobot>> {

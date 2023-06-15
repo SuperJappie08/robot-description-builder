@@ -1,10 +1,12 @@
 use pyo3::{basic::CompareOp, intern, prelude::*};
-use robot_description_builder::Transform;
+use robot_description_builder::{MirrorAxis, Transform};
 
 const NONE_STR: &str = "None";
 
 pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
 	module.add_class::<PyTransform>()?;
+	module.add_class::<PyMirrorAxis>()?;
+
 	Ok(())
 }
 
@@ -145,6 +147,34 @@ impl From<Transform> for PyTransform {
 			roll: value.rotation.map(|rotation| rotation.0),
 			pitch: value.rotation.map(|rotation| rotation.1),
 			yaw: value.rotation.map(|rotation| rotation.2),
+		}
+	}
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[pyclass(name = "MirrorAxis", module = "robot_description_builder")]
+pub enum PyMirrorAxis {
+	X,
+	Y,
+	Z,
+}
+
+impl From<PyMirrorAxis> for MirrorAxis {
+	fn from(value: PyMirrorAxis) -> Self {
+		match value {
+			PyMirrorAxis::X => Self::X,
+			PyMirrorAxis::Y => Self::Y,
+			PyMirrorAxis::Z => Self::Z,
+		}
+	}
+}
+
+impl From<MirrorAxis> for PyMirrorAxis {
+	fn from(value: MirrorAxis) -> Self {
+		match value {
+			MirrorAxis::X => Self::X,
+			MirrorAxis::Y => Self::Y,
+			MirrorAxis::Z => Self::Z,
 		}
 	}
 }

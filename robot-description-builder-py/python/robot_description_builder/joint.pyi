@@ -30,6 +30,9 @@ class JointBuilder:
 
 # TODO: mark as frozen
 
+class JointBuilderChain(JointBuilder):
+    def __repr__(self) -> str: ...
+    def mirror(self, axis) -> JointBuilderChain: ...
 
 class Joint:
     name: Final[str]
@@ -46,6 +49,8 @@ class Joint:
     # TODO: safety_controller: Any # TODO: IMPLEMENT
 
     def __repr__(self) -> str: ...
+    def rebuild(self) -> JointBuilder: ...
+    def rebuild_branch(self) -> JointBuilderChain: ...
 
 
 class JointType(Enum):

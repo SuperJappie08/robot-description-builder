@@ -1,24 +1,29 @@
 use std::sync::{Arc, RwLock, Weak};
 
 use pyo3::{exceptions::PyTypeError, intern, prelude::*, types::PyDict};
-use robot_description_builder::{Joint, JointBuilder, JointType};
+use robot_description_builder::{Chained, Joint, JointBuilder, JointType};
 
 use crate::{
 	link::{PyLink, PyLinkBuilder},
-	transform::PyTransform,
-	utils::PyReadWriteable,
+	transform::{PyMirrorAxis, PyTransform},
+	utils::{init_pyclass_initializer, PyReadWriteable, TryIntoPy},
 };
 
 pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
 	module.add_class::<PyJoint>()?;
 	module.add_class::<PyJointBuilder>()?;
 	module.add_class::<PyJointType>()?;
+	module.add_class::<PyJointBuilderChain>()?;
 
 	Ok(())
 }
 
 #[derive(Debug, Clone)]
-#[pyclass(name = "JointBuilder", module = "robot_description_builder.joint")]
+#[pyclass(
+	name = "JointBuilder",
+	module = "robot_description_builder.joint",
+	subclass
+)]
 pub struct PyJointBuilder {
 	builder: JointBuilder,
 	transform: Option<Py<PyTransform>>,
@@ -170,6 +175,52 @@ impl From<PyJointBuilder> for JointBuilder {
 }
 
 #[derive(Debug, Clone)]
+#[pyclass(name="JointBuilderChain", module="robot_description_builder.joint", extends=PyJointBuilder)]
+pub struct PyJointBuilderChain;
+
+impl PyJointBuilderChain {
+	fn from_chained(chained: Chained<JointBuilder>) -> PyClassInitializer<Self> {
+		(Self, Into::<PyJointBuilder>::into((*chained).clone())).into()
+	}
+
+	fn as_chained(slf: PyRef<'_, Self>) -> Chained<JointBuilder> {
+		unsafe { Chained::new(slf.into_super().builder.clone()) }
+	}
+}
+
+#[pymethods]
+impl PyJointBuilderChain {
+	fn mirror(slf: PyRef<'_, Self>, axis: PyMirrorAxis) -> PyResult<Py<Self>> {
+		let py = slf.py();
+		init_pyclass_initializer(
+			Self::from_chained(Self::as_chained(slf).mirror(axis.into())),
+			py,
+		)
+	}
+
+	fn __repr__(slf: PyRef<'_, Self>) -> PyResult<String> {
+		let class_name = slf
+			.py()
+			.get_type::<Self>()
+			.getattr(intern!(slf.py(), "__qualname__"))?
+			.extract::<&str>()?;
+
+		// TODO: EXPAND
+		Ok(format!(
+			"{class_name}({}, {}, ...)",
+			slf.as_ref().get_name(),
+			slf.as_ref().get_joint_type().__pyo3__repr__()
+		))
+	}
+}
+
+impl TryIntoPy<Py<PyJointBuilderChain>> for Chained<JointBuilder> {
+	fn try_into_py(self, py: Python<'_>) -> PyResult<Py<PyJointBuilderChain>> {
+		init_pyclass_initializer(PyJointBuilderChain::from_chained(self), py)
+	}
+}
+
+#[derive(Debug, Clone)]
 #[pyclass(name = "Joint", module = "robot_description_builder.joint", frozen)]
 pub struct PyJoint {
 	inner: Weak<RwLock<Joint>>,
@@ -237,6 +288,17 @@ impl PyJoint {
 	#[getter]
 	fn get_axis(&self) -> PyResult<Option<(f32, f32, f32)>> {
 		Ok(self.try_internal()?.py_read()?.axis())
+	}
+
+	fn rebuild(&self) -> PyResult<PyJointBuilder> {
+		Ok(self.try_internal()?.py_read()?.rebuild().into())
+	}
+
+	fn rebuild_branch(&self, py: Python<'_>) -> PyResult<Py<PyJointBuilderChain>> {
+		self.try_internal()?
+			.py_read()?
+			.rebuild_branch()
+			.try_into_py(py)
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {

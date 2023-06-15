@@ -1,3 +1,4 @@
+from enum import Enum, auto
 from typing import Optional
 
 class Transform:
@@ -21,3 +22,8 @@ class Transform:
     def __bool__(self) -> bool: ...
     def __eq__(self) -> bool: ...
     def __neq__(self) -> bool: ...
+
+class MirrorAxis(Enum):
+    X = auto()
+    Y = auto()
+    Z = auto()
