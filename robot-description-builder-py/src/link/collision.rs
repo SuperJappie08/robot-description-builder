@@ -1,5 +1,7 @@
 use pyo3::{intern, prelude::*};
-use robot_description_builder::{link_data::Collision, linkbuilding::CollisionBuilder, Transform};
+use robot_description_builder::{
+	link_data::Collision, linkbuilding::CollisionBuilder, prelude::GroupIDChanger, Transform,
+};
 
 pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
 	// let module = PyModule::new(py, "collision")?;
@@ -13,7 +15,7 @@ pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
 }
 
 use super::geometry::PyGeometryBase;
-use crate::transform::PyTransform;
+use crate::{identifier::GroupIDError, transform::PyTransform};
 
 /// TODO: Considering skipping the wrapping here and doing it manually
 #[derive(Debug, PartialEq, Clone)]
@@ -103,6 +105,16 @@ impl PyCollisionBuilder {
 		}
 
 		Ok(format!("{class_name}({data})"))
+	}
+
+	fn change_group_id(&mut self, new_group_id: String, _py: Python<'_>) -> PyResult<()> {
+		self.0
+			.change_group_id(new_group_id)
+			.map_err(GroupIDError::from)
+	}
+
+	fn apply_group_id(&mut self, _py: Python<'_>) {
+		self.0.apply_group_id()
 	}
 }
 

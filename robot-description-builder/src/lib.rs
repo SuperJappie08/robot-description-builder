@@ -30,6 +30,15 @@ pub mod prelude {
 	// pub use material::MaterialDescriptor;
 }
 
+/// TODO: Docs
+
+pub mod errors {
+	pub use super::cluster_objects::kinematic_data_errors::{
+		AddJointError, AddLinkError, AddMaterialError, AddTransmissionError,
+	};
+	pub use super::identifiers::GroupIDError;
+}
+
 #[cfg(test)]
 mod tests {
 	// #[test]

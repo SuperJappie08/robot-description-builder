@@ -1,5 +1,5 @@
-from . import cluster_objects, joint, link, material, transmission
-from ._internal import Transform, MirrorAxis
+from . import cluster_objects, exceptions, joint, link, material, transmission
+from ._internal import MirrorAxis, Transform
 
 __doc__ = _internal.__doc__
 del _internal
@@ -7,10 +7,11 @@ del _internal
 #     __all__ = _internal.__all__
 __all__ = [
     "cluster_objects",
+    "exceptions",
     "joint",
     "link",
     "material",
     "transmission",
     "Transform",
-    "MirrorAxis"
+    "MirrorAxis",
 ]

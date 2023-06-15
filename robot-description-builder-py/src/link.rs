@@ -8,7 +8,8 @@ use std::sync::{Arc, RwLock, Weak};
 use itertools::{process_results, Itertools};
 use pyo3::{intern, prelude::*};
 use robot_description_builder::{
-	link_data::LinkParent, linkbuilding::LinkBuilder, Chained, JointBuilder, Link,
+	link_data::LinkParent, linkbuilding::LinkBuilder, prelude::GroupIDChanger, Chained,
+	JointBuilder, Link,
 };
 
 use collision::{PyCollision, PyCollisionBuilder};
@@ -17,7 +18,9 @@ use visual::{PyVisual, PyVisualBuilder};
 
 use crate::{
 	cluster_objects::PyKinematicTree,
-	joint::{PyJoint, PyJointBuilder},
+	exceptions::AddJointError,
+	identifier::GroupIDError,
+	joint::{PyJoint, PyJointBuilder, PyJointBuilderChain},
 	transform::PyMirrorAxis,
 	utils::{init_pyclass_initializer, PyReadWriteable, TryIntoPy},
 };
@@ -181,6 +184,16 @@ impl PyLinkBuilder {
 		}
 
 		Ok(format!("{class_name}({data})"))
+	}
+
+	fn change_group_id(&mut self, new_group_id: String, _py: Python<'_>) -> PyResult<()> {
+		self.0
+			.change_group_id(new_group_id)
+			.map_err(GroupIDError::from)
+	}
+
+	fn apply_group_id(&mut self, _py: Python<'_>) {
+		self.0.apply_group_id()
 	}
 }
 
@@ -367,6 +380,17 @@ impl PyLink {
 
 	// TODO: Add rebuild_chain but the API does not support it yey
 	// TODO: Add attach chain methods
+
+	fn attach_joint_chain(
+		&self,
+		joint_chain: PyRef<'_, PyJointBuilderChain>,
+		// py: Python<'_>,
+	) -> PyResult<()> {
+		self.try_internal()?
+			.py_write()?
+			.attach_joint_chain(PyJointBuilderChain::as_chained(joint_chain))
+			.map_err(AddJointError::from)
+	}
 
 	/// TODO: Maybe rewrite
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {

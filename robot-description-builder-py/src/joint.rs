@@ -1,9 +1,10 @@
 use std::sync::{Arc, RwLock, Weak};
 
 use pyo3::{exceptions::PyTypeError, intern, prelude::*, types::PyDict};
-use robot_description_builder::{Chained, Joint, JointBuilder, JointType};
+use robot_description_builder::{prelude::GroupIDChanger, Chained, Joint, JointBuilder, JointType};
 
 use crate::{
+	identifier::GroupIDError,
 	link::{PyLink, PyLinkBuilder},
 	transform::{PyMirrorAxis, PyTransform},
 	utils::{init_pyclass_initializer, PyReadWriteable, TryIntoPy},
@@ -145,6 +146,16 @@ impl PyJointBuilder {
 			self.get_joint_type().__pyo3__repr__()
 		))
 	}
+
+	fn change_group_id(&mut self, new_group_id: String, _py: Python<'_>) -> PyResult<()> {
+		self.builder
+			.change_group_id(new_group_id)
+			.map_err(GroupIDError::from)
+	}
+
+	fn apply_group_id(&mut self, _py: Python<'_>) {
+		self.builder.apply_group_id()
+	}
 }
 
 impl From<JointBuilder> for PyJointBuilder {
@@ -183,7 +194,7 @@ impl PyJointBuilderChain {
 		(Self, Into::<PyJointBuilder>::into((*chained).clone())).into()
 	}
 
-	fn as_chained(slf: PyRef<'_, Self>) -> Chained<JointBuilder> {
+	pub fn as_chained(slf: PyRef<'_, Self>) -> Chained<JointBuilder> {
 		unsafe { Chained::new(slf.into_super().builder.clone()) }
 	}
 }

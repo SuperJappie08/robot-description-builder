@@ -1,4 +1,6 @@
 mod cluster_objects;
+mod exceptions;
+mod identifier;
 mod joint;
 mod link;
 mod material;
@@ -21,6 +23,7 @@ macro_rules! impl_into_py_callback {
 	};
 }
 
+// use identifier::PyGroupIDChangable;
 use pyo3::prelude::*;
 
 /// Formats the sum of two numbers as string.
@@ -50,6 +53,10 @@ fn rdf_builder_py(py: Python, m: &PyModule) -> PyResult<()> {
 	transmission::init_module(py, m)?;
 
 	cluster_objects::init_module(py, m)?;
+
+	identifier::init_module(py, m)?;
+
+	exceptions::init_module(py, m)?;
 
 	Ok(())
 }

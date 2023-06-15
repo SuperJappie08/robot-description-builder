@@ -62,10 +62,51 @@ def main():
         right_front_wheel_link, right_front_wheel_joint
     )
 
-    right_back_wheel =  right_leg.joints["[\\[right]\\]_[[front]]_wheel_joint"].rebuild_branch().mirror(MirrorAxis.X)
-    
+    right_back_wheel = (
+        right_leg.joints["[\\[right]\\]_[[front]]_wheel_joint"]
+        .rebuild_branch()
+        .mirror(MirrorAxis.X)
+    )
+    right_back_wheel.change_group_id("back")
+
+    right_leg.links[r"[\[right]\]_base"].attach_joint_chain(right_back_wheel)
+
+    right_leg = right_leg.yank_root()
+    right_leg.apply_group_id()
+
+    base_right_leg_joint = JointBuilder("base_to_[[right]]_leg", JointType.Fixed)
+    base_right_leg_joint.transform = Transform(y=-0.22, z=0.25)
+
+    # ======= Attach right leg ====== #
+
+    model.root_link.try_attach_child(right_leg, base_right_leg_joint)
+
+    # ====== Attaching left leg ===== #
+
+    left_leg = (
+        model.joints["base_to_[[right]]_leg"].rebuild_branch().mirror(MirrorAxis.Y)
+    )
+    left_leg.change_group_id("left")
+
+    model.root_link.attach_joint_chain(left_leg)
+
+    # ====== Defining the gripper ===== #
+
+    gripper_pole = (
+        LinkBuilder("gripper_pole")
+        .add_visual(
+            VisualBuilder(
+                CylinderGeometry(0.01, 0.2), origin=Transform(0.1, pitch=pi / 2)
+            )
+        )
+        .build()
+    )
+
+    # left_gripper = LinkBuilder("[[left]]_gripper").add_visual(VisualBuilder(
+    #     MeshGeometry()
+    # ))
+
     # TODO:
-    # right_back_wheel
 
     print(blue_material)
 

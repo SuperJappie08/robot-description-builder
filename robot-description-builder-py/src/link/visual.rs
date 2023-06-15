@@ -1,9 +1,10 @@
 use pyo3::{intern, prelude::*};
 
-use robot_description_builder::{link_data, linkbuilding::VisualBuilder};
+use robot_description_builder::{link_data, linkbuilding::VisualBuilder, prelude::GroupIDChanger};
 
 use super::geometry::PyGeometryBase;
 use crate::{
+	identifier::GroupIDError,
 	material::{PyMaterial, PyMaterialDescriptor},
 	transform::PyTransform,
 };
@@ -138,6 +139,16 @@ impl PyVisualBuilder {
 		}
 
 		Ok(format!("{class_name}({data})"))
+	}
+
+	fn change_group_id(&mut self, new_group_id: String, _py: Python<'_>) -> PyResult<()> {
+		self.0
+			.change_group_id(new_group_id)
+			.map_err(GroupIDError::from)
+	}
+
+	fn apply_group_id(&mut self, _py: Python<'_>) {
+		self.0.apply_group_id()
 	}
 }
 

@@ -1,10 +1,14 @@
 use pyo3::{intern, prelude::*};
-use robot_description_builder::material::{
-	data::{MaterialData, MaterialDataReferenceWrapper},
-	Material, MaterialDescriptor,
+use robot_description_builder::{
+	material::{
+		data::{MaterialData, MaterialDataReferenceWrapper},
+		Material, MaterialDescriptor,
+	},
+	prelude::GroupIDChanger,
 };
 
 use crate::{
+	identifier::GroupIDError,
 	impl_into_py_callback,
 	utils::{PyReadWriteable, TryIntoRefPyAny},
 };
@@ -146,6 +150,16 @@ impl PyMaterialDescriptor {
 			.extract::<&str>()?;
 
 		Ok(format!("{class_name}({data})"))
+	}
+
+	fn change_group_id(&mut self, new_group_id: String, _py: Python<'_>) -> PyResult<()> {
+		self.0
+			.change_group_id(new_group_id)
+			.map_err(GroupIDError::from)
+	}
+
+	fn apply_group_id(&mut self, _py: Python<'_>) {
+		self.0.apply_group_id()
 	}
 }
 

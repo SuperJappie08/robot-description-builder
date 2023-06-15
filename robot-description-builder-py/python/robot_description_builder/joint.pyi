@@ -28,6 +28,9 @@ class JointBuilder:
     """
     def __repr__(self) -> str: ...
 
+    def change_group_id(self, new_group_id: str) -> None: ...
+    def apply_group_id(self) -> None: ...
+
 # TODO: mark as frozen
 
 class JointBuilderChain(JointBuilder):
