@@ -8,7 +8,7 @@
 <!-- TODO: ADD DOC LINKS -->
 | Rust 🦀 | Python 🐍 |
 |:-------:|:----------:|
-| ![Crates.io](https://img.shields.io/crates/v/robot-description-builder) ![Crates.io](https://img.shields.io/crates/dr/robot-description-builder) [![Crates.io](https://img.shields.io/crates/l/robot-description-builder)](robot-description-builder/LICENSE) | ![PyPI](https://img.shields.io/pypi/v/robot-description-builder) ![PyPI - Downloads](https://img.shields.io/pypi/dm/robot-description-builder)[![PyPI - License](https://img.shields.io/pypi/l/robot-description-builder)](robot-description-builder-py/LICENSE)|
+| [![Crates.io](https://img.shields.io/crates/v/robot-description-builder)](https://crates.io/crates/robot-description-builder) [![Crates.io](https://img.shields.io/crates/dr/robot-description-builder)](https://crates.io/crates/robot-description-builder) [![Crates.io](https://img.shields.io/crates/l/robot-description-builder)](robot-description-builder/LICENSE) | [![PyPI](https://img.shields.io/pypi/v/robot-description-builder)](https://pypi.org/project/robot-description-builder/) [![PyPI - Downloads](https://img.shields.io/pypi/dm/robot-description-builder)](https://pypi.org/project/robot-description-builder/) [![PyPI - License](https://img.shields.io/pypi/l/robot-description-builder)](robot-description-builder-py/LICENSE)|
 
 
 
