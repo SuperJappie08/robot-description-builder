@@ -1,3 +1,3 @@
-from ._internal import AddJointError, GroupIDError
+from ._internal import AddJointError, AddLinkError, GroupIDError, XMLError
 
-__all__ = ["AddJointError", "GroupIDError"]
+__all__ = ["AddJointError", "AddLinkError", "GroupIDError", "XMLError"]

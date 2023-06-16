@@ -24,6 +24,7 @@ class KinematicTree(KinematicBase):
     def yank_root(self) -> LinkBuilderChain: ...
 
 class Robot(KinematicBase):
+    name: Final[str]
     root_link: Final[Link]
     """The Root Link of Robot. All other links are connected to this one"""
     newest_link: Final[Link]

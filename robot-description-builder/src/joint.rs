@@ -137,7 +137,7 @@ impl Joint {
 		log::info!("Yanked Joint \"{}\"", self.name());
 
 		self.parent_link()
-			.try_write()
+			.write()
 			.unwrap() // FIXME: UNWRAP NOT OK
 			.joints_mut()
 			.retain(|joint| !Arc::ptr_eq(&self.get_self(), joint));
@@ -214,6 +214,7 @@ impl ToURDF for Joint {
 				.write_empty()?;
 
 			if let Some((x, y, z)) = &self.axis {
+				// TODO: Fix '<axis xyz="-0 -0 -1"/>' after mirror.
 				writer
 					.create_element("axis")
 					.with_attribute(Attribute {

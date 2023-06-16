@@ -112,8 +112,13 @@ impl PyLinkBuilder {
 	}
 
 	#[getter]
-	fn get_joints(&self) -> Vec<PyJointBuilder> {
-		self.0.joints().iter().cloned().map(Into::into).collect()
+	fn get_joints(&self, py: Python<'_>) -> Vec<PyJointBuilder> {
+		self.0
+			.joints()
+			.iter()
+			.cloned()
+			.map(|obj| obj.into_py(py))
+			.collect()
 	}
 
 	fn add_visual(&mut self, visual: PyVisualBuilder) -> Self {
@@ -146,7 +151,7 @@ impl PyLinkBuilder {
 
 		data += ", joints=[";
 		data += process_results(
-			self.get_joints()
+			self.get_joints(py)
 				.into_iter()
 				.map(|joint_builder| joint_builder.__repr__(py)),
 			|mut iter| iter.join(", "),
@@ -350,7 +355,6 @@ impl PyLink {
 			.collect())
 	}
 
-	/// Not Chained
 	fn rebuild(&self) -> PyResult<PyLinkBuilder> {
 		Ok(self.try_internal()?.py_read()?.rebuild().into())
 	}
@@ -373,8 +377,7 @@ impl PyLink {
 				Into::<LinkBuilder>::into(link_builder),
 				Into::<JointBuilder>::into(joint_builder),
 			)
-			// TODO: ERROR
-			.map_err(|_| pyo3::exceptions::PyKeyError::new_err("???"))?;
+			.map_err(AddJointError::from)?;
 		Ok(())
 	}
 

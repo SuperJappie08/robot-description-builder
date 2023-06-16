@@ -87,8 +87,7 @@ impl PyKinematicBase {
 				.map(|(key, value)| (key.clone(), PyLink::new_weak(value, &self.implementor)))
 				.collect::<HashMap<_, _>>()
 				.into_py(py)
-				.extract::<Py<PyDict>>(py)?
-				.as_ref(py)
+				.downcast::<PyDict>(py)?
 				.as_mapping()
 		})
 	}
@@ -104,8 +103,7 @@ impl PyKinematicBase {
 				.map(|(key, value)| (key.clone(), PyJoint::new_weak(value, &self.implementor)))
 				.collect::<HashMap<_, _>>()
 				.into_py(py)
-				.extract::<Py<PyDict>>(py)?
-				.as_ref(py)
+				.downcast::<PyDict>(py)?
 				.as_mapping()
 		})
 	}
@@ -126,8 +124,7 @@ impl PyKinematicBase {
 				})
 				.collect::<HashMap<_, PyMaterial>>()
 				.into_py(py)
-				.extract::<Py<PyDict>>(py)?
-				.as_ref(py)
+				.downcast::<PyDict>(py)?
 				.as_mapping()
 		})
 	}

@@ -158,17 +158,17 @@ impl PyJointBuilder {
 	}
 }
 
-impl From<JointBuilder> for PyJointBuilder {
-	fn from(value: JointBuilder) -> Self {
-		Self {
-			transform: Python::with_gil(|py| {
-				value
-					.transform()
-					.copied()
-					.map(Into::into)
-					.map(|transform: PyTransform| transform.into_py(py).extract(py).unwrap())
-			}),
-			builder: value,
+impl IntoPy<PyJointBuilder> for JointBuilder {
+	fn into_py(self, py: Python<'_>) -> PyJointBuilder {
+		PyJointBuilder {
+			transform: self
+				.transform()
+				.copied()
+				.map(Into::into)
+				.map(|transform: PyTransform| {
+					Py::new(py, transform).unwrap() // FIXME: Ok? This unwrap is mostly interpreter errors
+				}),
+			builder: self,
 		}
 	}
 }
@@ -176,9 +176,9 @@ impl From<JointBuilder> for PyJointBuilder {
 impl From<PyJointBuilder> for JointBuilder {
 	fn from(mut value: PyJointBuilder) -> Self {
 		if let Some(py_transform) = value.transform {
-			value.builder.set_transform_simple(Python::with_gil(|py| {
-				py_transform.borrow_mut(py).clone().into()
-			}))
+			value
+				.builder
+				.set_transform_simple(Python::with_gil(|py| (*py_transform.borrow(py)).into()))
 		}
 
 		value.builder
@@ -190,8 +190,8 @@ impl From<PyJointBuilder> for JointBuilder {
 pub struct PyJointBuilderChain;
 
 impl PyJointBuilderChain {
-	fn from_chained(chained: Chained<JointBuilder>) -> PyClassInitializer<Self> {
-		(Self, Into::<PyJointBuilder>::into((*chained).clone())).into()
+	fn from_chained(py: Python<'_>, chained: Chained<JointBuilder>) -> PyClassInitializer<Self> {
+		(Self, (*chained).clone().into_py(py)).into()
 	}
 
 	pub fn as_chained(slf: PyRef<'_, Self>) -> Chained<JointBuilder> {
@@ -204,7 +204,7 @@ impl PyJointBuilderChain {
 	fn mirror(slf: PyRef<'_, Self>, axis: PyMirrorAxis) -> PyResult<Py<Self>> {
 		let py = slf.py();
 		init_pyclass_initializer(
-			Self::from_chained(Self::as_chained(slf).mirror(axis.into())),
+			Self::from_chained(py, Self::as_chained(slf).mirror(axis.into())),
 			py,
 		)
 	}
@@ -227,7 +227,7 @@ impl PyJointBuilderChain {
 
 impl TryIntoPy<Py<PyJointBuilderChain>> for Chained<JointBuilder> {
 	fn try_into_py(self, py: Python<'_>) -> PyResult<Py<PyJointBuilderChain>> {
-		init_pyclass_initializer(PyJointBuilderChain::from_chained(self), py)
+		init_pyclass_initializer(PyJointBuilderChain::from_chained(py, self), py)
 	}
 }
 
@@ -301,8 +301,8 @@ impl PyJoint {
 		Ok(self.try_internal()?.py_read()?.axis())
 	}
 
-	fn rebuild(&self) -> PyResult<PyJointBuilder> {
-		Ok(self.try_internal()?.py_read()?.rebuild().into())
+	fn rebuild(&self, py: Python<'_>) -> PyResult<PyJointBuilder> {
+		Ok(self.try_internal()?.py_read()?.rebuild().into_py(py))
 	}
 
 	fn rebuild_branch(&self, py: Python<'_>) -> PyResult<Py<PyJointBuilderChain>> {

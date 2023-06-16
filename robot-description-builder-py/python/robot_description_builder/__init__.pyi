@@ -1,5 +1,8 @@
 from enum import Enum, auto
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from robot_description_builder.cluster_objects import Robot
 
 class Transform:
     x: Optional[float]
@@ -27,3 +30,5 @@ class MirrorAxis(Enum):
     X = auto()
     Y = auto()
     Z = auto()
+
+def to_urdf_string(description: Robot, **kwargs) -> str: ...

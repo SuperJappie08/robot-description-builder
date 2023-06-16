@@ -13,7 +13,7 @@ from robot_description_builder.link.geometry import (
 from robot_description_builder.link.visual import VisualBuilder
 from robot_description_builder.material import Color, MaterialDescriptor
 
-
+# [Building a Movable Robot Model with URDF](http://wiki.ros.org/urdf/Tutorials/Building%20a%20Movable%20Robot%20Model%20with%20URDF)
 def main():
     # ==== Material Descriptions ==== #
     blue_material = MaterialDescriptor(Color(0, 0, 0.8), "blue")
@@ -28,7 +28,7 @@ def main():
     model = base_link.build().to_robot("visual")
 
     # ======= Start rigth leg ======= #
-    right_leg_link = LinkBuilder("[\\[right]\\]_leg").add_visual(
+    right_leg_link = LinkBuilder(r"[\[right]\]_leg").add_visual(
         VisualBuilder(
             BoxGeometry(0.6, 0.1, 0.2),
             material=white_material,
@@ -38,17 +38,17 @@ def main():
 
     right_leg = right_leg_link.build()
 
-    right_base_link = LinkBuilder("[\\[right]\\]_base").add_visual(
+    right_base_link = LinkBuilder(r"[\[right]\]_base").add_visual(
         VisualBuilder(BoxGeometry(0.4, 0.1, 0.1), material=white_material)
     )
 
     right_base_joint = JointBuilder(
-        "[\\[right]\\]_base_joint", JointType.Fixed, transform=Transform(z=-0.6)
+        r"[\[right]\]_base_joint", JointType.Fixed, transform=Transform(z=-0.6)
     )
 
     right_leg.root_link.try_attach_child(right_base_link, right_base_joint)
 
-    right_front_wheel_link = LinkBuilder("[\\[right]\\]_[[front]]_wheel").add_visual(
+    right_front_wheel_link = LinkBuilder(r"[\[right]\]_[[front]]_wheel").add_visual(
         VisualBuilder(
             CylinderGeometry(0.035, 0.1),
             origin=Transform(roll=pi / 2),
@@ -58,20 +58,22 @@ def main():
 
     right_front_wheel_joint = JointBuilder(
         r"[\[right]\]_[[front]]_wheel_joint",
-        JointType.Fixed,
+        JointType.Continuous,
         transform=Transform(x=0.133333333333, z=-0.085),
     )
+    right_front_wheel_joint.axis = (0,1,0)
 
     right_leg.newest_link.try_attach_child(
         right_front_wheel_link, right_front_wheel_joint
     )
 
     right_back_wheel = (
-        right_leg.joints["[\\[right]\\]_[[front]]_wheel_joint"]
+        right_leg.joints[r"[\[right]\]_[[front]]_wheel_joint"]
         .rebuild_branch()
         .mirror(MirrorAxis.X)
     )
     right_back_wheel.change_group_id("back")
+    right_back_wheel.axis = (0,1,0)
 
     right_leg.links[r"[\[right]\]_base"].attach_joint_chain(right_back_wheel)
 
@@ -134,7 +136,8 @@ def main():
     gripper_pole.root_link.try_attach_child(
         left_gripper.yank_root(),
         JointBuilder(
-            "[[left]]_gripper_joint", JointType.Fixed, transform=Transform(0.2, 0.01)
+        # TODO: FINISH
+            "[[left]]_gripper_joint", JointType.Revolute, transform=Transform(0.2, 0.01)
         ),
     )
 

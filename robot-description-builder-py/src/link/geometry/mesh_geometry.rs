@@ -1,6 +1,6 @@
 use pyo3::{basic::CompareOp, intern, prelude::*};
 
-use robot_description_builder::link_data::geometry::{MeshGeometry, GeometryInterface};
+use robot_description_builder::link_data::geometry::{GeometryInterface, MeshGeometry};
 
 use super::PyGeometryBase;
 
@@ -11,7 +11,11 @@ pub struct PyMeshGeometry {
 }
 
 impl PyMeshGeometry {
-	fn new(path: String, bounding_box: (f32, f32, f32), scale: Option<(f32, f32, f32)>) -> (PyMeshGeometry, PyGeometryBase) {
+	fn new(
+		path: String,
+		bounding_box: (f32, f32, f32),
+		scale: Option<(f32, f32, f32)>,
+	) -> (PyMeshGeometry, PyGeometryBase) {
 		let geometry = MeshGeometry::new(path, bounding_box, scale);
 		let base = PyGeometryBase::new(&geometry);
 		(PyMeshGeometry { inner: geometry }, base)
@@ -23,7 +27,11 @@ impl PyMeshGeometry {
 	/// TODO: Names of arguments might be incorrect/Require explanation
 	#[new]
 	#[pyo3(signature = (path, bounding_box, scale=None))]
-	fn py_new(path: String, bounding_box: (f32, f32, f32), scale: Option<(f32, f32, f32)>) -> (PyMeshGeometry, PyGeometryBase) {
+	fn py_new(
+		path: String,
+		bounding_box: (f32, f32, f32),
+		scale: Option<(f32, f32, f32)>,
+	) -> (PyMeshGeometry, PyGeometryBase) {
 		Self::new(path, bounding_box, scale)
 	}
 
@@ -64,39 +72,39 @@ impl PyMeshGeometry {
 		super_class.inner = data;
 	}
 
-    #[getter]
-    fn get_bounding_box(&self) -> (f32, f32, f32) {
-        self.inner.bounding_box
-    }
+	#[getter]
+	fn get_bounding_box(&self) -> (f32, f32, f32) {
+		self.inner.bounding_box
+	}
 
-    #[setter]
-    fn set_bounding_box(mut slf: PyRefMut<'_, Self>, bounding_box: (f32, f32, f32)) {
-        slf.inner.bounding_box.0 = bounding_box.0;
-        slf.inner.bounding_box.1 = bounding_box.1;
-        slf.inner.bounding_box.2 = bounding_box.2;
+	#[setter]
+	fn set_bounding_box(mut slf: PyRefMut<'_, Self>, bounding_box: (f32, f32, f32)) {
+		slf.inner.bounding_box.0 = bounding_box.0;
+		slf.inner.bounding_box.1 = bounding_box.1;
+		slf.inner.bounding_box.2 = bounding_box.2;
 
-        let data = slf.inner.boxed_clone();
-
-		let mut super_class = slf.into_super();
-		super_class.inner = data;
-    }
-
-    #[getter]
-    fn get_scale(&self) -> (f32, f32, f32) {
-        self.inner.scale
-    }
-
-    #[setter]
-    fn set_scale(mut slf: PyRefMut<'_, Self>, scale: (f32, f32, f32)) {
-        slf.inner.scale.0 = scale.0;
-        slf.inner.scale.1 = scale.1;
-        slf.inner.scale.2 = scale.2;
-
-        let data = slf.inner.boxed_clone();
+		let data = slf.inner.boxed_clone();
 
 		let mut super_class = slf.into_super();
 		super_class.inner = data;
-    }
+	}
+
+	#[getter]
+	fn get_scale(&self) -> (f32, f32, f32) {
+		self.inner.scale
+	}
+
+	#[setter]
+	fn set_scale(mut slf: PyRefMut<'_, Self>, scale: (f32, f32, f32)) {
+		slf.inner.scale.0 = scale.0;
+		slf.inner.scale.1 = scale.1;
+		slf.inner.scale.2 = scale.2;
+
+		let data = slf.inner.boxed_clone();
+
+		let mut super_class = slf.into_super();
+		super_class.inner = data;
+	}
 }
 
 impl From<MeshGeometry> for PyMeshGeometry {

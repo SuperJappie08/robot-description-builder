@@ -1,7 +1,7 @@
 use pyo3::{intern, prelude::*};
-use robot_description_builder::Robot;
+use robot_description_builder::{KinematicInterface, Robot};
 
-use crate::utils;
+use crate::{link::PyLink, utils};
 
 use super::{PyKinematicBase, PyKinematicTree};
 
@@ -59,6 +59,14 @@ impl PyRobot {
 
 		Ok(robot)
 	}
+
+	pub(crate) fn get_weak(&self) -> PyObject {
+		self.me.clone()
+	}
+
+	pub fn as_robot(&self) -> &Robot {
+		&self.inner
+	}
 }
 
 #[pymethods]
@@ -67,6 +75,15 @@ impl PyRobot {
 	fn name(&self) -> String {
 		self.inner.name().clone()
 	}
+	#[getter]
+	fn get_root_link(&self) -> PyLink {
+		(self.inner.get_root_link(), self.get_weak()).into()
+	}
+
+	#[getter]
+	fn get_newest_link(&self) -> PyLink {
+		(self.inner.get_newest_link(), self.get_weak()).into()
+	}
 }
 
 // impl From<Robot> for PyRobot {
@@ -74,3 +91,9 @@ impl PyRobot {
 // 		Self { inner: value }
 // 	}
 // }
+
+impl From<PyRobot> for Robot {
+	fn from(value: PyRobot) -> Self {
+		value.inner
+	}
+}

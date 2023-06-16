@@ -39,6 +39,13 @@ pub mod errors {
 	pub use super::identifiers::GroupIDError;
 }
 
+#[cfg(feature = "wrapper")]
+pub mod reexport {
+	pub use nalgebra;
+	#[cfg(feature = "xml")]
+	pub use quick_xml;
+}
+
 #[cfg(test)]
 mod tests {
 	// #[test]
