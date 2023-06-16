@@ -1,6 +1,7 @@
 mod box_geometry;
 mod cylinder_geometry;
 mod sphere_geometry;
+mod mesh_geometry;
 
 use pyo3::{basic::CompareOp, exceptions::PyNotImplementedError, prelude::*};
 use robot_description_builder::link_data::geometry::{GeometryInterface, GeometryShapeContainer};
@@ -8,6 +9,7 @@ use robot_description_builder::link_data::geometry::{GeometryInterface, Geometry
 pub use box_geometry::PyBoxGeometry;
 pub use cylinder_geometry::PyCylinderGeometry;
 pub use sphere_geometry::PySphereGeometry;
+pub use self::mesh_geometry::PyMeshGeometry;
 
 pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
 	// let module = PyModule::new(py, "geometry")?;
@@ -16,6 +18,7 @@ pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
 	module.add_class::<PyBoxGeometry>()?;
 	module.add_class::<PySphereGeometry>()?;
 	module.add_class::<PyCylinderGeometry>()?;
+	module.add_class::<PyMeshGeometry>()?;
 
 	// parent_module.add_submodule(module)?;
 
@@ -65,6 +68,9 @@ impl PyGeometryBase {
 			}
 			GeometryShapeContainer::Sphere(geometry) => {
 				Into::<PySphereGeometry>::into(geometry).__repr__(py)
+			}
+			GeometryShapeContainer::Mesh(geometry) => {
+				Into::<PyMeshGeometry>::into(geometry).__repr__(py)
 			}
 			other => Err(PyNotImplementedError::new_err(format!(
 				"__repr__ for {other:?} via GeometryBase is not implemented yet."

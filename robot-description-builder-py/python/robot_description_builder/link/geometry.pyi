@@ -1,6 +1,6 @@
 # Interface completish
 # TODO: DOCS incomplete
-from typing import Final, Tuple
+from typing import Final, Optional, Tuple
 
 # Need to use typing.Tuple instead of tuple because Python 3.8 is supported (Supported since Python 3.9)
 
@@ -51,6 +51,25 @@ class CylinderGeometry(GeometryBase):
     # Might be excessive
     def __eq__(self, other: BoxGeometry) -> bool: ...
     def __neq__(self, other: BoxGeometry) -> bool: ...
+
+
+class MeshGeometry(GeometryBase):
+    """TODO: DOC"""
+    path: str
+    """TODO: DOC"""
+    bounding_box: Tuple[float, float, float]
+    """TODO: DOC"""
+    scale: Tuple[float, float, float]
+    """TODO: DOC"""
+
+    def __new__(cls, path: str, bounding_box: Tuple[float, float, float], scale: Optional[Tuple[float, float, float]] = None) -> CylinderGeometry: ...
+    """TODO: DOC"""
+
+    def __repr__(self) -> str: ...
+    # Might be excessive
+    def __eq__(self, other: BoxGeometry) -> bool: ...
+    def __neq__(self, other: BoxGeometry) -> bool: ...
+
 
 class SphereGeometry(GeometryBase):
     """TODO: DOC"""

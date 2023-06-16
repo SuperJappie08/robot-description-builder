@@ -2,10 +2,13 @@
 from math import pi
 
 import robot_description_builder as rdb
-from robot_description_builder import Transform, MirrorAxis
+from robot_description_builder import MirrorAxis, Transform
 from robot_description_builder.joint import JointBuilder, JointType
 from robot_description_builder.link import LinkBuilder
-from robot_description_builder.link.geometry import BoxGeometry, CylinderGeometry
+from robot_description_builder.link.geometry import (BoxGeometry,
+                                                     CylinderGeometry,
+                                                     MeshGeometry,
+                                                     SphereGeometry)
 from robot_description_builder.link.visual import VisualBuilder
 from robot_description_builder.material import Color, MaterialDescriptor
 
@@ -102,11 +105,71 @@ def main():
         .build()
     )
 
-    # left_gripper = LinkBuilder("[[left]]_gripper").add_visual(VisualBuilder(
-    #     MeshGeometry()
-    # ))
+    left_gripper = (
+        LinkBuilder("[[left]]_gripper")
+        .add_visual(
+            VisualBuilder(
+                MeshGeometry(
+                    "package://urdf_tutorial/meshes/l_finger.dae", (0.1, 0.05, 0.06)
+                )
+            )
+        )
+        .build()
+    )
+
+    left_gripper.root_link.try_attach_child(
+        LinkBuilder("[[left]]_tip").add_visual(
+            VisualBuilder(
+                MeshGeometry(
+                    "package://urdf_tutorial/meshes/l_finger_tip.dae",
+                    (0.06, 0.04, 0.02),
+                ),
+                origin=Transform(0.09137, 0.00495),
+            )
+        ),
+        JointBuilder("[[left]]_tip_joint", JointType.Fixed),
+    )
+
+    gripper_pole.root_link.try_attach_child(
+        left_gripper.yank_root(),
+        JointBuilder(
+            "[[left]]_gripper_joint", JointType.Fixed, transform=Transform(0.2, 0.01)
+        ),
+    )
+
+    right_gripper = (
+        gripper_pole.joints["[[left]]_gripper_joint"]
+        .rebuild_branch()
+        .mirror(MirrorAxis.Y)
+    )
+
+    right_gripper.change_group_id("right")
+
+    gripper_pole.root_link.attach_joint_chain(right_gripper)
+
+    model.root_link.try_attach_child(
+        gripper_pole.yank_root(),
+        JointBuilder(
+            "gripper_extension", JointType.Fixed, transform=Transform(0.19, 0.0, 0.2)
+        ),
+    )
+
+    # ====== Defining the HEAD ====== #
+    head_link = LinkBuilder("head").add_visual(
+        VisualBuilder(
+            SphereGeometry(0.2),
+            material=MaterialDescriptor(Color(1.0, 1.0, 1.0), "white"),
+        )
+    )
+
+    head_swivel_joint = JointBuilder(
+        "head_swivel", JointType.Fixed, transform=Transform(z=0.3)
+    )
+
+    model.root_link.try_attach_child(head_link, head_swivel_joint)
 
     # TODO:
+    # TO URDF
 
     print(blue_material)
 
