@@ -1,5 +1,18 @@
-use rdb_py_macro::enum_generic_state;
-use robot_description_builder::smart_joint_extension::smartparams::*;
-use robot_description_builder::{smart_joint_extension::types::FixedType, SmartJointBuilder};
+// It is not needed to use super expansion macro for this type
+use robot_description_builder::{
+	smart_joint_extension::{smartparams::*, types::FixedType},
+	SmartJointBuilder,
+};
 
-enum_generic_state!(SmartJointBuilder {[FixedType], [NoAxis], [NoCalibration], [NoDynamics], [NoLimit], [NoMimic], [NoSafetyController]});
+// TODO:
+pub struct PyFixedJointBuilder {
+	inner: SmartJointBuilder<
+		FixedType,
+		NoAxis,
+		NoCalibration,
+		NoDynamics,
+		NoLimit,
+		NoMimic,
+		NoSafetyController,
+	>,
+}

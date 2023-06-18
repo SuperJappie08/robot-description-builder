@@ -46,3 +46,18 @@ where
 		}
 	}
 }
+
+impl<Type, Calibration, Dynamics, Limit, Mimic, SafetyController>
+	SmartJointBuilder<Type, WithAxis, Calibration, Dynamics, Limit, Mimic, SafetyController>
+where
+	Type: AxisAllowed,
+	Calibration: smart_joint_datatraits::CalibrationDataType,
+	Dynamics: smart_joint_datatraits::DynamicsDataType,
+	Limit: smart_joint_datatraits::LimitDataType,
+	Mimic: smart_joint_datatraits::MimicDataType,
+	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
+{
+	pub fn axis(&self) -> (f32, f32, f32) {
+		(self.axis.0, self.axis.1, self.axis.2)
+	}
+}

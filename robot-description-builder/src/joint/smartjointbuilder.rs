@@ -5,7 +5,7 @@ pub use smartjointtypes::{
 	ContinuousType, FixedType, FloatingType, NoType, PlanarType, PrismaticType, RevoluteType,
 };
 
-use super::{joint_tranform_mode::JointTransformMode, jointbuilder::JointBuilder, JointType};
+use super::{joint_tranform_mode::JointTransformMode, jointbuilder::JointBuilder};
 use crate::{link::LinkShapeData, transform::Transform};
 use smartparams::{NoAxis, NoCalibration, NoDynamics, NoLimit, NoMimic, NoSafetyController};
 
@@ -42,6 +42,11 @@ where
 	Mimic: smart_joint_datatraits::MimicDataType,
 	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
 {
+	pub fn rename(mut self, name: impl Into<String>) -> Self {
+		self.name = name.into();
+		self
+	}
+
 	pub fn add_transform(mut self, transform: Transform) -> Self {
 		self.origin = Some(transform.into());
 		self

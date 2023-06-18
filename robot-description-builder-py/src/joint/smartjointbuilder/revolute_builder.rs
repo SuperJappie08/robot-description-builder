@@ -4,11 +4,11 @@ use robot_description_builder::{
 	SmartJointBuilder,
 };
 
-enum_generic_state!(SmartJointBuilder {[RevoluteType],
-	[NoAxis, WithAxis],
-	[NoCalibration, WithCalibration],
-	[NoDynamics, WithDynamics],
-	[NoLimit, WithLimit],
-	[NoMimic, WithMimic],
+enum_generic_state!(SmartJointBuilder RevoluteType
+	[NoAxis, WithAxis]
+	[NoCalibration, WithCalibration]
+	[NoDynamics, WithDynamics]
+	[NoLimit, WithLimit]
+	[NoMimic, WithMimic]
 	[NoSafetyController, WithSafetyController]
-});
+);

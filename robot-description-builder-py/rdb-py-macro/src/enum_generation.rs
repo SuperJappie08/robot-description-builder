@@ -1,8 +1,8 @@
-use crate::parse::Generics;
+use crate::parse::GenericsEnumInput;
 
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{punctuated::Punctuated, Ident, Token, TypePath};
+use syn::{Ident, TypePath};
 
 use itertools::Itertools;
 
@@ -13,39 +13,45 @@ pub struct Variant {
 	pub variant_snip: TokenStream,
 }
 
-pub fn generate_variants(
-	mother_type: &Ident,
-	generics: Punctuated<Generics, Token![,]>,
-) -> Vec<Variant> {
-	let mut gen_iter = generics.into_iter();
+pub fn generate_variants(input: &GenericsEnumInput) -> Vec<Variant> {
+	let mut gen_iter = input.as_vec_of_vecs().into_iter();
+	let counts = input.as_counts();
 
 	let first = gen_iter.next().unwrap();
 	gen_iter
-		.fold(
-			first.options.into_iter().map(|val| vec![val]).collect_vec(),
-			|main: Vec<Vec<TypePath>>, iter| {
-				main.into_iter()
-					.cartesian_product(iter.options)
-					.map(|tup| {
-						let mut n = tup.0.clone();
-						n.push(tup.1);
-						n
-					})
-					.collect_vec()
-			},
-		)
+		.fold(vec![first], |main: Vec<Vec<TypePath>>, iter| {
+			main.into_iter()
+				.cartesian_product(iter.into_iter())
+				.map(|tup| {
+					let mut n = tup.0.clone();
+					n.push(tup.1);
+					n
+				})
+				.collect_vec()
+		})
 		.into_iter()
-		.map(|generic_types| generate_variant(mother_type, generic_types))
+		.map(|generic_types| generate_variant(&input.mother_type, generic_types, &counts))
 		.collect()
 }
 
-fn generate_variant(mother_type: &Ident, generic_types: Vec<TypePath>) -> Variant {
+fn generate_variant(
+	mother_type: &Ident,
+	generic_types: Vec<TypePath>,
+	counts: &[usize],
+) -> Variant {
 	let identifier = Ident::new(
 		generic_types
+			.to_vec()
 			.iter()
-			.cloned()
+			.zip_eq(counts.iter().copied())
+			.filter(|(_, count)| *count > 1)
+			.map(|(t, _)| t)
 			.map(|t| t.path.get_ident().unwrap().clone())
 			.join("")
+			.replace("With", "")
+			.replace("SafetyController", "SC")
+			.replace("Calibration", "Calib")
+			.replace("Dynamics", "Dynam")
 			.as_str(),
 		generic_types
 			.first()

@@ -100,9 +100,17 @@ where
 		self
 	}
 
+	pub fn effort(&self) -> f32 {
+		self.limit.effort
+	}
+
 	pub fn set_velocity(mut self, velocity: f32) -> Self {
 		self.limit.velocity = velocity;
 		self
+	}
+
+	pub fn velocity(&self) -> f32 {
+		self.limit.velocity
 	}
 }
 

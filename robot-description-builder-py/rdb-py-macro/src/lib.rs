@@ -1,3 +1,4 @@
+mod code_gen;
 mod conversion_impls;
 mod enum_generation;
 mod error_gen;
@@ -12,33 +13,33 @@ use syn::{parse_macro_input, Ident};
 
 use itertools::Itertools;
 
+/// TODO: Add field for IsContinous.
 #[proc_macro]
 pub fn enum_generic_state(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream {
 	let input = parse_macro_input!(tokens as GenericsEnumInput);
-	let mother_type = input.mother_type;
+
+	let mother_type = &input.mother_type;
+	let joint_type = &input.base_type;
 
 	let all_generics = input
-		.generics
-		.clone()
+		.get_all_generic_types()
 		.into_iter()
-		.flat_map(|g| g.options.into_iter())
 		.unique_by(|ty| format!("{}", ty.path.get_ident().unwrap()));
 
 	let enum_name = {
-		let joint_type = input.generics.first().unwrap().options.first().unwrap();
 		Ident::new(
 			format!(
 				"{}{}",
 				joint_type.path.segments.last().unwrap().ident,
 				mother_type
 			)
+			.replace("Type", "")
 			.as_str(),
 			mother_type.span(),
 		)
 	};
 
 	let mod_name = {
-		let joint_type = input.generics.first().unwrap().options.first().unwrap();
 		Ident::new(
 			format!(
 				"{}_{}",
@@ -46,12 +47,13 @@ pub fn enum_generic_state(tokens: proc_macro::TokenStream) -> proc_macro::TokenS
 				mother_type
 			)
 			.to_lowercase()
+			.replace("type", "")
 			.as_str(),
 			mother_type.span(),
 		)
 	};
 
-	let variants_data = generate_variants(&mother_type, input.generics);
+	let variants_data = generate_variants(&input);
 
 	let (variant_info, variants): (Vec<(Ident, TokenStream)>, Vec<TokenStream>) = variants_data
 		.into_iter()
@@ -64,6 +66,15 @@ pub fn enum_generic_state(tokens: proc_macro::TokenStream) -> proc_macro::TokenS
 		.unzip();
 
 	let (err_type, errors) = error_gen::generate_state_error(&enum_name, &variant_info);
+
+	let impls = code_gen::generate_smartjointbuilder_impls(
+		&enum_name,
+		&input.base_type,
+		&variant_info,
+		input.as_counts(),
+		&err_type,
+	);
+
 	let intos = variant_info.iter().map(|(variant, ty)| {
 		conversion_impls::impl_tryfrom_val_enum(&enum_name, variant, ty, &err_type)
 	});
@@ -72,6 +83,7 @@ pub fn enum_generic_state(tokens: proc_macro::TokenStream) -> proc_macro::TokenS
 		mod #mod_name {
 			use super::{#mother_type, #(#all_generics,)*};
 
+			#[derive(::core::fmt::Debug, ::core::clone::Clone)]
 			pub(super) enum #enum_name {
 				#(#variants)*
 			}
@@ -79,6 +91,8 @@ pub fn enum_generic_state(tokens: proc_macro::TokenStream) -> proc_macro::TokenS
 			#(#intos)*
 
 			#errors
+
+			#(#impls)*
 		}
 
 		use #mod_name::{#enum_name, #err_type};

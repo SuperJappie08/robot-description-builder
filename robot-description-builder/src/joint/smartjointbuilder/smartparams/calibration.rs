@@ -73,8 +73,16 @@ where
 		self
 	}
 
+	pub fn rising_calibration(&self) -> Option<f32> {
+		self.calibration.rising
+	}
+
 	pub fn set_falling_calibration(mut self, falling: f32) -> Self {
 		self.calibration.falling = Some(falling);
 		self
+	}
+
+	pub fn falling_calibration(&self) -> Option<f32> {
+		self.calibration.falling
 	}
 }

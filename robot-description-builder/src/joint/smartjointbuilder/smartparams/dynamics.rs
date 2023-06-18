@@ -73,8 +73,16 @@ where
 		self
 	}
 
+	pub fn damping(&self) -> Option<f32> {
+		self.dynamics.damping
+	}
+
 	pub fn set_friction(mut self, friction: f32) -> Self {
 		self.dynamics.friction = Some(friction);
 		self
+	}
+
+	pub fn friction(&self) -> Option<f32> {
+		self.dynamics.friction
 	}
 }
