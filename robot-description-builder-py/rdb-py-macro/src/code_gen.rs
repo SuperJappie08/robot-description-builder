@@ -52,7 +52,7 @@ fn impl_limit(
 	let fn_get_velocity = gen_get_velocity(variants_data);
 
 	// FIXME: Prevent the generation of function when continous.
-    // TODO: Acual limit, which migth lead to compiler errors... 😠
+	// TODO: Acual limit, which migth lead to compiler errors... 😠
 
 	quote! {
 		/// Methods to modify limit
@@ -63,7 +63,7 @@ fn impl_limit(
 			#fn_get_effort
 
 			#fn_set_velocity
-            #fn_get_velocity
+			#fn_get_velocity
 		}
 	}
 }
@@ -112,10 +112,10 @@ fn gen_get_velocity(variants_data: &[(Ident, TokenStream)]) -> TokenStream {
 
 	quote! {
 		pub fn velocity(&self) -> Option<f32> {
-            match self {
-                #(#variants)*
-                _ => None,
-            }
+			match self {
+				#(#variants)*
+				_ => None,
+			}
 		}
 	}
 }
@@ -148,10 +148,10 @@ fn gen_get_effort(variants_data: &[(Ident, TokenStream)]) -> TokenStream {
 
 	quote! {
 		pub fn effort(&self) -> Option<f32> {
-            match self {
-                #(#variants)*
-                _ => None,
-            }
+			match self {
+				#(#variants)*
+				_ => None,
+			}
 		}
 	}
 }

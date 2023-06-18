@@ -1,16 +1,19 @@
 mod base_joint_builder;
+mod generic_joint_builder;
 mod smartjointbuilder;
 use std::sync::{Arc, RwLock, Weak};
 
-use pyo3::{exceptions::PyTypeError, intern, prelude::*, types::PyDict};
-use robot_description_builder::{prelude::GroupIDChanger, Chained, Joint, JointBuilder, JointType};
+use pyo3::{intern, prelude::*};
+use robot_description_builder::{joint_data, Chained, Joint, JointBuilder, JointType};
 
 use crate::{
-	identifier::GroupIDError,
-	link::{PyLink, PyLinkBuilder},
+	link::PyLink,
 	transform::{PyMirrorAxis, PyTransform},
 	utils::{init_pyclass_initializer, PyReadWriteable, TryIntoPy},
 };
+
+pub use base_joint_builder::PyJointBuilderBase;
+pub use generic_joint_builder::PyJointBuilder;
 
 pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
 	module.add_class::<PyJoint>()?;
@@ -18,172 +21,26 @@ pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
 	module.add_class::<PyJointType>()?;
 	module.add_class::<PyJointBuilderChain>()?;
 
+	module.add_class::<PyJointBuilderBase>()?;
 	Ok(())
 }
 
-#[derive(Debug, Clone)]
-#[pyclass(
-	name = "JointBuilder",
-	module = "robot_description_builder.joint",
-	subclass
-)]
-pub struct PyJointBuilder {
-	builder: JointBuilder,
-	transform: Option<Py<PyTransform>>,
+#[derive(FromPyObject)]
+pub(in crate::joint) struct PyLimit {
+	lower: Option<f32>,
+	upper: Option<f32>,
+	effort: f32,
+	velocity: f32,
 }
 
-impl PyJointBuilder {
-	/// Internal new
-	pub(crate) fn new(name: String, joint_type: PyJointType) -> Self {
+impl From<PyLimit> for joint_data::LimitData {
+	fn from(value: PyLimit) -> Self {
 		Self {
-			builder: JointBuilder::new(name, joint_type.into()),
-			transform: None,
+			lower: value.lower,
+			upper: value.upper,
+			effort: value.effort,
+			velocity: value.velocity,
 		}
-	}
-}
-
-#[pymethods]
-impl PyJointBuilder {
-	#[new]
-	#[pyo3(signature = (name, joint_type, **kwds))]
-	fn py_new(
-		name: String,
-		joint_type: PyJointType,
-		kwds: Option<&PyDict>,
-		py: Python<'_>,
-	) -> PyResult<Self> {
-		let mut result = Self::new(name, joint_type);
-
-		if let Some(kwds) = kwds {
-			if let Some(transform) = kwds
-				.get_item(intern!(py, "transform"))
-				.map(FromPyObject::extract)
-			{
-				result.transform = transform?;
-				kwds.del_item(intern!(py, "transform"))?;
-			}
-
-			if !kwds.is_empty() {
-				let qual_name = py
-					.get_type::<Self>()
-					.getattr(intern!(py, "__new__"))?
-					.getattr(intern!(py, "__qualname__"))?;
-				return Err(PyTypeError::new_err(format!(
-					"{}() got an unexpected keyword argument {}",
-					qual_name,
-					kwds.keys()
-						.get_item(0)
-						.expect("The dict should not have been empty")
-						.repr()?
-				)));
-			}
-		}
-
-		Ok(result)
-	}
-
-	#[getter]
-	pub fn get_name(&self) -> String {
-		self.builder.name().clone()
-	}
-
-	#[getter]
-	fn get_joint_type(&self) -> PyJointType {
-		(*self.builder.joint_type()).into()
-	}
-
-	#[getter]
-	fn get_transform(&self) -> Option<Py<PyTransform>> {
-		self.transform.clone()
-	}
-
-	#[setter]
-	fn set_transform(&mut self, transform: Option<Py<PyTransform>>) {
-		self.transform = transform
-	}
-	// TODO: transform advanced
-
-	#[getter]
-	fn get_child(&self) -> Option<PyLinkBuilder> {
-		self.builder.child().cloned().map(Into::into)
-	}
-
-	#[getter]
-	fn get_axis(&self) -> Option<(f32, f32, f32)> {
-		self.builder.axis()
-	}
-
-	#[setter]
-	fn set_axis(&mut self, axis: Option<(f32, f32, f32)>) {
-		match (axis, self.builder.axis().is_some()) {
-			(Some(axis), _) => self.builder.with_axis(axis),
-			(None, true) => {
-				// This would be easier
-				// self.inner = JointBuilder{
-				// 	axis: None,
-				// 	..self.inner.clone()
-				// }
-				// TODO: This is a lot of work, it is easier to change the Rust libary
-				todo!()
-			}
-			(None, false) => (),
-		}
-	}
-
-	// /// TEMP implementation
-	// fn add_origin_offset(&mut self, x: f32, y: f32, z: f32) {
-	// 	self.inner = self.inner.clone().add_origin_offset((x, y, z));
-	// }
-
-	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		let class_name = py
-			.get_type::<Self>()
-			.getattr(intern!(py, "__qualname__"))?
-			.extract::<&str>()?;
-
-		// TODO: EXPAND
-		Ok(format!(
-			"{class_name}({}, {}, ...)",
-			self.get_name(),
-			self.get_joint_type().__pyo3__repr__()
-		))
-	}
-
-	fn change_group_id(&mut self, new_group_id: String, _py: Python<'_>) -> PyResult<()> {
-		self.builder
-			.change_group_id(new_group_id)
-			.map_err(GroupIDError::from)
-	}
-
-	fn apply_group_id(&mut self, _py: Python<'_>) {
-		self.builder.apply_group_id()
-	}
-}
-
-impl IntoPy<PyJointBuilder> for JointBuilder {
-	fn into_py(self, py: Python<'_>) -> PyJointBuilder {
-		PyJointBuilder {
-			transform: self
-				.transform()
-				.copied()
-				.map(Into::into)
-				.map(|transform: PyTransform| {
-					Py::new(py, transform).unwrap() // FIXME: Ok? This unwrap is mostly interpreter errors
-				}),
-			builder: self,
-		}
-	}
-}
-
-impl From<PyJointBuilder> for JointBuilder {
-	fn from(mut value: PyJointBuilder) -> Self {
-		if let Some(py_transform) = value.transform {
-			value
-				.builder
-				.set_transform_simple(Python::with_gil(|py| (*py_transform.borrow(py)).into()))
-		}
-
-		value.builder
 	}
 }
 
@@ -193,11 +50,16 @@ pub struct PyJointBuilderChain;
 
 impl PyJointBuilderChain {
 	fn from_chained(py: Python<'_>, chained: Chained<JointBuilder>) -> PyClassInitializer<Self> {
-		(Self, (*chained).clone().into_py(py)).into()
+		PyClassInitializer::from(IntoPy::<PyJointBuilderBase>::into_py(
+			(*chained).clone(),
+			py,
+		))
+		.add_subclass(PyJointBuilder)
+		.add_subclass(Self)
 	}
 
 	pub fn as_chained(slf: PyRef<'_, Self>) -> Chained<JointBuilder> {
-		unsafe { Chained::new(slf.into_super().builder.clone()) }
+		unsafe { Chained::new(slf.into_super().as_ref().builder.clone()) }
 	}
 }
 
@@ -218,11 +80,13 @@ impl PyJointBuilderChain {
 			.getattr(intern!(slf.py(), "__qualname__"))?
 			.extract::<&str>()?;
 
+		let super_slf = slf.into_super();
+
 		// TODO: EXPAND
 		Ok(format!(
 			"{class_name}({}, {}, ...)",
-			slf.as_ref().get_name(),
-			slf.as_ref().get_joint_type().__pyo3__repr__()
+			super_slf.as_ref().get_name(),
+			super_slf.as_ref().get_joint_type().__pyo3__repr__()
 		))
 	}
 }
@@ -303,8 +167,15 @@ impl PyJoint {
 		Ok(self.try_internal()?.py_read()?.axis())
 	}
 
-	fn rebuild(&self, py: Python<'_>) -> PyResult<PyJointBuilder> {
-		Ok(self.try_internal()?.py_read()?.rebuild().into_py(py))
+	fn rebuild(&self, py: Python<'_>) -> PyResult<Py<PyJointBuilder>> {
+		init_pyclass_initializer(
+			(
+				PyJointBuilder,
+				self.try_internal()?.py_read()?.rebuild().into_py(py),
+			)
+				.into(),
+			py,
+		)
 	}
 
 	fn rebuild_branch(&self, py: Python<'_>) -> PyResult<Py<PyJointBuilderChain>> {

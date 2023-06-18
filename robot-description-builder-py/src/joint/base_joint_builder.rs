@@ -5,15 +5,15 @@ use crate::{link::PyLinkBuilder, transform::PyTransform};
 
 use super::PyJointType;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 #[pyclass(
 	name = "JointBuilderBase",
 	module = "robot_description_builder.joint",
 	subclass
 )]
 pub struct PyJointBuilderBase {
-	builder: JointBuilder,
-	transform: Option<Py<PyTransform>>,
+	pub(super) builder: JointBuilder,
+	pub(super) transform: Option<Py<PyTransform>>,
 }
 
 /// These functions probally should become pub(super)
@@ -57,21 +57,27 @@ impl PyJointBuilderBase {
 #[pymethods]
 impl PyJointBuilderBase {
 	#[getter]
-	fn get_name(&self) -> String {
+	pub fn get_name(&self) -> String {
 		self.builder.name().clone()
 	}
 
 	#[getter]
-	fn get_type(&self) -> PyJointType {
+	pub fn get_joint_type(&self) -> PyJointType {
 		(*self.builder.joint_type()).into()
 	}
 
 	#[getter]
-	fn get_transform(&self) -> Option<Py<PyTransform>> {
+	pub fn get_transform(&self) -> Option<Py<PyTransform>> {
 		// TODO: How to now if updated
 		// Might be able to use pre-existing technique
 		self.transform.clone()
 	}
+
+	#[setter]
+	fn set_transform(&mut self, transform: Option<Py<PyTransform>>) {
+		self.transform = transform
+	}
+	// TODO: transform advanced
 
 	// TODO: I want this on this object however do not know how to pass back to inheriter
 	// I can probably overwrit it when necessary
@@ -79,18 +85,18 @@ impl PyJointBuilderBase {
 	// fn set_transform(&mut self)
 
 	#[getter]
-	fn get_child(&self) -> Option<PyLinkBuilder> {
+	pub fn get_child(&self) -> Option<PyLinkBuilder> {
 		self.builder.child().cloned().map(Into::into)
 	}
 
 	#[getter]
-	fn get_axis(&self) -> Option<(f32, f32, f32)> {
+	pub fn get_axis(&self) -> Option<(f32, f32, f32)> {
 		self.builder.axis()
 	}
 
 	/// TODO: BETTER TYPE (falling, rising)
 	#[getter]
-	fn get_calibration(&self) -> Option<(Option<f32>, Option<f32>)> {
+	pub fn get_calibration(&self) -> Option<(Option<f32>, Option<f32>)> {
 		let data = self.builder.calibration();
 
 		match data.contains_some() {
@@ -101,7 +107,7 @@ impl PyJointBuilderBase {
 
 	/// TODO: BETTER TYPE (friction, damping)
 	#[getter]
-	fn get_dynamics(&self) -> Option<(Option<f32>, Option<f32>)> {
+	pub fn get_dynamics(&self) -> Option<(Option<f32>, Option<f32>)> {
 		let data = self.builder.dynamics();
 
 		match data.contains_some() {
@@ -112,27 +118,23 @@ impl PyJointBuilderBase {
 
 	/// TODO: Better types
 	#[getter]
-	fn get_limit(&self, py: Python<'_>) -> PyResult<Option<PyObject>> {
+	pub fn get_limit<'py>(&self, py: Python<'py>) -> PyResult<Option<&'py PyAny>> {
 		match self.builder.limit() {
 			Some(limit) => {
-				let dict = PyDict::new(py);
-				dict.set_item(intern!(py, "velocity"), limit.velocity)?;
-				dict.set_item(intern!(py, "effort"), limit.effort)?;
+				let py_limit = py
+					.import(intern!(py, "robot_description_builder.joint"))?
+					.getattr(intern!(py, "limit"))?;
 
-				if limit.lower.is_some() || limit.upper.is_some() {
-					dict.set_item(
-						intern!(py, "lower"),
-						limit.lower.unwrap_or(f32::NEG_INFINITY),
-					)?;
-					dict.set_item(intern!(py, "upper"), limit.upper.unwrap_or(f32::INFINITY))?;
-				}
-
-				Ok(Some(unsafe {
-					Py::from_owned_ptr_or_err(
-						py,
-						pyo3::ffi::PyDictProxy_New(dict.as_mapping().into_ptr()),
-					)?
-				}))
+				Ok(Some(py_limit.call_method1(
+					intern!(py, "__new__"),
+					(
+						py_limit,
+						limit.effort,
+						limit.velocity,
+						limit.lower,
+						limit.upper,
+					),
+				)?))
 			}
 			None => Ok(None),
 		}
@@ -140,7 +142,7 @@ impl PyJointBuilderBase {
 
 	/// TODO: Propper types
 	#[getter]
-	fn get_mimic(&self, py: Python<'_>) -> PyResult<Option<PyObject>> {
+	pub fn get_mimic(&self, py: Python<'_>) -> PyResult<Option<PyObject>> {
 		match self.builder.mimic() {
 			Some(mimic) => {
 				let dict = PyDict::new(py);
@@ -161,7 +163,7 @@ impl PyJointBuilderBase {
 
 	/// TODO: Propper types
 	#[getter]
-	fn get_safety_controller(&self, py: Python<'_>) -> PyResult<Option<PyObject>> {
+	pub fn get_safety_controller(&self, py: Python<'_>) -> PyResult<Option<PyObject>> {
 		match self.builder.safety_controller() {
 			Some(safety_controller) => {
 				let dict = PyDict::new(py);
@@ -187,5 +189,32 @@ impl PyJointBuilderBase {
 			}
 			None => Ok(None),
 		}
+	}
+}
+
+impl IntoPy<PyJointBuilderBase> for JointBuilder {
+	fn into_py(self, py: Python<'_>) -> PyJointBuilderBase {
+		PyJointBuilderBase {
+			transform: self
+				.transform()
+				.copied()
+				.map(Into::into)
+				.map(|transform: PyTransform| {
+					Py::new(py, transform).unwrap() // FIXME: Ok? This unwrap is mostly interpreter errors
+				}),
+			builder: self,
+		}
+	}
+}
+
+impl From<PyJointBuilderBase> for JointBuilder {
+	fn from(mut value: PyJointBuilderBase) -> Self {
+		if let Some(py_transform) = value.transform {
+			value
+				.builder
+				.set_transform_simple(Python::with_gil(|py| (*py_transform.borrow(py)).into()))
+		}
+
+		value.builder
 	}
 }

@@ -4,15 +4,15 @@ use robot_description_builder::transmission::{
 	TransmissionHardwareInterface, TransmissionJointBuilder,
 };
 
-use crate::joint::{PyJoint, PyJointBuilder};
+use crate::joint::{PyJoint, PyJointBuilderBase};
 
 use super::PyTransmissionHardwareInterface;
 
 fn get_name_from_joint_or_name(obj: &PyAny) -> PyResult<String> {
 	if obj.is_instance_of::<PyJoint>() {
 		obj.extract::<PyJoint>()?.get_name()
-	} else if obj.is_instance_of::<PyJointBuilder>() {
-		Ok(obj.extract::<PyJointBuilder>()?.get_name())
+	} else if obj.is_instance_of::<PyJointBuilderBase>() {
+		Ok(obj.extract::<PyJointBuilderBase>()?.get_name())
 	} else if obj.is_instance_of::<PyString>() {
 		obj.extract()
 	} else {

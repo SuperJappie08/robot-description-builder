@@ -20,7 +20,7 @@ use crate::{
 	cluster_objects::PyKinematicTree,
 	exceptions::AddJointError,
 	identifier::GroupIDError,
-	joint::{PyJoint, PyJointBuilder, PyJointBuilderChain},
+	joint::{PyJoint, PyJointBuilder, PyJointBuilderBase, PyJointBuilderChain},
 	transform::PyMirrorAxis,
 	utils::{init_pyclass_initializer, PyReadWriteable, TryIntoPy},
 };
@@ -112,13 +112,16 @@ impl PyLinkBuilder {
 	}
 
 	#[getter]
-	fn get_joints(&self, py: Python<'_>) -> Vec<PyJointBuilder> {
-		self.0
-			.joints()
-			.iter()
-			.cloned()
-			.map(|obj| obj.into_py(py))
-			.collect()
+	fn get_joints(&self, py: Python<'_>) -> PyResult<Vec<Py<PyJointBuilder>>> {
+		itertools::process_results(
+			self.0
+				.joints()
+				.iter()
+				.cloned()
+				.map(|obj| (PyJointBuilder, obj.into_py(py)).into())
+				.map(|initer| init_pyclass_initializer(initer, py)),
+			|iter| iter.collect(),
+		)
 	}
 
 	fn add_visual(&mut self, visual: PyVisualBuilder) -> Self {
@@ -151,9 +154,9 @@ impl PyLinkBuilder {
 
 		data += ", joints=[";
 		data += process_results(
-			self.get_joints(py)
+			self.get_joints(py)?
 				.into_iter()
-				.map(|joint_builder| joint_builder.__repr__(py)),
+				.map(|joint_builder| joint_builder.into_ref(py).repr()),
 			|mut iter| iter.join(", "),
 		)?
 		.as_str();
@@ -369,7 +372,7 @@ impl PyLink {
 	fn try_attach_child(
 		&self,
 		link_builder: PyLinkBuilder,
-		joint_builder: PyJointBuilder,
+		joint_builder: PyJointBuilderBase,
 	) -> PyResult<()> {
 		self.try_internal()?
 			.py_write()?

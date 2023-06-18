@@ -2,16 +2,15 @@
 from math import pi
 
 from robot_description_builder import MirrorAxis, Transform, to_urdf_string
-from robot_description_builder.joint import JointBuilder, JointType
+from robot_description_builder.joint import JointBuilder, JointType, Limit
 from robot_description_builder.link import LinkBuilder
-from robot_description_builder.link.geometry import (
-    BoxGeometry,
-    CylinderGeometry,
-    MeshGeometry,
-    SphereGeometry,
-)
+from robot_description_builder.link.geometry import (BoxGeometry,
+                                                     CylinderGeometry,
+                                                     MeshGeometry,
+                                                     SphereGeometry)
 from robot_description_builder.link.visual import VisualBuilder
 from robot_description_builder.material import Color, MaterialDescriptor
+
 
 # [Building a Movable Robot Model with URDF](http://wiki.ros.org/urdf/Tutorials/Building%20a%20Movable%20Robot%20Model%20with%20URDF)
 def main():
@@ -25,7 +24,7 @@ def main():
         VisualBuilder(CylinderGeometry(0.2, 0.6), material=blue_material)
     )
 
-    model = base_link.build().to_robot("visual")
+    model = base_link.build().to_robot("flexible")
 
     # ======= Start rigth leg ======= #
     right_leg_link = LinkBuilder(r"[\[right]\]_leg").add_visual(
@@ -61,7 +60,7 @@ def main():
         JointType.Continuous,
         transform=Transform(x=0.133333333333, z=-0.085),
     )
-    right_front_wheel_joint.axis = (0,1,0)
+    right_front_wheel_joint.axis = (0, 1, 0)
 
     right_leg.newest_link.try_attach_child(
         right_front_wheel_link, right_front_wheel_joint
@@ -73,7 +72,7 @@ def main():
         .mirror(MirrorAxis.X)
     )
     right_back_wheel.change_group_id("back")
-    right_back_wheel.axis = (0,1,0)
+    right_back_wheel.axis = (0, 1, 0)
 
     right_leg.links[r"[\[right]\]_base"].attach_joint_chain(right_back_wheel)
 
@@ -136,11 +135,15 @@ def main():
     gripper_pole.root_link.try_attach_child(
         left_gripper.yank_root(),
         JointBuilder(
-        # TODO: FINISH
-            "[[left]]_gripper_joint", JointType.Revolute, transform=Transform(0.2, 0.01)
+            # TODO: FINISH
+            "[[left]]_gripper_joint",
+            JointType.Revolute,
+            transform=Transform(0.2, 0.01),
+            axis=(0, 0, 1),
+            limit=Limit(1000, 0.5, 0, 0.548),
         ),
     )
-    raise NotImplementedError("Hey")
+
     right_gripper = (
         gripper_pole.joints["[[left]]_gripper_joint"]
         .rebuild_branch()
@@ -154,7 +157,10 @@ def main():
     model.root_link.try_attach_child(
         gripper_pole.yank_root(),
         JointBuilder(
-            "gripper_extension", JointType.Fixed, transform=Transform(0.19, 0.0, 0.2)
+            "gripper_extension",
+            JointType.Prismatic,
+            transform=Transform(0.19, 0.0, 0.2),
+            limit=Limit(1000, 0.5, -0.38, 0),
         ),
     )
 
@@ -167,10 +173,20 @@ def main():
     )
 
     head_swivel_joint = JointBuilder(
-        "head_swivel", JointType.Fixed, transform=Transform(z=0.3)
+        "head_swivel", JointType.Continuous, transform=Transform(z=0.3), axis=(0, 0, 1)
     )
 
     model.root_link.try_attach_child(head_link, head_swivel_joint)
+
+    box_link = LinkBuilder("box").add_visual(
+        VisualBuilder(BoxGeometry(0.08, 0.08, 0.08), material=blue_material)
+    )
+
+    to_box_joint = JointBuilder(
+        "tobox", JointType.Fixed, transform=Transform(0.1814, 0, 0.1414)
+    )
+
+    model.newest_link.try_attach_child(box_link, to_box_joint)
 
     result = to_urdf_string(model, indent=(" ", 2))
 

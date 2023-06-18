@@ -4,12 +4,10 @@ from math import pi
 from robot_description_builder import MirrorAxis, Transform, to_urdf_string
 from robot_description_builder.joint import JointBuilder, JointType
 from robot_description_builder.link import LinkBuilder
-from robot_description_builder.link.geometry import (
-    BoxGeometry,
-    CylinderGeometry,
-    MeshGeometry,
-    SphereGeometry,
-)
+from robot_description_builder.link.geometry import (BoxGeometry,
+                                                     CylinderGeometry,
+                                                     MeshGeometry,
+                                                     SphereGeometry)
 from robot_description_builder.link.visual import VisualBuilder
 from robot_description_builder.material import Color, MaterialDescriptor
 
@@ -168,6 +166,16 @@ def main():
     )
 
     model.root_link.try_attach_child(head_link, head_swivel_joint)
+
+    box_link = LinkBuilder("box").add_visual(
+        VisualBuilder(BoxGeometry(0.08, 0.08, 0.08), material=blue_material)
+    )
+
+    to_box_joint = JointBuilder(
+        "tobox", JointType.Fixed, transform=Transform(0.1814, 0, 0.1414)
+    )
+
+    model.newest_link.try_attach_child(box_link, to_box_joint)
 
     result = to_urdf_string(model, indent=(" ", 2))
 
