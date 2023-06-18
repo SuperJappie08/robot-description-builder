@@ -1,16 +1,15 @@
 mod smartjointtypes;
 
 pub mod smartparams;
-pub use smartjointtypes::{FixedType, NoType, RevoluteType};
+pub use smartjointtypes::{
+	ContinuousType, FixedType, FloatingType, NoType, PlanarType, PrismaticType, RevoluteType,
+};
 
-use super::joint_tranform_mode::JointTransformMode;
+use super::{joint_tranform_mode::JointTransformMode, jointbuilder::JointBuilder, JointType};
 use crate::{link::LinkShapeData, transform::Transform};
 use smartparams::{NoAxis, NoCalibration, NoDynamics, NoLimit, NoMimic, NoSafetyController};
 
-use self::{
-	smartjointtypes::{ContinuousType, FloatingType, PlanarType, PrismaticType},
-	smartparams::smart_joint_datatraits,
-};
+use self::smartparams::smart_joint_datatraits;
 
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>
@@ -310,5 +309,31 @@ impl
 			mimic: self.mimic,
 			safety_controller: self.safety_controller,
 		}
+	}
+}
+
+#[cfg(feature = "wrapper")]
+impl<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>
+	SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>
+where
+	Type: smart_joint_datatraits::JointTypeTrait,
+	Axis: smart_joint_datatraits::AxisDataType,
+	Calibration: smart_joint_datatraits::CalibrationDataType,
+	Dynamics: smart_joint_datatraits::DynamicsDataType,
+	Limit: smart_joint_datatraits::LimitDataType,
+	Mimic: smart_joint_datatraits::MimicDataType,
+	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
+{
+	pub unsafe fn as_simple(&self) -> JointBuilder {
+		let mut joint_builder = JointBuilder::new(self.name.clone(), self.joint_type.as_type());
+
+		self.axis.simplify(&mut joint_builder);
+		self.calibration.simplify(&mut joint_builder);
+		self.dynamics.simplify(&mut joint_builder);
+		self.limit.simplify(&mut joint_builder, Type::IS_CONTINOUS);
+		self.mimic.simplify(&mut joint_builder);
+		self.safety_controller.simplify(&mut joint_builder);
+
+		joint_builder
 	}
 }

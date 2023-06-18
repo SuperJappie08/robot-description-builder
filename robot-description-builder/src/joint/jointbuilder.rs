@@ -44,6 +44,7 @@ pub struct JointBuilder {
 	pub(crate) origin: JointTransformMode,
 	pub(crate) child: Option<LinkBuilder>,
 
+	//Consider making everything below pub to remove need for all the functions
 	/// TODO: MAYBE CHANGE TO Vec3D Or something
 	pub(crate) axis: Option<(f32, f32, f32)>,
 	pub(crate) calibration: joint_data::CalibrationData,
@@ -177,6 +178,46 @@ impl JointBuilder {
 
 	pub fn axis_mut(&mut self) -> Option<&mut (f32, f32, f32)> {
 		self.axis.as_mut()
+	}
+
+	pub fn calibration(&self) -> &joint_data::CalibrationData {
+		&self.calibration
+	}
+
+	pub fn calibration_mut(&mut self) -> &mut joint_data::CalibrationData {
+		&mut self.calibration
+	}
+
+	pub fn dynamics(&self) -> &joint_data::DynamicsData {
+		&self.dynamics
+	}
+
+	pub fn dynamics_mut(&mut self) -> &mut joint_data::DynamicsData {
+		&mut self.dynamics
+	}
+
+	pub fn limit(&self) -> Option<&joint_data::LimitData> {
+		self.limit.as_ref()
+	}
+
+	pub fn limit_mut(&mut self) -> &mut Option<joint_data::LimitData> {
+		&mut self.limit
+	}
+
+	pub fn mimic(&self) -> Option<&joint_data::MimicBuilderData> {
+		self.mimic.as_ref()
+	}
+
+	pub fn mimic_mut(&mut self) -> &mut Option<joint_data::MimicBuilderData> {
+		&mut self.mimic
+	}
+
+	pub fn safety_controller(&self) -> Option<&joint_data::SafetyControllerData> {
+		self.safety_controller.as_ref()
+	}
+
+	pub fn safety_controller_mut(&mut self) -> &mut Option<joint_data::SafetyControllerData> {
+		&mut self.safety_controller
 	}
 }
 

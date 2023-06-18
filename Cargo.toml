@@ -1,5 +1,6 @@
 [workspace]
 members = [
     "robot-description-builder",
-    "robot-description-builder-py"
+    "robot-description-builder-py",
+    "robot-description-builder-py/rdb-py-macro"
 ]

@@ -39,6 +39,8 @@ use crate::{
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub struct FloatingType;
 
+impl_jointtype_traits!(FloatingType, false);
+
 impl From<FloatingType> for JointType {
 	fn from(_value: FloatingType) -> Self {
 		JointType::Floating
@@ -109,7 +111,9 @@ impl
 		value.axis.simplify(&mut joint_builder);
 		value.calibration.simplify(&mut joint_builder);
 		value.dynamics.simplify(&mut joint_builder);
-		value.limit.simplify(&mut joint_builder, false);
+		value
+			.limit
+			.simplify(&mut joint_builder, FloatingType::IS_CONTINOUS);
 		value.mimic.simplify(&mut joint_builder);
 		value.safety_controller.simplify(&mut joint_builder);
 

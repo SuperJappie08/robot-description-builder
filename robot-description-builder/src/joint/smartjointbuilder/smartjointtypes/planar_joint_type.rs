@@ -5,7 +5,10 @@ use crate::{
 	joint::{
 		jointbuilder::{BuildJoint, JointBuilder},
 		smartjointbuilder::{
-			smartparams::{smart_joint_datatraits, smart_joint_specification},
+			smartparams::{
+				smart_joint_datatraits::{self, JointTypeTrait},
+				smart_joint_specification,
+			},
 			SmartJointBuilder,
 		},
 		Joint, JointType,
@@ -16,6 +19,8 @@ use crate::{
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub struct PlanarType;
+
+impl_jointtype_traits!(PlanarType, true); // FIXME: Is it continous?
 
 impl From<PlanarType> for JointType {
 	fn from(_value: PlanarType) -> Self {
@@ -84,7 +89,9 @@ where
 		value.axis.simplify(&mut joint_builder);
 		value.calibration.simplify(&mut joint_builder);
 		value.dynamics.simplify(&mut joint_builder);
-		value.limit.simplify(&mut joint_builder, true); // FIXME: Is it continous?
+		value
+			.limit
+			.simplify(&mut joint_builder, PlanarType::IS_CONTINOUS);
 		value.mimic.simplify(&mut joint_builder);
 		value.safety_controller.simplify(&mut joint_builder);
 

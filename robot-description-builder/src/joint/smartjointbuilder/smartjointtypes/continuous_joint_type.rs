@@ -4,7 +4,10 @@ use crate::{
 	cluster_objects::kinematic_data_tree::KinematicDataTree,
 	joint::{
 		jointbuilder::{BuildJoint, JointBuilder},
-		smartjointbuilder::smartparams::{smart_joint_datatraits, smart_joint_specification},
+		smartjointbuilder::smartparams::{
+			smart_joint_datatraits::{self, JointTypeTrait},
+			smart_joint_specification,
+		},
 		Joint, JointType, SmartJointBuilder,
 	},
 	link::Link,
@@ -13,6 +16,8 @@ use crate::{
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub struct ContinuousType;
+
+impl_jointtype_traits!(ContinuousType, true);
 
 impl From<ContinuousType> for JointType {
 	fn from(_value: ContinuousType) -> Self {
@@ -87,7 +92,9 @@ where
 		value.axis.simplify(&mut joint_builder);
 		value.calibration.simplify(&mut joint_builder);
 		value.dynamics.simplify(&mut joint_builder);
-		value.limit.simplify(&mut joint_builder, true);
+		value
+			.limit
+			.simplify(&mut joint_builder, ContinuousType::IS_CONTINOUS);
 		value.mimic.simplify(&mut joint_builder);
 		value.safety_controller.simplify(&mut joint_builder);
 

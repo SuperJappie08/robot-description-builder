@@ -140,7 +140,7 @@ def main():
             "[[left]]_gripper_joint", JointType.Revolute, transform=Transform(0.2, 0.01)
         ),
     )
-
+    raise NotImplementedError("Hey")
     right_gripper = (
         gripper_pole.joints["[[left]]_gripper_joint"]
         .rebuild_branch()

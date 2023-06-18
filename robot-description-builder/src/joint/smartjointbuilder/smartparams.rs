@@ -21,6 +21,8 @@ pub mod smart_joint_specification {
 
 #[allow(unused_variables)]
 pub(crate) mod smart_joint_datatraits {
+	pub use super::super::smartjointtypes::{JointTypeTrait, SmartJointTypeTrait};
+
 	pub trait AxisDataType {
 		fn simplify(&self, joint_builder: &mut crate::joint::jointbuilder::JointBuilder) {}
 	}

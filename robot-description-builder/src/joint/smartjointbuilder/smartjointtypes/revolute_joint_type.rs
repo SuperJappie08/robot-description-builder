@@ -6,7 +6,7 @@ use crate::{
 	joint::{
 		smartjointbuilder::{
 			smartparams::{
-				smart_joint_datatraits::{self, LimitDataType},
+				smart_joint_datatraits::{self, JointTypeTrait, LimitDataType},
 				smart_joint_specification, WithLimit,
 			},
 			SmartJointBuilder,
@@ -19,6 +19,8 @@ use crate::{
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub struct RevoluteType;
+
+impl_jointtype_traits!(RevoluteType, false);
 
 impl From<RevoluteType> for JointType {
 	fn from(_value: RevoluteType) -> Self {
@@ -90,7 +92,9 @@ where
 		value.axis.simplify(&mut joint_builder);
 		value.calibration.simplify(&mut joint_builder);
 		value.dynamics.simplify(&mut joint_builder);
-		value.limit.simplify(&mut joint_builder, false);
+		value
+			.limit
+			.simplify(&mut joint_builder, RevoluteType::IS_CONTINOUS);
 		value.mimic.simplify(&mut joint_builder);
 		value.safety_controller.simplify(&mut joint_builder);
 

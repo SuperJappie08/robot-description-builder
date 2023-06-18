@@ -104,14 +104,23 @@ where
 		self.limit.velocity = velocity;
 		self
 	}
+}
 
-	/// TODO: maybe restrict
+impl<Type, Axis, Calibration, Dynamics, Mimic, SafetyController>
+	SmartJointBuilder<Type, Axis, Calibration, Dynamics, WithLimit, Mimic, SafetyController>
+where
+	Type: LimitAllowed + smart_joint_datatraits::SmartJointTypeTrait<false>,
+	Axis: smart_joint_datatraits::AxisDataType,
+	Calibration: smart_joint_datatraits::CalibrationDataType,
+	Dynamics: smart_joint_datatraits::DynamicsDataType,
+	Mimic: smart_joint_datatraits::MimicDataType,
+	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
+{
 	pub fn set_upper_limit(mut self, upper_limit: f32) -> Self {
 		self.limit.upper = Some(upper_limit);
 		self
 	}
 
-	/// TODO: maybe restrict
 	pub fn set_lower_limit(mut self, lower_limit: f32) -> Self {
 		self.limit.lower = Some(lower_limit);
 		self

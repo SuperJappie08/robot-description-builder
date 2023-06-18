@@ -46,6 +46,17 @@ pub mod reexport {
 	pub use quick_xml;
 }
 
+#[cfg(feature = "smart-joint-extension")]
+pub mod smart_joint_extension {
+	pub mod types {
+		pub use crate::joint::smartjointbuilder::{
+			ContinuousType, FixedType, FloatingType, NoType, PlanarType, PrismaticType,
+			RevoluteType,
+		};
+	}
+	pub use super::joint::smartjointbuilder::smartparams;
+}
+
 #[cfg(test)]
 mod tests {
 	// #[test]

@@ -19,6 +19,8 @@ use crate::{
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub struct FixedType;
 
+impl_jointtype_traits!(FixedType, false);
+
 impl From<FixedType> for JointType {
 	fn from(_value: FixedType) -> Self {
 		JointType::Fixed

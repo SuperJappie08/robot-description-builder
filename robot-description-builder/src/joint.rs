@@ -1,6 +1,10 @@
 mod joint_tranform_mode;
 mod jointbuilder;
+
+#[cfg(not(feature = "smart-joint-extension"))]
 mod smartjointbuilder;
+#[cfg(feature = "smart-joint-extension")]
+pub mod smartjointbuilder;
 
 /// TODO: Pub(crate) for now
 /// pub(crate)

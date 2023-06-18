@@ -6,7 +6,7 @@ use crate::{
 		jointbuilder::{BuildJoint, JointBuilder},
 		smartjointbuilder::{
 			smartparams::{
-				smart_joint_datatraits::{self, LimitDataType},
+				smart_joint_datatraits::{self, JointTypeTrait, LimitDataType},
 				smart_joint_specification, WithLimit,
 			},
 			SmartJointBuilder,
@@ -19,6 +19,8 @@ use crate::{
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub struct PrismaticType;
+
+impl_jointtype_traits!(PrismaticType, false);
 
 impl From<PrismaticType> for JointType {
 	fn from(_value: PrismaticType) -> Self {
@@ -97,7 +99,9 @@ where
 		value.axis.simplify(&mut joint_builder);
 		value.calibration.simplify(&mut joint_builder);
 		value.dynamics.simplify(&mut joint_builder);
-		value.limit.simplify(&mut joint_builder, false);
+		value
+			.limit
+			.simplify(&mut joint_builder, PrismaticType::IS_CONTINOUS);
 		value.mimic.simplify(&mut joint_builder);
 		value.safety_controller.simplify(&mut joint_builder);
 
