@@ -95,7 +95,7 @@ jobs:
     strategy:
       matrix:
         target: [x86_64, aarch64]
-        pyver: ['3.10', '3.9', '3.8']
+        pyver: ['3.9', '3.8'] # '3.10', Will always be built because of default version of Python
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
