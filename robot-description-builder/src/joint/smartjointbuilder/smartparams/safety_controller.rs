@@ -95,9 +95,17 @@ where
 		self
 	}
 
+	pub fn k_position(&self) -> Option<f32> {
+		self.safety_controller.k_position
+	}
+
 	pub fn set_k_velocity(mut self, k_velocity: f32) -> Self {
 		self.safety_controller.k_velocity = k_velocity;
 		self
+	}
+
+	pub fn k_velocity(&self) -> f32 {
+		self.safety_controller.k_velocity
 	}
 }
 
@@ -116,8 +124,16 @@ where
 		self
 	}
 
+	pub fn soft_lower_limit(&self) -> Option<f32> {
+		self.safety_controller.soft_lower_limit
+	}
+
 	pub fn set_soft_upper_limit(mut self, soft_upper_limit: f32) -> Self {
 		self.safety_controller.soft_upper_limit = Some(soft_upper_limit);
 		self
+	}
+
+	pub fn soft_upper_limit(&self) -> Option<f32> {
+		self.safety_controller.soft_upper_limit
 	}
 }

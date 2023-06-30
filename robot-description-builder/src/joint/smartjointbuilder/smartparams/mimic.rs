@@ -87,14 +87,26 @@ where
 		self
 	}
 
+	pub fn mimiced_joint_name(&self) -> &String {
+		&self.mimic.joint_name
+	}
+
 	pub fn set_mimic_multiplier(mut self, multiplier: f32) -> Self {
 		self.mimic.multiplier = Some(multiplier);
 		self
+	}
+
+	pub fn mimic_multiplier(&self) -> Option<f32> {
+		self.mimic.multiplier
 	}
 
 	/// Specifies the offset to add in the formula above. Defaults to 0 (radians for revolute joints, meters for prismatic joints)
 	pub fn set_mimic_offset(mut self, offset: f32) -> Self {
 		self.mimic.offset = Some(offset);
 		self
+	}
+
+	pub fn mimic_offset(&self) -> Option<f32> {
+		self.mimic.offset
 	}
 }

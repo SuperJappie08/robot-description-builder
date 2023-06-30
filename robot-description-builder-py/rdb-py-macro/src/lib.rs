@@ -2,6 +2,7 @@ mod code_gen;
 mod conversion_impls;
 mod enum_generation;
 mod error_gen;
+mod joint_type_info;
 mod parse;
 
 use enum_generation::generate_variants;

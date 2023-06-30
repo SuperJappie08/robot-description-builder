@@ -129,8 +129,16 @@ where
 		self
 	}
 
+	pub fn upper_limit(&self) -> Option<f32> {
+		self.limit.upper
+	}
+
 	pub fn set_lower_limit(mut self, lower_limit: f32) -> Self {
 		self.limit.lower = Some(lower_limit);
 		self
+	}
+
+	pub fn lower_limit(&self) -> Option<f32> {
+		self.limit.lower
 	}
 }

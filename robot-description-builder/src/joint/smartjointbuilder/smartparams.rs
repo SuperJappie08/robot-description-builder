@@ -17,6 +17,8 @@ pub mod smart_joint_specification {
 		axis::AxisAllowed, calibration::CalibrationAllowed, dynamics::DynamicsAllowed,
 		limit::LimitAllowed, mimic::MimicAllowed, safety_controller::SafetyControllerAllowed,
 	};
+
+	pub use super::super::smartjointtypes::{JointTypeTrait, SmartJointTypeTrait};
 }
 
 #[allow(unused_variables)]
