@@ -1,0 +1,53 @@
+%%{init: {"flowchart": {"defaultRenderer": "elk"}, "theme": "neutral"} }%%
+flowchart TD
+%% Both are technically initalized, but Unnamed does not get processed
+MaterialDescriptor[<code>MaterialDescriptor</code>] --> name_check{Has name?}
+
+name_check --No--> unnamed
+name_check --Yes--> named
+
+%% subgraph Material
+%%     new_unnamed[Create new\n Unnamed Material]
+%% end
+
+subgraph unnamed[Creating an Unnamend Material]
+    unnamed_materiald_data(<code>MaterialData</code>)
+    unnamedkind[Create <code>MaterialKind::Unnamed</code>]
+    unnamed_materiald_data --> unnamedkind
+    unnamedkind --> unnamed_create[Create <code>Material</code>]
+end
+
+subgraph named[Creating a Named Material]
+    %% direction TB
+    %% note "There is multi call protection"
+    named_materiald_data(<code>MaterialData</code>)
+    name(<code>name</code>)
+    namedkind[Create <code>MaterialKind::Named</code>,\n with <code>MaterialStage::PreInit</code>]
+    name & named_materiald_data --> namedkind
+    namedkind --> named_create[Create <code>Material</code>]
+
+    named_create --> tree_init
+
+    subgraph tree_init[<code>KinematicDataTree</code> get initialized]
+        %% direction TB
+        uninit_name(<code>name</code>)
+        uninit_mat("<code>MaterialStage::PreInit(MaterialData)</code>")
+        kdt(<code>KinematicDataTree</code>)
+        checkexists{Does <code>name</code> already\n have an entry in\n the <code>material_index</code>?}
+
+        kdt & uninit_name --> checkexists
+
+        checkexists --No---> add_to_index[Add the <code>MaterialData</code> to\nthe <code>material_index</code>\nof\n<code>KinematicDataTree</code>]
+        uninit_mat --> add_to_index --> copyref[Copy the <code>MaterialData</code> reference]
+        copyref-->inited_mat("<code>MaterialStage::Initialized(Arc#lt;RwLock#lt;MaterialData#gt;#gt;)</code>")
+        uninit_mat --> checksame
+        checkexists --Yes---> checksame{Are\nthe <code>MaterialData</code>s\n the same?}
+        checksame --Yes--> copyref
+        checksame --No--> materr[\"Return an Error,\nsince unique <code>MaterialData</code>s\nshare a Non-unique\n<code>name</code> #40;index#41;"\]
+    
+    end
+
+end
+inited_mat --> Material
+unnamed_create --> Material
+Material(<code>Material</code>)

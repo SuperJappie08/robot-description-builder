@@ -25,7 +25,7 @@ def main():
 
     model = base_link.build().to_robot("visual")
 
-    # ======= Start rigth leg ======= #
+    # ======= Start right leg ======= #
     right_leg_link = LinkBuilder("[\\[right]\\]_leg").add_visual(
         VisualBuilder(
             BoxGeometry(0.6, 0.1, 0.2),

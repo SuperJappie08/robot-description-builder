@@ -1,3 +1,4 @@
+// #![warn(missing_docs)]
 mod chained;
 mod cluster_objects;
 mod joint;
@@ -59,6 +60,7 @@ pub mod smart_joint_extension {
 
 #[cfg(test)]
 mod tests {
+	// #![allow(missing_docs)]
 	// #[test]
 	// fn it_works() {
 	// 	let result = add(2, 2);

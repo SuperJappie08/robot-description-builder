@@ -27,7 +27,7 @@ use crate::{
 	identifiers::GroupID, link::Link, transform::Transform, ArcLock, WeakLock,
 };
 
-#[cfg(any(feature = "xml"))]
+#[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
 #[derive(Debug)]
@@ -301,7 +301,7 @@ impl ToString for JointType {
 	}
 }
 
-#[cfg(any(feature = "xml"))]
+#[cfg(feature = "xml")]
 impl From<JointType> for Cow<'_, [u8]> {
 	fn from(value: JointType) -> Self {
 		value.to_string().into_bytes().into()

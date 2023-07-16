@@ -4,6 +4,9 @@ use crate::joint::{
 	smartjointbuilder::{smart_joint_datatraits, SmartJointBuilder},
 };
 
+/// A trait to signify if the `SafetyController` element is allowed on a specific `JointType` for the `SmartJointBuilder`
+///
+/// TODO: EXPAND
 pub trait SafetyControllerAllowed {}
 
 #[derive(Debug, Default, Clone)]

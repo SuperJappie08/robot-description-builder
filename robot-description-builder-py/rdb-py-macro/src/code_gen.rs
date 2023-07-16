@@ -14,7 +14,7 @@ pub fn generate_smartjointbuilder_impls(
 	let mut impls = Vec::new();
 	let is_continous = joint_type_info::is_continous(base_type);
 
-	impls.push(impl_default(enum_name, &variants_data));
+	impls.push(impl_default(enum_name, variants_data));
 
 	impls.push(standard_impls(enum_name, variants_data, err_type));
 

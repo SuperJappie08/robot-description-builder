@@ -29,3 +29,7 @@ Transmission Rewrite, due to not documentation of URDF being incorrect https://g
 
 Maybe add BaseJointBuilder -> Current joint builder -> GenericJointBuilder
 and add serveral smart ones
+
+FIX MIRRORING for non easy cases
+
+When PyLink attaches something it should update the dicts on the python object.

@@ -1,0 +1,99 @@
+classDiagram
+class ToURDF{
+    <<Trait>>
+    + to_urdf(&self, writer: &mut Writer~...~, urdf_config: &URDFConfig) Result~()，quick_xml∷Error~*
+}
+class GroupIDChanger {
+    <<Trait>>
+    + change_group_id(&mut self, new_group_id: impl GroupID) Result~()，GroupIDError~
+    + unsafe change_group_id_unchecked(&mut self, new_group_id: &str)*
+    + apply_group_id(&mut self)*
+}
+
+class Material{
+    - MaterialKind
+
+	~ new_unnamed(data: MaterialData) Material$
+	~ new_named_uninited(name: impl Into~String~, data: MaterialData) Material$
+	~ new_named_inited(name: impl Into~String~, data: Arc~RwLock~MaterialData~~) Material$
+
+	~ initialize(&mut self, tree: &KinematicDataTree) Result~()，AddMaterialError~
+    
+    + name(&self) Option~&String~
+    + material_data(&'a self) MaterialDataReferenceWrapper~'a~
+    + describe(&self) MaterialDescriptor
+}
+
+Material ..|> ToURDF
+Material "1" *-- MaterialKind
+Material -- MaterialDataReferenceWrapper
+
+class MaterialKind {
+    <<Enumeration>>
+    Named#40;name: String, data: MaterialStage#41;
+    Unnamed#40;MaterialData#41;
+}
+
+MaterialKind "0..1" *-- MaterialData: If Unnamed variant
+MaterialKind "0..1" *-- MaterialStage: If Named variant
+	
+class MaterialData {
+    <<Enumeration>>
+    Color#40;f32, f32, f32, f32#41;
+    Texture#40;String#41;
+}
+
+MaterialData ..|> ToURDF
+	
+class MaterialStage{
+    <<Enumeration>>
+    PreInit#40;MaterialData#41;
+    Initialized#40;Arc~RwLock~MaterialData~~#41;
+
+    + used_count(&self) usize
+    ~ initialize(&mut self, material_data: Arc~RwLock~MaterialData~~)
+    ~ data(&'a self) MaterialDataReferenceWrapper~'a~
+}
+
+MaterialStage "0..1" *-- MaterialData : If PreInit variant 
+MaterialStage ..|> ToURDF
+
+class MaterialDataReferenceWrapper~'a~{
+    <<Enumeration>>
+    Direct#40;&'a MaterialData#41;
+    Global#40;Arc~RwLock~MaterialData~~#41;
+
+    + same_material_data(&self, other: &MaterialDataReferenceWrapper) bool
+}
+
+class MaterialDescriptor{
+    %% TODO: Maybe FLIP TYPES
+    - name : Option~String~
+    - data : MaterialData
+
+    + new_color(red: f32, green: f32, blue: f32, alpha: f32) MaterialDescriptor$
+    + new_rgb(red: f32, green: f32, blue: f32) MaterialDescriptor$
+    + new_texture(texture_path: impl Into~String~) MaterialDescriptor$
+    ~ new_data(data: MaterialData) MaterialDescriptor$
+    + named(mut self, name: impl Into~String~) MaterialDescriptor
+    ~ build(self) Material
+
+    + name(&self) Option~&String~
+    + data(&self) &MaterialData
+}
+
+MaterialDescriptor "1" *-- MaterialData
+MaterialDescriptor ..|> GroupIDChanger
+%% MaterialDescriptor -->
+
+class KinematicDataTree {
+    ~ material_index : Arc~RwLock~HashMap~String，Arc~RwLock~MaterialData~~~~~
+}
+
+class ArcLockMaterialData["Arc&lt;RwLock&lt;MaterialData&gt;&gt;"] {
+    ~ MaterialData
+}
+
+ArcLockMaterialData --* "0..*" KinematicDataTree
+ArcLockMaterialData "1" *-- MaterialData
+ArcLockMaterialData "0..*" --* "0..1" MaterialStage
