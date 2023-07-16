@@ -3,16 +3,20 @@ from math import pi
 
 from robot_description_builder import MirrorAxis, Transform, to_urdf_string
 from robot_description_builder.joint import JointBuilder, JointType, Limit
-from robot_description_builder.link import LinkBuilder
-from robot_description_builder.link.geometry import (BoxGeometry,
-                                                     CylinderGeometry,
-                                                     MeshGeometry,
-                                                     SphereGeometry)
+from robot_description_builder.link import Inertial, LinkBuilder
+from robot_description_builder.link.collision import CollisionBuilder
+from robot_description_builder.link.geometry import (
+    BoxGeometry,
+    CylinderGeometry,
+    MeshGeometry,
+    SphereGeometry,
+)
 from robot_description_builder.link.visual import VisualBuilder
 from robot_description_builder.material import Color, MaterialDescriptor
 
 
-# [Building a Movable Robot Model with URDF](http://wiki.ros.org/urdf/Tutorials/Building%20a%20Movable%20Robot%20Model%20with%20URDF)
+# [Adding Physical and Collision Properties to a URDF Model](http://wiki.ros.org/urdf/Tutorials/Adding%20Physical%20and%20Collision%20Properties%20to%20a%20URDF%20Model)
+# Using ROS 2 as reference, since it is the most [up-to-date](https://github.com/ros/urdf_tutorial/blob/ros2/urdf/07-physics.urdf).
 def main():
     # ==== Material Descriptions ==== #
     blue_material = MaterialDescriptor(Color(0, 0, 0.8), "blue")
@@ -20,25 +24,40 @@ def main():
     white_material = MaterialDescriptor(Color(1, 1, 1), "white")
 
     # =========== Step 1 ============ #
-    base_link = LinkBuilder("base_link").add_visual(
-        VisualBuilder(CylinderGeometry(0.2, 0.6), material=blue_material)
+    base_link = (
+        LinkBuilder("base_link")
+        .add_visual(VisualBuilder(CylinderGeometry(0.2, 0.6), material=blue_material))
+        .add_collider(CollisionBuilder(CylinderGeometry(0.2, 0.6)))
+        .add_inertial(Inertial(10, 1e-3, 1e-3, 1e-3))
     )
 
-    model = base_link.build().to_robot("flexible")
+    model = base_link.build().to_robot("physics")
 
     # ======= Start rigth leg ======= #
-    right_leg_link = LinkBuilder(r"[\[right]\]_leg").add_visual(
-        VisualBuilder(
-            BoxGeometry(0.6, 0.1, 0.2),
-            material=white_material,
-            origin=Transform(z=-0.3, pitch=pi / 2),
+    right_leg_link = (
+        LinkBuilder(r"[\[right]\]_leg")
+        .add_visual(
+            VisualBuilder(
+                BoxGeometry(0.6, 0.1, 0.2),
+                material=white_material,
+                origin=Transform(z=-0.3, pitch=pi / 2),
+            )
         )
+        .add_collider(
+            CollisionBuilder(
+                BoxGeometry(0.6, 0.1, 0.2), origin=Transform(z=-0.3, pitch=pi / 2)
+            )
+        )
+        .add_inertial(Inertial(10, 1e-3, 1e-3, 1e-3))
     )
 
     right_leg = right_leg_link.build()
 
-    right_base_link = LinkBuilder(r"[\[right]\]_base").add_visual(
-        VisualBuilder(BoxGeometry(0.4, 0.1, 0.1), material=white_material)
+    right_base_link = (
+        LinkBuilder(r"[\[right]\]_base")
+        .add_visual(VisualBuilder(BoxGeometry(0.4, 0.1, 0.1), material=white_material))
+        .add_collider(CollisionBuilder(BoxGeometry(0.4, 0.1, 0.1)))
+        .add_inertial(Inertial(10, 1e-3, 1e-3, 1e-3))
     )
 
     right_base_joint = JointBuilder(
@@ -47,12 +66,22 @@ def main():
 
     right_leg.root_link.try_attach_child(right_base_link, right_base_joint)
 
-    right_front_wheel_link = LinkBuilder(r"[\[right]\]_[[front]]_wheel").add_visual(
-        VisualBuilder(
-            CylinderGeometry(0.035, 0.1),
-            origin=Transform(roll=pi / 2),
-            material=black_material,
+    right_front_wheel_link = (
+        LinkBuilder(r"[\[right]\]_[[front]]_wheel")
+        .add_visual(
+            VisualBuilder(
+                CylinderGeometry(0.035, 0.1),
+                origin=Transform(roll=pi / 2),
+                material=black_material,
+            )
         )
+        .add_collider(
+            CollisionBuilder(
+                CylinderGeometry(0.035, 0.1),
+                origin=Transform(roll=pi / 2),
+            )
+        )
+        .add_inertial(Inertial(1, 1e-3, 1e-3, 1e-3))
     )
 
     right_front_wheel_joint = JointBuilder(
@@ -104,38 +133,48 @@ def main():
                 CylinderGeometry(0.01, 0.2), origin=Transform(0.1, pitch=pi / 2)
             )
         )
+        .add_collider(
+            CollisionBuilder(
+                CylinderGeometry(0.01, 0.2), origin=Transform(0.1, pitch=pi / 2)
+            )
+        )
+        .add_inertial(Inertial(0.05, 1e-3, 1e-3, 1e-3))
         .build()
+    )
+
+    left_gripper_geometry = MeshGeometry(
+        "package://urdf_tutorial/meshes/l_finger.dae", (0.1, 0.05, 0.06)
     )
 
     left_gripper = (
         LinkBuilder("[[left]]_gripper")
-        .add_visual(
-            VisualBuilder(
-                MeshGeometry(
-                    "package://urdf_tutorial/meshes/l_finger.dae", (0.1, 0.05, 0.06)
-                )
-            )
-        )
+        .add_visual(VisualBuilder(left_gripper_geometry))
+        .add_collider(CollisionBuilder(left_gripper_geometry))
+        .add_inertial(Inertial(0.05, 1e-3, 1e-3, 1e-3))
         .build()
     )
 
+    left_tip_geometry = MeshGeometry(
+        "package://urdf_tutorial/meshes/l_finger_tip.dae",
+        (0.06, 0.04, 0.02),
+    )
+
     left_gripper.root_link.try_attach_child(
-        LinkBuilder("[[left]]_tip").add_visual(
-            VisualBuilder(
-                MeshGeometry(
-                    "package://urdf_tutorial/meshes/l_finger_tip.dae",
-                    (0.06, 0.04, 0.02),
-                ),
-                origin=Transform(0.09137, 0.00495),
-            )
-        ),
+        LinkBuilder("[[left]]_tip")
+        .add_visual(
+            VisualBuilder(left_tip_geometry, origin=Transform(0.09137, 0.00495))
+        )
+        .add_collider(
+            CollisionBuilder(left_tip_geometry, origin=Transform(0.09137, 0.00495))
+        )
+        .add_inertial(Inertial(0.05, 1e-3, 1e-3, 1e-3)),
         JointBuilder("[[left]]_tip_joint", JointType.Fixed),
     )
 
     gripper_pole.root_link.try_attach_child(
         left_gripper.yank_root(),
         JointBuilder(
-            # TODO: Upgrade to smartbuilder
+            # TODO: Change to smartbuilder
             "[[left]]_gripper_joint",
             JointType.Revolute,
             transform=Transform(0.2, 0.01),
@@ -165,11 +204,16 @@ def main():
     )
 
     # ====== Defining the HEAD ====== #
-    head_link = LinkBuilder("head").add_visual(
-        VisualBuilder(
-            SphereGeometry(0.2),
-            material=MaterialDescriptor(Color(1.0, 1.0, 1.0), "white"),
+    head_link = (
+        LinkBuilder("head")
+        .add_visual(
+            VisualBuilder(
+                SphereGeometry(0.2),
+                material=MaterialDescriptor(Color(1.0, 1.0, 1.0), "white"),
+            )
         )
+        .add_collider(CollisionBuilder(SphereGeometry(0.2)))
+        .add_inertial(Inertial(2, 1e-3, 1e-3, 1e-3))
     )
 
     head_swivel_joint = JointBuilder(
@@ -178,8 +222,20 @@ def main():
 
     model.root_link.try_attach_child(head_link, head_swivel_joint)
 
-    box_link = LinkBuilder("box").add_visual(
-        VisualBuilder(BoxGeometry(0.08, 0.08, 0.08), material=blue_material)
+    #  The URDF tutorial is inconsistent here, out of nowhere translates visual, but not collision.
+    box_link = (
+        LinkBuilder("box")
+        .add_visual(
+            VisualBuilder(
+                BoxGeometry(0.08, 0.08, 0.08),
+                material=blue_material,
+                origin=Transform(-0.04),
+            )
+        )
+        .add_collider(
+            CollisionBuilder(BoxGeometry(0.08, 0.08, 0.08), origin=Transform(-0.04))
+        )
+        .add_inertial(Inertial(1, 1e-3, 1e-3, 1e-3))
     )
 
     to_box_joint = JointBuilder(

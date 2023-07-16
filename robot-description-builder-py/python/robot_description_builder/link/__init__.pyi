@@ -4,20 +4,43 @@ from typing import TYPE_CHECKING, Final, List, Optional, Union
 # Need to use typing.Union instead `|` because `|` (Supported since Python 3.10)
 
 if TYPE_CHECKING:
+    from robot_description_builder import Transform
     from robot_description_builder.cluster_objects import KinematicTree
-    from robot_description_builder.joint import Joint, JointBuilder, JointBuilderChain
+    from robot_description_builder.joint import (Joint, JointBuilder,
+                                                 JointBuilderChain)
     from robot_description_builder.link.collision import (Collision,
                                                           CollisionBuilder)
     from robot_description_builder.link.visual import Visual, VisualBuilder
 
-
 class Inertial:
     """TODO"""
-    pass
 
+    origin: Final[Optional[Transform]]
+    mass: Final[float]
+    ixx: Final[float]
+    ixy: Final[float]
+    ixz: Final[float]
+    iyy: Final[float]
+    iyz: Final[float]
+    izz: Final[float]
+
+    def __new__(
+        cls,
+        mass: float,
+        ixx: float,
+        iyy: float,
+        izz: float,
+        ixy: float = 0.0,
+        ixz: float = 0.0,
+        iyz: float = 0.0,
+        origin: Optional[Transform] = None,
+    ) -> Inertial: ...
+    def __repr__(self) -> str: ...
+    def __bool__(self) -> bool: ...
 
 class LinkBuilder:
     """TODO"""
+
     name: Final[str]  # Final for now
     """The name of the `Link(Builder)` must be unique, checked when attaching to a `KinematicTree`"""
     visuals: Final[List[VisualBuilder]]
@@ -32,7 +55,6 @@ class LinkBuilder:
     def add_visual(self, visual_builder: VisualBuilder) -> LinkBuilder: ...
     def add_collider(self, collision_builder: CollisionBuilder) -> LinkBuilder: ...
     def add_inertial(self, inertial: Inertial) -> LinkBuilder: ...
-
     def build(self) -> KinematicTree: ...
     def change_group_id(self, new_group_id: str) -> None: ...
     def apply_group_id(self) -> None: ...
@@ -49,12 +71,12 @@ class Link:
     inertial: Final[Optional[Inertial]]
 
     def __repr__(self) -> str: ...
-    def try_attach_child(self, link_builder: LinkBuilder,
-                         joint_builder: JointBuilder) -> None: ...
+    def try_attach_child(
+        self, link_builder: LinkBuilder, joint_builder: JointBuilder
+    ) -> None: ...
     def attach_joint_chain(self, joint_chain: JointBuilderChain) -> None: ...
     """
     TODO: Maybe merge with attach_joint_chain_at
     """
     def rebuild(self) -> LinkBuilder: ...
     def rebuild_branch(self) -> LinkBuilderChain: ...
-    
