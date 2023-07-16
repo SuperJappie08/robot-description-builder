@@ -1,6 +1,6 @@
 use std::io::{Read, Seek};
 
-use itertools::{process_results, Itertools};
+use itertools::Itertools;
 use pyo3::{
 	exceptions::{PyBufferError, PyEOFError, PyKeyError, PyTypeError},
 	intern,
@@ -67,9 +67,10 @@ fn dict2urdfconfig(py: Python<'_>, kwds: &PyDict) -> PyResult<URDFConfig> {
 		return Err(PyTypeError::new_err(format!(
 			"{} got an unexpected keyword argument '{}'",
 			qualname,
-			process_results(kwds.keys().into_iter().map(|key| key.str()), |mut iter| {
-				iter.join(", ")
-			})?
+			kwds.keys()
+				.into_iter()
+				.map(|key| key.str())
+				.process_results(|mut iter| { iter.join(", ") })?
 		)));
 	}
 

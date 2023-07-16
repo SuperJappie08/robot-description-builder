@@ -1,4 +1,4 @@
-use itertools::process_results;
+use itertools::Itertools;
 use pyo3::{prelude::*, types::PyString};
 use robot_description_builder::transmission::{
 	TransmissionHardwareInterface, TransmissionJointBuilder,
@@ -84,10 +84,12 @@ impl TryFrom<TransmissionJointBuilder> for PyTransmissionJointBuilder {
 	fn try_from(value: TransmissionJointBuilder) -> Result<Self, PyErr> {
 		Ok(Self::py_new(
 			value.name().clone(),
-			process_results(
-				value.hw_interfaces().iter().copied().map(TryInto::try_into),
-				|iter| iter.collect(),
-			)?,
+			value
+				.hw_interfaces()
+				.iter()
+				.copied()
+				.map(TryInto::try_into)
+				.process_results(|iter| iter.collect())?,
 		))
 	}
 }

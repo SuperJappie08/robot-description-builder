@@ -1,7 +1,7 @@
 use super::{
 	transmission_wrappers::PyTransmissionActuator, PyTransmissionJointBuilder, PyTransmissionType,
 };
-use itertools::process_results;
+use itertools::Itertools;
 use pyo3::{intern, prelude::*};
 use robot_description_builder::transmission::{
 	TransmissionBuilder, TransmissionJointBuilder, WithActuator, WithJoints,
@@ -57,15 +57,13 @@ impl PyTransmissionBuilder {
 
 	#[getter]
 	fn get_joints(&self) -> PyResult<Vec<PyTransmissionJointBuilder>> {
-		process_results(
-			self.0
-				.joints()
-				.unwrap() // Unwrap Ok
-				.iter()
-				.cloned()
-				.map(TryInto::try_into),
-			|iter| iter.collect(),
-		)
+		self.0
+			.joints()
+			.unwrap() // Unwrap Ok
+			.iter()
+			.cloned()
+			.map(TryInto::try_into)
+			.process_results(|iter| iter.collect())
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {

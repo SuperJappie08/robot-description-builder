@@ -12,7 +12,7 @@ use crate::{
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
 #[cfg(feature = "xml")]
-use itertools::process_results;
+use itertools::Itertools;
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
@@ -163,12 +163,10 @@ impl ToURDF for TransmissionJoint {
 					.into(),
 			})
 			.write_inner_content(|writer| {
-				process_results(
-					self.hardware_interfaces
-						.iter()
-						.map(|hw_interface| hw_interface.to_urdf(writer, urdf_config)),
-					|iter| iter.collect::<Vec<_>>(),
-				)?;
+				self.hardware_interfaces
+					.iter()
+					.map(|hw_interface| hw_interface.to_urdf(writer, urdf_config))
+					.process_results(|iter| iter.collect::<Vec<_>>())?;
 				Ok(())
 			})?;
 

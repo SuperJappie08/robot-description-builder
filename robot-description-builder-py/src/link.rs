@@ -5,7 +5,7 @@ pub mod visual;
 
 use std::sync::{Arc, RwLock, Weak};
 
-use itertools::{process_results, Itertools};
+use itertools::Itertools;
 use pyo3::{intern, prelude::*};
 use robot_description_builder::{
 	link_data::LinkParent, linkbuilding::LinkBuilder, prelude::GroupIDChanger, Chained,
@@ -113,15 +113,13 @@ impl PyLinkBuilder {
 
 	#[getter]
 	fn get_joints(&self, py: Python<'_>) -> PyResult<Vec<Py<PyJointBuilder>>> {
-		itertools::process_results(
-			self.0
-				.joints()
-				.iter()
-				.cloned()
-				.map(|obj| (PyJointBuilder, obj.into_py(py)).into())
-				.map(|initer| init_pyclass_initializer(initer, py)),
-			|iter| iter.collect(),
-		)
+		self.0
+			.joints()
+			.iter()
+			.cloned()
+			.map(|obj| (PyJointBuilder, obj.into_py(py)).into())
+			.map(|initer| init_pyclass_initializer(initer, py))
+			.process_results(|iter| iter.collect())
 	}
 
 	fn add_visual(&mut self, visual: PyVisualBuilder) -> Self {
@@ -153,13 +151,12 @@ impl PyLinkBuilder {
 		let mut data = format!("'{}'", self.0.name());
 
 		data += ", joints=[";
-		data += process_results(
-			self.get_joints(py)?
-				.into_iter()
-				.map(|joint_builder| joint_builder.into_ref(py).repr()),
-			|mut iter| iter.join(", "),
-		)?
-		.as_str();
+		data += self
+			.get_joints(py)?
+			.into_iter()
+			.map(|joint_builder| joint_builder.into_ref(py).repr())
+			.process_results(|mut iter| iter.join(", "))?
+			.as_str();
 		data += "]";
 
 		if let Some(inertial) = self.get_inertial() {
@@ -169,25 +166,23 @@ impl PyLinkBuilder {
 
 		if !self.0.visuals().is_empty() {
 			data += ", visuals=[";
-			data += process_results(
-				self.get_visuals()
-					.into_iter()
-					.map(|visual_builder| visual_builder.__repr__(py)),
-				|mut iter| iter.join(", "),
-			)?
-			.as_str();
+			data += self
+				.get_visuals()
+				.into_iter()
+				.map(|visual_builder| visual_builder.__repr__(py))
+				.process_results(|mut iter| iter.join(", "))?
+				.as_str();
 			data += "]";
 		}
 
 		if !self.0.colliders().is_empty() {
 			data += ", colliders=[";
-			data += process_results(
-				self.get_colliders()
-					.into_iter()
-					.map(|collision_builder| collision_builder.__repr__(py)),
-				|mut iter| iter.join(", "),
-			)?
-			.as_str();
+			data += self
+				.get_colliders()
+				.into_iter()
+				.map(|collision_builder| collision_builder.__repr__(py))
+				.process_results(|mut iter| iter.join(", "))?
+				.as_str();
 			data += "]";
 		}
 
@@ -414,13 +409,11 @@ impl PyLink {
 			let visuals = link.visuals();
 			if !visuals.is_empty() {
 				repr += ", visuals=[";
-				repr += process_results(
-					visuals
-						.iter()
-						.map(|visual| PyVisual::from(visual.clone()).__repr__(py)),
-					|mut iter| iter.join(", "),
-				)?
-				.as_str();
+				repr += visuals
+					.iter()
+					.map(|visual| PyVisual::from(visual.clone()).__repr__(py))
+					.process_results(|mut iter| iter.join(", "))?
+					.as_str();
 				repr += "]";
 			}
 		}
@@ -429,13 +422,11 @@ impl PyLink {
 			let colliders = link.colliders();
 			if !colliders.is_empty() {
 				repr += ", colliders=[";
-				repr += process_results(
-					colliders
-						.iter()
-						.map(|collider| PyCollision::from(collider.clone()).__repr__(py)),
-					|mut iter| iter.join(", "),
-				)?
-				.as_str();
+				repr += colliders
+					.iter()
+					.map(|collider| PyCollision::from(collider.clone()).__repr__(py))
+					.process_results(|mut iter| iter.join(", "))?
+					.as_str();
 				repr += "]";
 			}
 		}

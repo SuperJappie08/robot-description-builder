@@ -5,7 +5,7 @@ pub(self) mod transmission_wrappers;
 
 use std::sync::{Arc, RwLock, Weak};
 
-use itertools::{process_results, Itertools};
+use itertools::Itertools;
 use pyo3::{intern, prelude::*};
 use robot_description_builder::transmission::Transmission;
 
@@ -72,16 +72,18 @@ impl PyTransmission {
 			.import(intern!(py, "robot_description_builder.transmission"))?
 			.getattr(intern!(py, "TransmissionJoint"))?;
 
-		process_results(
-			self.try_internal()?.py_read()?.joints().iter().map(
-				|trans_joint| match process_results(
-					trans_joint
-						.hardware_interfaces()
-						.iter()
-						.copied()
-						.map(TryInto::<PyTransmissionHardwareInterface>::try_into),
-					|iter| iter.collect_vec(),
-				) {
+		self.try_internal()?
+			.py_read()?
+			.joints()
+			.iter()
+			.map(|trans_joint| {
+				match trans_joint
+					.hardware_interfaces()
+					.iter()
+					.copied()
+					.map(TryInto::<PyTransmissionHardwareInterface>::try_into)
+					.process_results(|iter| iter.collect_vec())
+				{
 					Ok(hw_interfaces) => py_joints.call_method1(
 						intern!(py, "__new__"),
 						(
@@ -90,10 +92,9 @@ impl PyTransmission {
 						),
 					),
 					Err(e) => Err(e),
-				},
-			),
-			|iter| iter.collect(),
-		)
+				}
+			})
+			.process_results(|iter| iter.collect())
 	}
 
 	#[getter]
@@ -129,23 +130,25 @@ impl PyTransmission {
 			self.get_transmission_type()?.repr()
 		);
 
-		data += process_results(
-			self.get_joints(py)?.into_iter().map(|joint| joint.repr()),
-			|mut iter| iter.join(", "),
-		)?
-		.as_str();
+		data += self
+			.get_joints(py)?
+			.into_iter()
+			.map(|joint| joint.repr())
+			.process_results(|mut iter| iter.join(", "))?
+			.as_str();
 
 		data += "], actuators=[";
-		data += process_results(
-			self.get_actuators(py)?.into_iter().map(|py_actuator| {
+		data += self
+			.get_actuators(py)?
+			.into_iter()
+			.map(|py_actuator| {
 				py_actuator
 					// .try_into_py_ref(py)?
 					.repr()
 					.and_then(|val| val.extract::<String>())
-			}),
-			|mut iter| iter.join(", "),
-		)?
-		.as_str();
+			})
+			.process_results(|mut iter| iter.join(", "))?
+			.as_str();
 		data += "]";
 
 		Ok(format!("{class_name}({data})"))

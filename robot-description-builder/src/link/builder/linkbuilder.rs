@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock, Weak};
 
-use itertools::process_results;
+use itertools::Itertools;
 use nalgebra::Matrix3;
 
 use super::{BuildLink, CollisionBuilder, VisualBuilder};
@@ -131,13 +131,12 @@ impl BuildLink for LinkBuilder {
 				direct_parent: LinkParent::KinematicTree(Weak::clone(tree)),
 				child_joints: Vec::new(),
 				inertial: self.intertial,
-				visuals: process_results(
-					self.visual_builders
-						.into_iter()
-						.map(|visual_builder| visual_builder.build()),
-					|iter| iter.collect(),
-				)
-				.unwrap(),
+				visuals: self
+					.visual_builders
+					.into_iter()
+					.map(|visual_builder| visual_builder.build())
+					.process_results(|iter| iter.collect())
+					.unwrap(),
 				colliders: self
 					.colliders
 					.into_iter()
@@ -183,13 +182,12 @@ impl BuildLink for LinkBuilder {
 					.map(|joint_builder| joint_builder.build_chain(tree, me, shape_data.clone()))
 					.collect(),
 				inertial: self.intertial,
-				visuals: itertools::process_results(
-					self.visual_builders
-						.into_iter()
-						.map(|visual_builder| visual_builder.build()),
-					|iter| iter.collect(),
-				)
-				.unwrap(), // UNWRAP NOT OK
+				visuals: self
+					.visual_builders
+					.into_iter()
+					.map(|visual_builder| visual_builder.build())
+					.process_results(|iter| iter.collect())
+					.unwrap(), //FIXME: UNWRAP NOT OK?
 				colliders: self
 					.colliders
 					.into_iter()

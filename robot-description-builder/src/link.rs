@@ -10,7 +10,7 @@ mod visual;
 pub(crate) use link_shape_data::LinkShapeData;
 
 #[cfg(feature = "xml")]
-use itertools::process_results;
+use itertools::Itertools;
 
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
@@ -289,30 +289,24 @@ impl ToURDF for Link {
 				inertial_data.to_urdf(writer, urdf_config)?;
 			}
 
-			process_results(
-				self.visuals
-					.iter()
-					.map(|visual| visual.to_urdf(writer, urdf_config)),
-				|iter| iter.collect(),
-			)?;
+			self.visuals
+				.iter()
+				.map(|visual| visual.to_urdf(writer, urdf_config))
+				.process_results(|iter| iter.collect())?;
 
-			process_results(
-				self.colliders
-					.iter()
-					.map(|collider| collider.to_urdf(writer, urdf_config)),
-				|iter| iter.collect(),
-			)?;
+			self.colliders
+				.iter()
+				.map(|collider| collider.to_urdf(writer, urdf_config))
+				.process_results(|iter| iter.collect())?;
 
 			Ok(())
 		})?;
 
 		// Write joints
-		process_results(
-			self.joints()
-				.iter()
-				.map(|joint| joint.read().unwrap().to_urdf(writer, urdf_config)),
-			|iter| iter.collect(),
-		)?;
+		self.joints()
+			.iter()
+			.map(|joint| joint.read().unwrap().to_urdf(writer, urdf_config))
+			.process_results(|iter| iter.collect())?;
 
 		Ok(())
 	}

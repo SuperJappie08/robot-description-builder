@@ -1,6 +1,6 @@
 use std::sync::{PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
-use itertools::process_results;
+use itertools::Itertools;
 use pyo3::{prelude::*, pyclass_init::PyObjectInit, types::PyList, PyClass, PyTypeInfo};
 
 pub trait PoisonErrorHandler<T>: Into<Result<T, PoisonError<T>>> {
@@ -106,10 +106,10 @@ where
 	T: TryIntoPy<PyObject>,
 {
 	fn try_into_py(self, py: Python<'_>) -> PyResult<PyObject> {
-		let list: Vec<PyObject> =
-			process_results(self.into_iter().map(|e| e.try_into_py(py)), |iter| {
-				iter.collect()
-			})?;
+		let list: Vec<PyObject> = self
+			.into_iter()
+			.map(|e| e.try_into_py(py))
+			.process_results(|iter| iter.collect())?;
 		Ok(list.into_py(py))
 	}
 

@@ -17,12 +17,10 @@ use std::sync::Weak;
 
 use crate::{cluster_objects::kinematic_data_tree::KinematicDataTree, identifiers::GroupID};
 
-use itertools::process_results;
+use itertools::Itertools;
 
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
-#[cfg(feature = "urdf")]
-use itertools::Itertools;
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
@@ -204,13 +202,12 @@ impl TransmissionBuilder<WithJoints, WithActuator> {
 		Ok(Transmission {
 			name: self.name,
 			transmission_type: self.transmission_type,
-			joints: process_results(
-				self.joints
-					.0
-					.into_iter()
-					.map(|transmission_joint_builder| transmission_joint_builder.build(&tree)),
-				|iter| iter.collect(),
-			)?,
+			joints: self
+				.joints
+				.0
+				.into_iter()
+				.map(|transmission_joint_builder| transmission_joint_builder.build(&tree))
+				.process_results(|iter| iter.collect())?,
 			actuators: self.actuators.0,
 		})
 	}
@@ -289,19 +286,15 @@ impl ToURDF for Transmission {
 			.write_inner_content(|writer| {
 				self.transmission_type().to_urdf(writer, urdf_config)?;
 
-				process_results(
-					self.joints()
-						.iter()
-						.map(|transmission_joint| transmission_joint.to_urdf(writer, urdf_config)),
-					|iter| iter.collect_vec(),
-				)?;
+				self.joints()
+					.iter()
+					.map(|transmission_joint| transmission_joint.to_urdf(writer, urdf_config))
+					.process_results(|iter| iter.collect_vec())?;
 
-				process_results(
-					self.actuators.iter().map(|transmission_actuator| {
-						transmission_actuator.to_urdf(writer, urdf_config)
-					}),
-					|iter| iter.collect_vec(),
-				)?;
+				self.actuators
+					.iter()
+					.map(|transmission_actuator| transmission_actuator.to_urdf(writer, urdf_config))
+					.process_results(|iter| iter.collect_vec())?;
 
 				Ok(())
 			})?;

@@ -3,7 +3,7 @@ use std::{
 	sync::{Arc, PoisonError, RwLock, Weak},
 };
 
-use itertools::{process_results, Itertools};
+use itertools::Itertools;
 
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialMode, URDFMaterialReferences};
@@ -105,25 +105,21 @@ impl KinematicDataTree {
 				.map_err(|_| PoisonError::new(ErroredWrite(self.me.upgrade().unwrap())))? = Arc::downgrade(link);
 		}
 
-		process_results(
-			link.write()
-				.map_err(|_| errored_write_lock(link))?
-				.visuals_mut()
-				.iter_mut()
-				.filter_map(|visual| visual.material_mut())
-				.map(|material| self.try_add_material(material)),
-			|iter| iter.collect_vec(),
-		)?;
+		link.write()
+			.map_err(|_| errored_write_lock(link))?
+			.visuals_mut()
+			.iter_mut()
+			.filter_map(|visual| visual.material_mut())
+			.map(|material| self.try_add_material(material))
+			.process_results(|iter| iter.collect_vec())?;
 
-		process_results(
-			link.read()
-				.map_err(|_| errored_read_lock(link))?
-				.joints()
-				.iter()
-				.map(|joint| self.try_add_joint(joint)),
-			|iter| iter.collect_vec(),
-		)
-		.map_err(Box::new)?;
+		link.read()
+			.map_err(|_| errored_read_lock(link))?
+			.joints()
+			.iter()
+			.map(|joint| self.try_add_joint(joint))
+			.process_results(|iter| iter.collect_vec())
+			.map_err(Box::new)?;
 
 		Ok(())
 	}
@@ -261,37 +257,36 @@ impl ToURDF for KinematicDataTree {
 		// Write Materials if use > 2 depending on Config
 		// That might already be handled by the new material system
 		// TODO: Config stuff
-		process_results(
-			self.material_index
-				.read()
-				.unwrap() // FIXME: Is unwrap ok here?
-				.iter()
-				.filter(|(_, material_data)| {
-					// Maybe do this differently?
-					match urdf_config.material_references {
-						URDFMaterialReferences::AllNamedMaterialOnTop => true,
-						URDFMaterialReferences::OnlyMultiUseMaterials => {
-							Arc::strong_count(material_data) > 2
-						} // Weak::strong_count(material_ref)
-					}
-				})
-				.map(
-					|(name, arc_material_data)| {
-						Material::new_named_inited(name.clone(), Arc::clone(arc_material_data))
-					}, // FIXME: This might be a bit weird to do it like this, a propper construction method would be nice
+
+		self.material_index
+			.read()
+			.unwrap() // FIXME: Is unwrap ok here?
+			.iter()
+			.filter(|(_, material_data)| {
+				// Maybe do this differently?
+				match urdf_config.material_references {
+					URDFMaterialReferences::AllNamedMaterialOnTop => true,
+					URDFMaterialReferences::OnlyMultiUseMaterials => {
+						Arc::strong_count(material_data) > 2
+					} // Weak::strong_count(material_ref)
+				}
+			})
+			.map(
+				|(name, arc_material_data)| {
+					Material::new_named_inited(name.clone(), Arc::clone(arc_material_data))
+				}, // FIXME: This might be a bit weird to do it like this, a propper construction method would be nice
+			)
+			.sorted_by_cached_key(|material| material.name().unwrap().clone()) // TODO: Is it worth to make sorting optional?
+			.map(|material: Material| {
+				material.to_urdf(
+					writer,
+					&URDFConfig {
+						direct_material_ref: URDFMaterialMode::FullMaterial,
+						..urdf_config.clone()
+					},
 				)
-				.sorted_by_cached_key(|material| material.name().unwrap().clone()) // TODO: Is it worth to make sorting optional?
-				.map(|material: Material| {
-					material.to_urdf(
-						writer,
-						&URDFConfig {
-							direct_material_ref: URDFMaterialMode::FullMaterial,
-							..urdf_config.clone()
-						},
-					)
-				}),
-			|iter| iter.collect(),
-		)?;
+			})
+			.process_results(|iter| iter.collect())?;
 
 		self.root_link
 			.read()
@@ -312,14 +307,12 @@ impl ToURDF for KinematicDataTree {
 				},
 			)?;
 
-		process_results(
-			self.transmissions
-				.read()
-				.unwrap() // FIXME: Is unwrap ok here?
-				.values()
-				.map(|transmission| transmission.read().unwrap().to_urdf(writer, urdf_config)), // FIXME: Is unwrap ok here?
-			|iter| iter.collect(),
-		)?;
+		self.transmissions
+			.read()
+			.unwrap() // FIXME: Is unwrap ok here?
+			.values()
+			.map(|transmission| transmission.read().unwrap().to_urdf(writer, urdf_config)) // FIXME: Is unwrap ok here?
+			.process_results(|iter| iter.collect())?;
 
 		Ok(())
 	}
