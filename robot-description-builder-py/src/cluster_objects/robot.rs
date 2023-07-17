@@ -43,7 +43,7 @@ impl PyRobot {
 		)?;
 
 		weakref
-			.getattr("proxy")?
+			.getattr(intern!(py, "proxy"))?
 			.call1((&robot,))?
 			.to_object(py)
 			.clone_into(&mut robot.borrow_mut(py).me);

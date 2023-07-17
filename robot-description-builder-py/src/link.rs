@@ -6,7 +6,7 @@ pub mod visual;
 use std::sync::{Arc, RwLock, Weak};
 
 use itertools::Itertools;
-use pyo3::{intern, prelude::*};
+use pyo3::{ffi, intern, prelude::*, AsPyPointer};
 use robot_description_builder::{
 	link_data::LinkParent, linkbuilding::LinkBuilder, prelude::GroupIDChanger, Chained,
 	JointBuilder, Link,
@@ -17,7 +17,7 @@ use inertial::PyInertial;
 use visual::{PyVisual, PyVisualBuilder};
 
 use crate::{
-	cluster_objects::PyKinematicTree,
+	cluster_objects::{PyKinematicBase, PyKinematicTree},
 	exceptions::AddJointError,
 	identifier::GroupIDError,
 	joint::{PyJoint, PyJointBuilder, PyJointBuilderBase, PyJointBuilderChain},
@@ -263,7 +263,7 @@ impl TryIntoPy<Py<PyLinkBuilderChain>> for Chained<LinkBuilder> {
 )]
 pub struct PyLink {
 	inner: Weak<RwLock<Link>>,
-	/// Python weakref to the python parent tree
+	/// Python weakref.proxy to the python parent tree
 	tree: PyObject,
 }
 
@@ -368,6 +368,7 @@ impl PyLink {
 		&self,
 		link_builder: PyLinkBuilder,
 		joint_builder: PyJointBuilderBase,
+		py: Python<'_>,
 	) -> PyResult<()> {
 		self.try_internal()?
 			.py_write()?
@@ -376,6 +377,13 @@ impl PyLink {
 				Into::<JointBuilder>::into(joint_builder),
 			)
 			.map_err(AddJointError::from)?;
+
+		let tree = unsafe {
+			PyObject::from_borrowed_ptr(py, ffi::PyWeakref_GetObject(self.tree.as_ptr()))
+		};
+		tree.extract::<PyRef<'_, PyKinematicBase>>(py)?
+			.update_all(py)?;
+
 		Ok(())
 	}
 
@@ -385,12 +393,20 @@ impl PyLink {
 	fn attach_joint_chain(
 		&self,
 		joint_chain: PyRef<'_, PyJointBuilderChain>,
-		// py: Python<'_>,
+		py: Python<'_>,
 	) -> PyResult<()> {
 		self.try_internal()?
 			.py_write()?
 			.attach_joint_chain(PyJointBuilderChain::as_chained(joint_chain))
-			.map_err(AddJointError::from)
+			.map_err(AddJointError::from)?;
+
+		let tree = unsafe {
+			PyObject::from_borrowed_ptr(py, ffi::PyWeakref_GetObject(self.tree.as_ptr()))
+		};
+		tree.extract::<PyRef<'_, PyKinematicBase>>(py)?
+			.update_all(py)?;
+
+		Ok(())
 	}
 
 	/// TODO: Maybe rewrite

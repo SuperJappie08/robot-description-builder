@@ -70,7 +70,7 @@ impl PyKinematicBase {
 	}
 
 	#[inline]
-	pub(in crate::cluster_objects) fn update_all(&self, py: Python<'_>) -> PyResult<()> {
+	pub(crate) fn update_all(&self, py: Python<'_>) -> PyResult<()> {
 		self.update_links(py)?;
 		self.update_joints(py)?;
 		self.update_materials(py)

@@ -42,7 +42,7 @@ impl PyKinematicTree {
 		)?;
 
 		weakref
-			.getattr("proxy")?
+			.getattr(intern!(py, "proxy"))?
 			.call1((&tree,))?
 			.to_object(py)
 			.clone_into(&mut tree.borrow_mut(py).me);
@@ -104,13 +104,20 @@ impl PyKinematicTree {
 
 	/* TODO: This migth need to not return a Optional */
 	/* TODO: Should become chained builder */
-	fn yank_link(&self, name: String, py: Python<'_>) -> PyResult<Option<Py<PyLinkBuilderChain>>> {
-		match self
+	fn yank_link(
+		slf: PyRef<'_, Self>,
+		name: String,
+		py: Python<'_>,
+	) -> PyResult<Option<Py<PyLinkBuilderChain>>> {
+		match slf
 			.inner
 			.yank_link(&name)
 			.map(|link_builder| link_builder.try_into_py(py))
 		{
-			Some(Ok(chained_linkbuilder)) => Ok(Some(chained_linkbuilder)),
+			Some(Ok(chained_linkbuilder)) => {
+				slf.into_super().update_all(py)?;
+				Ok(Some(chained_linkbuilder))
+			}
 			Some(Err(err)) => Err(err),
 			None => Ok(None),
 		}
@@ -118,16 +125,19 @@ impl PyKinematicTree {
 
 	/* TODO: This migth need to not return a Optional */
 	fn yank_joint(
-		&self,
+		slf: PyRef<'_, Self>,
 		name: String,
 		py: Python<'_>,
 	) -> PyResult<Option<Py<PyJointBuilderChain>>> {
-		match self
+		match slf
 			.inner
 			.yank_joint(&name)
 			.map(|joint_builder| joint_builder.try_into_py(py))
 		{
-			Some(Ok(chained_jointbuilder)) => Ok(Some(chained_jointbuilder)),
+			Some(Ok(chained_jointbuilder)) => {
+				slf.into_super().update_all(py)?;
+				Ok(Some(chained_jointbuilder))
+			}
 			Some(Err(err)) => Err(err),
 			None => Ok(None),
 		}
