@@ -4,6 +4,8 @@ The transmission system is not fully correct. No Checking available as of NOW.
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Final, List, NamedTuple, Optional, Union
 
+# need to use type names instead of typing.Self (supported since Python 3.11)
+
 if TYPE_CHECKING:
     from robot_description_builder.joint import Joint
 

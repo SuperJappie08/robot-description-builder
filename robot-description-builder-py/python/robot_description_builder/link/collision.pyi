@@ -1,5 +1,7 @@
 from typing import Final, TYPE_CHECKING, TypeVar, Optional 
 
+# need to use type names instead of typing.Self (supported since Python 3.11)
+
 if TYPE_CHECKING:
     from robot_description_builder import Transform
     from robot_description_builder.link.geometry import GeometryBase

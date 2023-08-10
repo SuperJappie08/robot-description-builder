@@ -3,6 +3,7 @@
 from typing import Final, Optional, Tuple
 
 # Need to use typing.Tuple instead of tuple because Python 3.8 is supported (Supported since Python 3.9)
+# need to use type names instead of typing.Self (supported since Python 3.11)
 
 class GeometryBase:
     """TODO: DOC"""

@@ -2,6 +2,8 @@ from abc import ABC
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Final
 
+# need to use type names instead of typing.Self (supported since Python 3.11)
+
 if TYPE_CHECKING:
     from robot_description_builder.joint import Joint, JointBuilderChain
     from robot_description_builder.link import Link, LinkBuilder, LinkBuilderChain

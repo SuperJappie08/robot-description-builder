@@ -35,3 +35,5 @@ and add serveral smart ones
 FIX MIRRORING for non easy cases
 
 - [ ] When PyLink attaches something it should update the dicts on the python object.
+- [ ] Can still see ._internal when importing
+- [ ] Create Changelog.md and roadmap.md

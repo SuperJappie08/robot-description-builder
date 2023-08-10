@@ -6,7 +6,7 @@ pub mod visual;
 use std::sync::{Arc, RwLock, Weak};
 
 use itertools::Itertools;
-use pyo3::{ffi, intern, prelude::*, AsPyPointer};
+use pyo3::{ffi, intern, prelude::*, pyclass::CompareOp, AsPyPointer};
 use robot_description_builder::{
 	link_data::LinkParent, linkbuilding::LinkBuilder, prelude::GroupIDChanger, Chained,
 	JointBuilder, Link,
@@ -456,6 +456,19 @@ impl PyLink {
 
 		repr += ")";
 		Ok(repr)
+	}
+
+	fn __richcmp__(&self, other: &Self, op: CompareOp, py: Python<'_>) -> PyObject {
+		// FIXME: This auto genrates __hash__ is that ok?
+		match op {
+			CompareOp::Eq => {
+				(self.inner.ptr_eq(&other.inner) && self.tree.is(&other.tree)).into_py(py)
+			}
+			CompareOp::Ne => {
+				(!self.inner.ptr_eq(&other.inner) || !self.tree.is(&other.tree)).into_py(py)
+			}
+			_ => py.NotImplemented(),
+		}
 	}
 }
 

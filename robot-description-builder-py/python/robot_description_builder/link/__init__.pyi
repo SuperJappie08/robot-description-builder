@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Final, List, Optional, Union
 
 # Need to use typing.List instead of list because Python 3.8 is supported (Supported since Python 3.9)
 # Need to use typing.Union instead `|` because `|` (Supported since Python 3.10)
+# need to use type names instead of typing.Self (supported since Python 3.11)
 
 if TYPE_CHECKING:
     from robot_description_builder import Transform
@@ -66,11 +67,15 @@ class LinkBuilderChain(LinkBuilder):
 class Link:
     name: Final[str]
     parent: Final[Union[Joint, KinematicTree]]
+    joints: Final[List[Joint]]
     visuals: Final[List[Visual]]
     colliders: Final[List[Collision]]
     inertial: Final[Optional[Inertial]]
 
     def __repr__(self) -> str: ...
+    def __eq__(self, other: Link) -> bool: ...
+    def __neq__(self, other: Link) -> bool: ...
+    
     def try_attach_child(
         self, link_builder: LinkBuilder, joint_builder: JointBuilder
     ) -> None: ...

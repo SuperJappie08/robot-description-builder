@@ -1,5 +1,7 @@
 from typing import Final, NamedTuple, Optional, Union
 
+# need to use type names instead of typing.Self (supported since Python 3.11)
+
 class Color(NamedTuple):
     """TODO: Maybe move to actual file in order to support this"""
 

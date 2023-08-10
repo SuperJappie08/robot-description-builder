@@ -1,6 +1,8 @@
 # TODO: INTERFACE INCOMPLETE
 from typing import TYPE_CHECKING, Final, Optional, TypeVar
 
+# need to use type names instead of typing.Self (supported since Python 3.11)
+
 if TYPE_CHECKING:
     from robot_description_builder import Transform
     from robot_description_builder.material import Material, MaterialDescriptor
