@@ -18,12 +18,15 @@ use crate::to_rdf::to_urdf::{ToURDF, URDFMaterialMode};
 #[cfg(feature = "xml")]
 use quick_xml::events::attributes::Attribute;
 
+#[cfg(feature = "wrapper")]
+use crate::utils::ArcLock;
+
 use crate::{
 	cluster_objects::{
 		kinematic_data_errors::AddMaterialError, kinematic_data_tree::KinematicDataTree,
 	},
 	identifiers::GroupID,
-	utils::{errored_read_lock, read_arclock, write_arclock, ArcLock},
+	utils::{errored_read_lock, read_arclock, write_arclock},
 };
 
 use data::{MaterialData, MaterialDataReferenceWrapper};

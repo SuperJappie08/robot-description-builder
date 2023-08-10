@@ -1,3 +1,5 @@
+//! TODO: Internal DOC
+//!
 use std::sync::{Arc, PoisonError, RwLockReadGuard, RwLockWriteGuard, Weak};
 
 pub(crate) type ArcLock<T> = std::sync::Arc<std::sync::RwLock<T>>;

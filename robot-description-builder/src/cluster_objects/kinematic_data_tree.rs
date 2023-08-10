@@ -226,7 +226,8 @@ impl ToURDF for KinematicDataTree {
 					URDFMaterialReferences::AllNamedMaterialOnTop => true,
 					URDFMaterialReferences::OnlyMultiUseMaterials => {
 						Arc::strong_count(material_data) > 2
-					} // Weak::strong_count(material_ref)
+					}
+					_ => false,
 				}
 			})
 			.map(
@@ -259,6 +260,7 @@ impl ToURDF for KinematicDataTree {
 							AllNamedMaterialOnTop | OnlyMultiUseMaterials => {
 								URDFMaterialMode::Referenced
 							}
+							AlwaysInline => URDFMaterialMode::FullMaterial,
 						}
 					},
 					..urdf_config.clone()
@@ -647,7 +649,7 @@ mod tests {
 			link::Link,
 			material::MaterialDescriptor,
 			to_rdf::{
-				to_urdf::{ToURDF, URDFConfig},
+				to_urdf::{ToURDF, URDFConfig, URDFMaterialReferences},
 				XMLMode,
 			},
 			SmartJointBuilder, Transform,
@@ -735,7 +737,7 @@ mod tests {
 				.unwrap();
 
 			test_to_urdf_kinematic_data_tree(
-				kinematic_data_tree,
+				Arc::clone(&kinematic_data_tree),
 				format!(
 					r#"<material name="Leg_l1">
 	<color rgba="1 0 0 1"/>
@@ -784,6 +786,60 @@ mod tests {
 				),
 				&URDFConfig {
 					xml_mode: XMLMode::Indent('\t', 1),
+					..Default::default()
+				},
+			);
+
+			// Test full material
+			test_to_urdf_kinematic_data_tree(
+				kinematic_data_tree,
+				format!(
+					r#"<link name="Leg_[L1]_l1">
+	<visual name="Leg_[L1]_l1_vis_1">
+		<origin xyz="0 1.5 0"/>
+		<geometry>
+			<box size="2 3 1"/>
+		</geometry>
+		<material name="Leg_l1">
+			<color rgba="1 0 0 1"/>
+		</material>
+	</visual>
+	<collision name="Leg_[L1]_l1_col_1">
+		<origin xyz="0 1.5 0"/>
+		<geometry>
+			<box size="2 3 1"/>
+		</geometry>
+	</collision>
+</link>
+<joint name="Leg_[L1]_j1" type="fixed">
+	<origin xyz="0 3 0" rpy="0 0 {}"/>
+	<parent link="Leg_[L1]_l1"/>
+	<child link="Leg_[L1]_l2"/>
+</joint>
+<link name="Leg_[L1]_l2">
+	<visual name="Leg_[L1]_l2_vis_1">
+		<origin xyz="0 5 0" rpy="{} 0 0"/>
+		<geometry>
+			<cylinder radius="1" length="10"/>
+		</geometry>
+		<material name="Leg_l2">
+			<color rgba="0 1 0 1"/>
+		</material>
+	</visual>
+	<collision name="Leg_[L1]_l2_col_1">
+		<origin xyz="0 5 0" rpy="{} 0 0"/>
+		<geometry>
+			<cylinder radius="1" length="10"/>
+		</geometry>
+	</collision>
+</link>"#,
+					std::f32::consts::FRAC_PI_2,
+					std::f32::consts::FRAC_PI_2,
+					std::f32::consts::FRAC_PI_2,
+				),
+				&URDFConfig {
+					xml_mode: XMLMode::Indent('\t', 1),
+					material_references: URDFMaterialReferences::AlwaysInline,
 					..Default::default()
 				},
 			)

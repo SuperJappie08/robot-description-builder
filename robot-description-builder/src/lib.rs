@@ -1,4 +1,7 @@
 // #![warn(missing_docs)]
+// This is fine for now.
+#![doc = include_str!("../README.md")]
+
 mod chained;
 mod cluster_objects;
 mod joint;
@@ -36,6 +39,7 @@ pub mod errors {
 		AddJointError, AddLinkError, AddMaterialError, AddTransmissionError,
 	};
 	pub use super::identifiers::GroupIDError;
+	pub use super::yank_errors::YankLinkError;
 }
 
 #[cfg(feature = "wrapper")]

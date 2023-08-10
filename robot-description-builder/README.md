@@ -5,7 +5,7 @@
 [![Crates.io](https://img.shields.io/crates/v/robot-description-builder)](https://crates.io/crates/robot-description-builder)
 [![Crates.io](https://img.shields.io/crates/d/robot-description-builder)](https://crates.io/crates/robot-description-builder)
 [![Docs.rs](https://img.shields.io/docsrs/robot-description-builder)](https://docs.rs/robot-description-builder)
-[![License: MIT](https://img.shields.io/crates/l/robot-description-builder)](LICENSE)
+[![License: MIT](https://img.shields.io/crates/l/robot-description-builder)](https://github.com/SuperJappie08/robot-description-builder/blob/master/robot-description-builder/LICENSE)
 
 <!-- Robot-description-builder -->
 <b title="Robot-description-builder for Rust 🦀">`robot-description-builder`</b> is a <b title="Rust 🦀">Rust crate</b> for creating **robot descriptions** in multiple formats, like **[URDF](http://wiki.ros.org/urdf)**, for use in various **robotics and simulation** applications such as ROS and Gazebo Simulator.
@@ -16,7 +16,7 @@
 ## Installation
 <!-- TODO: MAYBE MOVE BECAUSE OF CRATES.IO LAYOUT-->
 <b title="Robot-description-builder for Rust 🦀">`robot-description-builder`</b> can be installed from [Crates.io](https://crates.io/crates/robot-description-builder) using the following command:
-```
+```shell
 $ carge add robot-description-builder
 ```
 
@@ -65,4 +65,4 @@ The documentation for this <span title="🦀📦">Rust Crate</span> can be found
 <pre align="center">🚧UNDER CONSTRUCTION: ADD LESSONS/DESIGN DECISIONS🚧</pre>
 
 ## License
-<b title="Robot-description-builder for Rust 🦀">`robot-description-builder`</b> is licensed under the [MIT](LICENSE) license.
+<b title="Robot-description-builder for Rust 🦀">`robot-description-builder`</b> is licensed under the [MIT](https://github.com/SuperJappie08/robot-description-builder/blob/master/robot-description-builder/LICENSE) license.

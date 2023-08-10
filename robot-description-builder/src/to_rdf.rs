@@ -9,7 +9,7 @@
 #[cfg(feature = "xml")]
 use quick_xml::Writer;
 #[cfg(feature = "xml")]
-use std::io::Cursor;
+use std::io::{Cursor, Read, Seek};
 
 #[cfg(feature = "urdf")]
 pub mod to_urdf;
@@ -40,4 +40,17 @@ fn make_xml_writer(xml_mode: XMLMode) -> Writer<Cursor<Vec<u8>>> {
 			Writer::new_with_indent(Cursor::new(Vec::new()), c as u8, depth)
 		}
 	}
+}
+
+#[cfg(feature = "xml")]
+/// Convert a [`quick_xml::Writer`] to a [`String`].
+// TODO: Example?
+pub fn xml_writer_to_string(writer: Writer<Cursor<Vec<u8>>>) -> String {
+	let mut buffer = writer.into_inner();
+
+	let mut out = String::new();
+	buffer.rewind().unwrap();
+	buffer.read_to_string(&mut out).unwrap();
+
+	out
 }

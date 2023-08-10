@@ -12,7 +12,7 @@ use crate::{
 		transmission_builder_state::{WithActuator, WithJoints},
 		Transmission, TransmissionBuilder,
 	},
-	utils::{ArcLock, WeakLock},
+	utils::{read_arclock, ArcLock, WeakLock},
 	Chained,
 };
 
@@ -27,8 +27,6 @@ pub use robot::Robot;
 type PoisonWriteIndexError<'a, K, V> = PoisonError<RwLockWriteGuard<'a, HashMap<K, V>>>;
 
 pub trait KinematicInterface: Sized {
-	// NOTE: THIS IS NOT FINAL;
-
 	/// Returns the root link of the Kinematic Tree
 	///
 	/// # Example
@@ -88,8 +86,7 @@ pub trait KinematicInterface: Sized {
 	fn get_material(&self, name: &str) -> Option<Material>;
 	fn get_transmission(&self, name: &str) -> Option<ArcLock<Transmission>>;
 
-	/// TODO: NOT FINAL
-	/// TODO: Maybe remove rcrefcell from transmission parameter
+	// TODO: NOT FINAL
 	fn try_add_transmission(
 		&self,
 		transmission: TransmissionBuilder<WithJoints, WithActuator>,
@@ -117,9 +114,7 @@ pub trait KinematicInterface: Sized {
 		&self,
 	) -> Result<(), PoisonWriteIndexError<String, ArcLock<Transmission>>>;
 
-	/// TODO: DOCS
-	///
-	/// NOTE: after yanking the joints parent link is the `newest_link`
+	// NOTE: after yanking the joints parent link is the `newest_link`
 	fn yank_link(&self, name: &str) -> Option<Chained<LinkBuilder>> {
 		let builder = self
 			.get_link(name)
@@ -154,7 +149,7 @@ pub trait KinematicInterface: Sized {
 	fn yank_joint(&self, name: &str) -> Option<Chained<JointBuilder>> {
 		let builder = self
 			.get_joint(name)
-			.map(|joint| joint.read().unwrap().yank().unwrap()) // FIXME: Is unwrap ok here? NO
+			.map(|joint| read_arclock(&joint).unwrap().yank().unwrap()) // FIXME: Is unwrap ok here? NO
 			.map(Chained);
 		self.purge_joints().unwrap(); // FIXME: Is unwrap ok here?
 		self.purge_links().unwrap(); // FIXME: Is unwrap ok here?

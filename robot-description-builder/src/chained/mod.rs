@@ -8,7 +8,11 @@ use std::{
 
 use crate::identifiers::GroupIDChanger;
 
+/// A Wrapper to indicate if the current builder is a chain.
+///
+/// TODO: EXPAND
 #[derive(Debug, PartialEq, Clone)]
+#[repr(transparent)]
 pub struct Chained<Builder: ChainableBuilder>(pub(crate) Builder);
 
 // impl<Builder> Chained<Builder>

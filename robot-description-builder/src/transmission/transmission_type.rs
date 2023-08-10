@@ -3,20 +3,20 @@ use crate::to_rdf::to_urdf::ToURDF;
 #[cfg(feature = "xml")]
 use quick_xml::events::BytesText;
 
-/// TODO: INTRO SENTENCE
-/// TODO: DOC
-/// <http://wiki.ros.org/ros_control#Transmission_Interfaces>
+// TODO: INTRO SENTENCE
+// TODO: DOC
+// <http://wiki.ros.org/ros_control#Transmission_Interfaces>
 #[non_exhaustive]
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum TransmissionType {
-	/// TODO: DOC
-	/// FROM [`ros_control`](http://wiki.ros.org/ros_control#Transmission_Interfaces)
+	// TODO: DOC
+	// FROM [`ros_control`](http://wiki.ros.org/ros_control#Transmission_Interfaces)
 	SimpleTransmission,
-	/// TODO: DOC
-	/// FROM [`ros_control`](http://wiki.ros.org/ros_control#Transmission_Interfaces)
+	// TODO: DOC
+	// FROM [`ros_control`](http://wiki.ros.org/ros_control#Transmission_Interfaces)
 	DifferentialTransmission,
-	/// TODO: DOC
-	/// FROM [`ros_control`](http://wiki.ros.org/ros_control#Transmission_Interfaces)
+	// TODO: DOC
+	// FROM [`ros_control`](http://wiki.ros.org/ros_control#Transmission_Interfaces)
 	FourBarLinkageTransmission,
 }
 

@@ -1,10 +1,7 @@
 /// If an argument is supplied no meshes are used.
 ///
 /// This has been done to prevent allow for the use of an online viewer and the usage of WSL without setting some OpenGL settings.
-use std::{
-	f32::consts::FRAC_PI_2,
-	io::{Read, Seek},
-};
+use std::f32::consts::FRAC_PI_2;
 
 use robot_description_builder as rdb;
 
@@ -14,27 +11,22 @@ use rdb::{
 	prelude::*,
 	to_rdf::{
 		to_urdf::{to_urdf, URDFConfig},
-		XMLMode,
+		xml_writer_to_string, XMLMode,
 	},
 	Link, MirrorAxis, Robot, SmartJointBuilder, Transform,
 };
 
 fn to_urdf_string(robot: &Robot) -> String {
-	let mut buffer = to_urdf(
-		robot,
-		URDFConfig {
-			xml_mode: XMLMode::Indent(' ', 2),
-			..Default::default()
-		},
+	xml_writer_to_string(
+		to_urdf(
+			robot,
+			URDFConfig {
+				xml_mode: XMLMode::Indent(' ', 2),
+				..Default::default()
+			},
+		)
+		.unwrap(),
 	)
-	.unwrap()
-	.into_inner();
-
-	let mut out = String::new();
-	buffer.rewind().unwrap();
-	buffer.read_to_string(&mut out).unwrap();
-
-	out
 }
 
 /// [Adding Physical and Collision Properties to a URDF Model](http://wiki.ros.org/urdf/Tutorials/Adding%20Physical%20and%20Collision%20Properties%20to%20a%20URDF%20Model)

@@ -9,11 +9,13 @@ The Changes between versions of [<b>`robot-description-builder`</b> for <b>Rust<
 - Added Changelog
 - Added `VisualBuilder::to_collision` to allow for conversion between visual and collision builders
 - Added `CollisionBuilder::to_visual` to allow for conversion between collision and visual builders
+- Added `to_rdf::xml_writer_to_string` function, the use is self-explanitory.
 
 ### Changed/Updated
 - Updated examples (URDF tutorial 7 & 8) to use `VisualBuilder::to_collision` and `CollisionBuilder::to_visual` in some places.
 - Changed Errortype of `TryFrom<MaterialDataReferenceWrapper<'a>>` impl of `MaterialData` from `PoisonError<ArcLock<MaterialData>>` to `PoisonError<ErroredRead<ArcLock<MaterialData>>>`
 - Added Errors to `yank` methods
+- Improved documentation
 
 ### Removed
 ### Misc

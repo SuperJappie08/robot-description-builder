@@ -65,7 +65,7 @@ pub enum AddLinkError {
 	AddJoint(#[from] Box<AddJointError>),
 	#[error(transparent)]
 	AddMaterial(#[from] AddMaterialError),
-	/// Error that results from `PoisonError<RwLockWriteGuard<'_, Weak<RwLock<Link>>>>` occurs when attempting to write to a poisoned `RwLock<Weak<RwLock<Link>>>>`. (Only used for [`KinematicDataTree`]`.newest_link`)
+	/// Error that results from `PoisonError<RwLockWriteGuard<'_, Weak<RwLock<Link>>>>` occurs when attempting to write to a poisoned `RwLock<Weak<RwLock<Link>>>>`. (Only used for `KinematicDataTree``.newest_link`)
 	#[error("Accesses `newest_link` failed: {0}")]
 	AccesNewestLink(#[from] PoisonError<ErroredWrite<Arc<KinematicDataTree>>>),
 }
