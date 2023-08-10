@@ -6,20 +6,25 @@ use crate::to_rdf::to_urdf::ToURDF;
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
-/// TODO: DOCS
+/// A Represenation for a Box Geometry.
 ///
-/// The fields are public for the Python wrapper. It doesn't change much for the Rust side, since most of the time these will be `Box<dyn GeometryInterface + Sync + Send>`.
+/// This Box is centered at the origin. (URDF)
+// The fields are public for the Python wrapper. It doesn't change much for the Rust side, since most of the time these will be `Box<dyn GeometryInterface + Sync + Send>`.
 #[derive(Debug, PartialEq, Clone)]
 pub struct BoxGeometry {
-	/// TODO: Figure out correct field names
+	// TODO: Figure out correct field names
+	/// The side-length in the X-direction.
 	pub side1: f32,
+	/// The side-length in the Y-direction.
 	pub side2: f32,
+	/// The side-length in the Z-direction.
 	pub side3: f32,
 }
 
 impl BoxGeometry {
-	/// TODO: REPLACE PARAMETER NAMES AND MAYBE NOT PUBLIC
+	/// Creates a new `BoxGeometry` with the specified side lengths.
 	pub fn new(side1: f32, side2: f32, side3: f32) -> Self {
+		// TODO: REPLACE PARAMETER NAMES
 		Self {
 			side1,
 			side2,

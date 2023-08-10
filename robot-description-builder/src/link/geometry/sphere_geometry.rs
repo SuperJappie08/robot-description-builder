@@ -7,15 +7,18 @@ use crate::to_rdf::to_urdf::ToURDF;
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
-/// TODO: DOCS
+/// A Represenation for a Sphere Geometry.
 ///
-/// The fields are public for the Python wrapper. It doesn't change much for the Rust side, since most of the time these will be `Box<dyn GeometryInterface + Sync + Send>`.
+/// This Sphere is centered at the origin. (URDF)
+// The fields are public for the Python wrapper. It doesn't change much for the Rust side, since most of the time these will be `Box<dyn GeometryInterface + Sync + Send>`.
 #[derive(Debug, PartialEq, Clone)]
 pub struct SphereGeometry {
+	/// The radius of the Sphere.
 	pub radius: f32,
 }
 
 impl SphereGeometry {
+	/// Creates a new `SphereGeometry` with the specified `radius`.
 	pub fn new(radius: f32) -> Self {
 		Self { radius }
 	}

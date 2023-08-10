@@ -7,16 +7,22 @@ use crate::transform::Mirror;
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
-/// TODO: DOCS
+/// A Represenation for a Cylinder Geometry.
 ///
-/// The fields are public for the Python wrapper. It doesn't change much for the Rust side, since most of the time these will be `Box<dyn GeometryInterface + Sync + Send>`.
+/// This Cylinder is centered at the origin, with the Z-axis as the rotational-symmetry axis. (URDF)
+// The fields are public for the Python wrapper. It doesn't change much for the Rust side, since most of the time these will be `Box<dyn GeometryInterface + Sync + Send>`.
 #[derive(Debug, PartialEq, Clone)]
 pub struct CylinderGeometry {
+	/// The radius of the Cylinder.
+	///
+	/// Around the Z-axis for URDF.
 	pub radius: f32,
+	/// The Length of the Cylinder.
 	pub length: f32,
 }
 
 impl CylinderGeometry {
+	/// Creates a new `CylinderGeometry` with the specified `radius` and `length`.
 	pub fn new(radius: f32, length: f32) -> Self {
 		Self { radius, length }
 	}
