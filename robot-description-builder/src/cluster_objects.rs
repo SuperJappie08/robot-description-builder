@@ -12,7 +12,8 @@ use crate::{
 		transmission_builder_state::{WithActuator, WithJoints},
 		Transmission, TransmissionBuilder,
 	},
-	ArcLock, Chained, WeakLock,
+	utils::{ArcLock, WeakLock},
+	Chained,
 };
 
 pub mod kinematic_data_errors;
@@ -122,7 +123,7 @@ pub trait KinematicInterface: Sized {
 	fn yank_link(&self, name: &str) -> Option<Chained<LinkBuilder>> {
 		let builder = self
 			.get_link(name)
-			.map(|link| link.read().unwrap().yank()) // FIXME: Is unwrap ok here?
+			.map(|link| link.read().unwrap().yank().unwrap()) // FIXME: Is unwrap ok here?
 			.map(Chained);
 		self.purge_joints().unwrap(); // FIXME: Is unwrap ok here?
 		self.purge_links().unwrap(); // FIXME: Is unwrap ok here?
@@ -147,13 +148,13 @@ pub trait KinematicInterface: Sized {
 	/// ```
 	fn yank_root(self) -> Chained<LinkBuilder> {
 		let builder = self.get_root_link().read().unwrap().yank();
-		Chained(builder)
+		Chained(builder.unwrap()) //FIXME: Unwrap not OK
 	}
 
 	fn yank_joint(&self, name: &str) -> Option<Chained<JointBuilder>> {
 		let builder = self
 			.get_joint(name)
-			.map(|joint| joint.read().unwrap().yank()) // FIXME: Is unwrap ok here?
+			.map(|joint| joint.read().unwrap().yank().unwrap()) // FIXME: Is unwrap ok here? NO
 			.map(Chained);
 		self.purge_joints().unwrap(); // FIXME: Is unwrap ok here?
 		self.purge_links().unwrap(); // FIXME: Is unwrap ok here?

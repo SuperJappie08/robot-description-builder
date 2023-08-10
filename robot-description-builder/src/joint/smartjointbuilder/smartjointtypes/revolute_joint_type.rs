@@ -14,7 +14,7 @@ use crate::{
 		BuildJoint, Joint, JointBuilder,
 	},
 	link::Link,
-	ArcLock, WeakLock,
+	utils::{ArcLock, WeakLock},
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]

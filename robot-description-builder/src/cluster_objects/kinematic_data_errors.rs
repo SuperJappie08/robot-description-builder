@@ -2,7 +2,7 @@ use thiserror::Error;
 
 use std::{
 	collections::HashMap,
-	sync::{Arc, PoisonError, Weak},
+	sync::{Arc, PoisonError},
 };
 
 use crate::{
@@ -10,57 +10,13 @@ use crate::{
 	link::Link,
 	material::data::MaterialData,
 	transmission::{BuildTransmissionError, Transmission},
-	ArcLock, WeakLock,
+	utils::{ArcLock, ErroredRead, ErroredWrite, WeakLock},
 };
 
 use super::kinematic_data_tree::KinematicDataTree;
 
 pub(crate) type PoisonReadIndexError<K, V> = PoisonError<ErroredRead<ArcLock<HashMap<K, V>>>>;
 pub(crate) type PoisonWriteIndexError<K, V> = PoisonError<ErroredWrite<ArcLock<HashMap<K, V>>>>;
-
-#[derive(Debug)]
-pub struct ErroredRead<T>(pub T);
-
-#[inline]
-pub(crate) fn errored_read_lock<T>(
-	errored_lock: &ArcLock<T>,
-) -> PoisonError<ErroredRead<ArcLock<T>>> {
-	PoisonError::new(ErroredRead(Arc::clone(errored_lock)))
-}
-
-impl<T> PartialEq for ErroredRead<Arc<T>> {
-	fn eq(&self, other: &Self) -> bool {
-		Arc::ptr_eq(&self.0, &other.0)
-	}
-}
-
-impl<T> PartialEq for ErroredRead<Weak<T>> {
-	fn eq(&self, other: &Self) -> bool {
-		Weak::ptr_eq(&self.0, &other.0)
-	}
-}
-
-#[derive(Debug)]
-pub struct ErroredWrite<T>(pub T);
-
-#[inline]
-pub(crate) fn errored_write_lock<T>(
-	errored_lock: &ArcLock<T>,
-) -> PoisonError<ErroredWrite<ArcLock<T>>> {
-	PoisonError::new(ErroredWrite(Arc::clone(errored_lock)))
-}
-
-impl<T> PartialEq for ErroredWrite<Arc<T>> {
-	fn eq(&self, other: &Self) -> bool {
-		Arc::ptr_eq(&self.0, &other.0)
-	}
-}
-
-impl<T> PartialEq for ErroredWrite<Weak<T>> {
-	fn eq(&self, other: &Self) -> bool {
-		Weak::ptr_eq(&self.0, &other.0)
-	}
-}
 
 #[derive(Debug, Error)]
 pub enum AddMaterialError {

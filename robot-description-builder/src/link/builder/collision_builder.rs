@@ -58,7 +58,7 @@ impl CollisionBuilder {
 	pub fn to_visual(&self) -> VisualBuilder {
 		VisualBuilder {
 			name: self.name.clone(),
-			origin: self.origin.clone(),
+			origin: self.origin,
 			geometry: self.geometry.boxed_clone(),
 			material_description: None,
 		}

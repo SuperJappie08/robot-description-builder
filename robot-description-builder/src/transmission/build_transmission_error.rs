@@ -1,6 +1,8 @@
 use thiserror::Error;
 
-use crate::{cluster_objects::kinematic_data_errors::PoisonReadIndexError, joint::Joint, WeakLock};
+use crate::{
+	cluster_objects::kinematic_data_errors::PoisonReadIndexError, joint::Joint, utils::WeakLock,
+};
 
 #[derive(Debug, Error)]
 pub enum BuildTransmissionError {

@@ -4,9 +4,8 @@ mod cluster_objects;
 mod joint;
 mod link;
 mod transform;
-
-type ArcLock<T> = std::sync::Arc<std::sync::RwLock<T>>;
-type WeakLock<T> = std::sync::Weak<std::sync::RwLock<T>>;
+mod utils;
+mod yank_errors;
 
 pub mod identifiers;
 pub mod material;
@@ -31,8 +30,7 @@ pub mod prelude {
 	// pub use material::MaterialDescriptor;
 }
 
-/// TODO: Docs
-
+/// Error-types used in `robot-description-builder`.
 pub mod errors {
 	pub use super::cluster_objects::kinematic_data_errors::{
 		AddJointError, AddLinkError, AddMaterialError, AddTransmissionError,
@@ -48,6 +46,9 @@ pub mod reexport {
 }
 
 #[cfg(feature = "smart-joint-extension")]
+/// The types required when extending `SmartJointBuilder` functionality.
+///
+/// TODO: EXPAND
 pub mod smart_joint_extension {
 	pub mod types {
 		pub use crate::joint::smartjointbuilder::{

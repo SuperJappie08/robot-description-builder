@@ -10,7 +10,7 @@ use crate::{
 	joint::{BuildJointChain, Joint, JointBuilder},
 	link::{link_data, Link, LinkParent, LinkShapeData},
 	transform::Mirror,
-	ArcLock, WeakLock,
+	utils::{ArcLock, WeakLock},
 };
 
 #[derive(Debug, PartialEq, Clone, Default)]

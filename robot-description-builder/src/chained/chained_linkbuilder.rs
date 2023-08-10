@@ -11,7 +11,7 @@ use crate::{
 		Link,
 	},
 	transform::{Mirror, MirrorAxis},
-	ArcLock, WeakLock,
+	utils::{ArcLock, WeakLock},
 };
 
 impl Chained<LinkBuilder> {
@@ -69,8 +69,7 @@ where
 	KI: KinematicInterface,
 {
 	fn from(value: KI) -> Self {
-		// FIXME: Is unwrap Ok Here?
-		Self(value.get_root_link().read().unwrap().yank())
+		value.yank_root()
 	}
 }
 

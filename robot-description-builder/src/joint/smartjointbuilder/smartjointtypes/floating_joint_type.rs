@@ -11,7 +11,7 @@ use crate::{
 		Joint, JointType,
 	},
 	link::Link,
-	ArcLock, WeakLock,
+	utils::{ArcLock, WeakLock},
 };
 
 /// Floating Joints are weird, as they do not behave like the other joint types.

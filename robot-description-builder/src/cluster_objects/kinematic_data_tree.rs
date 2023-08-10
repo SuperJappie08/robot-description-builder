@@ -15,7 +15,7 @@ use crate::{
 		transmission_builder_state::{WithActuator, WithJoints},
 		Transmission, TransmissionBuilder,
 	},
-	ArcLock, WeakLock,
+	utils::{read_arclock, write_arclock, ArcLock, ErroredWrite, WeakLock},
 };
 
 use super::{kinematic_data_errors::*, PoisonWriteIndexError};
@@ -72,31 +72,18 @@ impl KinematicDataTree {
 	///
 	/// I have done it.
 	pub(crate) fn try_add_link(&self, link: &ArcLock<Link>) -> Result<(), AddLinkError> {
-		let name = link
-			.read()
-			.map_err(|_| errored_read_lock(link))?
-			.name()
-			.clone();
+		let name = read_arclock(link)?.name().clone();
 
 		#[cfg(any(feature = "logging", test))]
 		log::debug!(target: "KinematicTreeData","Trying to attach Link: {}", name);
 
-		let other = {
-			self.links
-				.read()
-				.map_err(|_| errored_read_lock(&self.links))?
-				.get(&name)
-		}
-		.map(Weak::clone);
+		let other = { read_arclock(&self.links)?.get(&name) }.map(Weak::clone);
 		if let Some(preexisting_link) = other.and_then(|weak_link| weak_link.upgrade()) {
 			if !Arc::ptr_eq(&preexisting_link, link) {
 				return Err(AddLinkError::Conflict(name));
 			}
 		} else {
-			assert!(self
-				.links
-				.write()
-				.map_err(|_| errored_write_lock(&self.links))?
+			assert!(write_arclock(&self.links)?
 				.insert(name, Arc::downgrade(link))
 				.is_none());
 			*self
@@ -105,16 +92,14 @@ impl KinematicDataTree {
 				.map_err(|_| PoisonError::new(ErroredWrite(self.me.upgrade().unwrap())))? = Arc::downgrade(link);
 		}
 
-		link.write()
-			.map_err(|_| errored_write_lock(link))?
+		write_arclock(link)?
 			.visuals_mut()
 			.iter_mut()
 			.filter_map(|visual| visual.material_mut())
 			.map(|material| self.try_add_material(material))
 			.process_results(|iter| iter.collect_vec())?;
 
-		link.read()
-			.map_err(|_| errored_read_lock(link))?
+		read_arclock(link)?
 			.joints()
 			.iter()
 			.map(|joint| self.try_add_joint(joint))
@@ -125,42 +110,24 @@ impl KinematicDataTree {
 	}
 
 	pub(crate) fn try_add_joint(&self, joint: &ArcLock<Joint>) -> Result<(), AddJointError> {
-		let name = joint
-			.read()
-			.map_err(|_| errored_read_lock(joint))?
-			.name()
-			.clone();
+		let name = read_arclock(joint)?.name().clone();
 
 		#[cfg(any(feature = "logging", test))]
 		log::debug!(target: "KinematicTreeData","Trying to attach Joint: {}", name);
 
-		let other = {
-			self.joints
-				.read()
-				.map_err(|_| errored_read_lock(&self.joints))?
-				.get(&name)
-		}
-		.map(Weak::clone);
+		let other = { read_arclock(&self.joints)?.get(&name) }.map(Weak::clone);
 		if let Some(preexisting_joint) = other.and_then(|weak_joint| weak_joint.upgrade()) {
 			if !Arc::ptr_eq(&preexisting_joint, joint) {
 				return Err(AddJointError::Conflict(name));
 			}
 		} else {
-			assert!(self
-				.joints
-				.write()
-				.map_err(|_| errored_read_lock(&self.joints))?
+			assert!(write_arclock(&self.joints)?
 				.insert(name, Arc::downgrade(joint))
 				.is_none());
 		}
 
-		self.try_add_link(
-			joint
-				.read()
-				.map_err(|_| errored_read_lock(joint))?
-				.child_link_ref(),
-		)
-		.map_err(Box::new)?;
+		self.try_add_link(read_arclock(joint)?.child_link_ref())
+			.map_err(Box::new)?;
 
 		Ok(())
 	}
@@ -174,20 +141,11 @@ impl KinematicDataTree {
 		#[cfg(any(feature = "logging", test))]
 		log::debug!(target: "KinematicTreeData","Trying to attach Transmission: {}", name);
 
-		let other_transmission = {
-			self.transmissions
-				.read()
-				.map_err(|_| errored_read_lock(&self.transmissions))?
-				.get(&name)
-		}
-		.map(Arc::clone);
+		let other_transmission = { read_arclock(&self.transmissions)?.get(&name) }.map(Arc::clone);
 		if other_transmission.is_some() {
 			Err(AddTransmissionError::Conflict(name))
 		} else {
-			assert!(self
-				.transmissions
-				.write()
-				.map_err(|_| errored_write_lock(&self.transmissions))?
+			assert!(write_arclock(&self.transmissions)?
 				.insert(name, Arc::new(RwLock::new(transmission.build(&self.me)?)))
 				.is_none());
 			Ok(())

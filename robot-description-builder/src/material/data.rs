@@ -6,7 +6,7 @@
 */
 use std::sync::Arc;
 
-use crate::ArcLock;
+use crate::utils::{read_arclock, ArcLock, ErroredRead};
 
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
@@ -138,16 +138,13 @@ impl<'a> From<ArcLock<MaterialData>> for MaterialDataReferenceWrapper<'a> {
 }
 
 impl<'a> TryFrom<MaterialDataReferenceWrapper<'a>> for MaterialData {
-	type Error = std::sync::PoisonError<ArcLock<MaterialData>>;
+	type Error = std::sync::PoisonError<ErroredRead<ArcLock<MaterialData>>>;
 
 	fn try_from(value: MaterialDataReferenceWrapper) -> Result<Self, Self::Error> {
 		match value {
 			MaterialDataReferenceWrapper::Direct(data) => Ok(data.clone()),
 			MaterialDataReferenceWrapper::Global(arc_data) => {
-				let data_ref = arc_data
-					.read()
-					.map(|data| data.clone())
-					.map_err(|_| std::sync::PoisonError::new(Arc::clone(&arc_data)));
+				let data_ref = read_arclock(&arc_data).map(|data| data.clone());
 				data_ref
 			}
 		}

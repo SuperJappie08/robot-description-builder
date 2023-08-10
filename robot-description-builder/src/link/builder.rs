@@ -4,7 +4,7 @@ use super::{Link, LinkShapeData};
 use crate::{
 	cluster_objects::{kinematic_data_tree::KinematicDataTree, KinematicTree},
 	joint::Joint,
-	ArcLock, WeakLock,
+	utils::{ArcLock, WeakLock},
 };
 
 mod collision_builder;

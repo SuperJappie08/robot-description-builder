@@ -51,7 +51,8 @@ use crate::{
 		link_parent::LinkParent, visual::Visual,
 	},
 	transform::Transform,
-	ArcLock, WeakLock,
+	utils::{read_arclock, write_arclock, ArcLock, WeakLock},
+	yank_errors::YankLinkError,
 };
 
 /// TODO: Make Builder For Link
@@ -235,25 +236,26 @@ impl Link {
 	}
 
 	/// TODO: DOCS:
+	/// TODO: ADD ERRORS
 	/// TODO: TEST
-	pub(crate) fn yank(&self) -> LinkBuilder {
+	pub(crate) fn yank(&self) -> Result<LinkBuilder, YankLinkError> {
 		let builder = self.rebuild_branch_continued();
 
 		match self.parent() {
 			LinkParent::Joint(joint) => {
-				let joint = joint.upgrade().unwrap();
-				let parent_link = &joint.try_read().unwrap().parent_link; // FIXME: Is unwrap Ok here?
+				let joint = joint.upgrade().unwrap(); // This unwrap is Ok.
+				let parent_link = &read_arclock(&joint)?.parent_link;
 
+				// TODO: This is most-likely Ok, however it could error on the write.
 				*self.tree.upgrade().unwrap().newest_link.write().unwrap() =
 					Weak::clone(parent_link);
 
-				parent_link
-					.upgrade()
-					.unwrap() // This unwrap is Ok since the parent_link on a Joint is initialized while adding to the tree.
-					.write()
-					.unwrap() //FIXME: Is unwrap Ok here?
-					.joints_mut()
-					.retain(|other_joint| !Arc::ptr_eq(&joint, other_joint));
+				write_arclock(
+					// This unwrap is Ok, since the parent_link on a Joint is initialized while adding to the tree.
+					&parent_link.upgrade().unwrap(),
+				)?
+				.joints_mut()
+				.retain(|other_joint| !Arc::ptr_eq(&joint, other_joint));
 			}
 			LinkParent::KinematicTree(_) => {
 				#[cfg(any(feature = "logging", test))]
@@ -261,7 +263,7 @@ impl Link {
 			}
 		}
 
-		builder
+		Ok(builder)
 	}
 
 	pub(crate) fn get_shape_data(&self) -> LinkShapeData {

@@ -33,3 +33,6 @@ FIX MIRRORING for non easy cases
 - [ ] When PyLink attaches something it should update the dicts on the python object.
 - [ ] Can still see ._internal when importing
 - [ ] Create roadmap.md
+- [x] Upgrade VisBuilder to ColBuilder and back
+    - [ ] Make helper functions take VisualBuilder
+    - [ ] Optional: Add VisCol fn to link

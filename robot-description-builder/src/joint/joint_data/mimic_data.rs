@@ -5,7 +5,7 @@ use quick_xml::{events::attributes::Attribute, name::QName};
 
 use crate::{
 	cluster_objects::kinematic_data_tree::KinematicDataTree, identifiers::GroupID, joint::Joint,
-	WeakLock,
+	utils::WeakLock,
 };
 
 #[derive(Debug, Clone)]

@@ -12,7 +12,7 @@ use crate::{
 		Link, LinkShapeData,
 	},
 	transform::{Mirror, MirrorUpdater, Transform},
-	ArcLock, WeakLock,
+	utils::{ArcLock, WeakLock},
 };
 
 pub trait BuildJoint: Into<JointBuilder> {

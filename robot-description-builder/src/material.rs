@@ -20,11 +20,10 @@ use quick_xml::events::attributes::Attribute;
 
 use crate::{
 	cluster_objects::{
-		kinematic_data_errors::{errored_read_lock, errored_write_lock, AddMaterialError},
-		kinematic_data_tree::KinematicDataTree,
+		kinematic_data_errors::AddMaterialError, kinematic_data_tree::KinematicDataTree,
 	},
 	identifiers::GroupID,
-	ArcLock,
+	utils::{errored_read_lock, read_arclock, write_arclock, ArcLock},
 };
 
 use data::{MaterialData, MaterialDataReferenceWrapper};
@@ -80,9 +79,7 @@ impl Material {
 						let material_data_index = Arc::clone(&tree.material_index);
 
 						// Check if there already exists a `Material` with the same name
-						let other_material = material_data_index
-							.read()
-							.map_err(|_| errored_read_lock(&material_data_index))?
+						let other_material = read_arclock(&material_data_index)?
 							.get(name)
 							.map(Arc::clone);
 
@@ -102,9 +99,7 @@ impl Material {
 							}
 							None => {
 								let material_data = Arc::new(RwLock::new(data.clone()));
-								assert!(material_data_index
-									.write()
-									.map_err(|_| errored_write_lock(&material_data_index))?
+								assert!(write_arclock(&material_data_index)?
 									.insert(name.clone(), Arc::clone(&material_data))
 									.is_none());
 								material_data

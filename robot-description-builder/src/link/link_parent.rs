@@ -1,6 +1,8 @@
 use std::sync::Weak;
 
-use crate::{cluster_objects::kinematic_data_tree::KinematicDataTree, joint::Joint, WeakLock};
+use crate::{
+	cluster_objects::kinematic_data_tree::KinematicDataTree, joint::Joint, utils::WeakLock,
+};
 
 #[derive(Debug)]
 pub enum LinkParent {

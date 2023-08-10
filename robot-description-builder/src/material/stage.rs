@@ -1,7 +1,7 @@
 // Internal module
 use std::sync::Arc;
 
-use crate::ArcLock;
+use crate::utils::ArcLock;
 
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;

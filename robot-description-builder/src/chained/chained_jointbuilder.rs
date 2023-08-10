@@ -8,7 +8,7 @@ use crate::{
 	joint::{BuildJointChain, Joint, JointBuilder},
 	link::{builder::LinkBuilder, Link, LinkShapeData},
 	transform::{Mirror, MirrorAxis},
-	ArcLock, WeakLock,
+	utils::{ArcLock, WeakLock},
 };
 
 impl Chained<JointBuilder> {

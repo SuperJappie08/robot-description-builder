@@ -1,12 +1,10 @@
 use std::sync::{Arc, Weak};
 
 use crate::{
-	cluster_objects::{
-		kinematic_data_errors::errored_read_lock, kinematic_data_tree::KinematicDataTree,
-	},
+	cluster_objects::kinematic_data_tree::KinematicDataTree,
 	identifiers::GroupID,
 	joint::Joint,
-	WeakLock,
+	utils::{read_arclock, WeakLock},
 };
 
 #[cfg(feature = "urdf")]
@@ -64,10 +62,7 @@ impl TransmissionJointBuilder {
 		self,
 		tree: &Arc<KinematicDataTree>,
 	) -> Result<TransmissionJoint, BuildTransmissionError> {
-		let joint = match tree
-			.joints
-			.read()
-			.map_err(|_| errored_read_lock(&tree.joints))?
+		let joint = match read_arclock(&tree.joints)?
 			.get(self.name())
 			.map(Weak::clone)
 		{

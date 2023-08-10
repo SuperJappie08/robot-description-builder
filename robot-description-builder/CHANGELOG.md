@@ -12,6 +12,8 @@ The Changes between versions of [<b>`robot-description-builder`</b> for <b>Rust<
 
 ### Changed/Updated
 - Updated examples (URDF tutorial 7 & 8) to use `VisualBuilder::to_collision` and `CollisionBuilder::to_visual` in some places.
+- Changed Errortype of `TryFrom<MaterialDataReferenceWrapper<'a>>` impl of `MaterialData` from `PoisonError<ArcLock<MaterialData>>` to `PoisonError<ErroredRead<ArcLock<MaterialData>>>`
+- Added Errors to `yank` methods
 
 ### Removed
 ### Misc

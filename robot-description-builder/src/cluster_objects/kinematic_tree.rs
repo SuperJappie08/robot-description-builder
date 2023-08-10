@@ -15,7 +15,7 @@ use crate::{
 		transmission_builder_state::{WithActuator, WithJoints},
 		Transmission, TransmissionBuilder,
 	},
-	ArcLock, WeakLock,
+	utils::{ArcLock, WeakLock},
 };
 
 #[derive(Debug)]

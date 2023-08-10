@@ -18,13 +18,17 @@ pub use smartjointbuilder::SmartJointBuilder;
 
 #[cfg(feature = "xml")]
 use std::borrow::Cow;
-use std::sync::{Arc, Weak};
+use std::sync::{Arc, PoisonError, Weak};
 
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
 use crate::{
-	chained::Chained, cluster_objects::kinematic_data_tree::KinematicDataTree,
-	identifiers::GroupID, link::Link, transform::Transform, ArcLock, WeakLock,
+	chained::Chained,
+	cluster_objects::kinematic_data_tree::KinematicDataTree,
+	identifiers::GroupID,
+	link::Link,
+	transform::Transform,
+	utils::{write_arclock, ArcLock, ErroredWrite, WeakLock},
 };
 
 #[cfg(feature = "xml")]
@@ -134,21 +138,20 @@ impl Joint {
 	///
 	/// NOTE: you must get the link from the rep by cloning.
 	/// TODO: Maybe add a `first` argument to only set the `newest_link` if it is the first in the call stack
-	pub(crate) fn yank(&self) -> JointBuilder {
+	pub(crate) fn yank(&self) -> Result<JointBuilder, PoisonError<ErroredWrite<ArcLock<Link>>>> {
 		let builder = self.rebuild_branch_continued();
 
 		#[cfg(any(feature = "logging", test))]
 		log::info!("Yanked Joint \"{}\"", self.name());
 
-		self.parent_link()
-			.write()
-			.unwrap() // FIXME: UNWRAP NOT OK
+		write_arclock(&self.parent_link())?
 			.joints_mut()
 			.retain(|joint| !Arc::ptr_eq(&self.get_self(), joint));
 
+		// TODO: This is most-likely Ok, however it could error on the write.
 		*self.tree.upgrade().unwrap().newest_link.write().unwrap() = Weak::clone(&self.parent_link);
 
-		builder
+		Ok(builder)
 	}
 
 	/// Gets a (strong) refence to the current `Joint`. (An `Arc<RwLock<Joint>>`)
