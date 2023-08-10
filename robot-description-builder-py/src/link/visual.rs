@@ -2,7 +2,7 @@ use pyo3::{intern, prelude::*};
 
 use robot_description_builder::{link_data, linkbuilding::VisualBuilder, prelude::GroupIDChanger};
 
-use super::geometry::PyGeometryBase;
+use super::{collision::PyCollisionBuilder, geometry::PyGeometryBase};
 use crate::{
 	identifier::GroupIDError,
 	material::{PyMaterial, PyMaterialDescriptor},
@@ -112,6 +112,14 @@ impl PyVisualBuilder {
 			}
 			(None, false) => (),
 		}
+	}
+
+	/// Creates a :class:`robot_description_builder.link.collision.CollisionBuilder` from this ``VisualBuilder``.
+	///
+	/// :return: A :class:`robot_description_builder.link.collision.CollisionBuilder` with the data from this ``VisualBuilder``
+	/// :rtype: :class:`robot_description_builder.link.collision.CollisionBuilder`
+	fn as_collision(&self) -> PyCollisionBuilder {
+		self.0.to_collision().into()
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {

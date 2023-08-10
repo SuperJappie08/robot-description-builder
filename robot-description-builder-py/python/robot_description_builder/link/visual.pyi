@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from robot_description_builder import Transform
     from robot_description_builder.material import Material, MaterialDescriptor
     from robot_description_builder.link.geometry import GeometryBase
+    from robot_description_builder.link.collision import CollisionBuilder
 
 Geometry = TypeVar("Geometry", bound='GeometryBase')
 
@@ -25,6 +26,13 @@ class VisualBuilder[Geometry]:
                 material: Optional[MaterialDescriptor] = None) -> VisualBuilder[Geometry]: ...
     def __repr__(self) -> str: ...
     # TODO: EXPAND
+    def as_collision(self) -> CollisionBuilder[Geometry]:
+        """Creates a :class:`robot_description_builder.link.collision.CollisionBuilder` from this ``VisualBuilder``.
+
+        :return: A :class:`robot_description_builder.link.collision.CollisionBuilder` with the data from this ``VisualBuilder``
+        :rtype: :class:`robot_description_builder.link.collision.CollisionBuilder`
+        """
+        ...
     def change_group_id(self, new_group_id: str) -> None: ...
     def apply_group_id(self) -> None: ...
 

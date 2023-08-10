@@ -39,6 +39,7 @@ Homepage = "https://github.com/SuperJappie08/robot-description-builder"
 # Documentation = "https://readthedocs.org"
 Repository = "https://github.com/SuperJappie08/robot-description-builder/tree/master/robot-description-builder-py"
 # Changelog = ".../.../CHANGELOG.md"
+Changelog = "https://github.com/SuperJappie08/robot-description-builder/tree/master/robot-description-builder-py/CHANGELOG.md"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]

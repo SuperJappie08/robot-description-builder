@@ -3,6 +3,7 @@ use nalgebra::Matrix3;
 use crate::{
 	identifiers::GroupIDChanger,
 	link::{
+		builder::VisualBuilder,
 		collision::Collision,
 		geometry::{GeometryInterface, GeometryShapeData},
 	},
@@ -45,6 +46,22 @@ impl CollisionBuilder {
 	pub fn tranformed(mut self, transform: Transform) -> Self {
 		self.origin = Some(transform);
 		self
+	}
+
+	/// Creates a `VisualBuilder` from this `CollisionBuilder` reference by upgrading
+	///
+	/// Creates a [`VisualBuilder`] from the `CollisionBuilder` by cloning the following fields:
+	///  - `name`
+	///  - `origin`
+	///  - `geometry`
+	/// The other fields are left empty, since they are optional.
+	pub fn to_visual(&self) -> VisualBuilder {
+		VisualBuilder {
+			name: self.name.clone(),
+			origin: self.origin.clone(),
+			geometry: self.geometry.boxed_clone(),
+			material_description: None,
+		}
 	}
 
 	pub(crate) fn build(self) -> Collision {

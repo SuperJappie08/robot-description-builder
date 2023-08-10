@@ -3,7 +3,7 @@
 
 ![Lines of code](https://img.shields.io/tokei/lines/github/SuperJappie08/robot-description-builder)
 [![GitHub](https://img.shields.io/github/license/SuperJappie08/robot-description-builder)](LICENSE)
-![Sourcegraph for Repo Reference Count](https://img.shields.io/sourcegraph/rrc/github.com/SuperJappie08/robot-description-builder)
+<!-- ![Sourcegraph for Repo Reference Count](https://img.shields.io/sourcegraph/rrc/github.com/SuperJappie08/robot-description-builder) -->
 
 <!-- TODO: ADD DOC LINKS -->
 | Rust 🦀 | Python 🐍 |

@@ -3,6 +3,7 @@ use nalgebra::Matrix3;
 use crate::{
 	identifiers::GroupIDChanger,
 	link::{
+		builder::CollisionBuilder,
 		geometry::{GeometryInterface, GeometryShapeData},
 		visual::Visual,
 	},
@@ -60,6 +61,20 @@ impl VisualBuilder {
 	pub fn materialized(mut self, material_description: MaterialDescriptor) -> Self {
 		self.material_description = Some(material_description);
 		self
+	}
+
+	/// Creates a `CollisionBuilder` from this `VisualBuilder` reference by lossy conversion
+	///
+	/// Creates a [`CollisionBuilder`] from the `VisualBuilder` by cloning the following fields:
+	///  - `name`
+	///  - `origin`
+	///  - `geometry`
+	pub fn to_collision(&self) -> CollisionBuilder {
+		CollisionBuilder {
+			name: self.name.clone(),
+			origin: self.origin.clone(),
+			geometry: self.geometry.boxed_clone(),
+		}
 	}
 
 	/// FIXME: Propper Error, Which error?

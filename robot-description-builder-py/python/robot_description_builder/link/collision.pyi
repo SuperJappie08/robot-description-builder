@@ -5,6 +5,7 @@ from typing import Final, TYPE_CHECKING, TypeVar, Optional
 if TYPE_CHECKING:
     from robot_description_builder import Transform
     from robot_description_builder.link.geometry import GeometryBase
+    from robot_description_builder.link.visual import VisualBuilder
 
 Geometry = TypeVar("Geometry", bound='GeometryBase')
 
@@ -19,6 +20,13 @@ class CollisionBuilder[Geometry]:
                 origin: Optional[Transform] = None) -> CollisionBuilder[Geometry]: ...
     def __repr__(self) -> str: ...
     # TODO: EXPAND
+    def as_visual(self) -> VisualBuilder[Geometry]:
+        """Creates a :class:`robot_description_builder.link.visual.VisualBuilder` from this ``CollisionBuilder``.
+
+        :return: A :class:`robot_description_builder.link.visual.VisualBuilder` with the data from this ``CollisionBuilder``
+        :rtype: :class:`robot_description_builder.link.visual.VisualBuilder`
+        """
+        ...
     def change_group_id(self, new_group_id: str) -> None: ...
     def apply_group_id(self) -> None: ...
 

@@ -14,7 +14,7 @@ pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
 	Ok(())
 }
 
-use super::geometry::PyGeometryBase;
+use super::{geometry::PyGeometryBase, visual::PyVisualBuilder};
 use crate::{identifier::GroupIDError, transform::PyTransform};
 
 /// TODO: Considering skipping the wrapping here and doing it manually
@@ -83,6 +83,14 @@ impl PyCollisionBuilder {
 	#[getter]
 	fn get_geometry(&self) -> PyGeometryBase {
 		self.0.geometry().boxed_clone().into()
+	}
+
+	/// Creates a :class:`robot_description_builder.link.visual.VisualBuilder` from this ``CollisionBuilder``.
+	///
+	/// :return: A :class:`robot_description_builder.link.visual.VisualBuilder` with the data from this ``CollisionBuilder``
+	/// :rtype: :class:`robot_description_builder.link.visual.VisualBuilder`
+	fn as_visual(&self) -> PyVisualBuilder {
+		self.0.to_visual().into()
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {

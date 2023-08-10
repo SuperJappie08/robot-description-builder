@@ -5,12 +5,10 @@ from robot_description_builder import MirrorAxis, Transform, to_urdf_string
 from robot_description_builder.joint import JointBuilder, JointType, Limit
 from robot_description_builder.link import Inertial, LinkBuilder
 from robot_description_builder.link.collision import CollisionBuilder
-from robot_description_builder.link.geometry import (
-    BoxGeometry,
-    CylinderGeometry,
-    MeshGeometry,
-    SphereGeometry,
-)
+from robot_description_builder.link.geometry import (BoxGeometry,
+                                                     CylinderGeometry,
+                                                     MeshGeometry,
+                                                     SphereGeometry)
 from robot_description_builder.link.visual import VisualBuilder
 from robot_description_builder.material import Color, MaterialDescriptor
 
@@ -34,20 +32,16 @@ def main():
     model = base_link.build().to_robot("physics")
 
     # ======= Start rigth leg ======= #
+    right_leg_link_vis = VisualBuilder(
+        BoxGeometry(0.6, 0.1, 0.2),
+        material=white_material,
+        origin=Transform(z=-0.3, pitch=pi / 2),
+    )
+
     right_leg_link = (
         LinkBuilder(r"[\[right]\]_leg")
-        .add_visual(
-            VisualBuilder(
-                BoxGeometry(0.6, 0.1, 0.2),
-                material=white_material,
-                origin=Transform(z=-0.3, pitch=pi / 2),
-            )
-        )
-        .add_collider(
-            CollisionBuilder(
-                BoxGeometry(0.6, 0.1, 0.2), origin=Transform(z=-0.3, pitch=pi / 2)
-            )
-        )
+        .add_visual(right_leg_link_vis)
+        .add_collider(right_leg_link_vis.as_collision())
         .add_inertial(Inertial(10, 1e-3, 1e-3, 1e-3))
     )
 
@@ -159,14 +153,14 @@ def main():
         (0.06, 0.04, 0.02),
     )
 
+    left_tip_collider = CollisionBuilder(
+        left_tip_geometry, origin=Transform(0.09137, 0.00495)
+    )
+
     left_gripper.root_link.try_attach_child(
         LinkBuilder("[[left]]_tip")
-        .add_visual(
-            VisualBuilder(left_tip_geometry, origin=Transform(0.09137, 0.00495))
-        )
-        .add_collider(
-            CollisionBuilder(left_tip_geometry, origin=Transform(0.09137, 0.00495))
-        )
+        .add_visual(left_tip_collider.as_visual())
+        .add_collider(left_tip_collider)
         .add_inertial(Inertial(0.05, 1e-3, 1e-3, 1e-3)),
         JointBuilder("[[left]]_tip_joint", JointType.Fixed),
     )

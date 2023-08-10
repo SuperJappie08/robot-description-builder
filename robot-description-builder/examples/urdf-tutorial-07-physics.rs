@@ -67,16 +67,13 @@ fn main() {
 	let model = base_link.build_tree().to_robot("physics");
 
 	/* ====== Start right leg ====== */
+	let right_leg_link_vis = Visual::builder(BoxGeometry::new(0.6, 0.1, 0.2))
+		.materialized(white_material.clone())
+		.tranformed(Transform::new((0., 0., -0.3), (0., FRAC_PI_2, 0.)));
+
 	let right_leg_link = Link::builder("[\\[right]\\]_leg")
-		.add_visual(
-			Visual::builder(BoxGeometry::new(0.6, 0.1, 0.2))
-				.materialized(white_material.clone())
-				.tranformed(Transform::new((0., 0., -0.3), (0., FRAC_PI_2, 0.))),
-		)
-		.add_collider(
-			Collision::builder(BoxGeometry::new(0.6, 0.1, 0.2))
-				.tranformed(Transform::new((0., 0., -0.3), (0., FRAC_PI_2, 0.))),
-		)
+		.add_collider(right_leg_link_vis.to_collision()) // They can also be created by conversion.
+		.add_visual(right_leg_link_vis)
 		.add_intertial(InertialData {
 			mass: 10.,
 			ixx: 1e-3,
@@ -241,20 +238,17 @@ fn main() {
 		false => BoxGeometry::new(0.06, 0.04, 0.02).boxed_clone(),
 	};
 
+	let left_tip_collider = Collision::builder(left_tip_geometry)
+		.tranformed(Transform::new_translation(0.09137, 0.00495, 0.));
+
 	left_gripper
 		.get_root_link()
 		.write()
 		.unwrap()
 		.try_attach_child(
 			Link::builder("[[left]]_tip")
-				.add_visual(
-					Visual::builder(left_tip_geometry.boxed_clone())
-						.tranformed(Transform::new_translation(0.09137, 0.00495, 0.)),
-				)
-				.add_collider(
-					Collision::builder(left_tip_geometry)
-						.tranformed(Transform::new_translation(0.09137, 0.00495, 0.)),
-				)
+				.add_visual(left_tip_collider.to_visual())
+				.add_collider(left_tip_collider)
 				.add_intertial(InertialData {
 					mass: 0.05,
 					ixx: 1e-3,
