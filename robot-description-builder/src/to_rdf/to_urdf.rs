@@ -1,5 +1,4 @@
 //! The infrastructure to describe a `Robot` in the Universal Robot Description Format (URDF).
-
 // TODO: EXPAND Module doc?, Matbe not
 
 use std::io::Cursor;

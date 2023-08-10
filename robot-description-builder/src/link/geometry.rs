@@ -21,7 +21,9 @@ use crate::transform::Mirror;
 
 // use self::geometry_shape_data::GeometryShapeContainer;
 
+/// A trait to mirror items inside of a `Box<T>`.
 pub trait BoxedMirror {
+	/// Performs a `Mirror::mirrored` on a Boxed Implementor.
 	fn boxed_mirrored(
 		&self,
 		mirror_matrix: &Matrix3<f32>,
@@ -41,11 +43,15 @@ where
 }
 
 /// An interface for working with `Geometry`s generically.
-///
-/// LONGTERM-TODO: DECIDE IF `Box<dyn dyn GeometryInterface + Sync + Send>` shoudl be replaced with [`GeometryShapeContainer`]
+// LONGTERM-TODO: DECIDE IF `Box<dyn dyn GeometryInterface + Sync + Send>` should be replaced with [`GeometryShapeContainer`]
 pub trait GeometryInterface: Debug + BoxedMirror {
+	/// Provides the volume of a `Geometry`
 	fn volume(&self) -> f32;
+	/// Provides the surface area of a `Geometry`
 	fn surface_area(&self) -> f32;
+	/// Allows for Cloning of Boxed Geometries.
+	///
+	/// This has similiar functionality to [`Clone::clone`] except that it allows items to be [`Box`ed](Box).
 	fn boxed_clone(&self) -> Box<dyn GeometryInterface + Sync + Send>;
 
 	/// Get's the untransformed boundingbox size of the geometry from it's center. (X, Y, Z)

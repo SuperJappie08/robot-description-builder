@@ -34,7 +34,7 @@ $ carge add robot-description-builder
 <!-- COMPATIBILTY CHART FORMAT? -->
 | Spec | Support | State |
 |:----:|:-------:|:-----:|
-| [URDF](http://wiki.ros.org/urdf) | ✔ | Fully supported |
+| [URDF](http://wiki.ros.org/urdf) | ✔ | Fully supported **TRANSMISIONS ARE CURRENTLY INCORRECT** |
 | [URDF Gazebo](http://sdformat.org/tutorials?tut=sdformat_urdf_extensions&cat=specification&) | 🔩/❌ | Extension unsupported, Base URDF compatibility avaible |
 | [SDF](http://sdformat.org/) | ❌ | Planned |
 
