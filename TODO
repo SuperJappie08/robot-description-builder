@@ -12,14 +12,10 @@ Maybe add flip axes function to builder
 - [ ] Add Incrementable delimiter to GroupID
 
 - [ ] Update CI-PYTHON to build for multiple python versions
-    - [x] Maybe don't support Python3.7 since it is nearly EOL [(2023-06-27)](https://devguide.python.org/versions/) 
 
 https://github.com/python/mypy for stub testing and generation?
 Or https://monkeytype.readthedocs.io/en/latest/
 
-# BROKEN:
-- [x] (ALL) `thread '<unnamed>' panicked at 'not yet implemented', robot-description-builder-py/src/link/geometry.rs:50:9`
-    - `__repr__` on `PyGeometryBase` is called
 
 -----
 
@@ -36,4 +32,4 @@ FIX MIRRORING for non easy cases
 
 - [ ] When PyLink attaches something it should update the dicts on the python object.
 - [ ] Can still see ._internal when importing
-- [ ] Create Changelog.md and roadmap.md
+- [ ] Create roadmap.md

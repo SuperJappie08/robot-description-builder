@@ -14,3 +14,6 @@ The Changes between versions of [<b>`robot-description-builder`</b> for <b>Pytho
 
 ### Removed
 ### Misc
+- Bumped depency versions:
+ - Rust: PyO3 0.19.1 -> 0.19.2
+ - Python: Maturin 1.1.0 -> 1.2.0

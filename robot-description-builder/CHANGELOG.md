@@ -15,3 +15,5 @@ The Changes between versions of [<b>`robot-description-builder`</b> for <b>Rust<
 
 ### Removed
 ### Misc
+- Bumped depency versions:
+ - `quick-xml` 0.29.0 -> 0.30.0
