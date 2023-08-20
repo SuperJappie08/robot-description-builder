@@ -8,7 +8,28 @@ use crate::link::{
 /// TODO: Add material Specifierer
 /// TODO: Add Inertial data options
 /// TODO: ADD TEST?
-pub fn new_quick_link(
+pub fn new_quick_link(link_name: impl Into<String>, visual: VisualBuilder) -> LinkBuilder {
+	let link_name = link_name.into();
+	let mut link = LinkBuilder::new(&link_name);
+
+	let mut collision_name = link_name.clone();
+	collision_name.push_str("_collision");
+	link = link.add_collider(visual.to_collision().named(collision_name));
+
+	let mut visual_name = link_name.clone();
+	visual_name.push_str("_visual");
+	link = link.add_visual(visual.named(visual_name));
+
+	link
+}
+
+/// TODO: Finalize, this is temp
+/// TODO: ADD NAMED CHOICE for Vis & Col
+/// TODO: Add material Specifierer
+/// TODO: Add Inertial data options
+/// TODO: ADD TEST?
+/// TODO: Deprecate?
+fn new_quick_link_old(
 	link_name: impl Into<String>,
 	geometry: Box<dyn GeometryInterface + Sync + Send>,
 ) -> LinkBuilder {
@@ -48,7 +69,7 @@ pub fn new_box_link(
 ) -> LinkBuilder {
 	let geometry = BoxGeometry::new(side1, side2, side3);
 
-	new_quick_link(link_name, geometry.into())
+	new_quick_link_old(link_name, geometry.into())
 }
 
 /// TODO: Finalize, this is temp
@@ -60,7 +81,7 @@ pub fn new_box_link(
 pub fn new_cylinder_link(link_name: impl Into<String>, radius: f32, length: f32) -> LinkBuilder {
 	let geometry = CylinderGeometry::new(radius, length);
 
-	new_quick_link(link_name, geometry.into())
+	new_quick_link_old(link_name, geometry.into())
 }
 
 /// TODO: Finalize, this is temp
@@ -71,7 +92,7 @@ pub fn new_cylinder_link(link_name: impl Into<String>, radius: f32, length: f32)
 pub fn new_sphere_link(link_name: impl Into<String>, radius: f32) -> LinkBuilder {
 	let geometry = SphereGeometry::new(radius);
 
-	new_quick_link(link_name, geometry.into())
+	new_quick_link_old(link_name, geometry.into())
 }
 
 #[cfg(test)]

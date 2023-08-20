@@ -4,7 +4,7 @@ use crate::{
 	cluster_objects::kinematic_data_tree::KinematicDataTree,
 	identifiers::GroupID,
 	joint::Joint,
-	utils::{read_arclock, WeakLock},
+	utils::{ArcRW, WeakLock},
 };
 
 #[cfg(feature = "urdf")]
@@ -62,10 +62,7 @@ impl TransmissionJointBuilder {
 		self,
 		tree: &Arc<KinematicDataTree>,
 	) -> Result<TransmissionJoint, BuildTransmissionError> {
-		let joint = match read_arclock(&tree.joints)?
-			.get(self.name())
-			.map(Weak::clone)
-		{
+		let joint = match tree.joints.mread()?.get(self.name()).map(Weak::clone) {
 			Some(joint) => joint,
 			None => return Err(BuildTransmissionError::InvalidJoint(self.joint_name)),
 		};

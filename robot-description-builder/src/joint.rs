@@ -18,7 +18,7 @@ pub use smartjointbuilder::SmartJointBuilder;
 
 #[cfg(feature = "xml")]
 use std::borrow::Cow;
-use std::sync::{Arc, PoisonError, Weak};
+use std::sync::{Arc, Weak};
 
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
@@ -28,7 +28,8 @@ use crate::{
 	identifiers::GroupID,
 	link::Link,
 	transform::Transform,
-	utils::{write_arclock, ArcLock, ErroredWrite, WeakLock},
+	utils::{ArcLock, ArcRW, WeakLock},
+	yank_errors::{RebuildBranchError, YankJointError},
 };
 
 #[cfg(feature = "xml")]
@@ -112,23 +113,23 @@ impl Joint {
 			limit: self.limit,
 			mimic: self.mimic.clone().map(|mimic| mimic.into()),
 			safety_controller: self.safety_controller,
-			..Default::default()
+			..Default::default() // TODO: Might lose data here
 		}
 	}
 
-	pub(crate) fn rebuild_branch_continued(&self) -> JointBuilder {
+	pub(crate) fn rebuild_branch_continued(&self) -> Result<JointBuilder, RebuildBranchError> {
 		#[cfg(any(feature = "logging", test))]
 		log::info!(target: "JointBuilder","Rebuilding: {}", self.name());
-		JointBuilder {
-			child: Some(self.child_link.read().unwrap().rebuild_branch_continued()), // FIXME: Figure out if unwrap is Ok here?
+		Ok(JointBuilder {
+			child: Some(self.child_link.mread()?.rebuild_branch_continued()?),
 			..self.rebuild()
-		}
+		})
 	}
 
-	pub fn rebuild_branch(&self) -> Chained<JointBuilder> {
+	pub fn rebuild_branch(&self) -> Result<Chained<JointBuilder>, RebuildBranchError> {
 		#[cfg(any(feature = "logging", test))]
 		log::info!(target: "JointBuilder","Starting Branch Rebuilding: {}", self.name());
-		Chained(self.rebuild_branch_continued())
+		Ok(Chained(self.rebuild_branch_continued()?))
 	}
 
 	/// TODO:Find a way to make these builders special?
@@ -138,13 +139,14 @@ impl Joint {
 	///
 	/// NOTE: you must get the link from the rep by cloning.
 	/// TODO: Maybe add a `first` argument to only set the `newest_link` if it is the first in the call stack
-	pub(crate) fn yank(&self) -> Result<JointBuilder, PoisonError<ErroredWrite<ArcLock<Link>>>> {
-		let builder = self.rebuild_branch_continued();
+	pub(crate) fn yank(&self) -> Result<JointBuilder, YankJointError> {
+		let builder = self.rebuild_branch_continued()?;
 
 		#[cfg(any(feature = "logging", test))]
 		log::info!("Yanked Joint \"{}\"", self.name());
 
-		write_arclock(&self.parent_link())?
+		self.parent_link()
+			.mwrite()?
 			.joints_mut()
 			.retain(|joint| !Arc::ptr_eq(&self.get_self(), joint));
 

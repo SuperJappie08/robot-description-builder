@@ -150,6 +150,7 @@ fn main() {
 		.read()
 		.unwrap()
 		.rebuild_branch()
+		.unwrap()
 		.mirror(MirrorAxis::X);
 	right_back_wheel.change_group_id("back").unwrap();
 	// Need to de-mirror the rotation axis.
@@ -163,7 +164,7 @@ fn main() {
 		.attach_joint_chain(right_back_wheel)
 		.unwrap();
 
-	let mut right_leg = right_leg.yank_root();
+	let mut right_leg = right_leg.yank_root().unwrap();
 	right_leg.apply_group_id();
 
 	let base_right_leg_joint = SmartJointBuilder::new_fixed("base_to_[[right]]_leg")
@@ -186,6 +187,7 @@ fn main() {
 		.read()
 		.unwrap()
 		.rebuild_branch()
+		.unwrap()
 		.mirror(MirrorAxis::Y);
 	left_leg.change_group_id("left").unwrap();
 
@@ -265,7 +267,7 @@ fn main() {
 		.write()
 		.unwrap()
 		.try_attach_child(
-			left_gripper.yank_root(),
+			left_gripper.yank_root().unwrap(),
 			SmartJointBuilder::new_revolute("[[left]]_gripper_joint")
 				.with_axis((0., 0., 1.))
 				.with_limit(1000., 0.5)
@@ -281,6 +283,7 @@ fn main() {
 		.read()
 		.unwrap()
 		.rebuild_branch()
+		.unwrap()
 		.mirror(MirrorAxis::Y);
 
 	right_gripper.change_group_id("right").unwrap();
@@ -297,7 +300,7 @@ fn main() {
 		.write()
 		.unwrap()
 		.try_attach_child(
-			gripper_pole.yank_root(),
+			gripper_pole.yank_root().unwrap(),
 			SmartJointBuilder::new_prismatic("gripper_extension")
 				.with_limit(1000., 0.5)
 				.set_lower_limit(-(width * 2. - 0.02))

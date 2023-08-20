@@ -131,7 +131,8 @@ impl Clone for KinematicTree {
 			.get_root_link()
 			.read()
 			.unwrap() // FIXME: UNWRAP MIGHTN NOT BE OK HERE
-			.rebuild_branch_continued();
+			.rebuild_branch_continued()
+			.unwrap(); // FIXME: UNWRAP MIGHTN NOT BE OK HERE
 
 		root_link.build_tree()
 	}

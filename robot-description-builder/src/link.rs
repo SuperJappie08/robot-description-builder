@@ -51,8 +51,8 @@ use crate::{
 		link_parent::LinkParent, visual::Visual,
 	},
 	transform::Transform,
-	utils::{read_arclock, write_arclock, ArcLock, WeakLock},
-	yank_errors::YankLinkError,
+	utils::{ArcLock, ArcRW, WeakLock},
+	yank_errors::{RebuildBranchError, YankLinkError},
 };
 
 /// TODO: Make Builder For Link
@@ -209,53 +209,56 @@ impl Link {
 				.map(|collision| collision.rebuild())
 				.collect(),
 			intertial: self.inertial,
-			..Default::default()
+			..Default::default() // FIXME: Some data might be lost here
 		}
 	}
 
 	/// Rebuilds everything below this aswell
 	///
 	/// TODO: DOCS
-	pub(crate) fn rebuild_branch_continued(&self) -> LinkBuilder {
-		LinkBuilder {
+	pub(crate) fn rebuild_branch_continued(&self) -> Result<LinkBuilder, RebuildBranchError> {
+		Ok(LinkBuilder {
 			joints: self
 				.child_joints
 				.iter()
-				.map(|joint| joint.read().unwrap().rebuild_branch_continued()) // FIXME: Figure out if unwrap is Ok here?
-				.collect(),
+				.map(|joint| -> Result<JointBuilder, RebuildBranchError> {
+					joint.mread()?.rebuild_branch_continued()
+				})
+				.process_results(|iter| iter.collect())?,
 			..self.rebuild()
-		}
+		})
 	}
 
 	/// TODO: DOCS:
 	/// TODO: TEST
-	pub fn rebuild_branch(&self) -> Chained<LinkBuilder> {
+	pub fn rebuild_branch(&self) -> Result<Chained<LinkBuilder>, RebuildBranchError> {
 		#[cfg(any(feature = "logging", test))]
 		log::info!(target: "LinkBuilder","Starting Branch Rebuilding: {}", self.name());
-		Chained(self.rebuild_branch_continued())
+		Ok(Chained(self.rebuild_branch_continued()?))
 	}
 
 	/// TODO: DOCS:
 	/// TODO: ADD ERRORS
 	/// TODO: TEST
 	pub(crate) fn yank(&self) -> Result<LinkBuilder, YankLinkError> {
-		let builder = self.rebuild_branch_continued();
+		let builder = self.rebuild_branch_continued()?;
 
 		match self.parent() {
 			LinkParent::Joint(joint) => {
 				let joint = joint.upgrade().unwrap(); // This unwrap is Ok.
-				let parent_link = &read_arclock(&joint)?.parent_link;
+				let parent_link = &joint.mread()?.parent_link;
 
 				// TODO: This is most-likely Ok, however it could error on the write.
 				*self.tree.upgrade().unwrap().newest_link.write().unwrap() =
 					Weak::clone(parent_link);
 
-				write_arclock(
-					// This unwrap is Ok, since the parent_link on a Joint is initialized while adding to the tree.
-					&parent_link.upgrade().unwrap(),
-				)?
-				.joints_mut()
-				.retain(|other_joint| !Arc::ptr_eq(&joint, other_joint));
+				// This unwrap is Ok, since the parent_link on a Joint is initialized while adding to the tree.
+				parent_link
+					.upgrade()
+					.unwrap()
+					.mwrite()?
+					.joints_mut()
+					.retain(|other_joint| !Arc::ptr_eq(&joint, other_joint));
 			}
 			LinkParent::KinematicTree(_) => {
 				#[cfg(any(feature = "logging", test))]

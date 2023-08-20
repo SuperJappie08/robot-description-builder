@@ -69,7 +69,7 @@ where
 	KI: KinematicInterface,
 {
 	fn from(value: KI) -> Self {
-		value.yank_root()
+		value.yank_root().unwrap() // This might not be Ok
 	}
 }
 

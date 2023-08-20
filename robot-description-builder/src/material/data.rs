@@ -6,7 +6,7 @@
 */
 use std::sync::Arc;
 
-use crate::utils::{read_arclock, ArcLock, ErroredRead};
+use crate::utils::{ArcLock, ArcRW, ErroredRead};
 
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
@@ -144,7 +144,7 @@ impl<'a> TryFrom<MaterialDataReferenceWrapper<'a>> for MaterialData {
 		match value {
 			MaterialDataReferenceWrapper::Direct(data) => Ok(data.clone()),
 			MaterialDataReferenceWrapper::Global(arc_data) => {
-				let data_ref = read_arclock(&arc_data).map(|data| data.clone());
+				let data_ref = arc_data.mread().map(|data| data.clone());
 				data_ref
 			}
 		}

@@ -144,8 +144,8 @@ impl PyKinematicTree {
 	}
 
 	fn yank_root(&self, py: Python<'_>) -> PyResult<Py<PyLinkBuilderChain>> {
-		// TODO: Is clone here ok?
-		self.inner.clone().yank_root().try_into_py(py)
+		// TODO: Is clone here ok? // FIXME: UNWRAP
+		self.inner.clone().yank_root().unwrap().try_into_py(py)
 	}
 
 	fn to_robot(slf: Py<Self>, name: String, py: Python<'_>) -> PyResult<Py<PyRobot>> {

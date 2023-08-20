@@ -39,7 +39,7 @@ pub mod errors {
 		AddJointError, AddLinkError, AddMaterialError, AddTransmissionError,
 	};
 	pub use super::identifiers::GroupIDError;
-	pub use super::yank_errors::YankLinkError;
+	pub use super::yank_errors::{RebuildBranchError, YankJointError, YankLinkError};
 }
 
 #[cfg(feature = "wrapper")]

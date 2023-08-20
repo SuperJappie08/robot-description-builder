@@ -12,7 +12,8 @@ use crate::{
 		transmission_builder_state::{WithActuator, WithJoints},
 		Transmission, TransmissionBuilder,
 	},
-	utils::{read_arclock, ArcLock, WeakLock},
+	utils::{ArcLock, ArcRW, WeakLock},
+	yank_errors::{YankJointError, YankLinkError},
 	Chained,
 };
 
@@ -116,13 +117,16 @@ pub trait KinematicInterface: Sized {
 
 	// NOTE: after yanking the joints parent link is the `newest_link`
 	fn yank_link(&self, name: &str) -> Option<Chained<LinkBuilder>> {
+		// Result<Option<Chained<LinkBuilder>>, YankLinkError> {
+		// Maybe the option should be on the outside.
 		let builder = self
 			.get_link(name)
-			.map(|link| link.read().unwrap().yank().unwrap()) // FIXME: Is unwrap ok here?
-			.map(Chained);
+			// FIXME: UNWRAP NOT OK
+			.map(|link| -> Result<_, YankLinkError> { Ok(Chained(link.mread().unwrap().yank()?)) })
+			.transpose(); // TODO: Maybe don't transpose?
 		self.purge_joints().unwrap(); // FIXME: Is unwrap ok here?
 		self.purge_links().unwrap(); // FIXME: Is unwrap ok here?
-		builder
+		builder.unwrap() // FIXME: Is unwrap ok here?
 	}
 
 	/// Cosumes the `KinematicInterface` implementor and creates a `Chained<LinkBuilder>` to rebuild it.
@@ -136,24 +140,25 @@ pub trait KinematicInterface: Sized {
 	///
 	/// let builder = Link::builder("root-link");
 	///
-	/// assert_eq!(*builder.clone().build_tree().yank_root(), builder);
+	/// assert_eq!(*builder.clone().build_tree().yank_root().unwrap(), builder);
 	///
 	/// /// It is equivalent to yanking the "root_link"
-	/// assert_eq!(builder.clone().build_tree().yank_root(), builder.build_tree().yank_link("root-link").unwrap())
+	/// assert_eq!(builder.clone().build_tree().yank_root().unwrap(), builder.build_tree().yank_link("root-link").unwrap())
 	/// ```
-	fn yank_root(self) -> Chained<LinkBuilder> {
-		let builder = self.get_root_link().read().unwrap().yank();
-		Chained(builder.unwrap()) //FIXME: Unwrap not OK
+	fn yank_root(self) -> Result<Chained<LinkBuilder>, YankLinkError> {
+		// FIXME: UNWRAP NOT OK
+		let builder = self.get_root_link().mread().unwrap().yank()?;
+		Ok(Chained(builder))
 	}
 
 	fn yank_joint(&self, name: &str) -> Option<Chained<JointBuilder>> {
 		let builder = self
 			.get_joint(name)
-			.map(|joint| read_arclock(&joint).unwrap().yank().unwrap()) // FIXME: Is unwrap ok here? NO
-			.map(Chained);
+			.map(|joint| -> Result<_, YankJointError> { Ok(Chained(joint.mread()?.yank()?)) })
+			.transpose(); // TODO: Maybe don't transpose?
 		self.purge_joints().unwrap(); // FIXME: Is unwrap ok here?
 		self.purge_links().unwrap(); // FIXME: Is unwrap ok here?
-		builder
+		builder.unwrap() // FIXME: Is unwrap ok here? NO
 	}
 
 	// TODO: or a rebuild?

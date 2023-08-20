@@ -5,11 +5,14 @@ pub use smartjointtypes::{
 	ContinuousType, FixedType, FloatingType, NoType, PlanarType, PrismaticType, RevoluteType,
 };
 
-use super::{joint_tranform_mode::JointTransformMode, jointbuilder::JointBuilder};
+use super::joint_tranform_mode::JointTransformMode;
 use crate::{link::LinkShapeData, transform::Transform};
 use smartparams::{NoAxis, NoCalibration, NoDynamics, NoLimit, NoMimic, NoSafetyController};
 
 use self::smartparams::smart_joint_datatraits;
+
+#[cfg(feature = "wrapper")]
+use super::jointbuilder::JointBuilder;
 
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct SmartJointBuilder<Type, Axis, Calibration, Dynamics, Limit, Mimic, SafetyController>

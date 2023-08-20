@@ -7,6 +7,7 @@ use pyo3::{intern, prelude::*};
 use robot_description_builder::{joint_data, Chained, Joint, JointBuilder, JointType};
 
 use crate::{
+	exceptions::RebuildBranchError,
 	link::PyLink,
 	transform::{PyMirrorAxis, PyTransform},
 	utils::{init_pyclass_initializer, PyReadWriteable, TryIntoPy},
@@ -182,6 +183,7 @@ impl PyJoint {
 		self.try_internal()?
 			.py_read()?
 			.rebuild_branch()
+			.map_err(RebuildBranchError::from)?
 			.try_into_py(py)
 	}
 

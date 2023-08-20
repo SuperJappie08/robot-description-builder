@@ -9,18 +9,34 @@ pub(crate) type WeakLock<T> = std::sync::Weak<std::sync::RwLock<T>>;
 #[repr(transparent)]
 pub struct ErroredRead<T>(pub T);
 
+pub(crate) trait ArcRW: Sized {
+	type Target;
+	fn mread(&self) -> Result<RwLockReadGuard<'_, Self::Target>, PoisonError<ErroredRead<Self>>>;
+	fn mwrite(&self)
+		-> Result<RwLockWriteGuard<'_, Self::Target>, PoisonError<ErroredWrite<Self>>>;
+}
+
+impl<T> ArcRW for ArcLock<T> {
+	type Target = T;
+
+	#[inline]
+	fn mread(&self) -> Result<RwLockReadGuard<'_, Self::Target>, PoisonError<ErroredRead<Self>>> {
+		self.read().map_err(|_| errored_read_lock(self))
+	}
+
+	#[inline]
+	fn mwrite(
+		&self,
+	) -> Result<RwLockWriteGuard<'_, Self::Target>, PoisonError<ErroredWrite<Self>>> {
+		self.write().map_err(|_| errored_write_lock(self))
+	}
+}
+
 #[inline]
 pub(crate) fn errored_read_lock<T>(
 	errored_lock: &ArcLock<T>,
 ) -> PoisonError<ErroredRead<ArcLock<T>>> {
 	PoisonError::new(ErroredRead(Arc::clone(errored_lock)))
-}
-
-#[inline]
-pub(crate) fn read_arclock<T>(
-	arclock: &ArcLock<T>,
-) -> Result<RwLockReadGuard<'_, T>, PoisonError<ErroredRead<ArcLock<T>>>> {
-	arclock.read().map_err(|_| errored_read_lock(arclock))
 }
 
 // /// Upgrades and unwraps `WeakLock<T>` then read.
@@ -54,13 +70,6 @@ pub(crate) fn errored_write_lock<T>(
 	errored_lock: &ArcLock<T>,
 ) -> PoisonError<ErroredWrite<ArcLock<T>>> {
 	PoisonError::new(ErroredWrite(Arc::clone(errored_lock)))
-}
-
-#[inline]
-pub(crate) fn write_arclock<T>(
-	arclock: &ArcLock<T>,
-) -> Result<RwLockWriteGuard<'_, T>, PoisonError<ErroredWrite<ArcLock<T>>>> {
-	arclock.write().map_err(|_| errored_write_lock(arclock))
 }
 
 impl<T> PartialEq for ErroredWrite<Arc<T>> {

@@ -18,7 +18,7 @@ use visual::{PyVisual, PyVisualBuilder};
 
 use crate::{
 	cluster_objects::{PyKinematicBase, PyKinematicTree},
-	exceptions::AddJointError,
+	exceptions::{AddJointError, RebuildBranchError},
 	identifier::GroupIDError,
 	joint::{PyJoint, PyJointBuilder, PyJointBuilderBase, PyJointBuilderChain},
 	transform::PyMirrorAxis,
@@ -361,6 +361,7 @@ impl PyLink {
 		self.try_internal()?
 			.py_read()?
 			.rebuild_branch()
+			.map_err(RebuildBranchError::from)?
 			.try_into_py(py)
 	}
 

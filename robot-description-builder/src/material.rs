@@ -26,7 +26,7 @@ use crate::{
 		kinematic_data_errors::AddMaterialError, kinematic_data_tree::KinematicDataTree,
 	},
 	identifiers::GroupID,
-	utils::{errored_read_lock, read_arclock, write_arclock},
+	utils::{errored_read_lock, ArcRW},
 };
 
 use data::{MaterialData, MaterialDataReferenceWrapper};
@@ -82,9 +82,7 @@ impl Material {
 						let material_data_index = Arc::clone(&tree.material_index);
 
 						// Check if there already exists a `Material` with the same name
-						let other_material = read_arclock(&material_data_index)?
-							.get(name)
-							.map(Arc::clone);
+						let other_material = material_data_index.mread()?.get(name).map(Arc::clone);
 
 						match other_material {
 							Some(other_material) => {
@@ -102,7 +100,8 @@ impl Material {
 							}
 							None => {
 								let material_data = Arc::new(RwLock::new(data.clone()));
-								assert!(write_arclock(&material_data_index)?
+								assert!(material_data_index
+									.mwrite()?
 									.insert(name.clone(), Arc::clone(&material_data))
 									.is_none());
 								material_data

@@ -113,25 +113,25 @@ pub trait ToURDF {
 /// let white_material = MaterialDescriptor::new_rgb(1., 1., 1.).named("white");
 ///
 /// let right_leg_link = Link::builder("[\\[right]\\]_leg").add_visual(
-///		Visual::builder(BoxGeometry::new(0.6, 0.1, 0.2))
-///		.materialized(white_material.clone())
-///		.tranformed(Transform::new_translation(0., 0., -0.3)),
+///     Visual::builder(BoxGeometry::new(0.6, 0.1, 0.2))
+///     .materialized(white_material.clone())
+///     .tranformed(Transform::new_translation(0., 0., -0.3)),
 /// );
 ///
 /// let right_leg: Robot = right_leg_link.build_tree().to_robot("Right_Leg_bot");
 ///
 /// let right_base_link = Link::builder("[\\[right]\\]_base")
-///		.add_visual(Visual::builder(BoxGeometry::new(0.4, 0.1, 0.1)).materialized(white_material));
+///     .add_visual(Visual::builder(BoxGeometry::new(0.4, 0.1, 0.1)).materialized(white_material));
 ///
-///	let right_base_joint = SmartJointBuilder::new_fixed("[\\[right]\\]_base_joint")
-///		.add_transform(Transform::new_translation(0., 0., -0.6));
+/// let right_base_joint = SmartJointBuilder::new_fixed("[\\[right]\\]_base_joint")
+///     .add_transform(Transform::new_translation(0., 0., -0.6));
 ///
-///	right_leg
-///		.get_root_link()
-///	    .write()
-///	    .unwrap()
-///		.try_attach_child(right_base_link, right_base_joint)
-///		.unwrap();
+/// right_leg
+///     .get_root_link()
+///     .write()
+///     .unwrap()
+///     .try_attach_child(right_base_link, right_base_joint)
+///     .unwrap();
 ///
 /// assert_eq!(
 /// xml_writer_to_string(

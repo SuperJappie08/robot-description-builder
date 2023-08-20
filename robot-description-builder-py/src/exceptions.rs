@@ -48,3 +48,16 @@ impl XMLError {
 		XMLError::new_err(format!("{}", err))
 	}
 }
+
+// TODO: DOC
+create_exception!(
+	"robot_description_builder.exceptions",
+	RebuildBranchError,
+	PyException
+);
+
+impl RebuildBranchError {
+	pub fn from(err: errors::RebuildBranchError) -> PyErr {
+		RebuildBranchError::new_err((format!("{}", err),))
+	}
+}
