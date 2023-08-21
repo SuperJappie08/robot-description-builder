@@ -18,7 +18,7 @@ use visual::{PyVisual, PyVisualBuilder};
 
 use crate::{
 	cluster_objects::{PyKinematicBase, PyKinematicTree},
-	exceptions::{AddJointError, RebuildBranchError},
+	exceptions::{AttachChainError, RebuildBranchError},
 	identifier::GroupIDError,
 	joint::{PyJoint, PyJointBuilder, PyJointBuilderBase, PyJointBuilderChain},
 	transform::PyMirrorAxis,
@@ -377,7 +377,7 @@ impl PyLink {
 				Into::<LinkBuilder>::into(link_builder),
 				Into::<JointBuilder>::into(joint_builder),
 			)
-			.map_err(AddJointError::from)?;
+			.map_err(AttachChainError::from)?;
 
 		let tree = unsafe {
 			PyObject::from_borrowed_ptr(py, ffi::PyWeakref_GetObject(self.tree.as_ptr()))
@@ -399,7 +399,7 @@ impl PyLink {
 		self.try_internal()?
 			.py_write()?
 			.attach_joint_chain(PyJointBuilderChain::as_chained(joint_chain))
-			.map_err(AddJointError::from)?;
+			.map_err(AttachChainError::from)?;
 
 		let tree = unsafe {
 			PyObject::from_borrowed_ptr(py, ffi::PyWeakref_GetObject(self.tree.as_ptr()))

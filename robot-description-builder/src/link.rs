@@ -42,7 +42,7 @@ use crate::to_rdf::to_urdf::ToURDF;
 use crate::{
 	chained::Chained,
 	cluster_objects::{
-		kinematic_data_errors::AddJointError, kinematic_data_tree::KinematicDataTree,
+		kinematic_data_errors::AttachChainError, kinematic_data_tree::KinematicDataTree,
 	},
 	identifiers::GroupID,
 	joint::{BuildJoint, BuildJointChain, Joint, JointBuilder},
@@ -132,7 +132,7 @@ impl Link {
 		&mut self,
 		link_chain: LinkChain,
 		joint_builder: impl BuildJoint,
-	) -> Result<(), AddJointError>
+	) -> Result<(), AttachChainError>
 	where
 		LinkChain: Into<Chained<LinkBuilder>>,
 	{
@@ -152,7 +152,7 @@ impl Link {
 		&mut self,
 		mut joint_chain: Chained<JointBuilder>,
 		transform: Transform,
-	) -> Result<(), AddJointError> {
+	) -> Result<(), AttachChainError> {
 		joint_chain.0.with_origin(transform);
 
 		self.attach_joint_chain(joint_chain)
@@ -166,7 +166,7 @@ impl Link {
 	pub fn attach_joint_chain(
 		&mut self,
 		joint_chain: Chained<JointBuilder>,
-	) -> Result<(), AddJointError> {
+	) -> Result<(), AttachChainError> {
 		let joint =
 			joint_chain.build_chain(&self.tree, &self.get_weak_self(), self.get_shape_data());
 

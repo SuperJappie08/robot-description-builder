@@ -77,18 +77,17 @@ impl VisualBuilder {
 		}
 	}
 
-	/// FIXME: Propper Error, Which error?
-	pub(crate) fn build(self) -> Result<Visual, String> {
+	pub(crate) fn build(self) -> Visual {
 		let material = self
 			.material_description
 			.map(|description| description.build());
 
-		Ok(Visual {
+		Visual {
 			name: self.name,
 			origin: self.origin,
 			geometry: self.geometry,
 			material,
-		})
+		}
 	}
 
 	pub(crate) fn get_geometry_data(&self) -> GeometryShapeData {

@@ -36,7 +36,7 @@ pub mod prelude {
 /// Error-types used in `robot-description-builder`.
 pub mod errors {
 	pub use super::cluster_objects::kinematic_data_errors::{
-		AddJointError, AddLinkError, AddMaterialError, AddTransmissionError,
+		AddJointError, AddLinkError, AddMaterialError, AddTransmissionError, AttachChainError,
 	};
 	pub use super::identifiers::GroupIDError;
 	pub use super::yank_errors::{RebuildBranchError, YankJointError, YankLinkError};

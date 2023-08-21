@@ -152,6 +152,8 @@ pub trait KinematicInterface: Sized {
 	}
 
 	fn yank_joint(&self, name: &str) -> Option<Chained<JointBuilder>> {
+		// Option<Result<...>> could make sense since if the joint is not found it cannot be yanked
+		// Or a custom error type
 		let builder = self
 			.get_joint(name)
 			.map(|joint| -> Result<_, YankJointError> { Ok(Chained(joint.mread()?.yank()?)) })

@@ -1,6 +1,5 @@
 use std::sync::{Arc, RwLock, Weak};
 
-use itertools::Itertools;
 use nalgebra::Matrix3;
 
 use super::{BuildLink, CollisionBuilder, VisualBuilder};
@@ -134,13 +133,12 @@ impl BuildLink for LinkBuilder {
 				visuals: self
 					.visual_builders
 					.into_iter()
-					.map(|visual_builder| visual_builder.build())
-					.process_results(|iter| iter.collect())
-					.unwrap(),
+					.map(VisualBuilder::build)
+					.collect(),
 				colliders: self
 					.colliders
 					.into_iter()
-					.map(|collision_builder| collision_builder.build())
+					.map(CollisionBuilder::build)
 					.collect(),
 				me: Weak::clone(me),
 			})
@@ -185,13 +183,12 @@ impl BuildLink for LinkBuilder {
 				visuals: self
 					.visual_builders
 					.into_iter()
-					.map(|visual_builder| visual_builder.build())
-					.process_results(|iter| iter.collect())
-					.unwrap(), //FIXME: UNWRAP NOT OK?
+					.map(VisualBuilder::build)
+					.collect(),
 				colliders: self
 					.colliders
 					.into_iter()
-					.map(|collider_builder| collider_builder.build())
+					.map(CollisionBuilder::build)
 					.collect(),
 				me: Weak::clone(me),
 			})

@@ -1,9 +1,8 @@
-from ._internal import (AddJointError, AddLinkError, GroupIDError,
-                        RebuildBranchError, XMLError)
+from ._internal import (AttachChainError, GroupIDError, RebuildBranchError,
+                        XMLError)
 
 __all__ = [
-    "AddJointError",
-    "AddLinkError",
+    "AttachChainError",
     "GroupIDError",
     "RebuildBranchError",
     "XMLError",

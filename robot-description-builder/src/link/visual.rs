@@ -169,11 +169,7 @@ mod tests {
 
 		fn test_to_urdf_visual(visual: VisualBuilder, result: String, urdf_config: &URDFConfig) {
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));
-			assert!(visual
-				.build()
-				.unwrap()
-				.to_urdf(&mut writer, urdf_config)
-				.is_ok());
+			assert!(visual.build().to_urdf(&mut writer, urdf_config).is_ok());
 
 			writer.get_mut().rewind().unwrap();
 

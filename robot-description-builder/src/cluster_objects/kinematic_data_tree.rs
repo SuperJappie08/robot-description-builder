@@ -10,6 +10,7 @@ use crate::to_rdf::to_urdf::{ToURDF, URDFConfig, URDFMaterialMode, URDFMaterialR
 use crate::{
 	joint::Joint,
 	link::{builder::BuildLink, Link},
+	link_data::Visual,
 	material::{data::MaterialData, Material},
 	transmission::{
 		transmission_builder_state::{WithActuator, WithJoints},
@@ -71,67 +72,103 @@ impl KinematicDataTree {
 	/// It might actually be worth doing it
 	///
 	/// I have done it.
-	pub(crate) fn try_add_link(&self, link: &ArcLock<Link>) -> Result<(), AddLinkError> {
-		let name = link.mread()?.name().clone();
+	pub(crate) fn try_add_link(&self, link: &ArcLock<Link>) -> Result<(), AttachChainError> {
+		let name = link
+			.mread()
+			.map_err(AddLinkError::ReadNewLink)?
+			.name()
+			.clone();
 
 		#[cfg(any(feature = "logging", test))]
 		log::debug!(target: "KinematicTreeData","Trying to attach Link: {}", name);
 
-		let other = self.links.mread()?.get(&name).map(Weak::clone);
+		let other = self
+			.links
+			.mread()
+			/* In the future this lock might be saveable by overwriting with a newly generated index,
+			however waiting for "This is a nightly-only experimental API. (mutex_unpoison #96469)" */
+			.map_err(AddLinkError::ReadIndex)?
+			.get(&name)
+			.map(Weak::clone);
 		if let Some(preexisting_link) = other.and_then(|weak_link| weak_link.upgrade()) {
 			if !Arc::ptr_eq(&preexisting_link, link) {
-				return Err(AddLinkError::Conflict(name));
+				return Err(AttachChainError::Link(AddLinkError::Conflict(name)));
 			}
 		} else {
 			assert!(self
 				.links
-				.mwrite()?
+				.mwrite()
+				/* In the future this lock might be saveable by overwriting with a newly generated index,
+				however waiting for "This is a nightly-only experimental API. (mutex_unpoison #96469)" */
+				.map_err(AddLinkError::WriteIndex)?
 				.insert(name, Arc::downgrade(link))
 				.is_none());
 			*self
 				.newest_link
 				.write()
+				/* In the future the lock could be saved but waiting for
+				"This is a nightly-only experimental API. (mutex_unpoison #96469)" */
 				.map_err(|_| PoisonError::new(ErroredWrite(self.me.upgrade().unwrap())))? = Arc::downgrade(link);
 		}
 
-		link.mwrite()?
+		link.mwrite()
+			.map_err(AddLinkError::WriteNewLink)? // TODO: Don't think this is can occure.
 			.visuals_mut()
 			.iter_mut()
-			.filter_map(|visual| visual.material_mut())
+			.filter_map(Visual::material_mut)
 			.map(|material| self.try_add_material(material))
 			.process_results(|iter| iter.collect_vec())?;
 
-		link.mread()?
+		link.mread()
+			.map_err(AddLinkError::ReadNewLink)? // TODO: Don't think this is can occure.
 			.joints()
 			.iter()
 			.map(|joint| self.try_add_joint(joint))
-			.process_results(|iter| iter.collect_vec())
-			.map_err(Box::new)?;
+			.process_results(|iter| iter.collect_vec())?;
 
 		Ok(())
 	}
 
-	pub(crate) fn try_add_joint(&self, joint: &ArcLock<Joint>) -> Result<(), AddJointError> {
-		let name = joint.mread()?.name().clone();
+	pub(crate) fn try_add_joint(&self, joint: &ArcLock<Joint>) -> Result<(), AttachChainError> {
+		let name = joint
+			.mread()
+			.map_err(AddJointError::ReadNewJoint)?
+			.name()
+			.clone();
 
 		#[cfg(any(feature = "logging", test))]
 		log::debug!(target: "KinematicTreeData","Trying to attach Joint: {}", name);
 
-		let other = self.joints.mread()?.get(&name).map(Weak::clone);
+		let other = self
+			.joints
+			.mread()
+			/* In the future this lock might be saveable by overwriting with a newly generated index,
+			however waiting for "This is a nightly-only experimental API. (mutex_unpoison #96469)" */
+			.map_err(AddJointError::ReadIndex)?
+			.get(&name)
+			.map(Weak::clone);
 		if let Some(preexisting_joint) = other.and_then(|weak_joint| weak_joint.upgrade()) {
 			if !Arc::ptr_eq(&preexisting_joint, joint) {
-				return Err(AddJointError::Conflict(name));
+				return Err(AttachChainError::Joint(AddJointError::Conflict(name)));
 			}
+		// Multi Adding should not occure
 		} else {
 			assert!(self
 				.joints
-				.mwrite()?
+				.mwrite()
+				/* In the future this lock might be saveable by overwriting with a newly generated index,
+				however waiting for "This is a nightly-only experimental API. (mutex_unpoison #96469)" */
+				.map_err(AddJointError::WriteIndex)?
 				.insert(name, Arc::downgrade(joint))
 				.is_none());
 		}
 
-		self.try_add_link(joint.mread()?.child_link_ref())
-			.map_err(Box::new)?;
+		self.try_add_link(
+			joint
+				.mread()
+				.map_err(AddJointError::ReadNewJoint)?
+				.child_link_ref(),
+		)?;
 
 		Ok(())
 	}
@@ -162,6 +199,8 @@ impl KinematicDataTree {
 	pub(crate) fn purge_joints(
 		&self,
 	) -> Result<(), PoisonWriteIndexError<String, WeakLock<Joint>>> {
+		/* In the future the lock could be saved by overwriting with a newly generated index,
+		however waiting for "This is a nightly-only experimental API. (mutex_unpoison #96469)" */
 		let mut joints = self.joints.write()?;
 		joints.retain(|_, weak_joint| weak_joint.upgrade().is_some());
 		joints.shrink_to_fit();
@@ -170,6 +209,8 @@ impl KinematicDataTree {
 
 	/// Cleans up orphaned/broken `Link` entries from the `links` HashMap.
 	pub(crate) fn purge_links(&self) -> Result<(), PoisonWriteIndexError<String, WeakLock<Link>>> {
+		/* In the future the lock could be saved by overwriting with a newly generated index,
+		however waiting for "This is a nightly-only experimental API. (mutex_unpoison #96469)" */
 		let mut links = self.links.write()?;
 		links.retain(|_, weak_link| weak_link.upgrade().is_some());
 		links.shrink_to_fit();
@@ -183,6 +224,8 @@ impl KinematicDataTree {
 	pub(crate) fn purge_materials(
 		&self,
 	) -> Result<(), PoisonWriteIndexError<String, ArcLock<MaterialData>>> {
+		/* In the future the lock could be saved by overwriting with a newly generated index,
+		however waiting for "This is a nightly-only experimental API. (mutex_unpoison #96469)" */
 		let mut materials = self.material_index.write()?;
 		materials.retain(|_, material| Arc::strong_count(material) > 1);
 		materials.shrink_to_fit();
