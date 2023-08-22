@@ -23,15 +23,16 @@ use super::{kinematic_data_errors::*, PoisonWriteIndexError};
 
 #[derive(Debug)]
 pub struct KinematicDataTree {
+	/// The root `Link` of the kinematic tree
 	pub(crate) root_link: ArcLock<Link>,
 	//TODO: In this implementation the Keys, are not linked to the objects and could be changed.
 	// These index maps are ArcLock in order to be exposable to the outside world via the ref of this thing
-	/// TODO:? Maybe make materials immutable after creation.
+	// TODO:? Maybe make materials immutable after creation.
 	pub(crate) material_index: ArcLock<HashMap<String, ArcLock<MaterialData>>>,
 	pub(crate) links: ArcLock<HashMap<String, WeakLock<Link>>>,
 	pub(crate) joints: ArcLock<HashMap<String, WeakLock<Joint>>>,
-	/// Do Transmission have to wrapped into ArcLock? Maybe we can get a way with raw stuff?
-	/// Don't now it would unpack on the Python side...
+	// Do Transmission have to wrapped into ArcLock? Maybe we can get a way with raw stuff?
+	// Don't now it would unpack on the Python side...
 	pub(crate) transmissions: ArcLock<HashMap<String, ArcLock<Transmission>>>,
 	/// The most recently updated `Link`
 	pub(crate) newest_link: RwLock<WeakLock<Link>>,

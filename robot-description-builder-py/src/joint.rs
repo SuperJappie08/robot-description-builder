@@ -155,10 +155,10 @@ impl PyJoint {
 	}
 
 	#[getter]
-	fn get_origin(&self) -> PyResult<Option<PyTransform>> {
-		let origin = *self.try_internal()?.py_read()?.origin();
-		match origin.contains_some() {
-			true => Ok(Some(origin.into())),
+	fn get_transform(&self) -> PyResult<Option<PyTransform>> {
+		let transform = *self.try_internal()?.py_read()?.transform();
+		match transform.contains_some() {
+			true => Ok(Some(transform.into())),
 			false => Ok(None),
 		}
 	}

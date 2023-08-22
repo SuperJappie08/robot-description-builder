@@ -31,11 +31,11 @@ impl PyCollisionBuilder {
 	fn py_new(
 		geometry: &PyGeometryBase,
 		name: Option<String>,
-		origin: Option<PyTransform>,
+		transform: Option<PyTransform>,
 	) -> Self {
 		Self(CollisionBuilder::new_full(
 			name,
-			origin.map(Into::<Transform>::into),
+			transform.map(Into::<Transform>::into),
 			geometry.clone(),
 		))
 	}
@@ -52,7 +52,7 @@ impl PyCollisionBuilder {
 			(None, true) => {
 				self.0 = CollisionBuilder::new_full(
 					None,
-					self.0.origin().copied(),
+					self.0.transform().copied(),
 					self.0.geometry().boxed_clone(),
 				);
 			}
@@ -61,14 +61,14 @@ impl PyCollisionBuilder {
 	}
 
 	#[getter]
-	fn get_origin(&self) -> Option<PyTransform> {
-		self.0.origin().copied().map(Into::into)
+	fn get_transform(&self) -> Option<PyTransform> {
+		self.0.transform().copied().map(Into::into)
 	}
 
 	#[setter]
-	fn set_origin(&mut self, origin: Option<PyTransform>) {
-		match (origin, self.0.origin().is_some()) {
-			(Some(origin), _) => self.0 = self.0.clone().tranformed(origin.into()),
+	fn set_transform(&mut self, transform: Option<PyTransform>) {
+		match (transform, self.0.transform().is_some()) {
+			(Some(transform), _) => self.0 = self.0.clone().tranformed(transform.into()),
 			(None, true) => {
 				self.0 = CollisionBuilder::new_full(
 					self.0.name().cloned(),
@@ -107,8 +107,8 @@ impl PyCollisionBuilder {
 		data += "geometry=";
 		data += self.get_geometry().__repr__(py)?.as_str();
 
-		if let Some(transform) = self.get_origin() {
-			data += ", origin=";
+		if let Some(transform) = self.get_transform() {
+			data += ", transform=";
 			data += transform.__repr__(py)?.as_str();
 		}
 
@@ -160,8 +160,8 @@ impl PyCollision {
 	}
 
 	#[getter]
-	fn get_origin(&self) -> Option<PyTransform> {
-		self.inner.origin().copied().map(Into::into)
+	fn get_transform(&self) -> Option<PyTransform> {
+		self.inner.transform().copied().map(Into::into)
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
@@ -178,8 +178,8 @@ impl PyCollision {
 		data += "geometry=";
 		data += self.get_geometry().__repr__(py)?.as_str();
 
-		if let Some(transform) = self.get_origin() {
-			data += ", origin=";
+		if let Some(transform) = self.get_transform() {
+			data += ", transform=";
 			data += transform.__repr__(py)?.as_str();
 		}
 

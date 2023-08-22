@@ -19,7 +19,7 @@ use quick_xml::{events::attributes::Attribute, name::QName};
 ///
 /// The `rotation` is applied next and rotates the parent axes with the specified `roll`, `pitch` and yaw` `angles in radians
 ///
-/// In URDF this element is often refered to as `origin`.
+/// In URDF this element is often refered to as `<origin>`.
 pub struct Transform {
 	/// The translation of origin of the new coordinate system in meters.
 	pub translation: Option<(f32, f32, f32)>,

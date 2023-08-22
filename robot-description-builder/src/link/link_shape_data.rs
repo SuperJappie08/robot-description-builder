@@ -20,7 +20,7 @@ impl LinkShapeData {
 
 		if geometries.is_empty() {
 			let main_geometry = GeometryShapeData {
-				origin: Transform::default(),
+				transform: Transform::default(),
 				geometry: SphereGeometry::new(0.).into(),
 			};
 

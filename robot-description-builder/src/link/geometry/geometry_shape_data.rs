@@ -8,7 +8,13 @@ use crate::to_rdf::to_urdf::ToURDF;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct GeometryShapeData {
-	pub origin: Transform,
+	/// The transform from the frame/origin of the parent `Link` to the frame/origin of this `Geometry`.
+	///
+	/// This is the reference for the placement of the `geometry`.
+	///
+	// TODO: Maybe remove the last line
+	/// In URDF this field is refered to as `<origin>`
+	pub transform: Transform,
 	pub geometry: GeometryShapeContainer,
 }
 

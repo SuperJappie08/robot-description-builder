@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 class Inertial:
     """TODO"""
 
-    origin: Final[Optional[Transform]]
+    transform: Final[Optional[Transform]]
     mass: Final[float]
     ixx: Final[float]
     ixy: Final[float]
@@ -34,7 +34,7 @@ class Inertial:
         ixy: float = 0.0,
         ixz: float = 0.0,
         iyz: float = 0.0,
-        origin: Optional[Transform] = None,
+        transform: Optional[Transform] = None,
     ) -> Inertial: ...
     def __repr__(self) -> str: ...
     def __bool__(self) -> bool: ...

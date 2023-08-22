@@ -105,7 +105,7 @@ impl
 		#[cfg(any(feature = "logging", test))]
 		log::warn!("Floating Joints are kind of broken, si it is very likely it won't work in your simulator. Use at you own risk!");
 
-		joint_builder.with_origin(value.origin.unwrap_or_default());
+		joint_builder.with_transform(value.transform.unwrap_or_default());
 
 		// Probably unneccessary
 		value.axis.simplify(&mut joint_builder);

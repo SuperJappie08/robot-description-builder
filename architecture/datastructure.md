@@ -1,5 +1,7 @@
 Standard mermaid notation is used
 
+# Probably not fully up to date
+
 ```mermaid
 
 classDiagram
@@ -43,7 +45,7 @@ classDiagram
 	LinkParent "0..1" *-- KinematicDataTree: composition???
 
 	class InertialData {
-		+ Option~Transform~ origin
+		+ Option~Transform~ transform
 		+ f32 mass
 		+ f32 ixx
 		+ f32 ixy
@@ -57,7 +59,7 @@ classDiagram
 
 	class Visual {
 		~ Option~String~ name
-		~ Option~Transform~ origin
+		~ Option~Transform~ transform
 		~ Box~GeometryInterface~ geometry
 		~ Option~Material~ material
 	}
@@ -68,7 +70,7 @@ classDiagram
 
 	class Collision {
 		~ Option~String~ name
-		~ Option~Transform~ origin
+		~ Option~Transform~ transform
 		~ Box~GeometryInterface~ geometry
 	}
 
@@ -109,7 +111,7 @@ class Joint {
 	~ Weak~RwLock~Link~~ paren_link
 	~ Arc~RwLock~Link~~ child_link
 	~ JointType joint_type
-	- Transform origin
+	- Transform transform
 	- Option~[f32，f32，f32]~ axis
 	- CalibrationData calibration
 	- DynamicsData dynamics

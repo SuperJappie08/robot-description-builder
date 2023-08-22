@@ -13,7 +13,12 @@ use crate::{
 #[derive(Debug)]
 pub struct CollisionBuilder {
 	pub(crate) name: Option<String>,
-	pub(crate) origin: Option<Transform>,
+	/// The transform from the origin of the parent `Link` to the origin of this `Collision`.
+	///
+	/// This is the reference for the placement of the `geometry`.
+	///
+	/// In URDF this field is refered to as `<origin>`
+	pub(crate) transform: Option<Transform>,
 	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
 }
 
@@ -21,19 +26,19 @@ impl CollisionBuilder {
 	pub fn new(geometry: impl Into<Box<dyn GeometryInterface + Sync + Send>>) -> Self {
 		Self {
 			name: None,
-			origin: None,
+			transform: None,
 			geometry: geometry.into(),
 		}
 	}
 
 	pub fn new_full(
 		name: Option<String>,
-		origin: Option<Transform>,
+		transform: Option<Transform>,
 		geometry: impl Into<Box<dyn GeometryInterface + Sync + Send>>,
 	) -> Self {
 		Self {
 			name,
-			origin,
+			transform,
 			geometry: geometry.into(),
 		}
 	}
@@ -44,7 +49,7 @@ impl CollisionBuilder {
 	}
 
 	pub fn tranformed(mut self, transform: Transform) -> Self {
-		self.origin = Some(transform);
+		self.transform = Some(transform);
 		self
 	}
 
@@ -52,13 +57,13 @@ impl CollisionBuilder {
 	///
 	/// Creates a [`VisualBuilder`] from the `CollisionBuilder` by cloning the following fields:
 	///  - `name`
-	///  - `origin`
+	///  - `transform`
 	///  - `geometry`
 	/// The other fields are left empty, since they are optional.
 	pub fn to_visual(&self) -> VisualBuilder {
 		VisualBuilder {
 			name: self.name.clone(),
-			origin: self.origin,
+			transform: self.transform,
 			geometry: self.geometry.boxed_clone(),
 			material_description: None,
 		}
@@ -67,7 +72,7 @@ impl CollisionBuilder {
 	pub(crate) fn build(self) -> Collision {
 		Collision {
 			name: self.name,
-			origin: self.origin,
+			transform: self.transform,
 			geometry: self.geometry,
 		}
 	}
@@ -75,7 +80,7 @@ impl CollisionBuilder {
 	/// TODO: BETTER NAME
 	pub(crate) fn get_geometry_data(&self) -> GeometryShapeData {
 		GeometryShapeData {
-			origin: self.origin.unwrap_or_default(),
+			transform: self.transform.unwrap_or_default(),
 			geometry: self.geometry.shape_container(),
 		}
 	}
@@ -85,8 +90,8 @@ impl Mirror for CollisionBuilder {
 	fn mirrored(&self, mirror_matrix: &Matrix3<f32>) -> Self {
 		Self {
 			name: self.name.as_ref().cloned(), // FIXME: NAME
-			origin: self
-				.origin
+			transform: self
+				.transform
 				.as_ref()
 				.map(|transform| transform.mirrored(mirror_matrix)),
 			geometry: self.geometry.boxed_mirrored(mirror_matrix),
@@ -100,8 +105,8 @@ impl CollisionBuilder {
 		self.name.as_ref()
 	}
 
-	pub fn origin(&self) -> Option<&Transform> {
-		self.origin.as_ref()
+	pub fn transform(&self) -> Option<&Transform> {
+		self.transform.as_ref()
 	}
 
 	pub fn geometry(&self) -> &Box<dyn GeometryInterface + Sync + Send> {
@@ -125,7 +130,9 @@ impl GroupIDChanger for CollisionBuilder {
 
 impl PartialEq for CollisionBuilder {
 	fn eq(&self, other: &Self) -> bool {
-		self.name == other.name && self.origin == other.origin && *self.geometry == *other.geometry
+		self.name == other.name
+			&& self.transform == other.transform
+			&& *self.geometry == *other.geometry
 	}
 }
 
@@ -133,7 +140,7 @@ impl Clone for CollisionBuilder {
 	fn clone(&self) -> Self {
 		Self {
 			name: self.name.clone(),
-			origin: self.origin,
+			transform: self.transform,
 			geometry: self.geometry.boxed_clone(),
 		}
 	}

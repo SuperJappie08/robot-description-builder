@@ -33,12 +33,12 @@ impl PyVisualBuilder {
 	fn new(
 		geometry: &PyGeometryBase,
 		name: Option<String>,
-		origin: Option<PyTransform>,
+		transform: Option<PyTransform>,
 		material: Option<PyMaterialDescriptor>,
 	) -> PyVisualBuilder {
 		Self(VisualBuilder::new_full(
 			name,
-			origin.map(Into::into),
+			transform.map(Into::into),
 			geometry.clone(),
 			material.map(Into::into),
 		))
@@ -56,7 +56,7 @@ impl PyVisualBuilder {
 			(None, true) => {
 				self.0 = VisualBuilder::new_full(
 					None,
-					self.0.origin().copied(),
+					self.0.transform().copied(),
 					self.0.geometry().boxed_clone(),
 					self.0.material().cloned(),
 				)
@@ -71,13 +71,13 @@ impl PyVisualBuilder {
 	}
 
 	#[getter]
-	fn get_origin(&self) -> Option<PyTransform> {
-		self.0.origin().copied().map(Into::into)
+	fn get_transform(&self) -> Option<PyTransform> {
+		self.0.transform().copied().map(Into::into)
 	}
 
 	#[setter]
-	fn set_origin(&mut self, transform: Option<PyTransform>) {
-		match (transform, self.0.origin().is_some()) {
+	fn set_transform(&mut self, transform: Option<PyTransform>) {
+		match (transform, self.0.transform().is_some()) {
 			(Some(transform), _) => self.0 = self.0.clone().tranformed(transform.into()),
 			(None, true) => {
 				self.0 = VisualBuilder::new_full(
@@ -105,7 +105,7 @@ impl PyVisualBuilder {
 			(None, true) => {
 				self.0 = VisualBuilder::new_full(
 					self.0.name().cloned(),
-					self.0.origin().copied(),
+					self.0.transform().copied(),
 					self.0.geometry().boxed_clone(),
 					None,
 				)
@@ -136,8 +136,8 @@ impl PyVisualBuilder {
 		data += "geometry=";
 		data += self.get_geometry().__repr__(py)?.as_str();
 
-		if let Some(transform) = self.get_origin() {
-			data += ", origin=";
+		if let Some(transform) = self.get_transform() {
+			data += ", transform=";
 			data += transform.__repr__(py)?.as_str();
 		}
 
@@ -196,8 +196,8 @@ impl PyVisual {
 	}
 
 	#[getter]
-	fn get_origin(&self) -> Option<PyTransform> {
-		self.inner.origin().copied().map(Into::into)
+	fn get_transform(&self) -> Option<PyTransform> {
+		self.inner.transform().copied().map(Into::into)
 	}
 
 	#[getter]
@@ -219,8 +219,8 @@ impl PyVisual {
 		data += "geometry=";
 		data += self.get_geometry().__repr__(py)?.as_str();
 
-		if let Some(transform) = self.get_origin() {
-			data += ", origin=";
+		if let Some(transform) = self.get_transform() {
+			data += ", transform=";
 			data += transform.__repr__(py)?.as_str();
 		}
 

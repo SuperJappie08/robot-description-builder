@@ -40,8 +40,11 @@ pub(crate) trait BuildJointChain {
 pub struct JointBuilder {
 	pub(crate) name: String,
 	pub(crate) joint_type: JointType,
-	/// TODO: Maybe add a Figure it out???
-	pub(crate) origin: JointTransformMode,
+	// TODO: Maybe add a Figure it out???
+	/// The transform from the origin of the parent to the origin of this `JointBuilder`.
+	///
+	/// In URDF this field is refered to as `<origin>`
+	pub(crate) transform: JointTransformMode,
 	pub(crate) child: Option<LinkBuilder>,
 
 	//Consider making everything below pub to remove need for all the functions
@@ -66,7 +69,7 @@ impl JointBuilder {
 
 	/// TODO: rename transform
 	pub fn add_origin_offset(mut self, offset: (f32, f32, f32)) -> Self {
-		match &mut self.origin {
+		match &mut self.transform {
 			JointTransformMode::Direct(transform) => transform.translation = Some(offset),
 			JointTransformMode::FigureItOut(_) => todo!("Don't know how to do this"),
 		};
@@ -75,7 +78,7 @@ impl JointBuilder {
 
 	/// TODO: rename transform
 	pub fn add_origin_rotation(mut self, rotation: (f32, f32, f32)) -> Self {
-		match &mut self.origin {
+		match &mut self.transform {
 			JointTransformMode::Direct(tranform) => tranform.rotation = Some(rotation),
 			JointTransformMode::FigureItOut(_) => todo!("Don't know how to do this yet"),
 		}
@@ -83,18 +86,17 @@ impl JointBuilder {
 	}
 
 	pub fn set_transform_simple(&mut self, transform: Transform) {
-		self.origin = JointTransformMode::Direct(transform);
+		self.transform = JointTransformMode::Direct(transform);
 	}
 
-	/// TODO: rename transform
-	/// Nominated for Deprication
-	/// Maybe Not??
+	// Nominated for Deprication
+	// Maybe Not??
 	#[inline]
-	pub(crate) fn with_origin<JTM>(&mut self, origin: JTM)
+	pub(crate) fn with_transform<JTM>(&mut self, transform: JTM)
 	where
 		JTM: Into<JointTransformMode>,
 	{
-		self.origin = origin.into();
+		self.transform = transform.into();
 	}
 
 	/// TODO: HAS A CONFUSING NAME WITH SmartJointBuilder::with_axis, which consumes
@@ -146,7 +148,7 @@ impl JointBuilder {
 
 	pub fn transform(&self) -> Option<&Transform> {
 		// TODO: Maybe add a advanced mode for figure it out?
-		match &self.origin {
+		match &self.transform {
 			JointTransformMode::Direct(transform) => match transform.contains_some() {
 				true => Some(transform),
 				false => None,
@@ -157,7 +159,7 @@ impl JointBuilder {
 
 	pub fn transform_mut(&mut self) -> Option<&mut Transform> {
 		// TODO: Maybe add a advanced mode for figure it out?
-		match &mut self.origin {
+		match &mut self.transform {
 			JointTransformMode::Direct(transform) => match transform.contains_some() {
 				true => Some(transform),
 				false => None,
@@ -223,11 +225,11 @@ impl JointBuilder {
 
 impl Mirror for JointBuilder {
 	fn mirrored(&self, mirror_matrix: &Matrix3<f32>) -> Self {
-		let (origin, new_mirror_matrix) = self.origin.mirrored_update_matrix(mirror_matrix);
+		let (transform, new_mirror_matrix) = self.transform.mirrored_update_matrix(mirror_matrix);
 		Self {
 			name: self.name.clone(), // FIXME: Rename
 			joint_type: self.joint_type,
-			origin,
+			transform,
 			child: self
 				.child
 				.as_ref()
@@ -283,7 +285,7 @@ impl BuildJoint for JointBuilder {
 				parent_link,
 				child_link,
 				joint_type: self.joint_type,
-				origin: self.origin.apply(parent_link_size_data),
+				transform: self.transform.apply(parent_link_size_data),
 				axis: self.axis,
 				calibration: self.calibration,
 				dynamics: self.dynamics,
@@ -317,7 +319,7 @@ impl BuildJointChain for JointBuilder {
 				// This is Ok, since the Joint can only be attached with specific functions.
 				child_link: self.child.expect("When Building Kinematic Branches Joints should have a child link, since a Joint only makes sense when attachted to a Parent and a Child").build_chain(tree, me),
 				joint_type: self.joint_type,
-				origin: self.origin.apply(parent_shape_data),
+				transform: self.transform.apply(parent_shape_data),
 				axis: self.axis,
 				calibration: self.calibration,
 				dynamics: self.dynamics,

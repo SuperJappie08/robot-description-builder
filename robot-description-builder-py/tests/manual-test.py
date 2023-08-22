@@ -19,7 +19,7 @@ print(tree)
 
 vis: Visual = tree.root_link.visuals[0]
 
-print(vis.origin)
+print(vis.transform)
 
 print(tree.root_link.visuals)
 print(tree.root_link.joints)

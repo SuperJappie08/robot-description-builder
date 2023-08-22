@@ -15,7 +15,12 @@ use crate::{
 pub struct VisualBuilder {
 	/// TODO: Figure out if I want to keep the name optional?.
 	pub(crate) name: Option<String>,
-	pub(crate) origin: Option<Transform>,
+	/// The transform from the origin of the parent `Link` to the origin of this `Visual`.
+	///
+	/// This is the reference for the placement of the `geometry`.
+	///
+	/// In URDF this field is refered to as `<origin>`
+	pub(crate) transform: Option<Transform>,
 
 	/// Figure out if this needs to be public or not
 	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
@@ -27,22 +32,22 @@ impl VisualBuilder {
 	pub fn new(geometry: impl Into<Box<dyn GeometryInterface + Sync + Send>>) -> Self {
 		Self {
 			name: None,
-			origin: None,
+			transform: None,
 			geometry: geometry.into(),
 			material_description: None,
 		}
 	}
 
-	/// TODO: Figure out if this will be kept [Added for easier transistion]
+	// TODO: Figure out if this will be kept [Added for easier transistion]
 	pub fn new_full(
 		name: Option<String>,
-		origin: Option<Transform>,
+		transform: Option<Transform>,
 		geometry: impl Into<Box<dyn GeometryInterface + Sync + Send>>,
 		material_description: Option<MaterialDescriptor>,
 	) -> Self {
 		Self {
 			name,
-			origin,
+			transform,
 			geometry: geometry.into(),
 			material_description,
 		}
@@ -54,7 +59,7 @@ impl VisualBuilder {
 	}
 
 	pub fn tranformed(mut self, transform: Transform) -> Self {
-		self.origin = Some(transform);
+		self.transform = Some(transform);
 		self
 	}
 
@@ -67,12 +72,12 @@ impl VisualBuilder {
 	///
 	/// Creates a [`CollisionBuilder`] from the `VisualBuilder` by cloning the following fields:
 	///  - `name`
-	///  - `origin`
+	///  - `transform`
 	///  - `geometry`
 	pub fn to_collision(&self) -> CollisionBuilder {
 		CollisionBuilder {
 			name: self.name.clone(),
-			origin: self.origin,
+			transform: self.transform,
 			geometry: self.geometry.boxed_clone(),
 		}
 	}
@@ -84,7 +89,7 @@ impl VisualBuilder {
 
 		Visual {
 			name: self.name,
-			origin: self.origin,
+			transform: self.transform,
 			geometry: self.geometry,
 			material,
 		}
@@ -92,7 +97,7 @@ impl VisualBuilder {
 
 	pub(crate) fn get_geometry_data(&self) -> GeometryShapeData {
 		GeometryShapeData {
-			origin: self.origin.unwrap_or_default(),
+			transform: self.transform.unwrap_or_default(),
 			geometry: self.geometry.shape_container(),
 		}
 	}
@@ -102,8 +107,8 @@ impl Mirror for VisualBuilder {
 	fn mirrored(&self, mirror_matrix: &Matrix3<f32>) -> Self {
 		Self {
 			name: self.name.as_ref().cloned(), // TODO: Fix
-			origin: self
-				.origin
+			transform: self
+				.transform
 				.as_ref()
 				.map(|transform| transform.mirrored(mirror_matrix)),
 			geometry: self.geometry.boxed_mirrored(mirror_matrix),
@@ -118,8 +123,8 @@ impl VisualBuilder {
 		self.name.as_ref()
 	}
 
-	pub fn origin(&self) -> Option<&Transform> {
-		self.origin.as_ref()
+	pub fn transform(&self) -> Option<&Transform> {
+		self.transform.as_ref()
 	}
 
 	pub fn geometry(&self) -> &Box<dyn GeometryInterface + Sync + Send> {
@@ -156,7 +161,7 @@ impl GroupIDChanger for VisualBuilder {
 impl PartialEq for VisualBuilder {
 	fn eq(&self, other: &Self) -> bool {
 		self.name == other.name
-			&& self.origin == other.origin
+			&& self.transform == other.transform
 			&& *self.geometry == *other.geometry
 			&& self.material_description == other.material_description
 	}
@@ -166,7 +171,7 @@ impl Clone for VisualBuilder {
 	fn clone(&self) -> Self {
 		Self {
 			name: self.name.clone(),
-			origin: self.origin,
+			transform: self.transform,
 			geometry: self.geometry.boxed_clone(),
 			material_description: self.material_description.clone(),
 		}

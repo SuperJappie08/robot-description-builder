@@ -50,7 +50,7 @@ def test_update_index_after_attach():
     tree.root_link.try_attach_child(
         LinkBuilder("This is a [[test]]").add_visual(
             VisualBuilder(
-                BoxGeometry(1, 4, 5), name="visual_[[test]]", origin=Transform(1)
+                BoxGeometry(1, 4, 5), name="visual_[[test]]", transform=Transform(1)
             )
         ),
         jb,

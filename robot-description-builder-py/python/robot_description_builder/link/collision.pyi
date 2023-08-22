@@ -14,10 +14,10 @@ class CollisionBuilder[Geometry]:
     """
     name: Optional[str]
     geometry: Final[Geometry]
-    origin: Optional[Transform]
+    transform: Optional[Transform]
 
     def __new__(cls, geometry: Geometry, name: Optional[str] = None,
-                origin: Optional[Transform] = None) -> CollisionBuilder[Geometry]: ...
+                transform: Optional[Transform] = None) -> CollisionBuilder[Geometry]: ...
     def __repr__(self) -> str: ...
     # TODO: EXPAND
     def as_visual(self) -> VisualBuilder[Geometry]:
@@ -34,7 +34,7 @@ class Collision[Geometry]:
     """TODO:"""
     name: Final[Optional[str]]
     geometry: Final[Geometry]
-    origin: Final[Optional[Transform]]
+    transform: Final[Optional[Transform]]
     
     def __repr__(self) -> str: ...
     # TODO: EXPAND

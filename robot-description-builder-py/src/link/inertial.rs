@@ -20,7 +20,7 @@ pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
 	get_all
 )] // Is set_all ok, since we would need to send the data back to the tree which is weird, immutability is also an option, set_all)]
 pub struct PyInertial {
-	pub origin: Option<PyTransform>,
+	pub transform: Option<PyTransform>,
 	pub mass: f32,
 	pub ixx: f32, // Not the nicesest way of doing this.
 	pub ixy: f32,
@@ -33,7 +33,7 @@ pub struct PyInertial {
 #[pymethods]
 impl PyInertial {
 	#[new]
-	#[pyo3(signature = (mass, ixx, iyy, izz, ixy=0., ixz=0., iyz=0., origin=None))]
+	#[pyo3(signature = (mass, ixx, iyy, izz, ixy=0., ixz=0., iyz=0., transform=None))]
 	fn py_new(
 		mass: f32,
 		ixx: f32,
@@ -42,10 +42,10 @@ impl PyInertial {
 		ixy: f32,
 		ixz: f32,
 		iyz: f32,
-		origin: Option<PyTransform>,
+		transform: Option<PyTransform>,
 	) -> Self {
 		Self {
-			origin,
+			transform,
 			mass,
 			ixx,
 			ixy,
@@ -67,8 +67,8 @@ impl PyInertial {
 			class_name, self.mass, self.ixx, self.ixy, self.ixz, self.iyy, self.iyz, self.izz
 		);
 
-		if let Some(transform) = self.origin {
-			repr.push_str(format!(", origin = {}", transform.__repr__(py)?).as_str());
+		if let Some(transform) = self.transform {
+			repr.push_str(format!(", transform = {}", transform.__repr__(py)?).as_str());
 		}
 
 		repr.push(')');
@@ -77,7 +77,7 @@ impl PyInertial {
 	}
 
 	fn __bool__(&self) -> bool {
-		// Origin is not checked since it is meanining less without an mass or an inertia
+		// The transform is not checked since it is meanining less without an mass or an inertia
 		self.mass.abs() != 0.
 			|| self.ixx.abs() != 0.
 			|| self.ixy.abs() != 0.
@@ -91,7 +91,7 @@ impl PyInertial {
 impl From<InertialData> for PyInertial {
 	fn from(value: InertialData) -> Self {
 		Self {
-			origin: value.origin.map(Into::into),
+			transform: value.transform.map(Into::into),
 			mass: value.mass,
 			ixx: value.ixx,
 			ixy: value.ixy,
@@ -106,7 +106,7 @@ impl From<InertialData> for PyInertial {
 impl From<PyInertial> for InertialData {
 	fn from(value: PyInertial) -> Self {
 		Self {
-			origin: value.origin.map(Into::into),
+			transform: value.transform.map(Into::into),
 			mass: value.mass,
 			ixx: value.ixx,
 			ixy: value.ixy,

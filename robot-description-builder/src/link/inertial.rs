@@ -8,9 +8,14 @@ use crate::to_rdf::to_urdf::ToURDF;
 use quick_xml::{events::attributes::Attribute, name::QName};
 
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
-/// TODO: Figure out if things should be private or not?
+// TODO: Figure out if things should be private or not?
 pub struct InertialData {
-	pub origin: Option<Transform>,
+	/// The transform from the parent `Link`'s frame to the frame of the `InertialData`.
+	///
+	/// This is the reference for the placement of the center of mass and the moments of inertia.
+	///
+	/// In URDF this field is refered to as `<origin>`
+	pub transform: Option<Transform>,
 	pub mass: f32,
 	pub ixx: f32, // Not the nicesest way of doing this.
 	pub ixy: f32,
@@ -23,8 +28,8 @@ pub struct InertialData {
 impl Mirror for InertialData {
 	fn mirrored(&self, mirror_matrix: &Matrix3<f32>) -> Self {
 		Self {
-			origin: self
-				.origin
+			transform: self
+				.transform
 				.as_ref()
 				.map(|transform| transform.mirrored(mirror_matrix)),
 			..*self
@@ -41,8 +46,8 @@ impl ToURDF for InertialData {
 	) -> Result<(), quick_xml::Error> {
 		let element = writer.create_element("inertial");
 		element.write_inner_content(|writer| {
-			if let Some(origin) = &self.origin {
-				origin.to_urdf(writer, urdf_config)?;
+			if let Some(transform) = &self.transform {
+				transform.to_urdf(writer, urdf_config)?;
 			}
 
 			writer
@@ -105,7 +110,7 @@ mod tests {
 		}
 
 		#[test]
-		fn no_origin() {
+		fn no_transform() {
 			test_to_urdf_inertial(
 				InertialData {
 					mass: 0.12,
@@ -125,10 +130,10 @@ mod tests {
 		}
 
 		#[test]
-		fn with_origin() {
+		fn with_transform() {
 			test_to_urdf_inertial(
 				InertialData {
-					origin: Some(Transform {
+					transform: Some(Transform {
 						translation: Some((10.1, 20.2, 30.3)),
 						..Default::default()
 					}),

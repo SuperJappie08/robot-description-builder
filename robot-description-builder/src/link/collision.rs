@@ -8,15 +8,21 @@ use crate::{identifiers::GroupID, transform::Transform};
 
 #[derive(Debug)]
 pub struct Collision {
-	/// TODO: Figure out if I want to keep the name optional?.
+	// TODO: Figure out if I want to keep the name optional?.
 	pub(crate) name: Option<String>,
-	pub(crate) origin: Option<Transform>,
+	/// The transform from the origin of the parent `Link` to the origin of this `Collision`.
+	///
+	/// This is the reference for the placement of the `geometry`.
+	///
+	/// In URDF this field is refered to as `<origin>`
+	pub(crate) transform: Option<Transform>,
 
-	/// Figure out if this needs to be public or not
+	// TODO: Figure out if this needs to be public or not
 	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
 }
 
 impl Collision {
+	/// Create a new [`CollisionBuilder`] with the specified [`Geometry`](crate::link_data::geometry).
 	pub fn builder(
 		geometry: impl Into<Box<dyn GeometryInterface + Sync + Send>>,
 	) -> CollisionBuilder {
@@ -27,8 +33,8 @@ impl Collision {
 		self.name.as_ref()
 	}
 
-	pub fn origin(&self) -> Option<&Transform> {
-		self.origin.as_ref()
+	pub fn transform(&self) -> Option<&Transform> {
+		self.transform.as_ref()
 	}
 
 	pub fn geometry(&self) -> &Box<dyn GeometryInterface + Sync + Send> {
@@ -38,7 +44,7 @@ impl Collision {
 	pub fn rebuild(&self) -> CollisionBuilder {
 		CollisionBuilder {
 			name: self.name.clone(),
-			origin: self.origin,
+			transform: self.transform,
 			geometry: self.geometry.boxed_clone(),
 		}
 	}
@@ -60,8 +66,8 @@ impl ToURDF for Collision {
 		}
 
 		element.write_inner_content(|writer| {
-			if let Some(origin) = self.origin() {
-				origin.to_urdf(writer, urdf_config)?
+			if let Some(transform) = self.transform() {
+				transform.to_urdf(writer, urdf_config)?
 			}
 
 			self.geometry()
@@ -76,7 +82,9 @@ impl ToURDF for Collision {
 
 impl PartialEq for Collision {
 	fn eq(&self, other: &Self) -> bool {
-		self.name == other.name && self.origin == other.origin && *self.geometry == *other.geometry
+		self.name == other.name
+			&& self.transform == other.transform
+			&& *self.geometry == *other.geometry
 	}
 }
 
@@ -84,7 +92,7 @@ impl Clone for Collision {
 	fn clone(&self) -> Self {
 		Self {
 			name: self.name.clone(),
-			origin: self.origin,
+			transform: self.transform,
 			geometry: self.geometry.boxed_clone(),
 		}
 	}

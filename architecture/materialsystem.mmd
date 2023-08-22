@@ -20,13 +20,13 @@ class Material{
 	~ initialize(&mut self, tree: &KinematicDataTree) Result~()，AddMaterialError~
     
     + name(&self) Option~&String~
-    + material_data(&'a self) MaterialDataReferenceWrapper~'a~
+    + material_data(&'a self) MaterialDataReference~'a~
     + describe(&self) MaterialDescriptor
 }
 
 Material ..|> ToURDF
 Material "1" *-- MaterialKind
-Material -- MaterialDataReferenceWrapper
+Material -- MaterialDataReference
 
 class MaterialKind {
     <<Enumeration>>
@@ -52,18 +52,18 @@ class MaterialStage{
 
     + used_count(&self) usize
     ~ initialize(&mut self, material_data: Arc~RwLock~MaterialData~~)
-    ~ data(&'a self) MaterialDataReferenceWrapper~'a~
+    ~ data(&'a self) MaterialDataReference~'a~
 }
 
 MaterialStage "0..1" *-- MaterialData : If PreInit variant 
 MaterialStage ..|> ToURDF
 
-class MaterialDataReferenceWrapper~'a~{
+class MaterialDataReference~'a~{
     <<Enumeration>>
     Direct#40;&'a MaterialData#41;
     Global#40;Arc~RwLock~MaterialData~~#41;
 
-    + same_material_data(&self, other: &MaterialDataReferenceWrapper) bool
+    + same_material_data(&self, other: &MaterialDataReference) bool
 }
 
 class MaterialDescriptor{

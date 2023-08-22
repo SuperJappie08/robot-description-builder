@@ -1,7 +1,7 @@
 use pyo3::{intern, prelude::*};
 use robot_description_builder::{
 	material::{
-		data::{MaterialData, MaterialDataReferenceWrapper},
+		data::{MaterialData, MaterialDataReference},
 		Material, MaterialDescriptor,
 	},
 	prelude::GroupIDChanger,
@@ -194,10 +194,8 @@ impl PyMaterial {
 	#[getter]
 	fn get_data(&self) -> PyResult<PyMaterialData> {
 		match self.0.material_data() {
-			MaterialDataReferenceWrapper::Direct(data) => Ok(data.clone().into()),
-			MaterialDataReferenceWrapper::Global(arc_data) => {
-				Ok(arc_data.py_read()?.clone().into())
-			}
+			MaterialDataReference::Direct(data) => Ok(data.clone().into()),
+			MaterialDataReference::Global(arc_data) => Ok(arc_data.py_read()?.clone().into()),
 		}
 	}
 
@@ -215,10 +213,8 @@ impl PyMaterial {
 
 		data += "data=";
 		data += match self.0.material_data() {
-			MaterialDataReferenceWrapper::Direct(data) => repr_material_data(data),
-			MaterialDataReferenceWrapper::Global(arc_data) => {
-				repr_material_data(&*arc_data.py_read()?)
-			}
+			MaterialDataReference::Direct(data) => repr_material_data(data),
+			MaterialDataReference::Global(arc_data) => repr_material_data(&*arc_data.py_read()?),
 		}
 		.as_str();
 

@@ -17,12 +17,12 @@ class VisualBuilder[Geometry]:
     """
     name: Optional[str]
     geometry: Final[Geometry]
-    origin: Optional[Transform]
+    transform: Optional[Transform]
     material: Optional[MaterialDescriptor]
 
     def __new__(cls, geometry: Geometry,
                 name: Optional[str] = None,
-                origin: Optional[Transform] = None,
+                transform: Optional[Transform] = None,
                 material: Optional[MaterialDescriptor] = None) -> VisualBuilder[Geometry]: ...
     def __repr__(self) -> str: ...
     # TODO: EXPAND
@@ -41,7 +41,7 @@ class Visual[Geometry]:
     """TODO:"""
     name: Final[Optional[str]]
     geometry: Final[Geometry]
-    origin: Final[Optional[Transform]]
+    transform: Final[Optional[Transform]]
     # TODO:
     material: Final[Optional[Material]]
 

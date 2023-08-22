@@ -1,17 +1,27 @@
-//! TODO: Internal DOC
-//!
+//! A module containing utilities for simplifing the use of `Arc<RwLock<T>>`.
 use std::sync::{Arc, PoisonError, RwLockReadGuard, RwLockWriteGuard, Weak};
 
 pub(crate) type ArcLock<T> = std::sync::Arc<std::sync::RwLock<T>>;
 pub(crate) type WeakLock<T> = std::sync::Weak<std::sync::RwLock<T>>;
 
+/// A type to signify the Error occured, while reading the contained value.
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct ErroredRead<T>(pub T);
 
 pub(crate) trait ArcRW: Sized {
+	/// The target type of the `ArcLock`.
+	///
+	/// Must be equal to the generic of [`ArcLock`].
 	type Target;
+
+	/// Reads the [`ArcLock`] and converting the error to something reportable.
+	///
+	/// Equivalent to [`RwLock::read`](std::sync::RwLock::read()), with a more useable error.
 	fn mread(&self) -> Result<RwLockReadGuard<'_, Self::Target>, PoisonError<ErroredRead<Self>>>;
+	/// Writes to the [`ArcLock`] and converting the error to something reportable.
+	///
+	/// Equivalent to [`RwLock::write`](std::sync::RwLock::write()), with a more useable error.
 	fn mwrite(&self)
 		-> Result<RwLockWriteGuard<'_, Self::Target>, PoisonError<ErroredWrite<Self>>>;
 }
@@ -39,16 +49,6 @@ pub(crate) fn errored_read_lock<T>(
 	PoisonError::new(ErroredRead(Arc::clone(errored_lock)))
 }
 
-// /// Upgrades and unwraps `WeakLock<T>` then read.
-// ///
-// /// # Safety
-// /// The Upgrade must be valid
-// #[inline]
-// pub(crate) fn read_weaklock<'a, T>(weaklock: &'a WeakLock<T>) -> Result<RwLockReadGuard<'a, T>,PoisonError<ErroredRead<ArcLock<T>>>> {
-// 	// let arclock =
-//     weaklock.upgrade().unwrap().read().map_err(|_| errored_read_lock(&weaklock.upgrade().unwrap()))
-// }
-
 impl<T> PartialEq for ErroredRead<Arc<T>> {
 	fn eq(&self, other: &Self) -> bool {
 		Arc::ptr_eq(&self.0, &other.0)
@@ -61,6 +61,7 @@ impl<T> PartialEq for ErroredRead<Weak<T>> {
 	}
 }
 
+/// A type to signify the Error occured, while writing to the contained value.
 #[derive(Debug)]
 #[repr(transparent)]
 pub struct ErroredWrite<T>(pub T);

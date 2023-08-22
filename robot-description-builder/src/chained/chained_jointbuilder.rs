@@ -145,7 +145,7 @@ mod tests {
 			Chained(JointBuilder {
 				name: "Leg_[L1]_j0".into(),
 				joint_type: JointType::Revolute,
-				origin: JointTransformMode::Direct(Transform::new_translation(-1., 2., 3.)),
+				transform: JointTransformMode::Direct(Transform::new_translation(-1., 2., 3.)),
 				limit: Some(LimitData {
 					lower: Some(-0.5),
 					upper: Some(900.),
@@ -157,7 +157,7 @@ mod tests {
 					name: "Leg_[L1]_l1".into(),
 					visual_builders: vec![VisualBuilder {
 						name: Some("Leg_[L1]_l1_vis_1".into()),
-						origin: Some(Transform {
+						transform: Some(Transform {
 							translation: Some((0., 1.5, 0.)),
 							rotation: None
 						}),
@@ -166,7 +166,7 @@ mod tests {
 					}],
 					colliders: vec![CollisionBuilder {
 						name: Some("Leg_[L1]_l1_col_1".into()),
-						origin: Some(Transform {
+						transform: Some(Transform {
 							translation: Some((0., 1.5, 0.)),
 							rotation: None
 						}),
@@ -175,7 +175,7 @@ mod tests {
 					joints: vec![JointBuilder {
 						name: "Leg_[L1]_j1".into(),
 						joint_type: JointType::Fixed,
-						origin: JointTransformMode::Direct(Transform {
+						transform: JointTransformMode::Direct(Transform {
 							translation: Some((0., 3., 0.)),
 							rotation: Some((0., 0., FRAC_PI_2))
 						}),
@@ -183,7 +183,7 @@ mod tests {
 							name: "Leg_[L1]_l2".into(),
 							visual_builders: vec![VisualBuilder {
 								name: Some("Leg_[L1]_l2_vis_1".into()),
-								origin: Some(Transform {
+								transform: Some(Transform {
 									translation: Some((0., -5., 0.)),
 									rotation: Some((FRAC_PI_2, 0., 0.))
 								}),
@@ -192,7 +192,7 @@ mod tests {
 							}],
 							colliders: vec![CollisionBuilder {
 								name: Some("Leg_[L1]_l2_col_1".into()),
-								origin: Some(Transform {
+								transform: Some(Transform {
 									translation: Some((0., -5., 0.)),
 									rotation: Some((FRAC_PI_2, 0., 0.))
 								}),
@@ -217,7 +217,7 @@ mod tests {
 			Chained(JointBuilder {
 				name: "Leg_[L1]_j0".into(),
 				joint_type: JointType::Revolute,
-				origin: JointTransformMode::Direct(Transform::new_translation(1., -2., 3.)),
+				transform: JointTransformMode::Direct(Transform::new_translation(1., -2., 3.)),
 				limit: Some(LimitData {
 					lower: Some(-0.5),
 					upper: Some(900.),
@@ -229,7 +229,7 @@ mod tests {
 					name: "Leg_[L1]_l1".into(),
 					visual_builders: vec![VisualBuilder {
 						name: Some("Leg_[L1]_l1_vis_1".into()),
-						origin: Some(Transform {
+						transform: Some(Transform {
 							translation: Some((0., -1.5, 0.)),
 							rotation: None
 						}),
@@ -238,7 +238,7 @@ mod tests {
 					}],
 					colliders: vec![CollisionBuilder {
 						name: Some("Leg_[L1]_l1_col_1".into()),
-						origin: Some(Transform {
+						transform: Some(Transform {
 							translation: Some((0., -1.5, 0.)),
 							rotation: None
 						}),
@@ -247,7 +247,7 @@ mod tests {
 					joints: vec![JointBuilder {
 						name: "Leg_[L1]_j1".into(),
 						joint_type: JointType::Fixed,
-						origin: JointTransformMode::Direct(Transform {
+						transform: JointTransformMode::Direct(Transform {
 							translation: Some((0., -3., 0.)),
 							rotation: Some((0., 0., FRAC_PI_2))
 						}),
@@ -255,7 +255,7 @@ mod tests {
 							name: "Leg_[L1]_l2".into(),
 							visual_builders: vec![VisualBuilder {
 								name: Some("Leg_[L1]_l2_vis_1".into()),
-								origin: Some(Transform {
+								transform: Some(Transform {
 									translation: Some((0., 5., 0.)),
 									rotation: Some((FRAC_PI_2, 0., 0.))
 								}),
@@ -264,7 +264,7 @@ mod tests {
 							}],
 							colliders: vec![CollisionBuilder {
 								name: Some("Leg_[L1]_l2_col_1".into()),
-								origin: Some(Transform {
+								transform: Some(Transform {
 									translation: Some((0., 5., 0.)),
 									rotation: Some((FRAC_PI_2, 0., 0.))
 								}),
@@ -289,7 +289,7 @@ mod tests {
 			Chained(JointBuilder {
 				name: "Leg_[L1]_j0".into(),
 				joint_type: JointType::Revolute,
-				origin: JointTransformMode::Direct(Transform::new_translation(1., 2., -3.)),
+				transform: JointTransformMode::Direct(Transform::new_translation(1., 2., -3.)),
 				limit: Some(LimitData {
 					lower: Some(-0.5),
 					upper: Some(900.),
@@ -301,7 +301,7 @@ mod tests {
 					name: "Leg_[L1]_l1".into(),
 					visual_builders: vec![VisualBuilder {
 						name: Some("Leg_[L1]_l1_vis_1".into()),
-						origin: Some(Transform {
+						transform: Some(Transform {
 							translation: Some((0., 1.5, 0.)),
 							rotation: None
 						}),
@@ -310,7 +310,7 @@ mod tests {
 					}],
 					colliders: vec![CollisionBuilder {
 						name: Some("Leg_[L1]_l1_col_1".into()),
-						origin: Some(Transform {
+						transform: Some(Transform {
 							translation: Some((0., 1.5, 0.)),
 							rotation: None
 						}),
@@ -319,7 +319,7 @@ mod tests {
 					joints: vec![JointBuilder {
 						name: "Leg_[L1]_j1".into(),
 						joint_type: JointType::Fixed,
-						origin: JointTransformMode::Direct(Transform {
+						transform: JointTransformMode::Direct(Transform {
 							translation: Some((0., 3., 0.)),
 							rotation: Some((0., 0., FRAC_PI_2))
 						}),
@@ -327,7 +327,7 @@ mod tests {
 							name: "Leg_[L1]_l2".into(),
 							visual_builders: vec![VisualBuilder {
 								name: Some("Leg_[L1]_l2_vis_1".into()),
-								origin: Some(Transform {
+								transform: Some(Transform {
 									translation: Some((0., 5., 0.)),
 									rotation: Some((FRAC_PI_2, 0., 0.))
 								}),
@@ -336,7 +336,7 @@ mod tests {
 							}],
 							colliders: vec![CollisionBuilder {
 								name: Some("Leg_[L1]_l2_col_1".into()),
-								origin: Some(Transform {
+								transform: Some(Transform {
 									translation: Some((0., 5., 0.)),
 									rotation: Some((FRAC_PI_2, 0., 0.))
 								}),

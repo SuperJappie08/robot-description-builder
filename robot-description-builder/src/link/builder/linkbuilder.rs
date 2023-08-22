@@ -261,11 +261,11 @@ mod tests {
 				link_builder.get_shape_data(),
 				LinkShapeData {
 					main_geometry: GeometryShapeData {
-						origin: Transform::default(),
+						transform: Transform::default(),
 						geometry: SphereGeometry::new(0.).into()
 					},
 					geometries: vec![GeometryShapeData {
-						origin: Transform::default(),
+						transform: Transform::default(),
 						geometry: SphereGeometry::new(0.).into()
 					}]
 				}
@@ -284,11 +284,11 @@ mod tests {
 				link_builder.get_shape_data(),
 				LinkShapeData {
 					main_geometry: GeometryShapeData {
-						origin: Transform::default(),
+						transform: Transform::default(),
 						geometry: BoxGeometry::new(10., 20., 30.).into()
 					},
 					geometries: vec![GeometryShapeData {
-						origin: Transform::default(),
+						transform: Transform::default(),
 						geometry: BoxGeometry::new(10., 20., 30.).into()
 					}]
 				}
@@ -311,16 +311,16 @@ mod tests {
 				link_builder.get_shape_data(),
 				LinkShapeData {
 					main_geometry: GeometryShapeData {
-						origin: Transform::new_translation(5., 0., 16.),
+						transform: Transform::new_translation(5., 0., 16.),
 						geometry: CylinderGeometry::new(1., 2.).into()
 					},
 					geometries: vec![
 						GeometryShapeData {
-							origin: Transform::new_translation(5., 0., 16.),
+							transform: Transform::new_translation(5., 0., 16.),
 							geometry: CylinderGeometry::new(1., 2.).into()
 						},
 						GeometryShapeData {
-							origin: Transform::default(),
+							transform: Transform::default(),
 							geometry: BoxGeometry::new(10., 20., 30.).into()
 						}
 					]

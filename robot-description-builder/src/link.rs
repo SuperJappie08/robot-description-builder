@@ -20,6 +20,9 @@ pub mod link_data {
 	pub use crate::link::inertial::InertialData;
 	pub use crate::link::link_parent::LinkParent;
 	pub use crate::link::visual::Visual;
+
+	// TODO: Improve DOC
+	/// All availble geometry types
 	pub mod geometry {
 		pub use crate::link::geometry::*;
 	}
@@ -72,6 +75,7 @@ pub struct Link {
 }
 
 impl Link {
+	/// Create a new [`LinkBuilder`] with the specified `name`.
 	pub fn builder(name: impl Into<String>) -> LinkBuilder {
 		LinkBuilder::new(name)
 	}
@@ -87,6 +91,7 @@ impl Link {
 		Weak::clone(&self.me)
 	}
 
+	/// Gets the reference to the [`LinkParent`] of the current [`Link`]
 	pub fn parent(&self) -> &LinkParent {
 		&self.direct_parent
 	}
@@ -118,16 +123,16 @@ impl Link {
 		&mut self.child_joints
 	}
 
-	/// TODO: DOC
-	/// TODO: maybe flip arguments, because then it will be Link ( Joint, Link)
-	///
-	/// # DEFINED BEHAVIOR:
-	///  - The newest link get transfered from the child tree. TODO: VERIFY
-	///
-	/// ## TODO:
-	///  - DOC
-	///  - Test
-	///  - Doctest
+	// TODO: DOC
+	// TODO: maybe flip arguments, because then it will be Link ( Joint, Link)
+	//
+	// # DEFINED BEHAVIOR:
+	//  - The newest link get transfered from the child tree. TODO: VERIFY
+	//
+	// ## TODO:
+	//  - DOC
+	//  - Test
+	//  - Doctest
 	pub fn try_attach_child<LinkChain>(
 		&mut self,
 		link_chain: LinkChain,
@@ -142,27 +147,28 @@ impl Link {
 		)))
 	}
 
-	/// TODO: This is not finalized yet
-	///
-	/// ## TODO:
-	///  - DOC
-	///  - Test
-	///  - Doctest
+	// TODO: This is not finalized yet
+	//
+	// ## TODO:
+	//  - DOC
+	//  - Test
+	//  - Doctest
 	pub fn attach_joint_chain_at(
 		&mut self,
 		mut joint_chain: Chained<JointBuilder>,
 		transform: Transform,
 	) -> Result<(), AttachChainError> {
-		joint_chain.0.with_origin(transform);
+		joint_chain.0.with_transform(transform);
 
 		self.attach_joint_chain(joint_chain)
 	}
 
-	/// Attach a `Chained<JointBuilder>` to the position set in the root `JointBuilder`
-	///
-	/// ## TODO:
-	///  - Test
-	///  - Doctest
+	// Not happy with the end of this line
+	/// Attach a `Chained<JointBuilder>` to the position set in the root [`JointBuilder`].
+	//
+	// ## TODO:
+	//  - Test
+	//  - Doctest
 	pub fn attach_joint_chain(
 		&mut self,
 		joint_chain: Chained<JointBuilder>,

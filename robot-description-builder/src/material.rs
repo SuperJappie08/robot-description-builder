@@ -29,7 +29,7 @@ use crate::{
 	utils::{errored_read_lock, ArcRW},
 };
 
-use data::{MaterialData, MaterialDataReferenceWrapper};
+use data::{MaterialData, MaterialDataReference};
 use stage::MaterialStage;
 
 /// A struct to represents a `Material` of a `Visual` geometry.
@@ -70,8 +70,7 @@ impl Material {
 	}
 
 	/// Register the `Material` in the `KinematicDataTree`.
-	///
-	/// TODO: EXPAND
+	// TODO: Safe poisoned Locks when `mutex_unpoison` #96469 becomes stable.
 	pub(crate) fn initialize(&mut self, tree: &KinematicDataTree) -> Result<(), AddMaterialError> {
 		match &mut self.0 {
 			// An unnamed Material does not have to be initialized.
@@ -126,20 +125,17 @@ impl Material {
 		}
 	}
 
-	/// get a refeence to the `MaterialData` as a `MaterialDataReferenceWrapper`
-	///
-	/// TODO: EXPAND
-	/// TODO: Consider removing Wrapper for name of MaterialDataReferenceWrapper.
-	pub fn material_data(&self) -> MaterialDataReferenceWrapper {
+	/// Get a reference to the `MaterialData` as a [`MaterialDataReference`].
+	// TODO: EXPAND docs
+	pub fn material_data(&self) -> MaterialDataReference {
 		match &self.0 {
 			MaterialKind::Named { name: _, data } => data.data(),
 			MaterialKind::Unnamed(data) => data.into(),
 		}
 	}
 
-	/// Describes the `Material` to reform a `MaterialDescriptor`.
-	///
-	/// TODO: Expand
+	/// Describes the `Material` to reform a [`MaterialDescriptor`].
+	// TODO: Expand
 	pub fn describe(&self) -> MaterialDescriptor {
 		let descriptor = MaterialDescriptor::new_data(self.material_data().try_into().unwrap()); //FIXME: Unwrap not OK
 		match &self.0 {

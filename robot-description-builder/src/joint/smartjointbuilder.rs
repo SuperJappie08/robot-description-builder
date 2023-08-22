@@ -26,7 +26,10 @@ where
 {
 	name: String,
 	joint_type: Type,
-	origin: Option<JointTransformMode>,
+	/// The transform from the origin of the parent to the origin of this `Joint`.
+	///
+	/// In URDF this field is refered to as `<origin>`
+	transform: Option<JointTransformMode>,
 	axis: Axis,
 	calibration: Calibration,
 	dynamics: Dynamics,
@@ -45,18 +48,19 @@ where
 	Mimic: smart_joint_datatraits::MimicDataType,
 	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
 {
+	/// Renames the current `SmartJointBuilder`
 	pub fn rename(mut self, name: impl Into<String>) -> Self {
 		self.name = name.into();
 		self
 	}
 
 	pub fn add_transform(mut self, transform: Transform) -> Self {
-		self.origin = Some(transform.into());
+		self.transform = Some(transform.into());
 		self
 	}
 
 	pub fn add_dynamic_transform(mut self, func: fn(LinkShapeData) -> Transform) -> Self {
-		self.origin = Some(func.into());
+		self.transform = Some(func.into());
 		self
 	}
 }
@@ -188,7 +192,7 @@ impl
 		SmartJointBuilder {
 			name: self.name,
 			joint_type: RevoluteType,
-			origin: self.origin,
+			transform: self.transform,
 			axis: self.axis,
 			calibration: self.calibration,
 			dynamics: self.dynamics,
@@ -212,7 +216,7 @@ impl
 		SmartJointBuilder {
 			name: self.name,
 			joint_type: ContinuousType,
-			origin: self.origin,
+			transform: self.transform,
 			axis: self.axis,
 			calibration: self.calibration,
 			dynamics: self.dynamics,
@@ -236,7 +240,7 @@ impl
 		SmartJointBuilder {
 			name: self.name,
 			joint_type: PrismaticType,
-			origin: self.origin,
+			transform: self.transform,
 			axis: self.axis,
 			calibration: self.calibration,
 			dynamics: self.dynamics,
@@ -261,7 +265,7 @@ impl
 		SmartJointBuilder {
 			name: self.name,
 			joint_type: FixedType,
-			origin: self.origin,
+			transform: self.transform,
 			axis: self.axis,
 			calibration: self.calibration,
 			dynamics: self.dynamics,
@@ -285,7 +289,7 @@ impl
 		SmartJointBuilder {
 			name: self.name,
 			joint_type: FloatingType,
-			origin: self.origin,
+			transform: self.transform,
 			axis: self.axis,
 			calibration: self.calibration,
 			dynamics: self.dynamics,
@@ -309,7 +313,7 @@ impl
 		SmartJointBuilder {
 			name: self.name,
 			joint_type: PlanarType,
-			origin: self.origin,
+			transform: self.transform,
 			axis: self.axis,
 			calibration: self.calibration,
 			dynamics: self.dynamics,

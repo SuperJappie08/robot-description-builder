@@ -16,7 +16,7 @@ fn main() {
 				}
 			};
 
-			data.main_geometry.origin.translation.map(|(x, y, z)| {
+			data.main_geometry.transform.translation.map(|(x, y, z)| {
 				(
 					extend(x, bounding_box.0),
 					extend(y, bounding_box.1),
@@ -25,14 +25,14 @@ fn main() {
 			});
 
 			Transform {
-				translation: data.main_geometry.origin.translation.map(|(x, y, z)| {
+				translation: data.main_geometry.transform.translation.map(|(x, y, z)| {
 					(
 						extend(x, bounding_box.0),
 						extend(y, bounding_box.1),
 						extend(z, bounding_box.2),
 					)
 				}),
-				rotation: data.main_geometry.origin.rotation,
+				rotation: data.main_geometry.transform.rotation,
 			}
 		});
 

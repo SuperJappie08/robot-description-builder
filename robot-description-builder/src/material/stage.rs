@@ -6,7 +6,7 @@ use crate::utils::ArcLock;
 #[cfg(feature = "urdf")]
 use crate::to_rdf::to_urdf::ToURDF;
 
-use super::data::{MaterialData, MaterialDataReferenceWrapper};
+use super::data::{MaterialData, MaterialDataReference};
 
 /// Internal type for describing the stage of the initialization process the current [`MaterialKind::Named`](super::MaterialKind::Named) material is in.
 #[derive(Debug)]
@@ -37,10 +37,10 @@ impl MaterialStage {
 		}
 	}
 
-	/// Gets the data wrapped in a `MaterialDataReferenceWrapper`
+	/// Gets the data wrapped in a [`MaterialDataReference`]
 	///
 	/// TODO: Name could also be `get`
-	pub(crate) fn data(&self) -> MaterialDataReferenceWrapper {
+	pub(crate) fn data(&self) -> MaterialDataReference {
 		match self {
 			MaterialStage::PreInit(data) => data.into(),
 			MaterialStage::Initialized(arc_data) => Arc::clone(arc_data).into(),

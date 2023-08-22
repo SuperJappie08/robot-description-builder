@@ -27,7 +27,7 @@ use crate::{
 #[derive(Debug)]
 pub struct Robot {
 	/// The name of the robot
-	name: String, //TODO: Temp Pub
+	name: String,
 	data: Arc<KinematicDataTree>,
 }
 

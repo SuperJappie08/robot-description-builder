@@ -72,7 +72,7 @@ class Joint:
     # TODO: ??? Tree?
     parent_link: Final[Link]
     child_link: Final[Link]
-    origin: Final[Optional[Transform]]
+    transform: Final[Optional[Transform]]
     axis: Final[Optional[Tuple[float, float, float]]]
     # TODO: calibration: Any # TODO: IMPLEMENT
     # TODO: dynamics: Any # TODO: IMPLEMENT

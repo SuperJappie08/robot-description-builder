@@ -1,3 +1,4 @@
+# NOT UP TO DATE Probably
 ```mermaid
 classDiagram
     %% This is how it currently is implemented
@@ -186,15 +187,15 @@ class LinkParent{
 %% START Visual
 class Visual {
     + Option~String~ name
-    - Option~TransformData~ origin
+    - Option~TransformData~ transform
     ~ Box~GeometryInterface+Sync+Send~ geometry
     + Option~Arc~RwLock~Material~~~ material
 }
 
-%% Visual : + new(Option~String~ name, Option~Tranformdata~ origin, Box~GeometryInterface+Sync+Send~ geometry, Option~Arc~RwLock~Material~~~ material) Visual
+%% Visual : + new(Option~String~ name, Option~Tranformdata~ transform, Box~GeometryInterface+Sync+Send~ geometry, Option~Arc~RwLock~Material~~~ material) Visual
 Visual : + new(...) Visual
 Visual : + get_name(&self) &String
-Visual : + get_origin(&self) &Option~TransformData~
+Visual : + get_transform(&self) &Option~TransformData~
 Visual : + get_geometry(&self) &Box~GeometryInterface+Sync+Send~
 Visual : + get_material(&self) &Option~Arc~RwLock~Material~~~
 
@@ -206,14 +207,14 @@ Visual --o "*" Link : visuals
 %% START Collision
     class Collision {
         + Option~String~ name
-        - Option~TransformData~ origin
+        - Option~TransformData~ transform
         ~ Box~GeometryInterface+Sync+Send~ geometry
     }
 
     Collision : + new(...) Collision
 
     Collision : + get_name(&self) &String
-    Collision : + get_origin(&self) &Option~TransformData~
+    Collision : + get_transform(&self) &Option~TransformData~
     Collision : + get_geometry(&self) &Box~GeometryInterface+Sync+Send~
 
     GeometryInterface --* Collision

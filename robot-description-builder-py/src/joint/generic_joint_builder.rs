@@ -1,7 +1,7 @@
 use pyo3::{exceptions::PyTypeError, intern, prelude::*, types::PyDict};
 use robot_description_builder::{prelude::GroupIDChanger, JointBuilder};
 
-use crate::{identifier::GroupIDError, transform::PyTransform};
+use crate::identifier::GroupIDError;
 
 use super::{PyJointBuilderBase, PyJointType, PyLimit};
 
@@ -101,7 +101,9 @@ impl PyJointBuilder {
 	// }
 	// // TODO: transform advanced
 
-	/// TEMP implementation
+	// TEMP implementation
+	//
+	// TODO: Something
 	fn add_origin_offset(mut slf: PyRefMut<'_, Self>, x: f32, y: f32, z: f32) {
 		slf.as_mut().builder = slf.as_ref().builder.clone().add_origin_offset((x, y, z));
 	}

@@ -8,11 +8,11 @@ use crate::to_rdf::to_urdf::ToURDF;
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
-/// TODO: DOCS
-///
-/// The fields are public for the Python wrapper. It doesn't change much for the Rust side, since most of the time these will be `Box<dyn GeometryInterface + Sync + Send>`.
-/// DOC COPY
-/// A trimesh element specified by a filename, and an optional scale that scales the mesh's axis-aligned-bounding-box. Any geometry format is acceptable but specific application compatibility is dependent on implementation. The recommended format for best texture and color support is Collada .dae files. The mesh file is not transferred between machines referencing the same model. It must be a local file. Prefix the filename with package://\<packagename\>/\<path\> to make the path to the mesh file relative to the package \<packagename\>.
+// TODO: DOCS
+//
+// The fields are public for the Python wrapper. It doesn't change much for the Rust side, since most of the time these will be `Box<dyn GeometryInterface + Sync + Send>`.
+// DOC COPY
+// A trimesh element specified by a filename, and an optional scale that scales the mesh's axis-aligned-bounding-box. Any geometry format is acceptable but specific application compatibility is dependent on implementation. The recommended format for best texture and color support is Collada .dae files. The mesh file is not transferred between machines referencing the same model. It must be a local file. Prefix the filename with package://\<packagename\>/\<path\> to make the path to the mesh file relative to the package \<packagename\>.
 #[derive(Debug, PartialEq, Clone)]
 pub struct MeshGeometry {
 	pub path: String,
@@ -21,11 +21,11 @@ pub struct MeshGeometry {
 }
 
 impl MeshGeometry {
-	/// TODO: DOC
-	///
-	/// BoundingBox at current size?
-	///
-	/// Scale will default to 1. 1. 1.
+	// TODO: DOC
+	//
+	// BoundingBox at current size?
+	//
+	// Scale will default to 1. 1. 1.
 	pub fn new(
 		path: impl Into<String>,
 		bounding_box: (f32, f32, f32),
@@ -65,7 +65,7 @@ impl GeometryInterface for MeshGeometry {
 	}
 }
 
-/// TODO: ADD MIRROR TEST
+// TODO: ADD MIRROR TEST
 impl Mirror for MeshGeometry {
 	fn mirrored(&self, mirror_matrix: &Matrix3<f32>) -> Self {
 		// TODO: Add Mirrorable Specifier

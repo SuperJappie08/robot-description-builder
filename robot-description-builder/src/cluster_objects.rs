@@ -27,6 +27,7 @@ pub use robot::Robot;
 
 type PoisonWriteIndexError<'a, K, V> = PoisonError<RwLockWriteGuard<'a, HashMap<K, V>>>;
 
+/// A trait which allows for the existance of multiple different Kinematic Structures, such as `Robot` and `KinematicTree`.
 pub trait KinematicInterface: Sized {
 	/// Returns the root link of the Kinematic Tree
 	///

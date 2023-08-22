@@ -46,7 +46,10 @@ pub struct Joint {
 	pub(crate) child_link: ArcLock<Link>, //temp pub TODO: THIS PROBABLY ISN'T THE NICEST WAY TO DO THIS.
 	/// The information specific to the JointType: TODO: DECIDE IF THIS SHOULD BE PUBLIC
 	pub(crate) joint_type: JointType,
-	origin: Transform,
+	/// The transform from the origin of the parent `Link` to this `Joint`'s origin.
+	///
+	/// In URDF this field is refered to as `<origin>`
+	transform: Transform,
 	axis: Option<(f32, f32, f32)>,
 	calibration: joint_data::CalibrationData,
 	dynamics: joint_data::DynamicsData,
@@ -90,8 +93,8 @@ impl Joint {
 		&self.child_link
 	}
 
-	pub fn origin(&self) -> &Transform {
-		&self.origin
+	pub fn transform(&self) -> &Transform {
+		&self.transform
 	}
 
 	pub fn axis(&self) -> Option<(f32, f32, f32)> {
@@ -106,7 +109,7 @@ impl Joint {
 		JointBuilder {
 			name: self.name.clone(),
 			joint_type: self.joint_type,
-			origin: self.origin.into(),
+			transform: self.transform.into(),
 			axis: self.axis,
 			calibration: self.calibration,
 			dynamics: self.dynamics,
@@ -187,9 +190,9 @@ impl ToURDF for Joint {
 			});
 
 		element.write_inner_content(|writer| {
-			let origin = self.origin();
-			if origin.contains_some() {
-				origin.to_urdf(writer, urdf_config)?;
+			let transform = self.transform();
+			if transform.contains_some() {
+				transform.to_urdf(writer, urdf_config)?;
 			}
 
 			writer
@@ -269,7 +272,7 @@ impl PartialEq for Joint {
 			&& Weak::ptr_eq(&self.parent_link, &other.parent_link)
 			&& Arc::ptr_eq(&self.child_link, &other.child_link)
 			&& self.joint_type == other.joint_type
-			&& self.origin == other.origin
+			&& self.transform == other.transform
 			&& self.axis() == other.axis()
 			&& self.calibration == other.calibration
 			&& self.dynamics == other.dynamics
@@ -281,16 +284,56 @@ impl PartialEq for Joint {
 }
 
 /// TODO: Might add data of specif joint type to Struct Spaces.
+/// TODO: Expand Jointtype specifics
+///
+/// The sections cited from the URDF specification are accurate as of [2023-08-21](https://wiki.ros.org/urdf/XML/joint#Attributes).
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub enum JointType {
-	/// TODO: TEMP DEFAULT
+	/// A Fixed joint.
+	///
+	/// The URDF Specification says the following:
+	/// > fixed — this is not really a joint because it cannot move. All degrees of freedom are locked. This type of joint does not require the `<axis>`, `<calibration>`, `<dynamics>`, `<limits>` or `<safety_controller>`.
 	#[default]
-	Fixed, // — this is not really a joint because it cannot move. All degrees of freedom are locked. This type of joint does not require the <axis>, <calibration>, <dynamics>, <limits> or <safety_controller>.
-	Revolute, // — a hinge joint that rotates along the axis and has a limited range specified by the upper and lower limits.
-	Continuous, // — a continuous hinge joint that rotates around the axis and has no upper and lower limits.
-	Prismatic, // — a sliding joint that slides along the axis, and has a limited range specified by the upper and lower limits.
-	Floating,  // — this joint allows motion for all 6 degrees of freedom.
-	Planar,    // — this joint allows motion in a plane perpendicular to the axis.
+	Fixed,
+	/// A Revolute joint. (A limited rotational joint, like a weld)
+	///
+	/// This joint rotates a limited range around a specified (or default) axis.
+	///
+	/// The URDF Specification says the following:
+	/// > revolute — a hinge joint that rotates along the axis and has a limited range specified by the upper and lower limits.
+	Revolute,
+	/// A Continuous rotational joint. (A bearing or motor connection, like a wheel)
+	///
+	/// This joint rotates around a specified (or default) axis.
+	///
+	/// Since this Jointtype is unlimited in its movement, the [Limit](joint_data::LimitData) should not be specified.
+	///
+	/// The URDF Specification says the following:
+	/// > continuous — a continuous hinge joint that rotates around the axis and has no upper and lower limits.
+	Continuous,
+	/// A Prismitic joint. (A limited sliding joint, like a drawer rail or a linear actuator)
+	///
+	/// This joint slides a limited range along a specified (or default) axis.
+	///
+	/// The URDF Specification says the following:
+	/// > prismatic — a sliding joint that slides along the axis, and has a limited range specified by the upper and lower limits.
+	Prismatic,
+	/// A Floating joint. (Or a non-connection)
+	///
+	/// This is a joint to represent an unconnected link.
+	/// Most parsers do not handle this `JointType`, since it's not an actual joint and it causes problems with lots of different tooling for ROS/URDF, like  `sensor_msgs/JointState` messages from for example [`joint_state_publisher`](https://github.com/ros/robot_model/issues/188) which has chosen to ignore it.
+	///
+	/// The URDF Specification says the following:
+	/// > floating — this joint allows motion for all 6 degrees of freedom.
+	Floating,
+	/// A Planar joint. (A plane contact, like a magnet on a metal sheet)
+	///
+	/// This joint slides on the plane perpendicular the specified (or default) axis.
+	/// This `JointType` might cause problems with lots of different tooling for ROS/URDF, like  `sensor_msgs/JointState` messages from for example [`joint_state_publisher`](https://github.com/ros/joint_state_publisher/blob/7cb7069d2d78ebe4b8b80adc6bd859df0c8ccfc9/joint_state_publisher/src/joint_state_publisher/__init__.py#L83-L85C29) which has chosen to ignore it.
+	///
+	/// The URDF Specification says the following:
+	/// > planar — this joint allows motion in a plane perpendicular to the axis.
+	Planar,
 }
 
 impl ToString for JointType {
@@ -412,7 +455,7 @@ mod tests {
 			JointBuilder {
 				name: "joint-0".into(),
 				joint_type: JointType::Fixed,
-				origin: Transform {
+				transform: Transform {
 					translation: Some((1., 0., 0.)),
 					rotation: None
 				}
@@ -580,7 +623,7 @@ mod tests {
 				JointBuilder {
 					name: "joint-2".into(),
 					joint_type: JointType::Fixed,
-					origin: Transform {
+					transform: Transform {
 						translation: Some((0., 0., 1.5)),
 						..Default::default()
 					}
@@ -646,7 +689,7 @@ mod tests {
 				JointBuilder {
 					name: "joint-1-1".into(),
 					joint_type: JointType::Revolute,
-					origin: Transform {
+					transform: Transform {
 						translation: Some((4., 0., 0.)),
 						..Default::default()
 					}
@@ -730,7 +773,7 @@ mod tests {
 				yanked_branch.unwrap().0,
 				JointBuilder {
 					name: "joint-0".into(),
-					origin: Transform {
+					transform: Transform {
 						translation: Some((1., 0., 0.)),
 						..Default::default()
 					}
@@ -751,7 +794,7 @@ mod tests {
 						joints: vec![JointBuilder {
 							name: "joint-1-1".into(),
 							joint_type: JointType::Revolute,
-							origin: Transform {
+							transform: Transform {
 								translation: Some((4., 0., 0.)),
 								..Default::default()
 							}
