@@ -20,7 +20,7 @@ use crate::{
     extends = PyKinematicBase)]
 pub struct PyKinematicTree {
 	inner: KinematicTree,
-	/// Python weakref to self
+	/// Python weakref to self.
 	me: PyObject,
 }
 

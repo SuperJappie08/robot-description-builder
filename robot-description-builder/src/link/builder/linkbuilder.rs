@@ -16,18 +16,17 @@ use crate::{
 pub struct LinkBuilder {
 	// All fields are pub(crate) so I can struct initialize in rebuild
 	pub(crate) name: String,
-	/// TODO: Figure out if we make this immutable on a `Link` and only allow editting throug the builder.
-	///
-	/// TODO: Change name or change name of `colliders` make them consitent
-	pub(crate) visual_builders: Vec<VisualBuilder>,
+	// TODO: Figure out if we make this immutable on a `Link` and only allow editting throug the builder.
+	pub(crate) visuals: Vec<VisualBuilder>,
 	pub(crate) colliders: Vec<CollisionBuilder>,
-	/// TODO: Calulate InertialData?
+	// TODO: Calulate InertialData?
 	pub(crate) intertial: Option<link_data::InertialData>,
 	pub(crate) joints: Vec<JointBuilder>,
 }
 
 impl LinkBuilder {
-	/// TODO: depreaction Planned
+	// TODO: depreaction Planned
+	/// Create a new [`LinkBuilder`] with the specified `name`.
 	pub fn new(name: impl Into<String>) -> LinkBuilder {
 		Self {
 			name: name.into(),
@@ -35,26 +34,28 @@ impl LinkBuilder {
 		}
 	}
 
+	/// Adds a [`VisualBuilder`] to this `LinkBuilder`.
 	pub fn add_visual(mut self, visual: VisualBuilder) -> Self {
-		self.visual_builders.push(visual);
+		self.visuals.push(visual);
 		self
 	}
 
-	/// TODO: Not really sure if this is the way... but it is how clap does it.
+	// TODO: Not really sure if this is the way... but it is how clap does it.
+	/// Adds a [`CollisionBuilder`] to this `LinkBuilder`.
 	pub fn add_collider(mut self, collider: CollisionBuilder) -> Self {
 		self.colliders.push(collider);
 		self
 	}
 
-	/// TODO: Naming not inline with convention
-	/// Not happy with the added `add_` but otherwise name colliding with getter
+	// TODO: Naming not inline with convention
+	// Not happy with the added `add_` but otherwise name colliding with getter
+	/// Sets the [`InertialData`](link_data::InertialData) (`inertial`) of this `LinkBuilder`.
 	pub fn add_intertial(mut self, inertial: link_data::InertialData) -> Self {
 		self.intertial = Some(inertial);
 		self
 	}
 
-	/// FIXME: This is temporary, since BuildLink is now a private trait
-	/// I think this might be fine
+	/// Creates a [`KinematicTree`] by building this `LinkBuilder`.
 	pub fn build_tree(self) -> KinematicTree {
 		BuildLink::build_tree(self)
 	}
@@ -62,30 +63,42 @@ impl LinkBuilder {
 
 /// Non-builder methods
 impl LinkBuilder {
+	/// Gets a reference to the `name` of this `LinkBuilder`.
 	pub fn name(&self) -> &String {
 		&self.name
 	}
 
+	// TODO: Maybe Change to Iterator
+	/// Gets a reference to the `visuals` of this `LinkBuilder`.
 	pub fn visuals(&self) -> &Vec<VisualBuilder> {
-		&self.visual_builders
+		&self.visuals
 	}
 
+	// TODO: Maybe Change to Iterator
+	/// Gets a mutable reference to the `visuals` of this `LinkBuilder`.
 	pub fn visuals_mut(&mut self) -> &mut Vec<VisualBuilder> {
-		&mut self.visual_builders
+		&mut self.visuals
 	}
 
+	// TODO: Maybe Change to Iterator
+	/// Gets a reference to the `colliders` of this `LinkBuilder`.
 	pub fn colliders(&self) -> &Vec<CollisionBuilder> {
 		&self.colliders
 	}
 
+	// TODO: Maybe Change to Iterator
+	/// Gets a mutable reference to the `colliders` of this `LinkBuilder`.
 	pub fn colliders_mut(&mut self) -> &mut Vec<CollisionBuilder> {
 		&mut self.colliders
 	}
 
+	// TODO: Maybe Change to Iterator
+	/// Gets a reference to the `joints` of this `LinkBuilder`.
 	pub fn joints(&self) -> &Vec<JointBuilder> {
 		&self.joints
 	}
 
+	/// Gets an optional reference to the [`InertialData`](link_data::InertialData) of this `LinkBuilder`.
 	pub fn inertial(&self) -> Option<&link_data::InertialData> {
 		self.intertial.as_ref()
 	}
@@ -95,8 +108,8 @@ impl Mirror for LinkBuilder {
 	fn mirrored(&self, mirror_matrix: &Matrix3<f32>) -> Self {
 		Self {
 			name: self.name.clone(), // TODO: rename mirrored
-			visual_builders: self
-				.visual_builders
+			visuals: self
+				.visuals
 				.iter()
 				.map(|visual_builder| visual_builder.mirrored(mirror_matrix))
 				.collect(),
@@ -130,11 +143,7 @@ impl BuildLink for LinkBuilder {
 				direct_parent: LinkParent::KinematicTree(Weak::clone(tree)),
 				child_joints: Vec::new(),
 				inertial: self.intertial,
-				visuals: self
-					.visual_builders
-					.into_iter()
-					.map(VisualBuilder::build)
-					.collect(),
+				visuals: self.visuals.into_iter().map(VisualBuilder::build).collect(),
 				colliders: self
 					.colliders
 					.into_iter()
@@ -180,11 +189,7 @@ impl BuildLink for LinkBuilder {
 					.map(|joint_builder| joint_builder.build_chain(tree, me, shape_data.clone()))
 					.collect(),
 				inertial: self.intertial,
-				visuals: self
-					.visual_builders
-					.into_iter()
-					.map(VisualBuilder::build)
-					.collect(),
+				visuals: self.visuals.into_iter().map(VisualBuilder::build).collect(),
 				colliders: self
 					.colliders
 					.into_iter()

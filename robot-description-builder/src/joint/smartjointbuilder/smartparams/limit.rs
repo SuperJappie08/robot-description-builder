@@ -4,9 +4,11 @@ use crate::joint::{
 	smartjointbuilder::{smart_joint_datatraits, SmartJointBuilder},
 };
 
-/// TODO: Maybe add a continous lockout thing
+// TODO: Maybe add a continous lockout thing
+/// A trait to label a `SmartJointType` that is allowed to have a limit specified.
 pub trait LimitAllowed {}
 
+/// A type to significy that no [`Limit`](joint_data::LimitData) was specified.
 #[derive(Debug, Default, Clone)]
 pub struct NoLimit;
 impl smart_joint_datatraits::LimitDataType for NoLimit {}
@@ -104,16 +106,19 @@ where
 		self.limit.effort
 	}
 
+	/// Sets the velocity limit to the specified value in m/s or rad/s ([`velocity`](crate::joint::joint_data::LimitData::velocity)).
 	pub fn set_velocity(mut self, velocity: f32) -> Self {
 		self.limit.velocity = velocity;
 		self
 	}
 
+	/// Retrieves the set velocity limit in m/s or rad/s ([`velocity`](crate::joint::joint_data::LimitData::velocity)).
 	pub fn velocity(&self) -> f32 {
 		self.limit.velocity
 	}
 }
 
+/// The limits are only available on non continuous `JointType`s.
 impl<Type, Axis, Calibration, Dynamics, Mimic, SafetyController>
 	SmartJointBuilder<Type, Axis, Calibration, Dynamics, WithLimit, Mimic, SafetyController>
 where
@@ -124,20 +129,24 @@ where
 	Mimic: smart_joint_datatraits::MimicDataType,
 	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
 {
+	/// Sets the upper limit ([`upper`](crate::joint::joint_data::LimitData::upper)) in meters or radians.
 	pub fn set_upper_limit(mut self, upper_limit: f32) -> Self {
 		self.limit.upper = Some(upper_limit);
 		self
 	}
 
+	/// Retrieves the upper limit ([`upper`](crate::joint::joint_data::LimitData::upper)) in meters or radians.
 	pub fn upper_limit(&self) -> Option<f32> {
 		self.limit.upper
 	}
 
+	/// Sets the lower limit ([`lower`](crate::joint::joint_data::LimitData::lower)) in meters or radians.
 	pub fn set_lower_limit(mut self, lower_limit: f32) -> Self {
 		self.limit.lower = Some(lower_limit);
 		self
 	}
 
+	/// Retrieves the lower limit ([`lower`](crate::joint::joint_data::LimitData::lower)) in meters or radians.
 	pub fn lower_limit(&self) -> Option<f32> {
 		self.limit.lower
 	}

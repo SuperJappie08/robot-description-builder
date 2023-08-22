@@ -102,7 +102,7 @@ impl TryIntoPy<Py<PyJointBuilderChain>> for Chained<JointBuilder> {
 #[pyclass(name = "Joint", module = "robot_description_builder.joint", frozen)]
 pub struct PyJoint {
 	inner: Weak<RwLock<Joint>>,
-	/// Python weakref.proxy to the python parent tree
+	/// Python weakref.proxy to the python parent tree.
 	tree: PyObject,
 }
 

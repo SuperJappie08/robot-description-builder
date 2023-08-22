@@ -11,7 +11,7 @@ use super::{data::MaterialData, Material};
 /// A [`MaterialDescriptor`] is used to construct a [`Material`].
 ///
 /// A `Descriptor` is a smiliar idea as a `Builder`,
-///  but there is an important difference between which has to be adressed with a differen name.  
+///  but there is an important difference between which has to be adressed with a differen name.
 ///
 /// A `Builder` would always construct a new instance of a struct, in this project meaning it cannot be used twice in the same [`KinematicTree`](crate::KinematicTree).
 /// Since using a `Builder` twice would result in two exactly the same objects.
@@ -21,7 +21,7 @@ use super::{data::MaterialData, Material};
 /// If an instance already exists, which exactly matches the description, then the 'new' [`Material`] will refer to the pre-existing data.
 ///
 /// This is desirable in the case of [Materials](Material), since they are often reused.
-/// This could also allow for changing a [`Material`] and the other used of it changing withit.  
+/// This could also allow for changing a [`Material`] and the other used of it changing withit.
 ///
 /// # OLD STUFF TODO: UPDATE
 /// When a `MaterialDescriptor` is constructed for a specific `KinematicDataTee`, the following steps happen:
@@ -54,7 +54,7 @@ impl MaterialDescriptor {
 		}
 	}
 
-	/// Creates a new [`MaterialDescriptor`] with a solid color (rgb)
+	/// Creates a new [`MaterialDescriptor`] with a solid color (rgb).
 	///
 	/// The `red`, `green`, `blue` fields expect a value between 0 and 1.
 	///
@@ -90,12 +90,12 @@ impl MaterialDescriptor {
 		}
 	}
 
-	/// Creates a new [`MaterialDescriptor`] from a pre-existing [`MaterialData`]
+	/// Creates a new [`MaterialDescriptor`] from a pre-existing [`MaterialData`].
 	pub(crate) fn new_data(data: MaterialData) -> Self {
 		MaterialDescriptor { name: None, data }
 	}
 
-	/// Adds a `name` to the [`MaterialDescriptor`], so it can later be used as a referenced [`Material`]
+	/// Adds a `name` to the [`MaterialDescriptor`], so it can later be used as a referenced [`Material`].
 	///
 	/// # Important
 	/// When a named [`Material`] is used, it needs to be the same as all materials with the same name.
@@ -129,7 +129,7 @@ impl MaterialDescriptor {
 		self.name.as_ref()
 	}
 
-	/// Gets a reference to the [`MaterialData`] of the [`MaterialDescriptor`]
+	/// Gets a reference to the [`MaterialData`] of the [`MaterialDescriptor`].
 	pub fn data(&self) -> &MaterialData {
 		&self.data
 	}

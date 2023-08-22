@@ -19,12 +19,12 @@ pub struct Visual {
 	///
 	/// This is the reference for the placement of the `geometry`.
 	///
-	/// In URDF this field is refered to as `<origin>`
+	/// In URDF this field is refered to as `<origin>`.
 	pub(crate) transform: Option<Transform>,
 
-	/// Figure out if this needs to be public or not
+	// Figure out if this needs to be public or not
 	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
-	/// Not sure about refCell
+	// Not sure about refCell
 	pub(crate) material: Option<Material>,
 }
 
@@ -35,7 +35,7 @@ impl Visual {
 	}
 
 	// TODO: Is docthe test helpfull?
-	/// Gets the reference to the name of the `Visual`
+	/// Gets an optional reference to the name of this `Visual`.
 	///
 	/// # Example
 	/// Unwraps are hidden for brevity.
@@ -80,29 +80,33 @@ impl Visual {
 		self.name.as_ref()
 	}
 
-	// TODO: Maybe make optional reference?
+	/// Gets an optional reference to the `transform` of this `Visual`.
 	pub fn transform(&self) -> Option<&Transform> {
 		self.transform.as_ref()
 	}
 
+	/// Gets a reference to the `geometry` of this `Visual`.
 	pub fn geometry(&self) -> &Box<dyn GeometryInterface + Sync + Send> {
 		&self.geometry
 	}
 
+	/// Gets an optional reference to the [`material`](crate::material::Material) of this `Visual`.
 	pub fn material(&self) -> Option<&Material> {
 		self.material.as_ref()
 	}
 
+	/// Gets an optional mutable reference to the [`material`](crate::material::Material) of this `Visual`.
 	pub(crate) fn material_mut(&mut self) -> Option<&mut Material> {
 		self.material.as_mut()
 	}
 
+	/// Recreates the [`VisualBuilder`], which was used to create this `Visual`.
 	pub fn rebuild(&self) -> VisualBuilder {
 		VisualBuilder {
 			name: self.name.clone(),
 			transform: self.transform,
 			geometry: self.geometry.boxed_clone(),
-			material_description: self.material.as_ref().map(|material| material.describe()),
+			material_description: self.material.as_ref().map(Material::describe),
 		}
 	}
 

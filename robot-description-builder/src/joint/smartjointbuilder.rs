@@ -28,7 +28,7 @@ where
 	joint_type: Type,
 	/// The transform from the origin of the parent to the origin of this `Joint`.
 	///
-	/// In URDF this field is refered to as `<origin>`
+	/// In URDF this field is refered to as `<origin>`.
 	transform: Option<JointTransformMode>,
 	axis: Axis,
 	calibration: Calibration,
@@ -48,7 +48,7 @@ where
 	Mimic: smart_joint_datatraits::MimicDataType,
 	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
 {
-	/// Renames the current `SmartJointBuilder`
+	/// Renames the current `SmartJointBuilder`.
 	pub fn rename(mut self, name: impl Into<String>) -> Self {
 		self.name = name.into();
 		self
@@ -68,7 +68,7 @@ where
 impl
 	SmartJointBuilder<NoType, NoAxis, NoCalibration, NoDynamics, NoLimit, NoMimic, NoSafetyController>
 {
-	/// Created a new `JointType`-less `SmartJointBuilder`
+	/// Created a new `JointType`-less `SmartJointBuilder`.
 	pub fn new(
 		name: impl Into<String>,
 	) -> SmartJointBuilder<
@@ -87,7 +87,7 @@ impl
 		}
 	}
 
-	/// Creates a new `SmartJointBuilder` with `JointType::Revolute`
+	/// Creates a new `SmartJointBuilder` with `JointType::Revolute`.
 	pub fn new_revolute(
 		name: impl Into<String>,
 	) -> SmartJointBuilder<
@@ -102,7 +102,7 @@ impl
 		Self::new(name).revolute()
 	}
 
-	/// Creates a new `SmartJointBuilder` of type `Continuous`
+	/// Creates a new `SmartJointBuilder` of type `Continuous`.
 	pub fn new_continuous(
 		name: impl Into<String>,
 	) -> SmartJointBuilder<
@@ -117,7 +117,7 @@ impl
 		Self::new(name).continuous()
 	}
 
-	/// Creates a new `SmartJointBuilder` of type `Prismatic`
+	/// Creates a new `SmartJointBuilder` of type `Prismatic`.
 	pub fn new_prismatic(
 		name: impl Into<String>,
 	) -> SmartJointBuilder<
@@ -132,7 +132,7 @@ impl
 		Self::new(name).prismatic()
 	}
 
-	/// Creates a new `SmartJointBuilder` of type `Fixed`
+	/// Creates a new `SmartJointBuilder` of type `Fixed`.
 	pub fn new_fixed(
 		name: impl Into<String>,
 	) -> SmartJointBuilder<
@@ -147,7 +147,7 @@ impl
 		Self::new(name).fixed()
 	}
 
-	/// Creates a new `SmartJointBuilder` of type `Floating`
+	/// Creates a new `SmartJointBuilder` of type `Floating`.
 	pub fn new_floating(
 		name: impl Into<String>,
 	) -> SmartJointBuilder<
@@ -162,7 +162,7 @@ impl
 		Self::new(name).floating()
 	}
 
-	/// Creates a new `SmartJointBuilder` of type `Planar`
+	/// Creates a new `SmartJointBuilder` of type `Planar`.
 	pub fn new_planar(
 		name: impl Into<String>,
 	) -> SmartJointBuilder<
@@ -177,7 +177,8 @@ impl
 		Self::new(name).planar()
 	}
 
-	/// TODO: Maybe move these to a more generic implementation
+	// TODO: Maybe move these to a more generic implementation
+	/// Converts this `SmartJointBuilder` to the `Revolute` type.
 	pub fn revolute(
 		self,
 	) -> SmartJointBuilder<
@@ -202,6 +203,7 @@ impl
 		}
 	}
 
+	/// Converts this `SmartJointBuilder` to the `Continuous` type.
 	pub fn continuous(
 		self,
 	) -> SmartJointBuilder<
@@ -226,6 +228,7 @@ impl
 		}
 	}
 
+	/// Converts this `SmartJointBuilder` to the `Prismatic` type.
 	pub fn prismatic(
 		self,
 	) -> SmartJointBuilder<
@@ -250,7 +253,8 @@ impl
 		}
 	}
 
-	/// TODO: Maybe move these to a more generic implementation
+	// TODO: Maybe move these to a more generic implementation
+	/// Converts this `SmartJointBuilder` to the `Fixed` type.
 	pub fn fixed(
 		self,
 	) -> SmartJointBuilder<
@@ -275,6 +279,8 @@ impl
 		}
 	}
 
+	// TODO: ADD WARNING
+	/// Converts this `SmartJointBuilder` to the `Floating` type.
 	pub fn floating(
 		self,
 	) -> SmartJointBuilder<
@@ -299,6 +305,8 @@ impl
 		}
 	}
 
+	// TODO: ADD WARNING
+	/// Converts this `SmartJointBuilder` to the `Planar` type.
 	pub fn planar(
 		self,
 	) -> SmartJointBuilder<
@@ -336,6 +344,11 @@ where
 	Mimic: smart_joint_datatraits::MimicDataType,
 	SafetyController: smart_joint_datatraits::SafetyControllerDataType,
 {
+	/// Convert the `SmartJointBuilder` to a normal `JointBuilder`
+	///
+	/// # Safety
+	/// A normal [`JointBuilder`] is not checked for the required fields of its [`JointType`](super::JointType).
+	/// This could result in invalid descriptions.
 	pub unsafe fn as_simple(&self) -> JointBuilder {
 		let mut joint_builder = JointBuilder::new(self.name.clone(), self.joint_type.as_type());
 

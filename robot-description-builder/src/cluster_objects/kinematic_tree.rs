@@ -18,6 +18,7 @@ use crate::{
 	utils::{ArcLock, WeakLock},
 };
 
+// DOC-NOTES: Can be created by LinkBuilder::build_tree
 #[derive(Debug)]
 pub struct KinematicTree(Arc<KinematicDataTree>);
 
@@ -26,6 +27,7 @@ impl KinematicTree {
 		KinematicTree(data)
 	}
 
+	/// Converts this unnamed `KinematicTree` to a [`Robot`], which can be represents a more finalized robot structure.
 	pub fn to_robot(self, name: impl Into<String>) -> Robot {
 		Robot::new(name, self.0)
 	}
@@ -60,7 +62,9 @@ impl KinematicInterface for KinematicTree {
 		self.0
 			.links
 			.read()
-			.unwrap() // FIXME: Unwrapping might not be ok
+			/* In the future the lock could be saved by overwriting with a newly generated index,
+			however waiting for "This is a nightly-only experimental API. (mutex_unpoison #96469)" */
+			.expect("The RwLock of the Link Index was poisoned. In the future this will be recoverable (mutex_unpoison).")
 			.get(name)
 			.and_then(|weak_link| weak_link.upgrade())
 	}
@@ -69,7 +73,9 @@ impl KinematicInterface for KinematicTree {
 		self.0
 			.joints
 			.read()
-			.unwrap() // FIXME: Unwrapping might not be ok
+			/* In the future the lock could be saved by overwriting with a newly generated index,
+			however waiting for "This is a nightly-only experimental API. (mutex_unpoison #96469)" */
+			.expect("The RwLock of the Joint Index was poisoned. In the future this will be recoverable (mutex_unpoison).")
 			.get(name)
 			.and_then(|weak_joint| weak_joint.upgrade())
 	}
@@ -100,15 +106,11 @@ impl KinematicInterface for KinematicTree {
 		self.0.try_add_transmission(transmission)
 	}
 
-	fn purge_links(
-		&self,
-	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, WeakLock<Link>>>>> {
+	fn purge_links(&self) {
 		self.0.purge_links()
 	}
 
-	fn purge_joints(
-		&self,
-	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, WeakLock<Joint>>>>> {
+	fn purge_joints(&self) {
 		self.0.purge_joints()
 	}
 

@@ -13,22 +13,23 @@ use crate::{
 
 #[derive(Debug)]
 pub struct VisualBuilder {
-	/// TODO: Figure out if I want to keep the name optional?.
+	// TODO: Figure out if I want to keep the name optional?.
 	pub(crate) name: Option<String>,
 	/// The transform from the origin of the parent `Link` to the origin of this `Visual`.
 	///
 	/// This is the reference for the placement of the `geometry`.
 	///
-	/// In URDF this field is refered to as `<origin>`
+	/// In URDF this field is refered to as `<origin>`.
 	pub(crate) transform: Option<Transform>,
 
-	/// Figure out if this needs to be public or not
+	// Figure out if this needs to be public or not
 	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
-	/// Not sure about refCell
+	// Not sure about refCell
 	pub(crate) material_description: Option<MaterialDescriptor>,
 }
 
 impl VisualBuilder {
+	/// Create a new [`VisualBuilder`] with the specified [`Geometry`](crate::link_data::geometry).
 	pub fn new(geometry: impl Into<Box<dyn GeometryInterface + Sync + Send>>) -> Self {
 		Self {
 			name: None,
@@ -39,6 +40,7 @@ impl VisualBuilder {
 	}
 
 	// TODO: Figure out if this will be kept [Added for easier transistion]
+	/// Create a new [`VisualBuilder`] with all fields specified.
 	pub fn new_full(
 		name: Option<String>,
 		transform: Option<Transform>,
@@ -53,22 +55,30 @@ impl VisualBuilder {
 		}
 	}
 
+	/// Sets the `name` of this `VisualBuilder`.
 	pub fn named(mut self, name: impl Into<String>) -> Self {
 		self.name = Some(name.into());
 		self
 	}
 
+	/// Specify a `transform` for this `VisualBuilder`.
+	///
+	/// The default is a no transformation (The frame of the `Visual` will be the same as the frame of the parent `Link`).
 	pub fn tranformed(mut self, transform: Transform) -> Self {
 		self.transform = Some(transform);
 		self
 	}
 
+	/// Specify a `material` for this `VisualBuilder`.
+	///
+	/// The default is no material.
 	pub fn materialized(mut self, material_description: MaterialDescriptor) -> Self {
 		self.material_description = Some(material_description);
 		self
 	}
 
-	/// Creates a `CollisionBuilder` from this `VisualBuilder` reference by lossy conversion
+	// TODO: IMPROVE DOCS
+	/// Creates a `CollisionBuilder` from this `VisualBuilder` reference by lossy conversion.
 	///
 	/// Creates a [`CollisionBuilder`] from the `VisualBuilder` by cloning the following fields:
 	///  - `name`
@@ -106,7 +116,7 @@ impl VisualBuilder {
 impl Mirror for VisualBuilder {
 	fn mirrored(&self, mirror_matrix: &Matrix3<f32>) -> Self {
 		Self {
-			name: self.name.as_ref().cloned(), // TODO: Fix
+			name: self.name.as_ref().cloned(), // TODO: Rename?
 			transform: self
 				.transform
 				.as_ref()
@@ -119,18 +129,22 @@ impl Mirror for VisualBuilder {
 
 /// Non-builder methods
 impl VisualBuilder {
+	/// Gets an optional reference to the `name` of this `VisualBuilder`.
 	pub fn name(&self) -> Option<&String> {
 		self.name.as_ref()
 	}
 
+	/// Gets an optional reference to the `transform` of this `VisualBuilder`.
 	pub fn transform(&self) -> Option<&Transform> {
 		self.transform.as_ref()
 	}
 
+	/// Gets a reference to the [`geometry`](crate::link_data::geometry) of this `VisualBuilder`.
 	pub fn geometry(&self) -> &Box<dyn GeometryInterface + Sync + Send> {
 		&self.geometry
 	}
 
+	/// Gets an optional reference to the [`MaterialDescriptor`](crate::material::MaterialDescriptor) of this `VisualBuilder`.
 	pub fn material(&self) -> Option<&MaterialDescriptor> {
 		self.material_description.as_ref()
 	}

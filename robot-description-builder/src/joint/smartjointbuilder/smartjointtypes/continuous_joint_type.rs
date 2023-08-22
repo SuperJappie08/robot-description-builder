@@ -14,6 +14,10 @@ use crate::{
 	utils::{ArcLock, WeakLock},
 };
 
+// TODO: Maybe flip the JointType Doc order
+/// A representation of a continuous joint (`JointType::Continuous`) for the `SmartJointBuilder`.
+///
+/// See [`JointType::Continuous`] for more details.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub struct ContinuousType;
 

@@ -28,7 +28,7 @@ pub struct PyVisualBuilder(VisualBuilder);
 
 #[pymethods]
 impl PyVisualBuilder {
-	/// TODO: Figure out what a practical signature is
+	// TODO: Figure out what a practical signature is
 	#[new]
 	fn new(
 		geometry: &PyGeometryBase,
@@ -172,7 +172,7 @@ impl From<PyVisualBuilder> for VisualBuilder {
 	}
 }
 
-/// Don't know if CLone is a good idea?
+// Don't know if Clone is a good idea?
 #[derive(Debug, Clone)]
 #[pyclass(
 	name = "Visual",

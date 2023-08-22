@@ -16,6 +16,10 @@ use crate::{
 	utils::{ArcLock, WeakLock},
 };
 
+// TODO: Maybe flip the JointType Doc order
+/// A representation of a fixed joint (`JointType::Fixed`) for the `SmartJointBuilder`.
+///
+/// See [`JointType::Fixed`] for more details.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub struct FixedType;
 

@@ -76,7 +76,7 @@ pub enum AddLinkError {
 		"The new Link could not be added since its name '{0}' is already in use by another Link"
 	)]
 	Conflict(String),
-	/// Error that results from `PoisonError<RwLockWriteGuard<'_, Weak<RwLock<Link>>>>` occurs when attempting to write to a poisoned `RwLock<Weak<RwLock<Link>>>>`. (Only used for `KinematicDataTree``.newest_link`)
+	/// Error that results from `PoisonError<RwLockWriteGuard<'_, Weak<RwLock<Link>>>>` occurs when attempting to write to a poisoned `RwLock<Weak<RwLock<Link>>>>`. (Only used for `KinematicDataTree``.newest_link`).
 	/* In the future the lock could be saved by overwriting with a newly generated index, however waiting for
 	"This is a nightly-only experimental API. (mutex_unpoison #96469)" */
 	#[error("The lock of the `newest_link` on the KinematicDataTree is poisoned and therefore could not be accessed")]

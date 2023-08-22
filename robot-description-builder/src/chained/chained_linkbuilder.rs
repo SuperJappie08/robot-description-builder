@@ -51,7 +51,7 @@ impl BuildLink for Chained<LinkBuilder> {
 	}
 }
 
-/// Since Link's can end a chain, a `LinkBuilder` can always be converted to a `Chained<LinkBuilder>`
+/// Since Link's can end a chain, a `LinkBuilder` can always be converted to a `Chained<LinkBuilder>`.
 impl From<LinkBuilder> for Chained<LinkBuilder> {
 	fn from(value: LinkBuilder) -> Self {
 		Self(value)
@@ -145,7 +145,7 @@ mod tests {
 			right_leg_builder_x,
 			Chained(LinkBuilder {
 				name: "Leg_[L1]_l1".into(),
-				visual_builders: vec![VisualBuilder {
+				visuals: vec![VisualBuilder {
 					name: Some("Leg_[L1]_l1_vis_1".into()),
 					transform: Some(Transform {
 						translation: Some((0., 1.5, 0.)),
@@ -171,7 +171,7 @@ mod tests {
 					}),
 					child: Some(LinkBuilder {
 						name: "Leg_[L1]_l2".into(),
-						visual_builders: vec![VisualBuilder {
+						visuals: vec![VisualBuilder {
 							name: Some("Leg_[L1]_l2_vis_1".into()),
 							transform: Some(Transform {
 								translation: Some((0., -5., 0.)),
@@ -204,7 +204,7 @@ mod tests {
 			right_leg_builder_y,
 			Chained(LinkBuilder {
 				name: "Leg_[L1]_l1".into(),
-				visual_builders: vec![VisualBuilder {
+				visuals: vec![VisualBuilder {
 					name: Some("Leg_[L1]_l1_vis_1".into()),
 					transform: Some(Transform {
 						translation: Some((0., -1.5, 0.)),
@@ -230,7 +230,7 @@ mod tests {
 					}),
 					child: Some(LinkBuilder {
 						name: "Leg_[L1]_l2".into(),
-						visual_builders: vec![VisualBuilder {
+						visuals: vec![VisualBuilder {
 							name: Some("Leg_[L1]_l2_vis_1".into()),
 							transform: Some(Transform {
 								translation: Some((0., 5., 0.)),
@@ -263,7 +263,7 @@ mod tests {
 			right_leg_builder_z,
 			Chained(LinkBuilder {
 				name: "Leg_[L1]_l1".into(),
-				visual_builders: vec![VisualBuilder {
+				visuals: vec![VisualBuilder {
 					name: Some("Leg_[L1]_l1_vis_1".into()),
 					transform: Some(Transform {
 						translation: Some((0., 1.5, 0.)),
@@ -289,7 +289,7 @@ mod tests {
 					}),
 					child: Some(LinkBuilder {
 						name: "Leg_[L1]_l2".into(),
-						visual_builders: vec![VisualBuilder {
+						visuals: vec![VisualBuilder {
 							name: Some("Leg_[L1]_l2_vis_1".into()),
 							transform: Some(Transform {
 								translation: Some((0., 5., 0.)),

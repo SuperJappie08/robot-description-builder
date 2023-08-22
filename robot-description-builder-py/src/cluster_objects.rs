@@ -37,7 +37,7 @@ pub struct PyKinematicBase {
 	joints_dict: Py<PyDict>,
 	material_dict: Py<PyDict>,
 
-	/// Weakref to object above
+	// Weakref to object above
 	implementor: PyObject,
 	links_weak: Weak<RwLock<HashMap<String, Weak<RwLock<Link>>>>>,
 	joints_weak: Weak<RwLock<HashMap<String, Weak<RwLock<Joint>>>>>,

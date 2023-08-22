@@ -283,8 +283,16 @@ impl PartialEq for Joint {
 	}
 }
 
-/// TODO: Might add data of specif joint type to Struct Spaces.
-/// TODO: Expand Jointtype specifics
+// TODO: Might add data of specif joint type to Struct Spaces.
+// TODO: Expand Jointtype specifics
+/// An enum to represent the the types of `Joint`.
+///
+/// Currently, only URDF types are listed.
+///
+/// It is important to note that multi-axis jointtypes, like [`Floating`](JointType::Floating) and [`Planar`](JointType::Planar), are often incompatible with lots of different tooling for ROS/URDF, like `sensor_msgs/JointState` messages from for example [`joint_state_publisher`](https://github.com/ros/joint_state_publisher/blob/7cb7069d2d78ebe4b8b80adc6bd859df0c8ccfc9/joint_state_publisher/src/joint_state_publisher/__init__.py#L83-L85C29) which has chosen to ignore it.
+/// This is a result of most programs (like [`kdl_parser`](https://github.com/ros/kdl_parser/blob/74d4ee3bc6938de8ae40a700997baef06114ea1b/kdl_parser/src/kdl_parser.cpp#L103) and `joint_state_publisher`) only supporting single axis joints.
+/// Gazebo/[SDFormat](http://sdformat.org/spec?ver=1.10&elem=joint#joint_type) supports multi-access joints, but do not have an `Floating` or `Planar` equivalent.
+/// However, these `JointType`s (Mostly [`Planar`](JointType::Planar)) can be approximated by a combination of other joints.  
 ///
 /// The sections cited from the URDF specification are accurate as of [2023-08-21](https://wiki.ros.org/urdf/XML/joint#Attributes).
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
@@ -306,7 +314,7 @@ pub enum JointType {
 	///
 	/// This joint rotates around a specified (or default) axis.
 	///
-	/// Since this Jointtype is unlimited in its movement, the [Limit](joint_data::LimitData) should not be specified.
+	/// Since this Jointtype is unlimited in its movement, the [Limit](joint_data::LimitData) should not be specified (??TODO: [`effort`](joint_data::LimitData::effort) and [`velocity`](joint_data::LimitData::velocity) migth be useable??).
 	///
 	/// The URDF Specification says the following:
 	/// > continuous — a continuous hinge joint that rotates around the axis and has no upper and lower limits.
@@ -321,7 +329,7 @@ pub enum JointType {
 	/// A Floating joint. (Or a non-connection)
 	///
 	/// This is a joint to represent an unconnected link.
-	/// Most parsers do not handle this `JointType`, since it's not an actual joint and it causes problems with lots of different tooling for ROS/URDF, like  `sensor_msgs/JointState` messages from for example [`joint_state_publisher`](https://github.com/ros/robot_model/issues/188) which has chosen to ignore it.
+	/// Most parsers do not handle this `JointType`, since it's not an actual joint and it causes problems with lots of different tooling for ROS/URDF, like `sensor_msgs/JointState` messages from for example [`joint_state_publisher`](https://github.com/ros/robot_model/issues/188) which has chosen to ignore it.
 	///
 	/// The URDF Specification says the following:
 	/// > floating — this joint allows motion for all 6 degrees of freedom.
@@ -329,7 +337,7 @@ pub enum JointType {
 	/// A Planar joint. (A plane contact, like a magnet on a metal sheet)
 	///
 	/// This joint slides on the plane perpendicular the specified (or default) axis.
-	/// This `JointType` might cause problems with lots of different tooling for ROS/URDF, like  `sensor_msgs/JointState` messages from for example [`joint_state_publisher`](https://github.com/ros/joint_state_publisher/blob/7cb7069d2d78ebe4b8b80adc6bd859df0c8ccfc9/joint_state_publisher/src/joint_state_publisher/__init__.py#L83-L85C29) which has chosen to ignore it.
+	/// This `JointType` might cause problems with lots of different tooling for ROS/URDF, like `sensor_msgs/JointState` messages from for example [`joint_state_publisher`](https://github.com/ros/joint_state_publisher/blob/7cb7069d2d78ebe4b8b80adc6bd859df0c8ccfc9/joint_state_publisher/src/joint_state_publisher/__init__.py#L83-L85C29) which has chosen to ignore it.
 	///
 	/// The URDF Specification says the following:
 	/// > planar — this joint allows motion in a plane perpendicular to the axis.
@@ -462,7 +470,7 @@ mod tests {
 				.into(),
 				child: Some(LinkBuilder {
 					name: "link-1".into(),
-					visual_builders: vec![VisualBuilder::new_full(
+					visuals: vec![VisualBuilder::new_full(
 						None,
 						Some(Transform {
 							translation: Some((2., 0., 0.)),
@@ -696,7 +704,7 @@ mod tests {
 					.into(),
 					child: Some(LinkBuilder {
 						name: "link-1-1".into(),
-						visual_builders: vec![VisualBuilder::new_full(
+						visuals: vec![VisualBuilder::new_full(
 							Some("link-1-1-vis".into()),
 							Some(Transform {
 								translation: Some((9., 0.5, 0.)),
@@ -780,7 +788,7 @@ mod tests {
 					.into(),
 					child: Some(LinkBuilder {
 						name: "link-1".into(),
-						visual_builders: vec![VisualBuilder::new_full(
+						visuals: vec![VisualBuilder::new_full(
 							None,
 							Some(Transform {
 								translation: Some((2., 0., 0.)),
@@ -801,7 +809,7 @@ mod tests {
 							.into(),
 							child: Some(LinkBuilder {
 								name: "link-1-1".into(),
-								visual_builders: vec![VisualBuilder::new_full(
+								visuals: vec![VisualBuilder::new_full(
 									Some("link-1-1-vis".into()),
 									Some(Transform {
 										translation: Some((9., 0.5, 0.)),

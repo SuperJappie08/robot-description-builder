@@ -2,7 +2,7 @@
 use quick_xml::{events::attributes::Attribute, name::QName};
 
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
-/// TODO: DOC
+// TODO: DOC
 pub struct CalibrationData {
 	pub rising: Option<f32>,
 	pub falling: Option<f32>,

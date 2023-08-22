@@ -75,7 +75,7 @@ impl PyLinkBuilder {
 		self.0.inertial().copied().map(Into::into)
 	}
 
-	/// Sets the `inertial` field to the given value, either `None` or a `Inertial`
+	/// Sets the `inertial` field to the given value, either `None` or a `Inertial`.
 	///
 	/// # Notes:
 	/// The `joint` field gets lost when assigning `None` a `LinkBuilder` which already has a `Inertial`.
@@ -263,7 +263,7 @@ impl TryIntoPy<Py<PyLinkBuilderChain>> for Chained<LinkBuilder> {
 )]
 pub struct PyLink {
 	inner: Weak<RwLock<Link>>,
-	/// Python weakref.proxy to the python parent tree
+	/// Python weakref.proxy to the python parent tree.
 	tree: PyObject,
 }
 
@@ -287,16 +287,16 @@ impl PyLink {
 
 #[pymethods]
 impl PyLink {
-	/// The name or identifier of the `Link`
+	/// The name or identifier of the `Link`.
 	#[getter]
 	fn get_name(&self) -> PyResult<String> {
 		Ok(self.try_internal()?.py_read()?.name().clone())
 	}
 
 	#[getter]
-	/// The parent of the `Link`
+	/// The parent of the `Link`.
 	///
-	/// This can be either a `KinematicTree` or a `Joint` depending if this `Link` is the root of a tree or not.  
+	/// This can be either a `KinematicTree` or a `Joint` depending if this `Link` is the root of a tree or not.
 	fn get_parent(slf: PyRef<'_, Self>) -> PyResult<Py<PyAny>> {
 		match slf.try_internal()?.py_read()?.parent() {
 			LinkParent::KinematicTree(_) => Ok(slf.tree.clone()),

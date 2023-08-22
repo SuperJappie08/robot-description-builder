@@ -15,17 +15,28 @@ use quick_xml::{events::attributes::Attribute, name::QName};
 // A trimesh element specified by a filename, and an optional scale that scales the mesh's axis-aligned-bounding-box. Any geometry format is acceptable but specific application compatibility is dependent on implementation. The recommended format for best texture and color support is Collada .dae files. The mesh file is not transferred between machines referencing the same model. It must be a local file. Prefix the filename with package://\<packagename\>/\<path\> to make the path to the mesh file relative to the package \<packagename\>.
 #[derive(Debug, PartialEq, Clone)]
 pub struct MeshGeometry {
+	/// This should be a valid package path to a mesh file (e.g. `"package://robot_description/mesh/{mesh}"`).
+	/// This is unchecked.
+	/// You are on your own here.
 	pub path: String,
+	/// This is the size of the bounding box of the mesh at the current [`scale`](MeshGeometry::scale).
+	///
+	/// The bounding box is expected to be measured such that the center of the bounding box is at the origin.
 	pub bounding_box: (f32, f32, f32),
+	/// The desired scale off the mesh.
+	///
+	/// # Important
+	/// If this is non-zero you need to pre-calculate the scaled [`bounding_box`](MeshGeometry::bounding_box).
 	pub scale: (f32, f32, f32),
 }
 
 impl MeshGeometry {
-	// TODO: DOC
-	//
-	// BoundingBox at current size?
-	//
-	// Scale will default to 1. 1. 1.
+	/// Creates a new `MeshGeometry`.
+	///
+	/// # Important
+	/// - [`path`](MeshGeometry::path) should be a valid package path (e.g. `"package://robot_description/mesh/{mesh}"`). You are on your own here.
+	/// - [`bounding_box`](MeshGeometry::bounding_box) should be the bounding box at the current `scale`.
+	/// - [`scale`](MeshGeometry::scale) is either specified or defaults to `(1., 1., 1.)`.
 	pub fn new(
 		path: impl Into<String>,
 		bounding_box: (f32, f32, f32),

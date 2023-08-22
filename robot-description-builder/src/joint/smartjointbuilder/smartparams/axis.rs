@@ -3,8 +3,10 @@ use crate::joint::{
 	smartjointbuilder::{smart_joint_datatraits, SmartJointBuilder},
 };
 
+/// A trait to label a `SmartJointType` that is allowed to have an axis.
 pub trait AxisAllowed {}
 
+/// A type to significy that no [`axis`](JointBuilder::axis) was specified.
 #[derive(Debug, Default, Clone)]
 pub struct NoAxis;
 impl smart_joint_datatraits::AxisDataType for NoAxis {}

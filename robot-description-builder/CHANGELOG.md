@@ -23,6 +23,7 @@ The Changes between versions of [<b>`robot-description-builder`</b> for <b>Rust<
 - The error type of `Link::{try_attach_child, attach_joint_chain, attach_joint_chain_at}` were changed (from `AddJointError`) to `AttachChainError`
 - Created a new alternative `new_quick_link` method renamed (the old one). 
 - Renamed `MaterialDataReferenceWrapper` to `MaterialDataReference`.
+- `KinematicInterface::{purge_links, purge_joints}` now have an `except` statement, since the error is unrecoverable until mutex_unpoison #96469 gets stabilized.
 - Improved documentation
 
 ### Removed
@@ -31,6 +32,8 @@ The Changes between versions of [<b>`robot-description-builder`</b> for <b>Rust<
 - Moved all generic error helpers to `utils` module.
 - Created `ArcRW` trait, which has functions to read and write the internal lock of `ArcLock` with a better error. 
 - `Joint::rebuild_branch_continued` now returns a result type with error `RebuildBranchError`
+- The `visual_builders` field of `LinkBuilder` has been renamed to `visuals`.
+
 
 - Bumped depency versions:
  - `itertools` 0.10.5 -> 0.11.0

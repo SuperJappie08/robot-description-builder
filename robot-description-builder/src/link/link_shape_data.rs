@@ -1,7 +1,8 @@
 use super::geometry::{GeometryShapeData, SphereGeometry};
 use crate::transform::Transform;
 
-/// Contains the main geometry (first occurance). and the rest for use in the closure
+// TODO: IMPROVE DOCS
+/// Contains the main geometry (first occurance). and the rest for use in the closure.
 #[derive(Debug, PartialEq, Clone)]
 pub struct LinkShapeData {
 	pub main_geometry: GeometryShapeData,

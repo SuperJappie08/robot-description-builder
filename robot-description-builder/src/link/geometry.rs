@@ -45,19 +45,19 @@ where
 /// An interface for working with `Geometry`s generically.
 // LONGTERM-TODO: DECIDE IF `Box<dyn dyn GeometryInterface + Sync + Send>` should be replaced with [`GeometryShapeContainer`]
 pub trait GeometryInterface: Debug + BoxedMirror {
-	/// Provides the volume of a `Geometry`
+	/// Provides the volume of a `Geometry`.
 	fn volume(&self) -> f32;
-	/// Provides the surface area of a `Geometry`
+	/// Provides the surface area of a `Geometry`.
 	fn surface_area(&self) -> f32;
 	/// Allows for Cloning of Boxed Geometries.
 	///
 	/// This has similiar functionality to [`Clone::clone`] except that it allows items to be [`Box`ed](Box).
 	fn boxed_clone(&self) -> Box<dyn GeometryInterface + Sync + Send>;
 
-	/// Get's the untransformed boundingbox size of the geometry from it's center. (X, Y, Z)
+	/// Get's the untransformed boundingbox size of the geometry from it's center. (X, Y, Z).
 	fn bounding_box(&self) -> (f32, f32, f32);
 
-	/// Gets a `GeometryShapeContainer` of the current Shape
+	/// Gets a `GeometryShapeContainer` of the current Shape.
 	fn shape_container(&self) -> GeometryShapeContainer;
 }
 

@@ -4,23 +4,25 @@ use crate::joint::{
 	smartjointbuilder::{smart_joint_datatraits, SmartJointBuilder},
 };
 
+/// A trait to label a `SmartJointType` that is allowed to mimic another joint.
 pub trait MimicAllowed {}
 
+/// A type to significy that no [`Mimic`](joint_data::MimicData) was specified.
 #[derive(Debug, Default, Clone)]
 pub struct NoMimic;
 impl smart_joint_datatraits::MimicDataType for NoMimic {}
 
-///  (optional) (New with ROS Groovy. See issue)
-///
-/// This tag is used to specify that the defined joint mimics another existing joint. The value of this joint can be computed as value = multiplier * other_joint_value + offset.
-/// TODO: Write better docs
+//  (optional) (New with ROS Groovy. See issue)
+//
+// This tag is used to specify that the defined joint mimics another existing joint. The value of this joint can be computed as value = multiplier * other_joint_value + offset.
+// TODO: Write better docs
 #[derive(Debug, Default, Clone)]
 pub struct WithMimic {
 	/// This specifies the name of the joint to mimic.
 	joint_name: String,
 	/// Specifies the multiplicative factor in the formula above.
 	multiplier: Option<f32>,
-	/// Specifies the offset to add in the formula above. Defaults to 0 (radians for revolute joints, meters for prismatic joints)
+	/// Specifies the offset to add in the formula above. Defaults to 0 (radians for revolute joints, meters for prismatic joints).
 	offset: Option<f32>,
 }
 
@@ -100,7 +102,7 @@ where
 		self.mimic.multiplier
 	}
 
-	/// Specifies the offset to add in the formula above. Defaults to 0 (radians for revolute joints, meters for prismatic joints)
+	/// Specifies the offset to add in the formula above. Defaults to 0 (radians for revolute joints, meters for prismatic joints).
 	pub fn set_mimic_offset(mut self, offset: f32) -> Self {
 		self.mimic.offset = Some(offset);
 		self

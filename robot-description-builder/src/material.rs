@@ -185,10 +185,10 @@ impl From<(String, ArcLock<MaterialData>)> for Material {
 	}
 }
 
-/// An enum to unify named and unnamed `Material` into a single type
+/// An enum to unify named and unnamed `Material` into a single type.
 #[derive(Debug, PartialEq)]
 enum MaterialKind {
-	/// A variant to represent a named [`Material`]
+	/// A variant to represent a named [`Material`].
 	///
 	/// It keeps track of the `name` of the [`Material`] and its data which needs to be initialized.
 	/// This is ensured via [`MaterialStage`].

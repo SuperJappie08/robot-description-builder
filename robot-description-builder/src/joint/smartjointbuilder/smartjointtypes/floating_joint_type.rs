@@ -14,6 +14,13 @@ use crate::{
 	utils::{ArcLock, WeakLock},
 };
 
+// TODO: Maybe flip the JointType Doc order
+/// A representation of a floating joint (`JointType::Floating`) for the `SmartJointBuilder`.
+///
+/// See [`JointType::Floating`] for more details.
+///
+/// # DevNotes
+///
 /// Floating Joints are weird, as they do not behave like the other joint types.
 /// This causes problems with lots of different tooling for ROS/URDF, like  `sensor_msgs/JointState` messages from for example [`joint_state_publisher`](https://github.com/ros/robot_model/issues/188) which ignores it.
 ///

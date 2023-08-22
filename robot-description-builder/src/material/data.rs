@@ -63,7 +63,7 @@ impl ToURDF for MaterialData {
 /// This is neccessary for the global [`Material`](super::Material) implementation.
 #[derive(Debug)]
 pub enum MaterialDataReference<'a> {
-	/// A normal Reference to a [`MaterialData`] of an unnamed/unshared [`Material`](super::Material)
+	/// A normal Reference to a [`MaterialData`] of an unnamed/unshared [`Material`](super::Material).
 	Direct(&'a MaterialData),
 	/// A Global Reference to a [`MaterialData`] of a named/shared [`Material`](super::Material) via a `Arc<RwLock<T>>`.
 	Global(ArcLock<MaterialData>),
@@ -73,7 +73,7 @@ impl<'a> MaterialDataReference<'a> {
 	/// Check if the two referenced [`MaterialData`] structs describe the same appearance.
 	///
 	/// If one of the `MaterialData`s is the [`Global`](MaterialDataReference::Global) and it is poisoned,
-	/// then we replace the data from the [`Direct`](MaterialDataReference::Direct) with the other one and return `true`.  
+	/// then we replace the data from the [`Direct`](MaterialDataReference::Direct) with the other one and return `true`.
 	pub fn same_material_data(&self, other: &MaterialDataReference) -> bool {
 		#[allow(unreachable_code)] // This is for the Future Feature support
 		match (self, other) {

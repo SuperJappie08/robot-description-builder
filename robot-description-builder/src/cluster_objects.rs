@@ -79,11 +79,19 @@ pub trait KinematicInterface: Sized {
 
 	fn get_links(&self) -> ArcLock<HashMap<String, WeakLock<Link>>>;
 	fn get_joints(&self) -> ArcLock<HashMap<String, WeakLock<Joint>>>;
-	/// FIXME: This not Ok end-user should not interact wiht MaterialData
+	// FIXME: This not Ok end-user should not interact wiht MaterialData
 	fn get_materials(&self) -> ArcLock<HashMap<String, ArcLock<MaterialData>>>;
 	fn get_transmissions(&self) -> ArcLock<HashMap<String, ArcLock<Transmission>>>;
 
+	// TODO: EXAMPLE
+	/// Get the `Link` with the specified `name`.
+	///
+	/// If the [`Link`] does not exist `None` is returned.
 	fn get_link(&self, name: &str) -> Option<ArcLock<Link>>;
+	// TODO: EXAMPLE
+	/// Get the `Joint` with the specified `name`.
+	///
+	/// If the [`Joint`] does not exist `None` is returned.
 	fn get_joint(&self, name: &str) -> Option<ArcLock<Joint>>;
 	fn get_material(&self, name: &str) -> Option<Material>;
 	fn get_transmission(&self, name: &str) -> Option<ArcLock<Transmission>>;
@@ -94,19 +102,21 @@ pub trait KinematicInterface: Sized {
 		transmission: TransmissionBuilder<WithJoints, WithActuator>,
 	) -> Result<(), AddTransmissionError>;
 
+	// TODO: Maybe depricate
 	/// Cleans up orphaned/broken `Link` entries from the `links` HashMap.
 	///
 	/// This mostly happens automatically, but is exposed for use in other methods.
 	///
 	/// TODO: DOCTEST/EXAMPLE
-	fn purge_links(&self) -> Result<(), PoisonWriteIndexError<String, WeakLock<Link>>>;
+	fn purge_links(&self);
 
+	// TODO: Maybe depricate
 	/// Cleans up orphaned/broken `Joint` entries from the `joints` HashMap.
 	///
 	/// This mostly happens automatically, but is exposed for use in other methods.
 	///
 	/// TODO: DOCTEST/EXAMPLE
-	fn purge_joints(&self) -> Result<(), PoisonWriteIndexError<String, WeakLock<Joint>>>;
+	fn purge_joints(&self);
 
 	/// Cleans up orphaned/unused `Material` entries from `material_index` HashMap
 	fn purge_materials(&self) -> Result<(), PoisonWriteIndexError<String, ArcLock<MaterialData>>>;
@@ -116,6 +126,7 @@ pub trait KinematicInterface: Sized {
 		&self,
 	) -> Result<(), PoisonWriteIndexError<String, ArcLock<Transmission>>>;
 
+	// TODO: Maybe Error is removable
 	// NOTE: after yanking the joints parent link is the `newest_link`
 	fn yank_link(&self, name: &str) -> Option<Chained<LinkBuilder>> {
 		// Result<Option<Chained<LinkBuilder>>, YankLinkError> {
@@ -125,8 +136,8 @@ pub trait KinematicInterface: Sized {
 			// FIXME: UNWRAP NOT OK
 			.map(|link| -> Result<_, YankLinkError> { Ok(Chained(link.mread().unwrap().yank()?)) })
 			.transpose(); // TODO: Maybe don't transpose?
-		self.purge_joints().unwrap(); // FIXME: Is unwrap ok here?
-		self.purge_links().unwrap(); // FIXME: Is unwrap ok here?
+		self.purge_joints();
+		self.purge_links();
 		builder.unwrap() // FIXME: Is unwrap ok here?
 	}
 
@@ -147,7 +158,7 @@ pub trait KinematicInterface: Sized {
 	/// assert_eq!(builder.clone().build_tree().yank_root().unwrap(), builder.build_tree().yank_link("root-link").unwrap())
 	/// ```
 	fn yank_root(self) -> Result<Chained<LinkBuilder>, YankLinkError> {
-		// FIXME: UNWRAP NOT OK
+		// FIXME: UNWRAP NOT OK ? Maybe it is removeable
 		let builder = self.get_root_link().mread().unwrap().yank()?;
 		Ok(Chained(builder))
 	}
@@ -159,8 +170,8 @@ pub trait KinematicInterface: Sized {
 			.get_joint(name)
 			.map(|joint| -> Result<_, YankJointError> { Ok(Chained(joint.mread()?.yank()?)) })
 			.transpose(); // TODO: Maybe don't transpose?
-		self.purge_joints().unwrap(); // FIXME: Is unwrap ok here?
-		self.purge_links().unwrap(); // FIXME: Is unwrap ok here?
+		self.purge_joints();
+		self.purge_links();
 		builder.unwrap() // FIXME: Is unwrap ok here? NO
 	}
 

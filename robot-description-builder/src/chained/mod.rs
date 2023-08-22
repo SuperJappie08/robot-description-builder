@@ -108,7 +108,7 @@ mod tests {
 	};
 	use test_log::test;
 
-	/// For my own conncept of `DerefMut`
+	// For my own concept of `DerefMut`
 	#[test]
 	fn deref_mut_test() {
 		let leg_tree = Link::builder("leg_[[L01]]_l1").build_tree();

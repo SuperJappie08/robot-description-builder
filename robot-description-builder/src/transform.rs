@@ -17,7 +17,7 @@ use quick_xml::{events::attributes::Attribute, name::QName};
 ///
 /// The `translation` is applied first and uses the axes of the parent coordinate system. The translation is specified in meters.
 ///
-/// The `rotation` is applied next and rotates the parent axes with the specified `roll`, `pitch` and yaw` `angles in radians
+/// The `rotation` is applied next and rotates the parent axes with the specified `roll`, `pitch` and yaw` `angles in radians.
 ///
 /// In URDF this element is often refered to as `<origin>`.
 pub struct Transform {
@@ -79,7 +79,7 @@ impl Transform {
 		}
 	}
 
-	/// Creates a new `Transform` from roll-pitch-yaw angles
+	/// Creates a new `Transform` from roll-pitch-yaw angles.
 	///
 	/// Creates a new `Transform` from the roll-pitch-yaw angles in radians as `f32` and leaves the other values at the default.
 	///
@@ -232,11 +232,11 @@ impl From<MirrorAxis> for Matrix3<f32> {
 	}
 }
 
-/// A mirrorable type
+/// A mirrorable type.
 ///
 /// Types implementing `Mirror` are able to be [`mirrored`](Mirror::mirrored), given an `mirror_matrix`.
 pub(crate) trait Mirror {
-	/// Returns a mirrored clone of itself
+	/// Returns a mirrored clone of itself.
 	///
 	/// TODO: EXAMPLE
 	fn mirrored(&self, mirror_matrix: &Matrix3<f32>) -> Self;

@@ -8,20 +8,27 @@ use crate::to_rdf::to_urdf::ToURDF;
 use quick_xml::{events::attributes::Attribute, name::QName};
 
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
-// TODO: Figure out if things should be private or not?
+// TODO: Maybe rename to Inertial?
 pub struct InertialData {
 	/// The transform from the parent `Link`'s frame to the frame of the `InertialData`.
 	///
 	/// This is the reference for the placement of the center of mass and the moments of inertia.
 	///
-	/// In URDF this field is refered to as `<origin>`
+	/// In URDF this field is refered to as `<origin>`.
 	pub transform: Option<Transform>,
+	/// The mass of the current [`Link`](super::Link).
 	pub mass: f32,
-	pub ixx: f32, // Not the nicesest way of doing this.
+	/// The Moments of ineria around the x axis.
+	pub ixx: f32,
+	/// Product of inertia element xy.
 	pub ixy: f32,
+	/// Product of inertia element xz.
 	pub ixz: f32,
+	/// The Moments of ineria around the y axis.
 	pub iyy: f32,
+	/// Product of inertia element yz.
 	pub iyz: f32,
+	/// The Moments of ineria around the z axis.
 	pub izz: f32,
 }
 

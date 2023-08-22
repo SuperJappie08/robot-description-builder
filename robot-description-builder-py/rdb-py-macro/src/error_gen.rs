@@ -4,7 +4,7 @@ use syn::Ident;
 
 use crate::conversion_impls::{impl_from_enum2enum, impl_from_val2enum};
 
-/// TODO: Maybe make a struct Error(GeneratedEnum)
+// TODO: Maybe make a struct Error(GeneratedEnum)
 pub fn generate_state_error(
 	enum_name: &Ident,
 	variant_data: &[(Ident, TokenStream)],

@@ -17,7 +17,7 @@ pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
 use super::{geometry::PyGeometryBase, visual::PyVisualBuilder};
 use crate::{identifier::GroupIDError, transform::PyTransform};
 
-/// TODO: Considering skipping the wrapping here and doing it manually
+// TODO: Considering skipping the wrapping here and doing it manually
 #[derive(Debug, PartialEq, Clone)]
 #[pyclass(
 	name = "CollisionBuilder",

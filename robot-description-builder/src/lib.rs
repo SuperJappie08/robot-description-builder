@@ -24,7 +24,7 @@ pub mod linkbuilding {
 	pub use super::link::builder::*;
 }
 
-/// TODO: Docs
+// TODO: Docs
 pub mod prelude {
 	pub use super::cluster_objects::KinematicInterface;
 	pub use super::identifiers::GroupIDChanger;
@@ -42,6 +42,7 @@ pub mod errors {
 	pub use super::yank_errors::{RebuildBranchError, YankJointError, YankLinkError};
 }
 
+/// The important libraries re-exported.
 #[cfg(feature = "wrapper")]
 pub mod reexport {
 	pub use nalgebra;
@@ -51,8 +52,7 @@ pub mod reexport {
 
 #[cfg(feature = "smart-joint-extension")]
 /// The types required when extending `SmartJointBuilder` functionality.
-///
-/// TODO: EXPAND
+// TODO: EXPAND
 pub mod smart_joint_extension {
 	pub mod types {
 		pub use crate::joint::smartjointbuilder::{

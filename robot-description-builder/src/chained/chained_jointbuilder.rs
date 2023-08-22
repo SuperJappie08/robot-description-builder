@@ -155,7 +155,7 @@ mod tests {
 				axis: Some((0., -1., 0.)),
 				child: Some(LinkBuilder {
 					name: "Leg_[L1]_l1".into(),
-					visual_builders: vec![VisualBuilder {
+					visuals: vec![VisualBuilder {
 						name: Some("Leg_[L1]_l1_vis_1".into()),
 						transform: Some(Transform {
 							translation: Some((0., 1.5, 0.)),
@@ -181,7 +181,7 @@ mod tests {
 						}),
 						child: Some(LinkBuilder {
 							name: "Leg_[L1]_l2".into(),
-							visual_builders: vec![VisualBuilder {
+							visuals: vec![VisualBuilder {
 								name: Some("Leg_[L1]_l2_vis_1".into()),
 								transform: Some(Transform {
 									translation: Some((0., -5., 0.)),
@@ -227,7 +227,7 @@ mod tests {
 				axis: Some((0., 1., 0.)),
 				child: Some(LinkBuilder {
 					name: "Leg_[L1]_l1".into(),
-					visual_builders: vec![VisualBuilder {
+					visuals: vec![VisualBuilder {
 						name: Some("Leg_[L1]_l1_vis_1".into()),
 						transform: Some(Transform {
 							translation: Some((0., -1.5, 0.)),
@@ -253,7 +253,7 @@ mod tests {
 						}),
 						child: Some(LinkBuilder {
 							name: "Leg_[L1]_l2".into(),
-							visual_builders: vec![VisualBuilder {
+							visuals: vec![VisualBuilder {
 								name: Some("Leg_[L1]_l2_vis_1".into()),
 								transform: Some(Transform {
 									translation: Some((0., 5., 0.)),
@@ -299,7 +299,7 @@ mod tests {
 				axis: Some((0., -1., 0.)),
 				child: Some(LinkBuilder {
 					name: "Leg_[L1]_l1".into(),
-					visual_builders: vec![VisualBuilder {
+					visuals: vec![VisualBuilder {
 						name: Some("Leg_[L1]_l1_vis_1".into()),
 						transform: Some(Transform {
 							translation: Some((0., 1.5, 0.)),
@@ -325,7 +325,7 @@ mod tests {
 						}),
 						child: Some(LinkBuilder {
 							name: "Leg_[L1]_l2".into(),
-							visual_builders: vec![VisualBuilder {
+							visuals: vec![VisualBuilder {
 								name: Some("Leg_[L1]_l2_vis_1".into()),
 								transform: Some(Transform {
 									translation: Some((0., 5., 0.)),

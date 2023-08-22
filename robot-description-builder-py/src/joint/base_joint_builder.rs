@@ -16,7 +16,7 @@ pub struct PyJointBuilderBase {
 	pub(super) transform: Option<Py<PyTransform>>,
 }
 
-/// These functions probally should become pub(super)
+// These functions probally should become pub(super)
 impl PyJointBuilderBase {
 	pub(crate) fn new(py: Python<'_>, builder: JointBuilder) -> PyResult<Self> {
 		Ok(Self {
@@ -94,7 +94,7 @@ impl PyJointBuilderBase {
 		self.builder.axis()
 	}
 
-	/// TODO: BETTER TYPE (falling, rising)
+	// TODO: BETTER TYPE (falling, rising)
 	#[getter]
 	pub fn get_calibration(&self) -> Option<(Option<f32>, Option<f32>)> {
 		let data = self.builder.calibration();
@@ -105,7 +105,7 @@ impl PyJointBuilderBase {
 		}
 	}
 
-	/// TODO: BETTER TYPE (friction, damping)
+	// TODO: BETTER TYPE (friction, damping)
 	#[getter]
 	pub fn get_dynamics(&self) -> Option<(Option<f32>, Option<f32>)> {
 		let data = self.builder.dynamics();
@@ -116,7 +116,7 @@ impl PyJointBuilderBase {
 		}
 	}
 
-	/// TODO: Better types
+	// TODO: Better types
 	#[getter]
 	pub fn get_limit<'py>(&self, py: Python<'py>) -> PyResult<Option<&'py PyAny>> {
 		match self.builder.limit() {
@@ -140,7 +140,7 @@ impl PyJointBuilderBase {
 		}
 	}
 
-	/// TODO: Propper types
+	// TODO: Propper types
 	#[getter]
 	pub fn get_mimic(&self, py: Python<'_>) -> PyResult<Option<PyObject>> {
 		match self.builder.mimic() {
@@ -161,7 +161,7 @@ impl PyJointBuilderBase {
 		}
 	}
 
-	/// TODO: Propper types
+	// TODO: Propper types
 	#[getter]
 	pub fn get_safety_controller(&self, py: Python<'_>) -> PyResult<Option<PyObject>> {
 		match self.builder.safety_controller() {

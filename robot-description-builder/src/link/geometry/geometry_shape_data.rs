@@ -13,13 +13,13 @@ pub struct GeometryShapeData {
 	/// This is the reference for the placement of the `geometry`.
 	///
 	// TODO: Maybe remove the last line
-	/// In URDF this field is refered to as `<origin>`
+	/// In URDF this field is refered to as `<origin>`.
 	pub transform: Transform,
 	pub geometry: GeometryShapeContainer,
 }
 
 impl GeometryShapeData {
-	/// X Y Z Bounding box sizes from center of the origin of the shape
+	/// X Y Z Bounding box sizes from center of the origin of the shape.
 	pub fn bounding_box(&self) -> (f32, f32, f32) {
 		match &self.geometry {
 			GeometryShapeContainer::Box(g) => g.bounding_box(),

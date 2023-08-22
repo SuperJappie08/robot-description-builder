@@ -4,8 +4,10 @@ use crate::joint::{
 	smartjointbuilder::{smart_joint_datatraits, SmartJointBuilder},
 };
 
+/// A trait to label a `SmartJointType` that is allowed to have a dynamics data.
 pub trait DynamicsAllowed {}
 
+/// A type to significy that no [`Dynamics`](joint_data::DynamicsData) was specified.
 #[derive(Debug, Default, Clone)]
 pub struct NoDynamics;
 impl smart_joint_datatraits::DynamicsDataType for NoDynamics {}

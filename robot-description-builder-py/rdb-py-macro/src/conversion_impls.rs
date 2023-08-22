@@ -34,7 +34,7 @@ pub fn impl_from_enum2enum(
 	}
 }
 
-/// TODO: Rename
+// TODO: Rename
 pub fn impl_tryfrom_val_enum(
 	enum_name: &Ident,
 	variant: &Ident,

@@ -23,8 +23,8 @@ use super::{kinematic_data_errors::*, PoisonWriteIndexError};
 
 #[derive(Debug)]
 pub struct KinematicDataTree {
-	/// The root `Link` of the kinematic tree
-	pub(crate) root_link: ArcLock<Link>,
+	/// The root `Link` of the kinematic tree.
+	pub(super) root_link: ArcLock<Link>,
 	//TODO: In this implementation the Keys, are not linked to the objects and could be changed.
 	// These index maps are ArcLock in order to be exposable to the outside world via the ref of this thing
 	// TODO:? Maybe make materials immutable after creation.
@@ -34,7 +34,7 @@ pub struct KinematicDataTree {
 	// Do Transmission have to wrapped into ArcLock? Maybe we can get a way with raw stuff?
 	// Don't now it would unpack on the Python side...
 	pub(crate) transmissions: ArcLock<HashMap<String, ArcLock<Transmission>>>,
-	/// The most recently updated `Link`
+	/// The most recently updated `Link`.
 	pub(crate) newest_link: RwLock<WeakLock<Link>>,
 	// is_rigid: bool // ? For gazebo -> TO AdvancedSimulationData [ASD]
 	me: Weak<Self>,
@@ -66,13 +66,13 @@ impl KinematicDataTree {
 		material.initialize(self)
 	}
 
-	/// This might replace try_add_link at some point, when i figure out of this contual building works?
-	/// But it loops throug everything which could be a lot...
-	///
-	/// Never mind it only will loop over things down stream.
-	/// It might actually be worth doing it
-	///
-	/// I have done it.
+	// This might replace try_add_link at some point, when i figure out of this contual building works?
+	// But it loops throug everything which could be a lot...
+	//
+	// Never mind it only will loop over things down stream.
+	// It might actually be worth doing it
+	//
+	// I have done it.
 	pub(crate) fn try_add_link(&self, link: &ArcLock<Link>) -> Result<(), AttachChainError> {
 		let name = link
 			.mread()
@@ -197,31 +197,25 @@ impl KinematicDataTree {
 	}
 
 	/// Cleans up orphaned/broken `Joint` entries from the `joints` HashMap.
-	pub(crate) fn purge_joints(
-		&self,
-	) -> Result<(), PoisonWriteIndexError<String, WeakLock<Joint>>> {
+	pub(crate) fn purge_joints(&self) {
 		/* In the future the lock could be saved by overwriting with a newly generated index,
 		however waiting for "This is a nightly-only experimental API. (mutex_unpoison #96469)" */
-		let mut joints = self.joints.write()?;
+		let mut joints = self.joints.write().expect("The RwLock of the Joint Index was poisoned. In the future this will be recoverable (mutex_unpoison).");
 		joints.retain(|_, weak_joint| weak_joint.upgrade().is_some());
-		joints.shrink_to_fit();
-		Ok(())
+		joints.shrink_to_fit()
 	}
 
 	/// Cleans up orphaned/broken `Link` entries from the `links` HashMap.
-	pub(crate) fn purge_links(&self) -> Result<(), PoisonWriteIndexError<String, WeakLock<Link>>> {
+	pub(crate) fn purge_links(&self) {
 		/* In the future the lock could be saved by overwriting with a newly generated index,
 		however waiting for "This is a nightly-only experimental API. (mutex_unpoison #96469)" */
-		let mut links = self.links.write()?;
+		let mut links = self.links.write().expect("The RwLock of the Link Index was poisoned. In the future this will be recoverable (mutex_unpoison).");
 		links.retain(|_, weak_link| weak_link.upgrade().is_some());
-		links.shrink_to_fit();
-		Ok(())
+		links.shrink_to_fit()
 	}
 
-	/// Cleans up orphaned/unused `Material` entries from `material_index` HashMap
-	///
-	/// TODO: Check if this works
-	/// FIXME: This doesn't work if you hace multiple robots using the same material.
+	/// Cleans up orphaned/unused `Material` entries from `material_index` HashMap.
+	// TODO: Check if this works
 	pub(crate) fn purge_materials(
 		&self,
 	) -> Result<(), PoisonWriteIndexError<String, ArcLock<MaterialData>>> {
@@ -233,25 +227,13 @@ impl KinematicDataTree {
 		Ok(())
 	}
 
-	/// Cleans up orphaned/broken `Transmission` entries from the `transmissions` HashMap
+	/// Cleans up orphaned/broken `Transmission` entries from the `transmissions` HashMap.
 	pub(crate) fn purge_transmissions(
 		&self,
 	) -> Result<(), PoisonWriteIndexError<String, ArcLock<Transmission>>> {
 		// Ok(())
 		// TODO:
 		todo!("Not Implemnted yet! First Implement `Transmission`")
-	}
-
-	/// TODO: DECIDE IF DEPRECATE?
-	/// Cleans up broken `Joint` and `Link` entries from the `links` and `joints` HashMaps.
-	///
-	/// TODO: Rewrite DOC
-	pub(crate) fn purge(&self) {
-		self.purge_joints().unwrap(); //FIXME: UNWRAP?
-
-		self.purge_links().unwrap(); //FIXME: UNWRAP?
-
-		//TODO: UPDATE FOR MATERIALS
 	}
 }
 
@@ -731,8 +713,8 @@ mod tests {
 		}
 
 		#[test]
-		/// FIXME: This test checks for weird behavior, since I ran into an free floating [`MaterialData`](crate::material_mod::MaterialData)
-		///			It also show both root level materials and inline both is kind of Ok but it is uncessary
+		/// FIXME: This test checks for weird behavior, since I ran into an free floating [`MaterialData`](crate::material_mod::MaterialData).
+		///			It also show both root level materials and inline both is kind of Ok but it is uncessary.
 		///
 		/// tl;dr: We are checking for weird behavior, but atleast the tested behavior is compliant.
 		fn material_as_matrials() {

@@ -14,17 +14,24 @@ mod planar_joint_type;
 mod prismatic_joint_type;
 mod revolute_joint_type;
 
+/// A trait to filter the non-continuous and continuous [SmartJoint Types](super::smartjointtypes) with trait bounds.
 pub trait SmartJointTypeTrait<const IS_CONTINOUS: bool>: JointTypeTrait {}
 
+/// A trait to designate `SmartJointBuilder` `JointType` types.
 pub trait JointTypeTrait: Copy + Default + Into<JointType> {
+	/// Designates if the JointType is continous or not.
+	///
+	/// This must match with the implementation of [`SmartJointTypeTrait`].
 	const IS_CONTINOUS: bool;
 
+	/// Return the [`JointType`] associated with this [`SmartJointType`](super::smartjointtypes).
 	#[inline]
 	fn as_type(&self) -> JointType {
 		(*self).into()
 	}
 }
 
+/// An unspecified `JointType` for `SmartJointBuilder`.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub struct NoType;
 

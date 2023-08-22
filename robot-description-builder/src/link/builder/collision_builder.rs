@@ -17,12 +17,13 @@ pub struct CollisionBuilder {
 	///
 	/// This is the reference for the placement of the `geometry`.
 	///
-	/// In URDF this field is refered to as `<origin>`
+	/// In URDF this field is refered to as `<origin>`.
 	pub(crate) transform: Option<Transform>,
 	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
 }
 
 impl CollisionBuilder {
+	/// Create a new [`CollisionBuilder`] with the specified [`Geometry`](crate::link_data::geometry).
 	pub fn new(geometry: impl Into<Box<dyn GeometryInterface + Sync + Send>>) -> Self {
 		Self {
 			name: None,
@@ -30,7 +31,7 @@ impl CollisionBuilder {
 			geometry: geometry.into(),
 		}
 	}
-
+	/// Create a new [`CollisionBuilder`] with all fields specified.
 	pub fn new_full(
 		name: Option<String>,
 		transform: Option<Transform>,
@@ -43,17 +44,22 @@ impl CollisionBuilder {
 		}
 	}
 
+	/// Sets the `name` of this `CollisionBuilder`.
 	pub fn named(mut self, name: impl Into<String>) -> Self {
 		self.name = Some(name.into());
 		self
 	}
 
+	/// Specify a `transform` for this `CollisionBuilder`.
+	///
+	/// The default is a no transformation (The frame of the `Collision` will be the same as the frame of the parent `Link`).
 	pub fn tranformed(mut self, transform: Transform) -> Self {
 		self.transform = Some(transform);
 		self
 	}
 
-	/// Creates a `VisualBuilder` from this `CollisionBuilder` reference by upgrading
+	// TODO: IMPROVE DOCS
+	/// Creates a `VisualBuilder` from this `CollisionBuilder` reference by upgrading.
 	///
 	/// Creates a [`VisualBuilder`] from the `CollisionBuilder` by cloning the following fields:
 	///  - `name`
@@ -77,7 +83,7 @@ impl CollisionBuilder {
 		}
 	}
 
-	/// TODO: BETTER NAME
+	// TODO: BETTER NAME
 	pub(crate) fn get_geometry_data(&self) -> GeometryShapeData {
 		GeometryShapeData {
 			transform: self.transform.unwrap_or_default(),
@@ -89,7 +95,7 @@ impl CollisionBuilder {
 impl Mirror for CollisionBuilder {
 	fn mirrored(&self, mirror_matrix: &Matrix3<f32>) -> Self {
 		Self {
-			name: self.name.as_ref().cloned(), // FIXME: NAME
+			name: self.name.as_ref().cloned(), // TODO: Rename?
 			transform: self
 				.transform
 				.as_ref()
@@ -101,14 +107,17 @@ impl Mirror for CollisionBuilder {
 
 /// Non-builder methods
 impl CollisionBuilder {
+	/// Gets an optional reference to the `name` of this `CollisionBuilder`.
 	pub fn name(&self) -> Option<&String> {
 		self.name.as_ref()
 	}
 
+	/// Gets an optional reference to the `transform` of this `CollisionBuilder`.
 	pub fn transform(&self) -> Option<&Transform> {
 		self.transform.as_ref()
 	}
 
+	/// Gets a reference to the [`geometry`](crate::link_data::geometry) of this `CollisionBuilder`.
 	pub fn geometry(&self) -> &Box<dyn GeometryInterface + Sync + Send> {
 		&self.geometry
 	}
@@ -146,7 +155,7 @@ impl Clone for CollisionBuilder {
 	}
 }
 
-/// TODO: Decide if this is ok?
+// TODO: Decide if this is ok?
 impl From<CollisionBuilder> for Collision {
 	fn from(value: CollisionBuilder) -> Self {
 		value.build()

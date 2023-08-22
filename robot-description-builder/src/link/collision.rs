@@ -14,7 +14,7 @@ pub struct Collision {
 	///
 	/// This is the reference for the placement of the `geometry`.
 	///
-	/// In URDF this field is refered to as `<origin>`
+	/// In URDF this field is refered to as `<origin>`.
 	pub(crate) transform: Option<Transform>,
 
 	// TODO: Figure out if this needs to be public or not
@@ -29,18 +29,25 @@ impl Collision {
 		CollisionBuilder::new(geometry)
 	}
 
+	// TODO: LinkFields?
+	/// Gets an optional reference to the `name` of this `Collision`.
 	pub fn name(&self) -> Option<&String> {
 		self.name.as_ref()
 	}
 
+	// TODO: LinkFields?
+	/// Gets an optional reference to the `transform` of this `Collision`.
 	pub fn transform(&self) -> Option<&Transform> {
 		self.transform.as_ref()
 	}
 
+	// TODO: LinkFields?
+	/// Gets a reference to the `geometry` of this `Collision`.
 	pub fn geometry(&self) -> &Box<dyn GeometryInterface + Sync + Send> {
 		&self.geometry
 	}
 
+	/// Recreates the [`CollisionBuilder`], which was used to create this `Collision`.
 	pub fn rebuild(&self) -> CollisionBuilder {
 		CollisionBuilder {
 			name: self.name.clone(),

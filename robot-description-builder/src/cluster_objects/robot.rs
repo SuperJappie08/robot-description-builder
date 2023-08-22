@@ -26,7 +26,7 @@ use crate::{
 
 #[derive(Debug)]
 pub struct Robot {
-	/// The name of the robot
+	/// The name of the robot.
 	name: String,
 	data: Arc<KinematicDataTree>,
 }
@@ -39,7 +39,7 @@ impl Robot {
 		}
 	}
 
-	/// Gets a refence to the name of the `Robot`
+	/// Gets a refence to the name of the `Robot`.
 	///
 	/// # Example
 	/// ```rust
@@ -84,7 +84,9 @@ impl KinematicInterface for Robot {
 		self.data
 			.links
 			.read()
-			.unwrap() // FIXME: Unwrapping might not be ok
+			/* In the future the lock could be saved by overwriting with a newly generated index,
+			however waiting for "This is a nightly-only experimental API. (mutex_unpoison #96469)" */
+			.expect("The RwLock of the Link Index was poisoned. In the future this will be recoverable (mutex_unpoison).")
 			.get(name)
 			.and_then(|weak_link| weak_link.upgrade())
 	}
@@ -93,7 +95,9 @@ impl KinematicInterface for Robot {
 		self.data
 			.joints
 			.read()
-			.unwrap() // FIXME: Unwrapping might not be ok
+			/* In the future the lock could be saved by overwriting with a newly generated index,
+			however waiting for "This is a nightly-only experimental API. (mutex_unpoison #96469)" */
+			.expect("The RwLock of the Joint Index was poisoned. In the future this will be recoverable (mutex_unpoison).")
 			.get(name)
 			.and_then(|weak_joint| weak_joint.upgrade())
 	}
@@ -124,15 +128,11 @@ impl KinematicInterface for Robot {
 		self.data.try_add_transmission(transmission)
 	}
 
-	fn purge_links(
-		&self,
-	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, WeakLock<Link>>>>> {
+	fn purge_links(&self) {
 		self.data.purge_links()
 	}
 
-	fn purge_joints(
-		&self,
-	) -> Result<(), PoisonError<RwLockWriteGuard<HashMap<String, WeakLock<Joint>>>>> {
+	fn purge_joints(&self) {
 		self.data.purge_joints()
 	}
 

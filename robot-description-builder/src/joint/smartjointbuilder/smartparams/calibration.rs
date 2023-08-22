@@ -4,8 +4,10 @@ use crate::joint::{
 	smartjointbuilder::{smart_joint_datatraits, SmartJointBuilder},
 };
 
+/// A trait to label a `SmartJointType` that is allowed to have a calibration element.
 pub trait CalibrationAllowed {}
 
+/// A type to significy that no [`Calibration`](joint_data::CalibrationData) was specified.
 #[derive(Debug, Default, Clone)]
 pub struct NoCalibration;
 impl smart_joint_datatraits::CalibrationDataType for NoCalibration {}

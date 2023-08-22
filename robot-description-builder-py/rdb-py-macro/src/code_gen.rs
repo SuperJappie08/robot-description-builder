@@ -100,7 +100,7 @@ fn impl_safety_controller(
 	}
 
 	quote! {
-		/// Methods to modify SafetyController
+		/// Methods to modify SafetyController.
 		impl #enum_name {
 			#fns
 		}
@@ -297,7 +297,7 @@ fn impl_mimic(
 	let fn_get_mimic_offset = gen_get_mimic_offset(with_iter);
 
 	quote! {
-		/// Methods to modify Mimic
+		/// Methods to modify Mimic.
 		impl #enum_name {
 			#fn_with_mimic
 
@@ -499,7 +499,7 @@ fn impl_limit(
 	};
 
 	quote! {
-		/// Methods to modify limit
+		/// Methods to modify limit.
 		impl #enum_name {
 			#fns
 		}
@@ -677,7 +677,7 @@ fn impl_dynamics(enum_name: &Ident, variants_data: &[(Ident, TokenStream)]) -> T
 	let fn_get_friction = gen_get_friction(variants_data);
 
 	quote! {
-		/// Methods to modify Dynamics
+		/// Methods to modify Dynamics.
 		impl #enum_name {
 			#fn_set_damping
 			#fn_get_damping
@@ -777,7 +777,7 @@ fn impl_calibration(enum_name: &Ident, variants_data: &[(Ident, TokenStream)]) -
 	let fn_get_falling = gen_get_falling(variants_data);
 
 	quote! {
-		/// Methods to modify Calibration
+		/// Methods to modify Calibration.
 		impl #enum_name {
 			#fn_set_rising_calibration
 			#fn_get_rising
@@ -881,7 +881,7 @@ fn impl_axis(enum_name: &Ident, variants_data: &[(Ident, TokenStream)]) -> Token
 	let fn_get_axis = gen_get_axis(variants_data);
 
 	quote! {
-		/// Methods to modify axis
+		/// Methods to modify axis.
 		impl #enum_name {
 			#fn_with_axis
 			#fn_get_axis

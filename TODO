@@ -36,3 +36,5 @@ FIX MIRRORING for non easy cases
 - [x] Upgrade VisBuilder to ColBuilder and back
     - [ ] Make helper functions take VisualBuilder
     - [ ] Optional: Add VisCol fn to link
+- [ ] Prefix Mode (Stitch Visual name on the end of link name to create unique names)
+- [ ] Restructure Rust Modules

@@ -12,6 +12,7 @@ pub use limit::{NoLimit, WithLimit};
 pub use mimic::{NoMimic, WithMimic};
 pub use safety_controller::{NoSafetyController, WithSafetyController};
 
+/// This module contains all traits to specify a `SmartJointBuilderType`.
 pub mod smart_joint_specification {
 	pub use crate::joint::smartjointbuilder::smartparams::{
 		axis::AxisAllowed, calibration::CalibrationAllowed, dynamics::DynamicsAllowed,

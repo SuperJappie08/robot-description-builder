@@ -17,10 +17,14 @@ use crate::{
 	utils::{ArcLock, WeakLock},
 };
 
+// TODO: Maybe flip the JointType Doc order
+/// A representation of a planar joint (`JointType::Planar`) for the `SmartJointBuilder`.
+///
+/// See [`JointType::Planar`] for more details.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub struct PlanarType;
 
-impl_jointtype_traits!(PlanarType, true); // FIXME: Is it continous?
+impl_jointtype_traits!(PlanarType, true); // FIXME: Is it continous?/How would it be limited
 
 impl From<PlanarType> for JointType {
 	fn from(_value: PlanarType) -> Self {
@@ -29,14 +33,14 @@ impl From<PlanarType> for JointType {
 }
 
 impl smart_joint_specification::AxisAllowed for PlanarType {}
-/// TODO: Figure out if this is allowed
+///TODO: Figure out if this is allowed.
 impl smart_joint_specification::CalibrationAllowed for PlanarType {}
 impl smart_joint_specification::DynamicsAllowed for PlanarType {}
-/// TODO: Figure out if this is allowed/if joint is continous
+/// TODO: Figure out if this is allowed/if joint is continous.
 impl smart_joint_specification::LimitAllowed for PlanarType {}
-/// TODO: Figure out if this is allowed
+/// TODO: Figure out if this is allowed.
 impl smart_joint_specification::MimicAllowed for PlanarType {}
-/// TODO: Figure out if this is allowed
+/// TODO: Figure out if this is allowed.
 impl smart_joint_specification::SafetyControllerAllowed for PlanarType {}
 
 impl<Axis, Calibration, Dynamics, Limit, Mimic, SafetyController> BuildJoint

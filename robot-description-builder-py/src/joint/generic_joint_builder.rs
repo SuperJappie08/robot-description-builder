@@ -5,7 +5,6 @@ use crate::identifier::GroupIDError;
 
 use super::{PyJointBuilderBase, PyJointType, PyLimit};
 
-/// TODO: Rename to JointBuilder
 #[derive(Debug, Clone)]
 #[pyclass(
 	name = "JointBuilder",

@@ -16,7 +16,7 @@ use crate::{
 };
 
 pub trait BuildJoint: Into<JointBuilder> {
-	/// Creates the joint ?? and subscribes it to the right right places
+	// Creates the joint ?? and subscribes it to the right right places
 	fn build(
 		self,
 		tree: Weak<KinematicDataTree>,
@@ -26,7 +26,7 @@ pub trait BuildJoint: Into<JointBuilder> {
 	) -> ArcLock<Joint>;
 }
 
-/// NOTE: Removed Trait bound due for `Chained<JointBuilder>`
+// NOTE: Removed Trait bound due for `Chained<JointBuilder>`
 pub(crate) trait BuildJointChain {
 	fn build_chain(
 		self,
@@ -43,12 +43,12 @@ pub struct JointBuilder {
 	// TODO: Maybe add a Figure it out???
 	/// The transform from the origin of the parent to the origin of this `JointBuilder`.
 	///
-	/// In URDF this field is refered to as `<origin>`
+	/// In URDF this field is refered to as `<origin>`.
 	pub(crate) transform: JointTransformMode,
 	pub(crate) child: Option<LinkBuilder>,
 
 	//Consider making everything below pub to remove need for all the functions
-	/// TODO: MAYBE CHANGE TO Vec3D Or something
+	// TODO: MAYBE CHANGE TO Vec3D Or something
 	pub(crate) axis: Option<(f32, f32, f32)>,
 	pub(crate) calibration: joint_data::CalibrationData,
 	pub(crate) dynamics: joint_data::DynamicsData,
@@ -57,7 +57,7 @@ pub struct JointBuilder {
 	pub(crate) safety_controller: Option<joint_data::SafetyControllerData>,
 }
 
-/// TODO: maybe add new_full ? or make fields public
+// TODO: maybe add new_full ? or make fields public
 impl JointBuilder {
 	pub fn new(name: impl Into<String>, joint_type: JointType) -> Self {
 		Self {
@@ -67,7 +67,7 @@ impl JointBuilder {
 		}
 	}
 
-	/// TODO: rename transform
+	// TODO: rename transform
 	pub fn add_origin_offset(mut self, offset: (f32, f32, f32)) -> Self {
 		match &mut self.transform {
 			JointTransformMode::Direct(transform) => transform.translation = Some(offset),
@@ -76,7 +76,7 @@ impl JointBuilder {
 		self
 	}
 
-	/// TODO: rename transform
+	// TODO: rename transform
 	pub fn add_origin_rotation(mut self, rotation: (f32, f32, f32)) -> Self {
 		match &mut self.transform {
 			JointTransformMode::Direct(tranform) => tranform.rotation = Some(rotation),
@@ -99,33 +99,38 @@ impl JointBuilder {
 		self.transform = transform.into();
 	}
 
-	/// TODO: HAS A CONFUSING NAME WITH SmartJointBuilder::with_axis, which consumes
+	// TODO: HAS A CONFUSING NAME WITH SmartJointBuilder::with_axis, which consumes
+	/// Add the [`axis`](JointBuilder::axis) to the `JointBuillder`.
 	#[inline]
 	pub fn with_axis(&mut self, axis: (f32, f32, f32)) {
 		self.axis = Some(axis);
 	}
 
-	/// Add the full `CalibrationData` to the `JointBuillder`.
+	/// Add the full [`CalibrationData`](joint_data::CalibrationData) to the `JointBuillder`.
 	#[inline]
 	pub(crate) fn with_calibration_data(&mut self, calibration_data: joint_data::CalibrationData) {
 		self.calibration = calibration_data;
 	}
 
+	/// Add the full [`DynamicsData`](joint_data::DynamicsData) to the `JointBuillder`.
 	#[inline]
 	pub(crate) fn with_dynamics_data(&mut self, dynamics_data: joint_data::DynamicsData) {
 		self.dynamics = dynamics_data;
 	}
 
+	/// Add the full [`LimitData`](joint_data::LimitData) to the `JointBuillder`.
 	#[inline]
 	pub(crate) fn with_limit_data(&mut self, limit_data: joint_data::LimitData) {
 		self.limit = Some(limit_data);
 	}
 
+	/// Add the full [`MimicData`](joint_data::MimicData) to the `JointBuillder`.
 	#[inline]
 	pub(crate) fn with_mimic_data(&mut self, mimic_data: joint_data::MimicBuilderData) {
 		self.mimic = Some(mimic_data);
 	}
 
+	/// Add the full [`SafetyControllerData`](joint_data::SafetyControllerData) to the `JointBuillder`.
 	#[inline]
 	pub(crate) fn with_safety_controller(
 		&mut self,

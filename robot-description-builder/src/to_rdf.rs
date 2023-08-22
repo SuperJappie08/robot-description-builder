@@ -20,10 +20,10 @@ pub mod to_sdf;
 /// A setting for configuring the style of the generated XML representation.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub enum XMLMode {
-	/// No indentation in the output XML
+	/// No indentation in the output XML.
 	#[default]
 	NoIndent,
-	/// Indentation as specified in the output XML
+	/// Indentation as specified in the output XML.
 	///
 	/// The indentation level will increase with every opening XML element and decreases when a XML element is closed.
 	/// - `char` is the character will be used to indent the elements.
@@ -31,7 +31,7 @@ pub enum XMLMode {
 	Indent(char, usize),
 }
 
-/// Create a XML-writer with the specified `XMLMode`
+/// Create a XML-writer with the specified [`XMLMode`].
 #[cfg(feature = "xml")]
 fn make_xml_writer(xml_mode: XMLMode) -> Writer<Cursor<Vec<u8>>> {
 	match xml_mode {

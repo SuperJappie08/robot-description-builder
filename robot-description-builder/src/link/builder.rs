@@ -15,9 +15,9 @@ pub use collision_builder::CollisionBuilder;
 pub use linkbuilder::LinkBuilder;
 pub use visual_builder::VisualBuilder;
 
-/// FIXME: Split the trait into multiple traits, because it does not make sense in all situations
+// FIXME: Split the trait into multiple traits, because it does not make sense in all situations
 pub(crate) trait BuildLink {
-	/// TODO: THE BUILDER IS ALLOWED TO BUILD JOINTS FOR THIS BEAST, Maybe not for end users but might be usefull for cloning;
+	// TODO: THE BUILDER IS ALLOWED TO BUILD JOINTS FOR THIS BEAST, Maybe not for end users but might be usefull for cloning;
 	fn build(self, tree: &Weak<KinematicDataTree>) -> ArcLock<Link>;
 
 	fn build_tree(self) -> KinematicTree
@@ -28,10 +28,9 @@ pub(crate) trait BuildLink {
 		KinematicTree::new(data)
 	}
 
-	/// TODO: Make internal
-	/// TODO: Maybe move to `LinkChainBuilder`
-	///
-	/// Starts building the Kinematic Chain, the `tree` argument is not yet intitialized at this point.  
+	// TODO: Make internal
+	// TODO: Maybe move to `LinkChainBuilder`
+	/// Starts building the Kinematic Chain, the `tree` argument is not yet intitialized at this point.
 	fn start_building_chain(self, tree: &Weak<KinematicDataTree>) -> ArcLock<Link>;
 
 	fn build_chain(
@@ -40,7 +39,7 @@ pub(crate) trait BuildLink {
 		parent_joint: &WeakLock<Joint>,
 	) -> ArcLock<Link>;
 
-	/// TODO: Rename?
+	// TODO: Rename?
 	fn get_shape_data(&self) -> LinkShapeData;
 }
 

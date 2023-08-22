@@ -15,6 +15,8 @@ use itertools::Itertools;
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
+/// All datatypes which a link can hold.
+// TODO: Maybe make a link module with everything in it
 pub mod link_data {
 	pub use crate::link::collision::Collision;
 	pub use crate::link::inertial::InertialData;
@@ -58,7 +60,6 @@ use crate::{
 	yank_errors::{RebuildBranchError, YankLinkError},
 };
 
-/// TODO: Make Builder For Link
 #[derive(Debug)]
 pub struct Link {
 	name: String,
@@ -208,20 +209,16 @@ impl Link {
 	pub fn rebuild(&self) -> LinkBuilder {
 		LinkBuilder {
 			name: self.name.clone(),
-			visual_builders: self.visuals.iter().map(|visual| visual.rebuild()).collect(),
-			colliders: self
-				.colliders
-				.iter()
-				.map(|collision| collision.rebuild())
-				.collect(),
+			visuals: self.visuals.iter().map(Visual::rebuild).collect(),
+			colliders: self.colliders.iter().map(Collision::rebuild).collect(),
 			intertial: self.inertial,
 			..Default::default() // FIXME: Some data might be lost here
 		}
 	}
 
-	/// Rebuilds everything below this aswell
-	///
-	/// TODO: DOCS
+	// Rebuilds everything below this aswell
+	//
+	// TODO: DOCS
 	pub(crate) fn rebuild_branch_continued(&self) -> Result<LinkBuilder, RebuildBranchError> {
 		Ok(LinkBuilder {
 			joints: self
@@ -235,17 +232,17 @@ impl Link {
 		})
 	}
 
-	/// TODO: DOCS:
-	/// TODO: TEST
+	// TODO: DOCS:
+	// TODO: TEST
 	pub fn rebuild_branch(&self) -> Result<Chained<LinkBuilder>, RebuildBranchError> {
 		#[cfg(any(feature = "logging", test))]
 		log::info!(target: "LinkBuilder","Starting Branch Rebuilding: {}", self.name());
 		Ok(Chained(self.rebuild_branch_continued()?))
 	}
 
-	/// TODO: DOCS:
-	/// TODO: ADD ERRORS
-	/// TODO: TEST
+	// TODO: DOCS:
+	// TODO: ADD ERRORS
+	// TODO: TEST
 	pub(crate) fn yank(&self) -> Result<LinkBuilder, YankLinkError> {
 		let builder = self.rebuild_branch_continued()?;
 
