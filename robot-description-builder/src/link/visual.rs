@@ -238,7 +238,7 @@ mod tests {
 		fn no_name_origin_no_material() {
 			test_to_urdf_visual(
 				Visual::builder(SphereGeometry::new(3.))
-					.tranformed(Transform::new((4., 6.78, 1.), (PI, 2. * PI, 0.))),
+					.transformed(Transform::new((4., 6.78, 1.), (PI, 2. * PI, 0.))),
 				String::from(
 					r#"<visual><origin xyz="4 6.78 1" rpy="3.1415927 6.2831855 0"/><geometry><sphere radius="3"/></geometry></visual>"#,
 				),
@@ -267,7 +267,7 @@ mod tests {
 			test_to_urdf_visual(
 				Visual::builder(CylinderGeometry::new(4.5, 75.35))
 					.named("some_col")
-					.tranformed(Transform::new_translation(5.4, 9.1, 7.8))
+					.transformed(Transform::new_translation(5.4, 9.1, 7.8))
 					.materialized(MaterialDescriptor::new_color(0.75, 0.5, 1., 1.)),
 				String::from(
 					r#"<visual name="some_col"><origin xyz="5.4 9.1 7.8"/><geometry><cylinder radius="4.5" length="75.35"/></geometry><material><color rgba="0.75 0.5 1 1"/></material></visual>"#,

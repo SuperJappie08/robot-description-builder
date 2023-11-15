@@ -105,13 +105,13 @@ mod tests {
 		let left_leg_1_tree = Link::builder("Leg_[L1]_l1")
 			.add_visual(
 				Visual::builder(geom_leg_l1.clone())
-					.tranformed(Transform::new_translation(0., 1.5, 0.))
+					.transformed(Transform::new_translation(0., 1.5, 0.))
 					.named("Leg_[L1]_l1_vis_1")
 					.materialized(material_l1.clone()),
 			)
 			.add_collider(
 				Collision::builder(geom_leg_l1.clone())
-					.tranformed(Transform::new_translation(0., 1.5, 0.))
+					.transformed(Transform::new_translation(0., 1.5, 0.))
 					.named("Leg_[L1]_l1_col_1"),
 			)
 			.build_tree();
@@ -124,13 +124,13 @@ mod tests {
 				Link::builder("Leg_[L1]_l2")
 					.add_visual(
 						Visual::builder(geom_leg_l2.clone())
-							.tranformed(Transform::new((0., 5., 0.), (FRAC_PI_2, 0., 0.)))
+							.transformed(Transform::new((0., 5., 0.), (FRAC_PI_2, 0., 0.)))
 							.named("Leg_[L1]_l2_vis_1")
 							.materialized(material_l2.clone()),
 					)
 					.add_collider(
 						Collision::builder(geom_leg_l2.clone())
-							.tranformed(Transform::new((0., 5., 0.), (FRAC_PI_2, 0., 0.)))
+							.transformed(Transform::new((0., 5., 0.), (FRAC_PI_2, 0., 0.)))
 							.named("Leg_[L1]_l2_col_1"),
 					),
 				SmartJointBuilder::new_fixed("Leg_[L1]_j1")

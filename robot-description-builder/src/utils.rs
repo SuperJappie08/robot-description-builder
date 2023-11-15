@@ -9,6 +9,7 @@ pub(crate) type WeakLock<T> = std::sync::Weak<std::sync::RwLock<T>>;
 #[repr(transparent)]
 pub struct ErroredRead<T>(pub T);
 
+/// A utility trait, which adds read and write methods with better errrors.
 pub(crate) trait ArcRW: Sized {
 	/// The target type of the `ArcLock`.
 	///
@@ -42,6 +43,7 @@ impl<T> ArcRW for ArcLock<T> {
 	}
 }
 
+/// Create an error from a reference to the `ArcLock<T>` if an error occurred while attempting to acquire a read guard to the lock.
 #[inline]
 pub(crate) fn errored_read_lock<T>(
 	errored_lock: &ArcLock<T>,
@@ -66,6 +68,7 @@ impl<T> PartialEq for ErroredRead<Weak<T>> {
 #[repr(transparent)]
 pub struct ErroredWrite<T>(pub T);
 
+/// Create an error from a reference to the `ArcLock<T>` if an error occurred while attempting to acquire a write guard to the lock.
 #[inline]
 pub(crate) fn errored_write_lock<T>(
 	errored_lock: &ArcLock<T>,

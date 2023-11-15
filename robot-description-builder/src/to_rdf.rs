@@ -44,7 +44,28 @@ fn make_xml_writer(xml_mode: XMLMode) -> Writer<Cursor<Vec<u8>>> {
 
 #[cfg(feature = "xml")]
 /// Convert a [`quick_xml::Writer`] to a [`String`].
-// TODO: Example?
+///
+/// # Example
+/// ```rust
+/// # use robot_description_builder::{Link, link_data::{Visual, geometry::SphereGeometry}, to_rdf::{xml_writer_to_string, to_urdf::{to_urdf, URDFConfig}}};
+/// let robot = Link::builder("my-link")
+///     .add_visual(
+///         Visual::builder(SphereGeometry::new(4.0))
+///     )
+///     .build_tree()
+///     .to_robot("my-robot");
+///
+/// let writer = to_urdf(&robot, URDFConfig::default()).unwrap();
+/// let urdf_description: String = xml_writer_to_string(writer);
+///
+/// assert_eq!(
+///     urdf_description,
+///     String::from(
+///         "\u{feff}<?xml version=\"1.0\"?><robot name=\"my-robot\"><link name=\"my-link\"><visual><geometry><sphere radius=\"4\"/></geometry></visual></link></robot>"
+///     )
+/// );
+/// ```
+// TODO: Maybe only show example when URDF feature enabled
 pub fn xml_writer_to_string(writer: Writer<Cursor<Vec<u8>>>) -> String {
 	let mut buffer = writer.into_inner();
 

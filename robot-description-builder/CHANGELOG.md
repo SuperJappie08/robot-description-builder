@@ -24,6 +24,7 @@ The Changes between versions of [<b>`robot-description-builder`</b> for <b>Rust<
 - Created a new alternative `new_quick_link` method renamed (the old one). 
 - Renamed `MaterialDataReferenceWrapper` to `MaterialDataReference`.
 - `KinematicInterface::{purge_links, purge_joints}` now have an `except` statement, since the error is unrecoverable until mutex_unpoison #96469 gets stabilized.
+- Fixed spelling mistake in method name of `VisualBuilder` and `CollisionBuilder` (`*::tranformed` -> `*::transformed`)
 - Improved documentation
 
 ### Removed

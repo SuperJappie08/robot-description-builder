@@ -24,12 +24,12 @@ fn main() {
 		.add_visual(
 			Visual::builder(BoxGeometry::new(2.0, 0.5, 0.5))
 				.named("Leg_[[R1]]_l0_vis")
-				.tranformed(Transform::new_translation(1.0, 0.0, 0.0)),
+				.transformed(Transform::new_translation(1.0, 0.0, 0.0)),
 		)
 		.add_collider(
 			Collision::builder(CylinderGeometry::new(0.24, 2.0))
 				.named("Leg_[[R1]]_l0_col")
-				.tranformed(Transform::new_translation(1.0, 0.0, 0.0)),
+				.transformed(Transform::new_translation(1.0, 0.0, 0.0)),
 		)
 		.build_tree();
 
@@ -41,12 +41,12 @@ fn main() {
 				.add_visual(
 					Visual::builder(BoxGeometry::new(0.5, 0.1, 0.1))
 						.named("Leg_[[R1]]_l1_vis")
-						.tranformed(Transform::new_translation(1., 0., 0.)),
+						.transformed(Transform::new_translation(1., 0., 0.)),
 				)
 				.add_collider(
 					Collision::builder(BoxGeometry::new(0.25, 0.1, 0.1))
 						.named("Leg_[[R1]]_l1_col")
-						.tranformed(Transform::new_translation(0.25, 0., 0.)),
+						.transformed(Transform::new_translation(0.25, 0., 0.)),
 				),
 			JointBuilder::new("Leg_[[R1]]_j1", JointType::Fixed)
 				.add_origin_offset((2.0, 0., 0.))

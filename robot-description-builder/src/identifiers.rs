@@ -8,14 +8,14 @@
 use std::fmt;
 
 /// The delimiter used at the start of a [`GroupID`].
-pub const DELIMITER_OPEN_GROUPID: &str = r#"[["#;
+pub const DELIMITER_OPEN_GROUPID: &str = r"[[";
 /// The delimiter used at the end of a [`GroupID`].
-pub const DELIMITER_CLOSE_GROUPID: &str = r#"]]"#;
+pub const DELIMITER_CLOSE_GROUPID: &str = r"]]";
 
 /// The escaped delimiter, which gets converted to [`DELIMITER_OPEN_GROUPID`] when applied.
-pub const DELIMITER_ESCAPED_OPEN_GROUPID: &str = r#"[\["#;
+pub const DELIMITER_ESCAPED_OPEN_GROUPID: &str = r"[\[";
 /// The escaped delimiter, which gets converted to [`DELIMITER_CLOSE_GROUPID`] when applied.
-pub const DELIMITER_ESCAPED_CLOSE_GROUPID: &str = r#"]\]"#;
+pub const DELIMITER_ESCAPED_CLOSE_GROUPID: &str = r"]\]";
 
 /// Enum to store the various types of errors that can cause invalidation of a [`GroupID`].
 ///

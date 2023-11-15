@@ -52,7 +52,7 @@ fn main() {
 	let right_leg_link = Link::builder("[\\[right]\\]_leg").add_visual(
 		Visual::builder(BoxGeometry::new(0.6, 0.1, 0.2))
 			.materialized(white_material.clone())
-			.tranformed(Transform::new((0., 0., -0.3), (0., FRAC_PI_2, 0.))),
+			.transformed(Transform::new((0., 0., -0.3), (0., FRAC_PI_2, 0.))),
 	);
 
 	let right_leg = right_leg_link.build_tree();
@@ -72,7 +72,7 @@ fn main() {
 
 	let right_front_wheel_link = Link::builder("[\\[right]\\]_[[front]]_wheel").add_visual(
 		Visual::builder(CylinderGeometry::new(0.035, 0.1))
-			.tranformed(Transform::new_rotation(FRAC_PI_2, 0., 0.))
+			.transformed(Transform::new_rotation(FRAC_PI_2, 0., 0.))
 			.materialized(black_material.clone()),
 	);
 
@@ -146,7 +146,7 @@ fn main() {
 	let gripper_pole = Link::builder("gripper_pole")
 		.add_visual(
 			Visual::builder(CylinderGeometry::new(0.01, 0.2))
-				.tranformed(Transform::new((0.1, 0., 0.), (0., FRAC_PI_2, 0.))),
+				.transformed(Transform::new((0.1, 0., 0.), (0., FRAC_PI_2, 0.))),
 		)
 		.build_tree();
 
@@ -177,7 +177,7 @@ fn main() {
 					.boxed_clone(),
 					false => BoxGeometry::new(0.06, 0.04, 0.02).boxed_clone(),
 				})
-				.tranformed(Transform::new_translation(0.09137, 0.00495, 0.)),
+				.transformed(Transform::new_translation(0.09137, 0.00495, 0.)),
 			),
 			SmartJointBuilder::new_fixed("[[left]]_tip_joint"),
 		)

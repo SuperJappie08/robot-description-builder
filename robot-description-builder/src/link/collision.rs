@@ -165,7 +165,7 @@ mod tests {
 		fn no_name_origin() {
 			test_to_urdf_collision(
 				Collision::builder(SphereGeometry::new(3.))
-					.tranformed(Transform::new((4., 6.78, 1.), (PI, 2. * PI, 0.))),
+					.transformed(Transform::new((4., 6.78, 1.), (PI, 2. * PI, 0.))),
 				String::from(
 					r#"<collision><origin xyz="4 6.78 1" rpy="3.1415927 6.2831855 0"/><geometry><sphere radius="3"/></geometry></collision>"#,
 				),
@@ -178,7 +178,7 @@ mod tests {
 			test_to_urdf_collision(
 				Collision::builder(CylinderGeometry::new(4.5, 75.35))
 					.named("some_col")
-					.tranformed(Transform::new_translation(5.4, 9.1, 7.8)),
+					.transformed(Transform::new_translation(5.4, 9.1, 7.8)),
 				String::from(
 					r#"<collision name="some_col"><origin xyz="5.4 9.1 7.8"/><geometry><cylinder radius="4.5" length="75.35"/></geometry></collision>"#,
 				),

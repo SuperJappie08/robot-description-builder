@@ -115,7 +115,7 @@ pub trait ToURDF {
 /// let right_leg_link = Link::builder("[\\[right]\\]_leg").add_visual(
 ///     Visual::builder(BoxGeometry::new(0.6, 0.1, 0.2))
 ///     .materialized(white_material.clone())
-///     .tranformed(Transform::new_translation(0., 0., -0.3)),
+///     .transformed(Transform::new_translation(0., 0., -0.3)),
 /// );
 ///
 /// let right_leg: Robot = right_leg_link.build_tree().to_robot("Right_Leg_bot");

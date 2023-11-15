@@ -21,7 +21,7 @@ pub fn generate_variants(input: &GenericsEnumInput) -> Vec<Variant> {
 	gen_iter
 		.fold(vec![first], |main: Vec<Vec<TypePath>>, iter| {
 			main.into_iter()
-				.cartesian_product(iter.into_iter())
+				.cartesian_product(iter)
 				.map(|tup| {
 					let mut n = tup.0.clone();
 					n.push(tup.1);

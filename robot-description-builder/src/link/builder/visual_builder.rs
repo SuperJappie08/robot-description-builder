@@ -64,7 +64,7 @@ impl VisualBuilder {
 	/// Specify a `transform` for this `VisualBuilder`.
 	///
 	/// The default is a no transformation (The frame of the `Visual` will be the same as the frame of the parent `Link`).
-	pub fn tranformed(mut self, transform: Transform) -> Self {
+	pub fn transformed(mut self, transform: Transform) -> Self {
 		self.transform = Some(transform);
 		self
 	}

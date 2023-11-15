@@ -427,11 +427,11 @@ mod tests {
 				LinkBuilder::new("link-1")
 					.add_collider(
 						CollisionBuilder::new(SphereGeometry::new(4.))
-							.tranformed(Transform::new_translation(2., 0., 0.)),
+							.transformed(Transform::new_translation(2., 0., 0.)),
 					)
 					.add_visual(
 						Visual::builder(SphereGeometry::new(4.))
-							.tranformed(Transform::new_translation(2., 0., 0.))
+							.transformed(Transform::new_translation(2., 0., 0.))
 							.materialized(material_red.clone()),
 					),
 				SmartJointBuilder::new("joint-0")
@@ -518,11 +518,11 @@ mod tests {
 					let tmp_tree = LinkBuilder::new("link-1")
 						.add_collider(
 							CollisionBuilder::new(SphereGeometry::new(4.))
-								.tranformed(Transform::new_translation(2., 0., 0.)),
+								.transformed(Transform::new_translation(2., 0., 0.)),
 						)
 						.add_visual(
 							Visual::builder(SphereGeometry::new(4.))
-								.tranformed(Transform::new_translation(2., 0., 0.))
+								.transformed(Transform::new_translation(2., 0., 0.))
 								.materialized(
 									MaterialDescriptor::new_color(0., 0., 1., 1.).named("Blue"),
 								),
@@ -537,7 +537,7 @@ mod tests {
 							LinkBuilder::new("link-1-1").add_visual(
 								Visual::builder(CylinderGeometry::new(0.5, 18.))
 									.named("link-1-1-vis")
-									.tranformed(Transform::new_translation(9., 0.5, 0.))
+									.transformed(Transform::new_translation(9., 0.5, 0.))
 									.materialized(MaterialDescriptor::new_color(
 										0.5, 0.5, 0.5, 0.75,
 									)),
@@ -798,7 +798,7 @@ mod tests {
 							Some(MaterialDescriptor::new_color(0., 0., 1., 1.,).named("Blue"))
 						)],
 						colliders: vec![CollisionBuilder::new(SphereGeometry::new(4.))
-							.tranformed(Transform::new_translation(2., 0., 0.))],
+							.transformed(Transform::new_translation(2., 0., 0.))],
 						joints: vec![JointBuilder {
 							name: "joint-1-1".into(),
 							joint_type: JointType::Revolute,

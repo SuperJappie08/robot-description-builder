@@ -61,7 +61,7 @@ fn main() {
 	/* ====== Start right leg ====== */
 	let right_leg_link_vis = Visual::builder(BoxGeometry::new(0.6, 0.1, 0.2))
 		.materialized(white_material.clone())
-		.tranformed(Transform::new((0., 0., -0.3), (0., FRAC_PI_2, 0.)));
+		.transformed(Transform::new((0., 0., -0.3), (0., FRAC_PI_2, 0.)));
 
 	let right_leg_link = Link::builder("[\\[right]\\]_leg")
 		.add_collider(right_leg_link_vis.to_collision()) // They can also be created by conversion.
@@ -100,12 +100,12 @@ fn main() {
 	let right_front_wheel_link = Link::builder("[\\[right]\\]_[[front]]_wheel")
 		.add_visual(
 			Visual::builder(CylinderGeometry::new(0.035, 0.1))
-				.tranformed(Transform::new_rotation(FRAC_PI_2, 0., 0.))
+				.transformed(Transform::new_rotation(FRAC_PI_2, 0., 0.))
 				.materialized(black_material.clone()),
 		)
 		.add_collider(
 			Collision::builder(CylinderGeometry::new(0.035, 0.1))
-				.tranformed(Transform::new_rotation(FRAC_PI_2, 0., 0.)),
+				.transformed(Transform::new_rotation(FRAC_PI_2, 0., 0.)),
 		)
 		.add_intertial(InertialData {
 			mass: 1.,
@@ -185,11 +185,11 @@ fn main() {
 	let gripper_pole = Link::builder("gripper_pole")
 		.add_visual(
 			Visual::builder(CylinderGeometry::new(0.01, 0.2))
-				.tranformed(Transform::new((0.1, 0., 0.), (0., FRAC_PI_2, 0.))),
+				.transformed(Transform::new((0.1, 0., 0.), (0., FRAC_PI_2, 0.))),
 		)
 		.add_collider(
 			Collision::builder(CylinderGeometry::new(0.01, 0.2))
-				.tranformed(Transform::new((0.1, 0., 0.), (0., FRAC_PI_2, 0.))),
+				.transformed(Transform::new((0.1, 0., 0.), (0., FRAC_PI_2, 0.))),
 		)
 		.add_intertial(InertialData {
 			mass: 0.05,
@@ -233,7 +233,7 @@ fn main() {
 	};
 
 	let left_tip_collider = Collision::builder(left_tip_geometry)
-		.tranformed(Transform::new_translation(0.09137, 0.00495, 0.));
+		.transformed(Transform::new_translation(0.09137, 0.00495, 0.));
 
 	left_gripper
 		.get_root_link()
@@ -332,11 +332,11 @@ fn main() {
 		.add_visual(
 			Visual::builder(BoxGeometry::new(0.08, 0.08, 0.08))
 				.materialized(blue_material.clone())
-				.tranformed(Transform::new_translation(-0.04, 0., 0.)),
+				.transformed(Transform::new_translation(-0.04, 0., 0.)),
 		)
 		.add_collider(
 			Collision::builder(BoxGeometry::new(0.08, 0.08, 0.08))
-				.tranformed(Transform::new_translation(-0.04, 0., 0.)),
+				.transformed(Transform::new_translation(-0.04, 0., 0.)),
 		)
 		.add_intertial(InertialData {
 			mass: 1.,

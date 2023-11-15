@@ -78,7 +78,7 @@ impl PyVisualBuilder {
 	#[setter]
 	fn set_transform(&mut self, transform: Option<PyTransform>) {
 		match (transform, self.0.transform().is_some()) {
-			(Some(transform), _) => self.0 = self.0.clone().tranformed(transform.into()),
+			(Some(transform), _) => self.0 = self.0.clone().transformed(transform.into()),
 			(None, true) => {
 				self.0 = VisualBuilder::new_full(
 					self.0.name().cloned(),

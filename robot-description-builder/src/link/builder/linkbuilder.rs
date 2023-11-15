@@ -303,7 +303,7 @@ mod tests {
 			let link_builder = LinkBuilder::new("a Link")
 				.add_visual(
 					VisualBuilder::new(CylinderGeometry::new(1., 2.))
-						.tranformed(Transform::new_translation(5., 0., 16.)),
+						.transformed(Transform::new_translation(5., 0., 16.)),
 				)
 				.add_visual(
 					VisualBuilder::new(BoxGeometry::new(10., 20., 30.)).named("a link's visual"),
