@@ -135,7 +135,8 @@ impl Material {
 	}
 
 	/// Describes the `Material` to reform a [`MaterialDescriptor`].
-	// TODO: Expand
+	///
+	/// This can be used to clone the `Material` for use in a different `Link`.
 	pub fn describe(&self) -> MaterialDescriptor {
 		let descriptor = MaterialDescriptor::new_data(self.material_data().try_into().unwrap()); //FIXME: Unwrap not OK
 		match &self.0 {

@@ -24,7 +24,7 @@ pub(crate) trait BuildLink {
 	where
 		Self: Sized,
 	{
-		let data = KinematicDataTree::newer_link(self);
+		let data = KinematicDataTree::new(self);
 		KinematicTree::new(data)
 	}
 

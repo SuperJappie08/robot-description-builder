@@ -15,8 +15,6 @@ pub struct SDFConfig {
 }
 
 /// A trait to allow parts of a `Robot` to be described in the SDFormat.
-///
-/// TODO: EXPAND?
 pub trait ToSDF {
 	/// Represents the element as in SDFormat.
 	fn to_sdf(

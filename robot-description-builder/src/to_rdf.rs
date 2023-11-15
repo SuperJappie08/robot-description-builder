@@ -65,7 +65,6 @@ fn make_xml_writer(xml_mode: XMLMode) -> Writer<Cursor<Vec<u8>>> {
 ///     )
 /// );
 /// ```
-// TODO: Maybe only show example when URDF feature enabled
 pub fn xml_writer_to_string(writer: Writer<Cursor<Vec<u8>>>) -> String {
 	let mut buffer = writer.into_inner();
 

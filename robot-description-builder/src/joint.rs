@@ -102,13 +102,19 @@ impl Joint {
 		self.axis
 	}
 
-	/// Make a `JointBuilder` to build a 'Clone' of the `Joint`
+	/// Make a `JointBuilder` to build a 'Clone' of the `Joint`.
+	///
+	/// This method does not clone the child of the [`Joint`], only the `Joint` is self.
+	///
+	/// If the whole branch needs to be copied use [`rebuild_branch`](Self::rebuild_branch()).
 	pub fn rebuild(&self) -> JointBuilder {
 		#[cfg(any(feature = "logging", test))]
 		log::info!(target: "JointBuilder","Rebuilding: {}", self.name());
 		JointBuilder {
 			name: self.name.clone(),
 			joint_type: self.joint_type,
+			// child is None, since this method only rebuilds the current Joint
+			child: None,
 			transform: self.transform.into(),
 			axis: self.axis,
 			calibration: self.calibration,
@@ -116,7 +122,6 @@ impl Joint {
 			limit: self.limit,
 			mimic: self.mimic.clone().map(|mimic| mimic.into()),
 			safety_controller: self.safety_controller,
-			..Default::default() // TODO: Might lose data here
 		}
 	}
 
@@ -129,6 +134,7 @@ impl Joint {
 		})
 	}
 
+	// TODO: DOCS
 	pub fn rebuild_branch(&self) -> Result<Chained<JointBuilder>, RebuildBranchError> {
 		#[cfg(any(feature = "logging", test))]
 		log::info!(target: "JointBuilder","Starting Branch Rebuilding: {}", self.name());

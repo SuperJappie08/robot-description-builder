@@ -173,7 +173,7 @@ impl JointBuilder {
 		}
 	}
 
-	// TODO: ORIGIN
+	// TODO: Transform
 
 	pub fn child(&self) -> Option<&LinkBuilder> {
 		self.child.as_ref()

@@ -41,7 +41,7 @@ pub struct KinematicDataTree {
 }
 
 impl KinematicDataTree {
-	pub(crate) fn newer_link(root_link_builder: impl BuildLink) -> Arc<Self> {
+	pub(crate) fn new(root_link_builder: impl BuildLink) -> Arc<Self> {
 		let data = Arc::new_cyclic(|tree| Self {
 			root_link: root_link_builder.start_building_chain(tree),
 			material_index: Arc::new(RwLock::new(HashMap::new())),
@@ -56,8 +56,8 @@ impl KinematicDataTree {
 			#[cfg(any(feature = "logging", test))]
 			log::trace!("Attempting to register tree data to index");
 
-			// 1st Unwrapping is Ok here, since we just made the KinematicDataTree
-			data.try_add_link(&data.root_link).unwrap(); //FIXME: is Unwrap Ok? No Link could contain conflicting materials
+			//FIXME: This unwrap is not Ok, the Link could contain conflicting materials
+			data.try_add_link(&data.root_link).unwrap();
 		}
 		data
 	}
@@ -342,7 +342,7 @@ mod tests {
 
 	#[test]
 	fn newer_link_singular_empty() {
-		let tree = KinematicDataTree::newer_link(LinkBuilder::new("Linky"));
+		let tree = KinematicDataTree::new(LinkBuilder::new("Linky"));
 
 		assert_eq!(tree.links.try_read().unwrap().len(), 1);
 		assert_eq!(tree.joints.try_read().unwrap().len(), 0);
@@ -381,7 +381,7 @@ mod tests {
 
 	#[test]
 	fn newer_link_multi_empty() {
-		let tree = KinematicDataTree::newer_link(LinkBuilder {
+		let tree = KinematicDataTree::new(LinkBuilder {
 			joints: vec![
 				JointBuilder {
 					child: Some(LinkBuilder {
@@ -723,7 +723,7 @@ mod tests {
 			let geom_leg_l1 = BoxGeometry::new(2., 3., 1.);
 			let geom_leg_l2 = CylinderGeometry::new(1., 10.);
 
-			let kinematic_data_tree = KinematicDataTree::newer_link(
+			let kinematic_data_tree = KinematicDataTree::new(
 				Link::builder("Leg_[L1]_l1")
 					.add_visual(
 						Visual::builder(geom_leg_l1.clone())

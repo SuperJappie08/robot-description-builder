@@ -38,8 +38,6 @@ impl MaterialStage {
 	}
 
 	/// Gets the data wrapped in a [`MaterialDataReference`]
-	///
-	/// TODO: Name could also be `get`
 	pub(crate) fn data(&self) -> MaterialDataReference {
 		match self {
 			MaterialStage::PreInit(data) => data.into(),

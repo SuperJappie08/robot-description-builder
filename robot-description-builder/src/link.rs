@@ -206,13 +206,19 @@ impl Link {
 		&self.colliders
 	}
 
+	/// Make a `LinkBuilder` to build a 'Clone' of the `Link`.
+	///
+	/// This method does not clone the child joints of the [`Link`], only the `Link` is self.
+	///
+	/// If the whole branch needs to be copied use [`rebuild_branch`](Self::rebuild_branch()).
 	pub fn rebuild(&self) -> LinkBuilder {
 		LinkBuilder {
 			name: self.name.clone(),
+			// Joints is empty, since this method only rebuilds the current Joint
+			joints: Vec::new(),
 			visuals: self.visuals.iter().map(Visual::rebuild).collect(),
 			colliders: self.colliders.iter().map(Collision::rebuild).collect(),
 			intertial: self.inertial,
-			..Default::default() // FIXME: Some data might be lost here
 		}
 	}
 

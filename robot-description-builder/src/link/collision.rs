@@ -8,7 +8,8 @@ use crate::{identifiers::GroupID, transform::Transform};
 
 #[derive(Debug)]
 pub struct Collision {
-	// TODO: Figure out if I want to keep the name optional?.
+	/// The _string identifier_/name of this visual element.
+	// TODO: Add export option which generates name.
 	pub(crate) name: Option<String>,
 	/// The transform from the origin of the parent `Link` to the origin of this `Collision`.
 	///
@@ -16,8 +17,7 @@ pub struct Collision {
 	///
 	/// In URDF this field is refered to as `<origin>`.
 	pub(crate) transform: Option<Transform>,
-
-	// TODO: Figure out if this needs to be public or not
+	/// The geometry of this Collision element.
 	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
 }
 
@@ -29,19 +29,16 @@ impl Collision {
 		CollisionBuilder::new(geometry)
 	}
 
-	// TODO: LinkFields?
 	/// Gets an optional reference to the `name` of this `Collision`.
 	pub fn name(&self) -> Option<&String> {
 		self.name.as_ref()
 	}
 
-	// TODO: LinkFields?
 	/// Gets an optional reference to the `transform` of this `Collision`.
 	pub fn transform(&self) -> Option<&Transform> {
 		self.transform.as_ref()
 	}
 
-	// TODO: LinkFields?
 	/// Gets a reference to the `geometry` of this `Collision`.
 	pub fn geometry(&self) -> &Box<dyn GeometryInterface + Sync + Send> {
 		&self.geometry

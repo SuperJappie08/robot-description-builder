@@ -27,6 +27,9 @@ The Changes between versions of [<b>`robot-description-builder`</b> for <b>Rust<
 - Fixed spelling mistake in method name of `VisualBuilder` and `CollisionBuilder` (`*::tranformed` -> `*::transformed`)
 - Improved documentation
 
+#### Internal
+ - Renamed `KinematicDataTree::newer_link` to `KinematicDataTree::new` 
+
 ### Removed
 ### Misc
 - Moved internal typealiasses `ArcLock` and `WeakLock` to `utils` module.

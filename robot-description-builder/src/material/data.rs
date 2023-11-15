@@ -1,9 +1,8 @@
 //! The raw `Matarial` data handlers.
 //!
-//! TODO: EXPAND
-/* DOC TODO:
- - Module DOC
-*/
+//! This module contains:
+//!  - The [`MaterialData`] container, which contains the raw material data such as the color.
+//!  - The [`MaterialDataReference`], which is a referenced which can refer to a material data from both (Global) named  and unnamed materials.
 use std::sync::Arc;
 
 use crate::utils::{ArcLock, ArcRW, ErroredRead};
@@ -103,8 +102,9 @@ impl<'a> MaterialDataReference<'a> {
 				}
 			}
 			(MaterialDataReference::Global(left), MaterialDataReference::Global(right)) => {
-				left.read().unwrap().clone() == right.read().unwrap().clone()
-			} // FIXME: Unwrap not OK
+				Arc::ptr_eq(left, right)
+					|| left.read().unwrap().clone() == right.read().unwrap().clone() // FIXME: Unwrap not OK
+			}
 		}
 	}
 }

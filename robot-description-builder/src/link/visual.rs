@@ -13,7 +13,8 @@ use crate::{
 
 #[derive(Debug)]
 pub struct Visual {
-	// TODO: Figure out if I want to keep the name optional?.
+	/// The _string identifier_/name of this visual element.
+	// TODO: Add export option which generates name.
 	pub(crate) name: Option<String>,
 	/// The transform from the origin of the parent `Link` to the origin of this `Visual`.
 	///
@@ -21,10 +22,9 @@ pub struct Visual {
 	///
 	/// In URDF this field is refered to as `<origin>`.
 	pub(crate) transform: Option<Transform>,
-
-	// Figure out if this needs to be public or not
+	/// The geometry of this Visual element.
 	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
-	// Not sure about refCell
+	/// The material of this Visual element.
 	pub(crate) material: Option<Material>,
 }
 
@@ -158,11 +158,7 @@ impl PartialEq for Visual {
 			&& *self.geometry == *other.geometry
 			&& match (&self.material, &other.material) {
 				(None, None) => true,
-				(Some(own_material), Some(other_material)) => {
-					// FIXME: The Or is for testing pursposes, It might need to be incorparted into the Lib, but then we need a differnt way
-					// Needed for unnamed materials, which do not share a reference.
-					own_material == other_material
-				}
+				(Some(own_material), Some(other_material)) => own_material == other_material,
 				_ => false,
 			}
 	}
