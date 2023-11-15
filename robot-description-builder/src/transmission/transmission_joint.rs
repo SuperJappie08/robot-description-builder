@@ -154,7 +154,7 @@ impl ToURDF for TransmissionJoint {
 					.as_bytes()
 					.into(),
 			})
-			.write_inner_content(|writer| {
+			.write_inner_content(|writer| -> quick_xml::Result<()> {
 				self.hardware_interfaces
 					.iter()
 					.map(|hw_interface| hw_interface.to_urdf(writer, urdf_config))

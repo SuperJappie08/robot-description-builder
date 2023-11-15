@@ -41,7 +41,7 @@ impl PyJointBuilder {
 
 		if let Some(kwds) = kwds {
 			if let Some(transform) = kwds
-				.get_item(intern!(py, "transform"))
+				.get_item(intern!(py, "transform"))?
 				.map(FromPyObject::extract)
 			{
 				base.transform = transform?;
@@ -49,7 +49,7 @@ impl PyJointBuilder {
 			}
 
 			if let Some(axis) = kwds
-				.get_item(intern!(py, "axis"))
+				.get_item(intern!(py, "axis"))?
 				.map(FromPyObject::extract)
 			{
 				base.builder.with_axis(axis?);
@@ -64,7 +64,7 @@ impl PyJointBuilder {
 			// if let Some(dynamics) = kwds.get_item(intern!(py, "dynamics")).map()
 
 			if let Some(limit) = kwds
-				.get_item(intern!(py, "limit"))
+				.get_item(intern!(py, "limit"))?
 				.map::<PyResult<PyLimit>, _>(FromPyObject::extract)
 			{
 				*base.builder.limit_mut() = Some(limit?.into());

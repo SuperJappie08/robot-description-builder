@@ -189,7 +189,7 @@ impl ToURDF for Joint {
 				value: self.joint_type().into(),
 			});
 
-		element.write_inner_content(|writer| {
+		element.write_inner_content(|writer| -> quick_xml::Result<()> {
 			let transform = self.transform();
 			if transform.contains_some() {
 				transform.to_urdf(writer, urdf_config)?;

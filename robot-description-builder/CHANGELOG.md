@@ -36,9 +36,9 @@ The Changes between versions of [<b>`robot-description-builder`</b> for <b>Rust<
 
 
 - Bumped depency versions:
- - `itertools` 0.10.5 -> 0.11.0
+ - `itertools` 0.10.5 -> 0.12.0
  - `log` 0.4.18 -> 0.4.19 
- - `quick-xml` 0.29.0 -> 0.30.0
+ - `quick-xml` 0.29.0 -> 0.31.0
  - `thiserror` 1.0.40 -> 1.0
  - `nalgebra` 0.32.2 -> 0.32.3
  - `DEV` `test-log` 0.2.11 -> 0.2.12

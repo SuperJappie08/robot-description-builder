@@ -64,7 +64,7 @@ impl ToURDF for CylinderGeometry {
 		_urdf_config: &crate::to_rdf::to_urdf::URDFConfig,
 	) -> Result<(), quick_xml::Error> {
 		let element = writer.create_element("geometry");
-		element.write_inner_content(|writer| {
+		element.write_inner_content(|writer| -> quick_xml::Result<()> {
 			writer
 				.create_element("cylinder")
 				.with_attribute(Attribute {

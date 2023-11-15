@@ -283,7 +283,7 @@ impl ToURDF for Transmission {
 				key: QName(b"name"),
 				value: self.name().display().as_bytes().into(),
 			})
-			.write_inner_content(|writer| {
+			.write_inner_content(|writer| -> quick_xml::Result<()> {
 				self.transmission_type().to_urdf(writer, urdf_config)?;
 
 				self.joints()

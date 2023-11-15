@@ -29,8 +29,8 @@ The Changes between versions of [<b>`robot-description-builder`</b> for <b>Pytho
 
 ### Misc
 - Bumped depency versions:
- - Rust: PyO3 0.19.1 -> 0.19.2
- - Rust: itertools 0.10.5 -> 0.11.0
+ - Rust: PyO3 0.19.1 -> 0.20.0
+ - Rust: itertools 0.10.5 -> 0.12.0
  - Rust: thiserror 0.10.40 -> 0.10 (Less specific versioning)
- - Python: Maturin 1.0.1 -> 1.2.0
- - Python: pytest 7.3.1 -> 7.4.0
+ - Python: Maturin 1.0.1 -> 1.3.2
+ - Python: pytest 7.3.1 -> 7.4.3

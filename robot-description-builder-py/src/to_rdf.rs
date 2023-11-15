@@ -14,7 +14,7 @@ pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
 
 /// Takes `'indent'` argument from a `&PyDict` to extract a `XMLMode`
 fn dict2xmlmode(py: Python<'_>, kwds: &PyDict) -> PyResult<XMLMode> {
-	if let Some(indent) = kwds.get_item(intern!(py, "indent")) {
+	if let Some(indent) = kwds.get_item(intern!(py, "indent"))? {
 		if let Ok((c, count)) = indent.extract::<(char, usize)>() {
 			// Char and count so indentation
 			kwds.del_item(intern!(py, "indent"))?;

@@ -132,7 +132,7 @@ impl ToURDF for Visual {
 				value: name.display().as_bytes().into(),
 			});
 		}
-		element.write_inner_content(|writer| {
+		element.write_inner_content(|writer| -> quick_xml::Result<()> {
 			// Could make this with `get_geometry_data``
 			if let Some(transform) = self.transform() {
 				transform.to_urdf(writer, urdf_config)?

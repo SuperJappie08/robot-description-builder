@@ -79,7 +79,7 @@ fn dict2urdfconfig(py: Python<'_>, kwds: &PyDict) -> PyResult<URDFConfig> {
 
 /// Takes `'target'` argument from a `&PyDict` to extract a `URDFTarget`
 fn dict2urdftarget(py: Python<'_>, kwds: &PyDict) -> PyResult<URDFTarget> {
-	if let Some(target) = kwds.get_item(intern!(py, "target")) {
+	if let Some(target) = kwds.get_item(intern!(py, "target"))? {
 		// target specified so extract the target string
 		let target = target.extract::<&str>()?;
 		let target_lower = target.to_lowercase();
@@ -101,7 +101,7 @@ fn dict2urdftarget(py: Python<'_>, kwds: &PyDict) -> PyResult<URDFTarget> {
 }
 
 fn dict2materialref(py: Python<'_>, kwds: &PyDict) -> PyResult<URDFMaterialReferences> {
-	if let Some(material_mode) = kwds.get_item(intern!(py, "material_refmode")) {
+	if let Some(material_mode) = kwds.get_item(intern!(py, "material_refmode"))? {
 		return Err(pyo3::exceptions::PyNotImplementedError::new_err(format!(
 			"TODO: material_ref_mode: {}",
 			material_mode

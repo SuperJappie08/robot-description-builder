@@ -4,3 +4,4 @@ members = [
     "robot-description-builder-py",
     "robot-description-builder-py/rdb-py-macro"
 ]
+resolver = "2"

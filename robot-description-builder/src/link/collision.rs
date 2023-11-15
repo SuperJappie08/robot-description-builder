@@ -72,7 +72,7 @@ impl ToURDF for Collision {
 			});
 		}
 
-		element.write_inner_content(|writer| {
+		element.write_inner_content(|writer| -> quick_xml::Result<()> {
 			if let Some(transform) = self.transform() {
 				transform.to_urdf(writer, urdf_config)?
 			}
