@@ -64,7 +64,7 @@ fn main() {
 		.get_root_link()
 		.write()
 		.unwrap()
-		.try_attach_child(right_base_link, right_base_joint)
+		.try_attach_child(right_base_joint, right_base_link)
 		.unwrap();
 
 	let right_front_wheel_link = Link::builder("[\\[right]\\]_[[front]]_wheel").add_visual(
@@ -81,7 +81,7 @@ fn main() {
 		.get_newest_link()
 		.write()
 		.unwrap()
-		.try_attach_child(right_front_wheel_link, right_front_wheel_joint)
+		.try_attach_child(right_front_wheel_joint, right_front_wheel_link)
 		.unwrap();
 
 	let mut right_back_wheel = right_leg
@@ -114,7 +114,7 @@ fn main() {
 		.get_root_link()
 		.write()
 		.unwrap()
-		.try_attach_child(right_leg, base_right_leg_joint)
+		.try_attach_child(base_right_leg_joint, right_leg)
 		.unwrap();
 
 	/* ==== Attaching left leg ===== */
@@ -161,6 +161,7 @@ fn main() {
 		.write()
 		.unwrap()
 		.try_attach_child(
+			SmartJointBuilder::new_fixed("[[left]]_tip_joint"),
 			Link::builder("[[left]]_tip").add_visual(
 				Visual::builder(match use_meshes {
 					true => MeshGeometry::new(
@@ -173,7 +174,6 @@ fn main() {
 				})
 				.transformed(Transform::new_translation(0.09137, 0.00495, 0.)),
 			),
-			SmartJointBuilder::new_fixed("[[left]]_tip_joint"),
 		)
 		.unwrap();
 
@@ -182,9 +182,9 @@ fn main() {
 		.write()
 		.unwrap()
 		.try_attach_child(
-			left_gripper.yank_root().unwrap(),
 			SmartJointBuilder::new_fixed("[[left]]_gripper_joint")
 				.add_transform(Transform::new_translation(0.2, 0.01, 0.)),
+			left_gripper.yank_root().unwrap(),
 		)
 		.unwrap();
 
@@ -211,9 +211,9 @@ fn main() {
 		.write()
 		.unwrap()
 		.try_attach_child(
-			gripper_pole.yank_root().unwrap(),
 			SmartJointBuilder::new_fixed("gripper_extension")
 				.add_transform(Transform::new_translation(0.19, 0., 0.2)),
+			gripper_pole.yank_root().unwrap(),
 		)
 		.unwrap();
 
@@ -230,7 +230,7 @@ fn main() {
 		.get_root_link()
 		.write()
 		.unwrap()
-		.try_attach_child(head_link, head_swivel_joint)
+		.try_attach_child(head_swivel_joint, head_link)
 		.unwrap();
 
 	let box_link = Link::builder("box").add_visual(
@@ -244,7 +244,7 @@ fn main() {
 		.get_newest_link()
 		.write()
 		.unwrap()
-		.try_attach_child(box_link, to_box_joint)
+		.try_attach_child(to_box_joint, box_link)
 		.unwrap();
 
 	let out = to_urdf_string(&model);

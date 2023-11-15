@@ -49,7 +49,7 @@ fn main() {
 	tree.get_root_link()
 		.write()
 		.unwrap()
-		.try_attach_child(right_leg_link, base_right_leg_joint)
+		.try_attach_child(base_right_leg_joint, right_leg_link)
 		.unwrap();
 
 	// /* UNCOMMENT FOR 2 */

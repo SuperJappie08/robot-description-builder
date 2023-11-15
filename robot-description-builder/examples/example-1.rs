@@ -37,6 +37,9 @@ fn main() {
 		.try_write()
 		.unwrap()
 		.try_attach_child(
+			JointBuilder::new("Leg_[[R1]]_j1", JointType::Fixed)
+				.add_origin_offset((2.0, 0., 0.))
+				.to_owned(),
 			Link::builder("Leg_[[R1]]_l1")
 				.add_visual(
 					Visual::builder(BoxGeometry::new(0.5, 0.1, 0.1))
@@ -48,9 +51,6 @@ fn main() {
 						.named("Leg_[[R1]]_l1_col")
 						.transformed(Transform::new_translation(0.25, 0., 0.)),
 				),
-			JointBuilder::new("Leg_[[R1]]_j1", JointType::Fixed)
-				.add_origin_offset((2.0, 0., 0.))
-				.to_owned(),
 		)
 		.unwrap();
 
@@ -66,10 +66,10 @@ fn main() {
 		.write()
 		.unwrap()
 		.try_attach_child(
-			link,
 			JointBuilder::new("Leg_[[R1]]_j0", JointType::Fixed)
 				.add_origin_offset((0.4, 0., 0.))
 				.to_owned(),
+			link,
 		)
 		.unwrap();
 

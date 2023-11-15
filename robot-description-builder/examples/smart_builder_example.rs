@@ -50,7 +50,7 @@ fn main() {
 	tree.get_root_link()
 		.write()
 		.unwrap()
-		.try_attach_child(Link::builder("child_fixed"), fixed_builder)
+		.try_attach_child(fixed_builder, Link::builder("child_fixed"))
 		.unwrap();
 
 	println!("{:#?}", tree);

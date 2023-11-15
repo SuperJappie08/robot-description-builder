@@ -743,6 +743,10 @@ mod tests {
 				.try_write()
 				.unwrap()
 				.try_attach_child(
+					SmartJointBuilder::new_fixed("Leg_[L1]_j1").add_transform(Transform::new(
+						(0., 3., 0.),
+						(0., 0., std::f32::consts::FRAC_PI_2),
+					)),
 					Link::builder("Leg_[L1]_l2")
 						.add_visual(
 							Visual::builder(geom_leg_l2.clone())
@@ -761,10 +765,6 @@ mod tests {
 								))
 								.named("Leg_[L1]_l2_col_1"),
 						),
-					SmartJointBuilder::new_fixed("Leg_[L1]_j1").add_transform(Transform::new(
-						(0., 3., 0.),
-						(0., 0., std::f32::consts::FRAC_PI_2),
-					)),
 				)
 				.unwrap();
 

@@ -38,8 +38,8 @@ pub trait KinematicInterface: Sized {
 	///
 	/// /// This is equivalent to `get_root_link` in this case, since this is a new tree/Link.
 	/// tree.get_newest_link().try_write().unwrap().try_attach_child(
-	///     LinkBuilder::new("his one and only child"),
-	///     JointBuilder::new("just a joint", JointType::Fixed)
+	///     JointBuilder::new("just a joint", JointType::Fixed),
+	///     LinkBuilder::new("his one and only child")
 	/// ).unwrap();
 	///
 	/// assert_eq!(tree.get_root_link().try_read().unwrap().name(), "the root link")
@@ -56,8 +56,8 @@ pub trait KinematicInterface: Sized {
 	/// assert_eq!(tree.get_newest_link().try_read().unwrap().name(), "the root link");
 	///
 	/// tree.get_newest_link().try_write().unwrap().try_attach_child(
-	///     LinkBuilder::new("his one and only child"),
-	///     JointBuilder::new("just a joint", JointType::Fixed)
+	///     JointBuilder::new("just a joint", JointType::Fixed),
+	///     LinkBuilder::new("his one and only child")
 	/// ).unwrap();
 	///
 	/// assert_eq!(tree.get_newest_link().try_read().unwrap().name(), "his one and only child");
@@ -65,12 +65,13 @@ pub trait KinematicInterface: Sized {
 	/// let long_sub_tree = LinkBuilder::new("the other child").build_tree();
 	///
 	/// long_sub_tree.get_newest_link().try_write().unwrap().try_attach_child(
-	///     Link::builder("the latest child"),
-	///     JointBuilder::new("second joint", JointType::Fixed)
+	///     JointBuilder::new("second joint", JointType::Fixed),
+	///     Link::builder("the latest child")
 	/// ).unwrap();
 	///
-	/// tree.get_root_link().try_write().unwrap().try_attach_child(long_sub_tree,
-	///     JointBuilder::new("third joint", JointType::Fixed)
+	/// tree.get_root_link().try_write().unwrap().try_attach_child(
+	///     JointBuilder::new("third joint", JointType::Fixed),
+	///     long_sub_tree
 	/// ).unwrap();
 	///
 	/// assert_eq!(tree.get_newest_link().try_read().unwrap().name(), "the latest child");

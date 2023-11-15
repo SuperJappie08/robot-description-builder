@@ -136,8 +136,8 @@ impl Link {
 	//  - Doctest
 	pub fn try_attach_child<LinkChain>(
 		&mut self,
-		link_chain: LinkChain,
 		joint_builder: impl BuildJoint,
+		link_chain: LinkChain,
 	) -> Result<(), AttachChainError>
 	where
 		LinkChain: Into<Chained<LinkBuilder>>,
@@ -398,8 +398,8 @@ mod tests {
 				.try_write()
 				.unwrap()
 				.try_attach_child(
+					JointBuilder::new("steve", JointType::Fixed),
 					LinkBuilder::new("child_link"),
-					JointBuilder::new("steve", JointType::Fixed)
 				),
 			Ok(())
 		);
@@ -468,8 +468,8 @@ mod tests {
 			.try_write()
 			.unwrap()
 			.try_attach_child(
-				LinkBuilder::new("other_child_link"),
 				JointBuilder::new("other_joint", JointType::Fixed),
+				LinkBuilder::new("other_child_link"),
 			)
 			.unwrap();
 
@@ -477,8 +477,8 @@ mod tests {
 			.try_write()
 			.unwrap()
 			.try_attach_child(
-				other_tree,
 				JointBuilder::new("initial_joint", JointType::Fixed),
+				other_tree,
 			)
 			.unwrap();
 
@@ -491,7 +491,7 @@ mod tests {
 		tree.get_root_link()
 			.try_write()
 			.unwrap()
-			.try_attach_child(tree_three, JointBuilder::new("joint-3", JointType::Fixed))
+			.try_attach_child(JointBuilder::new("joint-3", JointType::Fixed), tree_three)
 			.unwrap();
 
 		assert_eq!(tree.get_root_link().try_read().unwrap().name(), "root");

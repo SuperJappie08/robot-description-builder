@@ -110,7 +110,7 @@ fn main() {
 		.get_root_link()
 		.write()
 		.unwrap()
-		.try_attach_child(right_base_link, right_base_joint)
+		.try_attach_child(right_base_joint, right_base_link)
 		.unwrap();
 
 	let right_front_wheel_link = Link::builder("[\\[right]\\]_[[front]]_wheel")
@@ -141,7 +141,7 @@ fn main() {
 		.get_newest_link()
 		.write()
 		.unwrap()
-		.try_attach_child(right_front_wheel_link, right_front_wheel_joint)
+		.try_attach_child(right_front_wheel_joint, right_front_wheel_link)
 		.unwrap();
 
 	let mut right_back_wheel = right_leg
@@ -176,7 +176,7 @@ fn main() {
 		.get_root_link()
 		.write()
 		.unwrap()
-		.try_attach_child(right_leg, base_right_leg_joint)
+		.try_attach_child(base_right_leg_joint, right_leg)
 		.unwrap();
 
 	/* ==== Attaching left leg ===== */
@@ -251,6 +251,7 @@ fn main() {
 		.write()
 		.unwrap()
 		.try_attach_child(
+			SmartJointBuilder::new_fixed("[[left]]_tip_joint"),
 			Link::builder("[[left]]_tip")
 				.add_visual(left_tip_collider.to_visual())
 				.add_collider(left_tip_collider)
@@ -258,7 +259,6 @@ fn main() {
 					mass: 0.05,
 					..default_inertial
 				}),
-			SmartJointBuilder::new_fixed("[[left]]_tip_joint"),
 		)
 		.unwrap();
 
@@ -267,13 +267,13 @@ fn main() {
 		.write()
 		.unwrap()
 		.try_attach_child(
-			left_gripper.yank_root().unwrap(),
 			SmartJointBuilder::new_revolute("[[left]]_gripper_joint")
 				.with_axis((0., 0., 1.))
 				.with_limit(1000., 0.5)
 				.set_upper_limit(0.548)
 				.set_lower_limit(0.)
 				.add_transform(Transform::new_translation(polelen, 0.01, 0.)),
+			left_gripper.yank_root().unwrap(),
 		)
 		.unwrap();
 
@@ -300,12 +300,12 @@ fn main() {
 		.write()
 		.unwrap()
 		.try_attach_child(
-			gripper_pole.yank_root().unwrap(),
 			SmartJointBuilder::new_prismatic("gripper_extension")
 				.with_limit(1000., 0.5)
 				.set_lower_limit(-(width * 2. - 0.02))
 				.set_upper_limit(0.)
 				.add_transform(Transform::new_translation(width - 0.01, 0., 0.2)),
+			gripper_pole.yank_root().unwrap(),
 		)
 		.unwrap();
 
@@ -329,7 +329,7 @@ fn main() {
 		.get_root_link()
 		.write()
 		.unwrap()
-		.try_attach_child(head_link, head_swivel_joint)
+		.try_attach_child(head_swivel_joint, head_link)
 		.unwrap();
 
 	//  The URDF tutorial is inconsistent here, out of nowhere translates visual, but not collision.
@@ -356,7 +356,7 @@ fn main() {
 		.get_newest_link()
 		.write()
 		.unwrap()
-		.try_attach_child(box_link, to_box_joint)
+		.try_attach_child(to_box_joint, box_link)
 		.unwrap();
 
 	let out = to_urdf_string(&model);

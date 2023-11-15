@@ -396,10 +396,10 @@ mod tests {
 			.try_write()
 			.unwrap()
 			.try_attach_child(
-				LinkBuilder::new("child"),
 				SmartJointBuilder::new("Joint1")
 					.fixed()
 					.add_transform(Transform::new_translation(2.0, 3.0, 5.0)),
+				LinkBuilder::new("child"),
 			)
 			.unwrap();
 
@@ -430,6 +430,9 @@ mod tests {
 			.try_write()
 			.unwrap()
 			.try_attach_child(
+				SmartJointBuilder::new("joint-0")
+					.add_transform(Transform::new_translation(1.0, 0., 0.))
+					.fixed(),
 				LinkBuilder::new("link-1")
 					.add_collider(
 						CollisionBuilder::new(SphereGeometry::new(4.))
@@ -440,9 +443,6 @@ mod tests {
 							.transformed(Transform::new_translation(2., 0., 0.))
 							.materialized(material_red.clone()),
 					),
-				SmartJointBuilder::new("joint-0")
-					.add_transform(Transform::new_translation(1.0, 0., 0.))
-					.fixed(),
 			)
 			.unwrap();
 
@@ -520,6 +520,9 @@ mod tests {
 			.try_write()
 			.unwrap()
 			.try_attach_child(
+				SmartJointBuilder::new("joint-0")
+					.add_transform(Transform::new_translation(1.0, 0., 0.))
+					.fixed(),
 				{
 					let tmp_tree = LinkBuilder::new("link-1")
 						.add_collider(
@@ -540,6 +543,13 @@ mod tests {
 						.write()
 						.unwrap()
 						.try_attach_child(
+							SmartJointBuilder::new("joint-1-1")
+								.revolute()
+								.add_transform(Transform::new_translation(4., 0., 0.))
+								.with_axis((0., 0., 1.))
+								.with_limit(100., 1000.)
+								.set_upper_limit(std::f32::consts::FRAC_PI_6)
+								.set_lower_limit(-std::f32::consts::FRAC_PI_6),
 							LinkBuilder::new("link-1-1").add_visual(
 								Visual::builder(CylinderGeometry::new(0.5, 18.))
 									.named("link-1-1-vis")
@@ -548,21 +558,11 @@ mod tests {
 										0.5, 0.5, 0.5, 0.75,
 									)),
 							),
-							SmartJointBuilder::new("joint-1-1")
-								.revolute()
-								.add_transform(Transform::new_translation(4., 0., 0.))
-								.with_axis((0., 0., 1.))
-								.with_limit(100., 1000.)
-								.set_upper_limit(std::f32::consts::FRAC_PI_6)
-								.set_lower_limit(-std::f32::consts::FRAC_PI_6),
 						)
 						.unwrap();
 
 					tmp_tree
 				},
-				SmartJointBuilder::new("joint-0")
-					.add_transform(Transform::new_translation(1.0, 0., 0.))
-					.fixed(),
 			)
 			.unwrap();
 
@@ -570,8 +570,8 @@ mod tests {
 			.write()
 			.unwrap()
 			.try_attach_child(
-				LinkBuilder::new("link-2").build_tree(),
 				JointBuilder::new("joint-2", JointType::Fixed).add_origin_offset((0., 0., 1.5)),
+				LinkBuilder::new("link-2").build_tree(),
 			)
 			.unwrap();
 

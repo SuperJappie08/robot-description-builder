@@ -21,6 +21,7 @@ The Changes between versions of [<b>`robot-description-builder`</b> for <b>Pytho
 - Renamed all `origin` fields to `transform` to make the naming less URDF specific.
 - Updated examples (URDF tutorial 7 & 8) to use visual/collision conversions in some places.
 - Fixed Spelling mistake.
+- Flipped arguments of `Link::try_attach_child` to make more sense geometrically (Link -> Joint -> Link)
 - Updated `pyproject.toml` to contain links to the repository.
 - Improved stubfile coverage.
 

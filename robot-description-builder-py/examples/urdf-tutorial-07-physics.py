@@ -35,7 +35,7 @@ def main():
     right_leg_link_vis = VisualBuilder(
         BoxGeometry(0.6, 0.1, 0.2),
         material=white_material,
-        origin=Transform(z=-0.3, pitch=pi / 2),
+        transform=Transform(z=-0.3, pitch=pi / 2),
     )
 
     right_leg_link = (
@@ -58,21 +58,21 @@ def main():
         r"[\[right]\]_base_joint", JointType.Fixed, transform=Transform(z=-0.6)
     )
 
-    right_leg.root_link.try_attach_child(right_base_link, right_base_joint)
+    right_leg.root_link.try_attach_child(right_base_joint, right_base_link)
 
     right_front_wheel_link = (
         LinkBuilder(r"[\[right]\]_[[front]]_wheel")
         .add_visual(
             VisualBuilder(
                 CylinderGeometry(0.035, 0.1),
-                origin=Transform(roll=pi / 2),
+                transform=Transform(roll=pi / 2),
                 material=black_material,
             )
         )
         .add_collider(
             CollisionBuilder(
                 CylinderGeometry(0.035, 0.1),
-                origin=Transform(roll=pi / 2),
+                transform=Transform(roll=pi / 2),
             )
         )
         .add_inertial(Inertial(1, 1e-3, 1e-3, 1e-3))
@@ -86,7 +86,7 @@ def main():
     right_front_wheel_joint.axis = (0, 1, 0)
 
     right_leg.newest_link.try_attach_child(
-        right_front_wheel_link, right_front_wheel_joint
+        right_front_wheel_joint, right_front_wheel_link
     )
 
     right_back_wheel = (
@@ -107,7 +107,7 @@ def main():
 
     # ======= Attach right leg ====== #
 
-    model.root_link.try_attach_child(right_leg, base_right_leg_joint)
+    model.root_link.try_attach_child(base_right_leg_joint, right_leg)
 
     # ====== Attaching left leg ===== #
 
@@ -124,12 +124,12 @@ def main():
         LinkBuilder("gripper_pole")
         .add_visual(
             VisualBuilder(
-                CylinderGeometry(0.01, 0.2), origin=Transform(0.1, pitch=pi / 2)
+                CylinderGeometry(0.01, 0.2), transform=Transform(0.1, pitch=pi / 2)
             )
         )
         .add_collider(
             CollisionBuilder(
-                CylinderGeometry(0.01, 0.2), origin=Transform(0.1, pitch=pi / 2)
+                CylinderGeometry(0.01, 0.2), transform=Transform(0.1, pitch=pi / 2)
             )
         )
         .add_inertial(Inertial(0.05, 1e-3, 1e-3, 1e-3))
@@ -154,19 +154,18 @@ def main():
     )
 
     left_tip_collider = CollisionBuilder(
-        left_tip_geometry, origin=Transform(0.09137, 0.00495)
+        left_tip_geometry, transform=Transform(0.09137, 0.00495)
     )
 
     left_gripper.root_link.try_attach_child(
+        JointBuilder("[[left]]_tip_joint", JointType.Fixed),
         LinkBuilder("[[left]]_tip")
         .add_visual(left_tip_collider.as_visual())
         .add_collider(left_tip_collider)
         .add_inertial(Inertial(0.05, 1e-3, 1e-3, 1e-3)),
-        JointBuilder("[[left]]_tip_joint", JointType.Fixed),
     )
 
     gripper_pole.root_link.try_attach_child(
-        left_gripper.yank_root(),
         JointBuilder(
             # TODO: Change to smartbuilder
             "[[left]]_gripper_joint",
@@ -175,6 +174,7 @@ def main():
             axis=(0, 0, 1),
             limit=Limit(1000, 0.5, 0, 0.548),
         ),
+        left_gripper.yank_root(),
     )
 
     right_gripper = (
@@ -188,13 +188,13 @@ def main():
     gripper_pole.root_link.attach_joint_chain(right_gripper)
 
     model.root_link.try_attach_child(
-        gripper_pole.yank_root(),
         JointBuilder(
             "gripper_extension",
             JointType.Prismatic,
             transform=Transform(0.19, 0.0, 0.2),
             limit=Limit(1000, 0.5, -0.38, 0),
         ),
+        gripper_pole.yank_root(),
     )
 
     # ====== Defining the HEAD ====== #
@@ -214,7 +214,7 @@ def main():
         "head_swivel", JointType.Continuous, transform=Transform(z=0.3), axis=(0, 0, 1)
     )
 
-    model.root_link.try_attach_child(head_link, head_swivel_joint)
+    model.root_link.try_attach_child(head_swivel_joint, head_link)
 
     #  The URDF tutorial is inconsistent here, out of nowhere translates visual, but not collision.
     box_link = (
@@ -223,11 +223,11 @@ def main():
             VisualBuilder(
                 BoxGeometry(0.08, 0.08, 0.08),
                 material=blue_material,
-                origin=Transform(-0.04),
+                transform=Transform(-0.04),
             )
         )
         .add_collider(
-            CollisionBuilder(BoxGeometry(0.08, 0.08, 0.08), origin=Transform(-0.04))
+            CollisionBuilder(BoxGeometry(0.08, 0.08, 0.08), transform=Transform(-0.04))
         )
         .add_inertial(Inertial(1, 1e-3, 1e-3, 1e-3))
     )
@@ -236,7 +236,7 @@ def main():
         "tobox", JointType.Fixed, transform=Transform(0.1814, 0, 0.1414)
     )
 
-    model.newest_link.try_attach_child(box_link, to_box_joint)
+    model.newest_link.try_attach_child(to_box_joint, box_link)
 
     result = to_urdf_string(model, indent=(" ", 2))
 

@@ -6,6 +6,7 @@ from robot_description_builder.link import LinkBuilder
 from robot_description_builder.link.geometry import BoxGeometry, SphereGeometry
 from robot_description_builder.link.visual import VisualBuilder
 
+
 def test_build():
     tree = LinkBuilder("some_link_name").build()
     assert type(tree) == KinematicTree
@@ -48,16 +49,16 @@ def test_update_index_after_attach():
     )
 
     tree.root_link.try_attach_child(
+        jb,
         LinkBuilder("This is a [[test]]").add_visual(
             VisualBuilder(
                 BoxGeometry(1, 4, 5), name="visual_[[test]]", transform=Transform(1)
             )
         ),
-        jb,
     )
 
     assert set(links.keys()) == {"Linky", "This is a [[test]]"}
     assert set(joints.keys()) == {"Some [[Joint]]"}
-    
+
     assert tree.root_link == links["Linky"]
     assert tree.newest_link == links["This is a [[test]]"]

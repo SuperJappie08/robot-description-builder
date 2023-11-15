@@ -367,15 +367,15 @@ impl PyLink {
 
 	fn try_attach_child(
 		&self,
-		link_builder: PyLinkBuilder,
 		joint_builder: PyJointBuilderBase,
+		link_builder: PyLinkBuilder,
 		py: Python<'_>,
 	) -> PyResult<()> {
 		self.try_internal()?
 			.py_write()?
 			.try_attach_child(
-				Into::<LinkBuilder>::into(link_builder),
 				Into::<JointBuilder>::into(joint_builder),
+				Into::<LinkBuilder>::into(link_builder),
 			)
 			.map_err(AttachChainError::from)?;
 

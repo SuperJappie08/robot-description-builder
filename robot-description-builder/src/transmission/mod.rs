@@ -561,8 +561,8 @@ mod tests {
 				.try_write()
 				.unwrap()
 				.try_attach_child(
-					Link::builder("child"),
 					SmartJointBuilder::new_continuous("Jointy"),
+					Link::builder("child"),
 				)
 				.unwrap();
 

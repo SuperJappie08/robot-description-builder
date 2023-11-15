@@ -130,7 +130,7 @@ pub trait ToURDF {
 ///     .get_root_link()
 ///     .write()
 ///     .unwrap()
-///     .try_attach_child(right_base_link, right_base_joint)
+///     .try_attach_child(right_base_joint, right_base_link)
 ///     .unwrap();
 ///
 /// assert_eq!(

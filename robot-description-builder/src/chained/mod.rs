@@ -81,8 +81,8 @@ mod tests {
 			.try_write()
 			.unwrap()
 			.try_attach_child(
-				Link::builder("leg_[[L01]]_l2"),
 				SmartJointBuilder::new_fixed("leg_[[L01]]_j1"),
+				Link::builder("leg_[[L01]]_l2"),
 			)
 			.unwrap();
 
@@ -90,7 +90,7 @@ mod tests {
 		tree.get_root_link()
 			.try_write()
 			.unwrap()
-			.try_attach_child(leg_tree, SmartJointBuilder::new_fixed("leg_[[L01]]_j0"))
+			.try_attach_child(SmartJointBuilder::new_fixed("leg_[[L01]]_j0"), leg_tree)
 			.unwrap();
 
 		let builder_chain = tree.yank_joint("leg_[[L01]]_j0").unwrap();

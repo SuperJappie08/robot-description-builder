@@ -133,15 +133,15 @@ mod tests {
 				.try_write()
 				.unwrap()
 				.try_attach_child(
-					Link::builder("child_link").build_tree(),
 					SmartJointBuilder::new_fixed("joint-s"),
+					Link::builder("child_link").build_tree(),
 				)
 				.unwrap();
 
 			tree.get_root_link()
 				.try_write()
 				.unwrap()
-				.try_attach_child(Link::builder("child_link_2"), joint_builder)
+				.try_attach_child(joint_builder, Link::builder("child_link_2"))
 				.unwrap();
 
 			let mut writer = quick_xml::Writer::new(std::io::Cursor::new(Vec::new()));

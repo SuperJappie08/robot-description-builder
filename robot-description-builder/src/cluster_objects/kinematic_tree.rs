@@ -390,8 +390,8 @@ mod tests {
 			.try_write()
 			.unwrap()
 			.try_attach_child(
-				LinkBuilder::new("other-child").build_tree(),
 				JointBuilder::new("other-child-joint", JointType::Fixed),
+				LinkBuilder::new("other-child").build_tree(),
 			)
 			.unwrap();
 
@@ -399,8 +399,8 @@ mod tests {
 			.try_write()
 			.unwrap()
 			.try_attach_child(
-				other_tree,
 				JointBuilder::new("other-joint", JointType::Fixed),
+				other_tree,
 			)
 			.unwrap();
 
@@ -408,8 +408,8 @@ mod tests {
 			.try_write()
 			.unwrap()
 			.try_attach_child(
-				LinkBuilder::new("3"),
 				JointBuilder::new("three", JointType::Fixed),
+				LinkBuilder::new("3"),
 			)
 			.unwrap();
 

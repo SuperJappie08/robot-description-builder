@@ -85,6 +85,12 @@ mod tests {
 			.write()
 			.unwrap()
 			.try_attach_child(
+				SmartJointBuilder::new_revolute("Leg_[L1]_j0")
+					.add_transform(Transform::new_translation(1., 2., 3.))
+					.with_axis((0., 1., 0.))
+					.with_limit(0.1, 100.)
+					.set_lower_limit(-0.5)
+					.set_upper_limit(900.),
 				{
 					let tree = Link::builder("Leg_[L1]_l1")
 						.add_visual(
@@ -104,6 +110,8 @@ mod tests {
 						.try_write()
 						.unwrap()
 						.try_attach_child(
+							SmartJointBuilder::new_fixed("Leg_[L1]_j1")
+								.add_transform(Transform::new((0., 3., 0.), (0., 0., FRAC_PI_2))),
 							Link::builder("Leg_[L1]_l2")
 								.add_visual(
 									Visual::builder(geom_leg_l2.clone())
@@ -122,18 +130,10 @@ mod tests {
 										))
 										.named("Leg_[L1]_l2_col_1"),
 								),
-							SmartJointBuilder::new_fixed("Leg_[L1]_j1")
-								.add_transform(Transform::new((0., 3., 0.), (0., 0., FRAC_PI_2))),
 						)
 						.unwrap();
 					tree.yank_link("Leg_[L1]_l1").unwrap()
 				},
-				SmartJointBuilder::new_revolute("Leg_[L1]_j0")
-					.add_transform(Transform::new_translation(1., 2., 3.))
-					.with_axis((0., 1., 0.))
-					.with_limit(0.1, 100.)
-					.set_lower_limit(-0.5)
-					.set_upper_limit(900.),
 			)
 			.unwrap();
 
