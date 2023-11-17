@@ -19,7 +19,7 @@ use quick_xml::{events::attributes::Attribute, name::QName};
 // TODO: Maybe make a link module with everything in it
 pub mod link_data {
 	pub use crate::link::collision::Collision;
-	pub use crate::link::inertial::InertialData;
+	pub use crate::link::inertial::Inertial;
 	pub use crate::link::link_parent::LinkParent;
 	pub use crate::link::visual::Visual;
 
@@ -52,21 +52,47 @@ use crate::{
 	identifiers::GroupID,
 	joint::{BuildJoint, BuildJointChain, Joint, JointBuilder},
 	link::{
-		builder::LinkBuilder, collision::Collision, inertial::InertialData,
-		link_parent::LinkParent, visual::Visual,
+		builder::LinkBuilder, collision::Collision, inertial::Inertial, link_parent::LinkParent,
+		visual::Visual,
 	},
 	transform::Transform,
 	utils::{ArcLock, ArcRW, WeakLock},
 	yank_errors::{RebuildBranchError, YankLinkError},
 };
 
+/// A `Link` in a Kinematic Structure.
+///
+/// A `Link` is an element of a [`KinematicInterface`](crate::cluster_objects::KinematicInterface) Implementor (for now [`KinematicTree`] and [`Robot`](crate::cluster_objects::Robot)).
+///
+/// A `Link` can be created from a [`LinkBuilder`], which can be created by the [`builder`](Self::builder) method.
+///
+/// This will configure most of the link data:
+/// - **`name`**: The [_string identifier_](crate::identifiers) (or name) of this `Link`. For practical purposes, it is recommended to use unique identifiers/names.
+/// - **[`visuals`](Visual)** (0+): The [`Visual`] elements associated with this `Link`.
+/// - **[`colliders`](Collision)** (0+): The [`Collision`] elements associated with this `Link`.
+/// - **[`joints`](Joint)** (0+): The child [`Joints`](Joint) of this `Link`.
+/// A [`Joint`] can be attached together with its child, using the methods mentioned in the [Building](Link#Building) section.
+/// - **[`inertial`](Inertial)** (Optional): The [`Inertial`] data for this `Link`.
+///
+/// # Building
+/// A [`Joint`] and its child `Link` can only be attached to a `Link`/[`KinematicTree`] in one go, to prevent (invalid) leaf [`Joints`](Joint) and disconnected `Links`.
+/// The following methods can be used to attach a branch:
+/// - [`attach_joint_chain`](Self::attach_joint_chain): Attach a [`Chained<JointBuilder>`] to the current `Link`.
+/// - [`attach_joint_chain_at`](Self::attach_joint_chain_at): Attach a [`Chained<JointBuilder>`] to the current `Link` with the specified [`Transform`].
+/// - [`try_attach_child`](Self::try_attach_child): Attach a `Link`(chain) via a specified [`Joint`].
+///
+/// [`KinematicTree`]: crate::cluster_objects::KinematicTree
+// TODO: Check if something is missing?
 #[derive(Debug)]
 pub struct Link {
+	/// The [_string identifier_](crate::identifiers) or name of this `Link`.
+	///
+	/// For practical purposes, it is recommended to use unique identifiers/names.
 	name: String,
 	pub(crate) tree: Weak<KinematicDataTree>,
 	direct_parent: link_data::LinkParent,
 	child_joints: Vec<ArcLock<Joint>>,
-	inertial: Option<InertialData>,
+	inertial: Option<Inertial>,
 	visuals: Vec<link_data::Visual>,
 	colliders: Vec<link_data::Collision>,
 	// /// TODO: Maybe array, or thing
@@ -165,7 +191,7 @@ impl Link {
 	}
 
 	// Not happy with the end of this line
-	/// Attach a `Chained<JointBuilder>` to the position set in the root [`JointBuilder`].
+	// Attach a `Chained<JointBuilder>` to the position set in the root [`JointBuilder`].
 	//
 	// ## TODO:
 	//  - Test
@@ -186,7 +212,7 @@ impl Link {
 		Ok(())
 	}
 
-	pub fn inertial(&self) -> Option<&InertialData> {
+	pub fn inertial(&self) -> Option<&Inertial> {
 		self.inertial.as_ref()
 	}
 

@@ -1,3 +1,6 @@
+#![deny(rustdoc::broken_intra_doc_links)]
+#![deny(rustdoc::unescaped_backticks)]
+#![warn(rustdoc::redundant_explicit_links)]
 // #![warn(missing_docs)]
 // This is fine for now.
 #![doc = include_str!("../README.md")]
@@ -13,6 +16,8 @@ mod yank_errors;
 pub mod identifiers;
 pub mod material;
 pub mod to_rdf;
+#[doc(hidden)]
+// FIXME: Hidden until correctly implemented
 pub mod transmission;
 pub use chained::Chained;
 pub use cluster_objects::{KinematicInterface, KinematicTree, Robot};

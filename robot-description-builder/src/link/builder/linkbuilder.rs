@@ -12,20 +12,37 @@ use crate::{
 	utils::{ArcLock, WeakLock},
 };
 
+/// The builder for the `Link` type.
+///
+/// The `LinkBuilder` is used to construct a [`Link`].
+/// It can be attached to a pre-existing [`Link`] in a [`KinematicTree`] or a [`Robot`](crate::cluster_objects::Robot).
+/// Or a new [`KinematicTree`] can be started with this `LinkBuilder` as the blueprint for the `root_link`.
+///
+/// This will configure most of the link data:
+/// - **`name`**: The [_string identifier_](crate::identifiers) (or name) of this [`Link`]. For practical purposes, it is recommended to use unique identifiers/names.
+/// - **[`visuals`](super::VisualBuilder)** (0+): The builders for the [`Visual`](crate::link::Visual) elements associated with this [`Link`].
+/// - **[`colliders`](super::CollisionBuilder)** (0+): The builders for the [`Collision`](crate::link::Collision) elements associated with this [`Link`].
+/// - **[`joints`](crate::joint::JointBuilder)** (0+): The buiders for the child [`Joints`](crate::joint::Joint) of this [`Link`].
+/// (This field should be/is assumed as empty on a bare `LinkBuilder`, but can optionally be non-empty in a [`Chained<LinkBuilder>`](crate::chained::Chained))<br/>
+/// This field only be filled when reconstructing or yanking a pre-existing [`Link`]/[`Joint`].
+/// - **[`inertial`](crate::link::inertial::Inertial)** (Optional): The [`Inertial`](crate::link::inertial::Inertial) data for this [`Link`].
+// TODO: Check if something is missing?
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct LinkBuilder {
 	// All fields are pub(crate) so I can struct initialize in rebuild
+	/// The [_string identifier_](crate::identifiers) or name of this `Link`.
+	///
+	/// For practical purposes, it is recommended to use unique identifiers/names.
 	pub(crate) name: String,
 	// TODO: Figure out if we make this immutable on a `Link` and only allow editting throug the builder.
 	pub(crate) visuals: Vec<VisualBuilder>,
 	pub(crate) colliders: Vec<CollisionBuilder>,
-	// TODO: Calulate InertialData?
-	pub(crate) intertial: Option<link_data::InertialData>,
+	// TODO: Calulate Inertial?
+	pub(crate) intertial: Option<link_data::Inertial>,
 	pub(crate) joints: Vec<JointBuilder>,
 }
 
 impl LinkBuilder {
-	// TODO: depreaction Planned
 	/// Create a new [`LinkBuilder`] with the specified `name`.
 	pub fn new(name: impl Into<String>) -> LinkBuilder {
 		Self {
@@ -49,8 +66,8 @@ impl LinkBuilder {
 
 	// TODO: Naming not inline with convention
 	// Not happy with the added `add_` but otherwise name colliding with getter
-	/// Sets the [`InertialData`](link_data::InertialData) (`inertial`) of this `LinkBuilder`.
-	pub fn add_intertial(mut self, inertial: link_data::InertialData) -> Self {
+	/// Sets the [`Inertial`](link_data::Inertial) (`inertial`) of this `LinkBuilder`.
+	pub fn add_intertial(mut self, inertial: link_data::Inertial) -> Self {
 		self.intertial = Some(inertial);
 		self
 	}
@@ -98,8 +115,8 @@ impl LinkBuilder {
 		&self.joints
 	}
 
-	/// Gets an optional reference to the [`InertialData`](link_data::InertialData) of this `LinkBuilder`.
-	pub fn inertial(&self) -> Option<&link_data::InertialData> {
+	/// Gets an optional reference to the [`Inertial`](link_data::Inertial) of this `LinkBuilder`.
+	pub fn inertial(&self) -> Option<&link_data::Inertial> {
 		self.intertial.as_ref()
 	}
 }

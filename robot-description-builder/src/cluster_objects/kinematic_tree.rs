@@ -18,7 +18,12 @@ use crate::{
 	utils::{ArcLock, WeakLock},
 };
 
-// DOC-NOTES: Can be created by LinkBuilder::build_tree
+/// A representation of a basic Kinematic structure.
+///
+/// `KinematicTree`'s can be made from a single [`LinkBuilder`](crate::link::builder::LinkBuilder) by its [`build_tree()`](crate::link::builder::LinkBuilder::build_tree) method.
+///
+/// A `KinematicTree` can be upgraded to a [`Robot`] by calling [`to_robot`](KinematicTree::to_robot).
+/// This will allow the `Robot` to be exported to [all supported Robot Description Formats](crate::to_rdf).
 #[derive(Debug)]
 pub struct KinematicTree(Arc<KinematicDataTree>);
 

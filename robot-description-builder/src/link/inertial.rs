@@ -7,10 +7,10 @@ use crate::to_rdf::to_urdf::ToURDF;
 #[cfg(feature = "xml")]
 use quick_xml::{events::attributes::Attribute, name::QName};
 
-#[derive(Debug, PartialEq, Clone, Copy, Default)]
 // TODO: Maybe rename to Inertial?
-pub struct InertialData {
-	/// The transform from the parent `Link`'s frame to the frame of the `InertialData`.
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
+pub struct Inertial {
+	/// The transform from the parent [`Link`](super::Link)'s frame to the frame of the `InertialData`.
 	///
 	/// This is the reference for the placement of the center of mass and the moments of inertia.
 	///
@@ -32,7 +32,7 @@ pub struct InertialData {
 	pub izz: f32,
 }
 
-impl Mirror for InertialData {
+impl Mirror for Inertial {
 	fn mirrored(&self, mirror_matrix: &Matrix3<f32>) -> Self {
 		Self {
 			transform: self
@@ -45,7 +45,7 @@ impl Mirror for InertialData {
 }
 
 #[cfg(feature = "urdf")]
-impl ToURDF for InertialData {
+impl ToURDF for Inertial {
 	fn to_urdf(
 		&self,
 		writer: &mut quick_xml::Writer<std::io::Cursor<Vec<u8>>>,
@@ -86,7 +86,7 @@ impl ToURDF for InertialData {
 
 #[cfg(test)]
 mod tests {
-	use super::InertialData;
+	use super::Inertial;
 	use test_log::test;
 
 	#[cfg(feature = "urdf")]
@@ -101,7 +101,7 @@ mod tests {
 		use std::io::Seek;
 
 		fn test_to_urdf_inertial(
-			inertial_data: InertialData,
+			inertial_data: Inertial,
 			result: String,
 			urdf_config: &URDFConfig,
 		) {
@@ -119,7 +119,7 @@ mod tests {
 		#[test]
 		fn no_transform() {
 			test_to_urdf_inertial(
-				InertialData {
+				Inertial {
 					mass: 0.12,
 					ixx: 1.23,
 					ixy: 2.34,
@@ -139,7 +139,7 @@ mod tests {
 		#[test]
 		fn with_transform() {
 			test_to_urdf_inertial(
-				InertialData {
+				Inertial {
 					transform: Some(Transform {
 						translation: Some((10.1, 20.2, 30.3)),
 						..Default::default()

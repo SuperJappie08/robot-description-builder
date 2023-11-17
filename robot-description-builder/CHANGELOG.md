@@ -14,19 +14,21 @@ The Changes between versions of [<b>`robot-description-builder`</b> for <b>Rust<
 
 ### Changed/Updated
 - Renamed all `origin` fields to `transform` to make the naming less URDF specific.
-- Renamed `MaterialDataReferenceWrapper` to `MaterialDataReference`
+- Renamed `MaterialDataReferenceWrapper` to `MaterialDataReference`.
+- Renamed `InertialData` to `Inertial`.
 - Updated examples (URDF tutorial 7 & 8) to use `VisualBuilder::to_collision` and `CollisionBuilder::to_visual` in some places.
 - Changed Errortype of `TryFrom<MaterialDataReference<'a>>` impl of `MaterialData` from `PoisonError<ArcLock<MaterialData>>` to `PoisonError<ErroredRead<ArcLock<MaterialData>>>`
 - Added Errors to `yank` methods.
-- Updated `AddLinkError` and `AddJointError` to be used with `AttachChainError`
-- `Joint::rebuild_branch` now returns a result type with error `RebuildBranchError`
-- The error type of `Link::{try_attach_child, attach_joint_chain, attach_joint_chain_at}` were changed (from `AddJointError`) to `AttachChainError`
+- Updated `AddLinkError` and `AddJointError` to be used with `AttachChainError`.
+- `Joint::rebuild_branch` now returns a result type with error `RebuildBranchError`.
+- The error type of `Link::{try_attach_child, attach_joint_chain, attach_joint_chain_at}` were changed (from `AddJointError`) to `AttachChainError`.
 - Created a new alternative `new_quick_link` method renamed (the old one). 
 - Renamed `MaterialDataReferenceWrapper` to `MaterialDataReference`.
 - `KinematicInterface::{purge_links, purge_joints}` now have an `except` statement, since the error is unrecoverable until mutex_unpoison #96469 gets stabilized.
 - Fixed spelling mistake in method name of `VisualBuilder` and `CollisionBuilder` (`*::tranformed` -> `*::transformed`)
 - Flipped arguments of `Link::try_attach_child` to make more sense geometrically (Link -> Joint -> Link)
-- Improved documentation
+- Hidden all transmission related methods, functions and types until they are implemented propperly.
+- Improved documentation.
 
 #### Internal
  - Renamed `KinematicDataTree::newer_link` to `KinematicDataTree::new` 

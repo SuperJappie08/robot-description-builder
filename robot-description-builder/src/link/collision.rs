@@ -6,10 +6,25 @@ use quick_xml::{events::attributes::Attribute, name::QName};
 use super::{builder::CollisionBuilder, geometry::GeometryInterface};
 use crate::{identifiers::GroupID, transform::Transform};
 
+/// A `Collision` geometry for a `Link`.
+///
+/// This struct holds one of (the many) Colliders for the associated [`Link`].
+///  It can be constructed via the [`CollisionBuilder`] (accessable via the [`builder`](Self::builder) method) and [added while building the `Link`](crate::link::builder::LinkBuilder::add_collider).
+/// It contains the following data:
+/// - **[`geometry`](crate::link_data::geometry)**: The geometry used for collision checking[^mesh-warning].
+/// - **[`transform`](crate::Transform)** (Optional): The transform from the [`Link`] frame to the `geometry`.
+/// - **`name`** (Optional): The identifiers/names of this collision element. For practical purposes, it is recommended to use unique identifiers/names.
+///
+/// [^mesh-warning]: **WARNING:** It is not recommended to use high-detail meshes for collision geometries, since this will slow down the collision checking process.
+/// Also, keep in mind, that some simulators only support the use of convex meshes for collisions, if at all.
+///
+/// [`Link`]: crate::link::Link
 #[derive(Debug)]
 pub struct Collision {
-	/// The _string identifier_/name of this visual element.
 	// TODO: Add export option which generates name.
+	/// The [_string identifier_](crate::identifiers) or name of this collision element.
+	///
+	/// For practical purposes, it is recommended to use unique identifiers/names.
 	pub(crate) name: Option<String>,
 	/// The transform from the origin of the parent `Link` to the origin of this `Collision`.
 	///

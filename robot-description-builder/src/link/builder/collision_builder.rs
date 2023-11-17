@@ -10,8 +10,30 @@ use crate::{
 	transform::{Mirror, Transform},
 };
 
+/// The builder for `Collision` components.
+///
+/// The `CollisionBuilder` is used to construct [`Collision`] elements of [`Links`](crate::link::Link).
+///
+/// This will configure the collision data:
+/// - **[`geometry`](crate::link_data::geometry)**: The geometry used for collision checking[^mesh-warning].
+/// - **[`transform`](crate::Transform)** (Optional): The transform from the [`Link`] frame to the `geometry`.
+/// - **`name`** (Optional): The [_string identifier_](crate::identifiers) (or name) of this collision element. For practical purposes, it is recommended to use unique identifiers/names.
+///
+/// They can be added to a [`LinkBuilder`](super::LinkBuilder) while constructing a [`Link`] by calling [`add_collider`](crate::link::builder::LinkBuilder::add_collider).
+///
+/// A `CollisionBuilder` can be converted to a [`VisualBuilder`] to make defining [`Visual`](crate::link::visual::Visual) easier.
+///	If this is used, it might be easier to first create the [`VisualBuilder`], and convert that back to a `CollisionBuilder`, since it contains more information.
+///
+/// [^mesh-warning]: **WARNING:** It is not recommended to use high-detail meshes for collision geometries, since this will slow down the collision checking process.
+/// Also, keep in mind, that some simulators only support the use of convex meshes for collisions, if at all.
+///
+/// [`Link`]: crate::link::Link
+// TODO: Consider making the structfields public
 #[derive(Debug)]
 pub struct CollisionBuilder {
+	/// The [_string identifier_](crate::identifiers) or name of this collision element.
+	///
+	/// For practical purposes, it is recommended to use unique identifiers/names.
 	pub(crate) name: Option<String>,
 	/// The transform from the origin of the parent `Link` to the origin of this `Collision`.
 	///
@@ -19,6 +41,7 @@ pub struct CollisionBuilder {
 	///
 	/// In URDF this field is refered to as `<origin>`.
 	pub(crate) transform: Option<Transform>,
+	/// The geometry of this Collision element.
 	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
 }
 

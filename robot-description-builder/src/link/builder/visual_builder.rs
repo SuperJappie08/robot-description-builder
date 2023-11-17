@@ -11,9 +11,28 @@ use crate::{
 	transform::{Mirror, Transform},
 };
 
+/// The builder for `Visual` components.
+///
+/// The `VisualBuilder` is used to construct [`Visual`] elements of [`Links`](crate::link::Link).
+///
+/// This will configure the visual data:
+/// - **[`geometry`](crate::link_data::geometry)**: The geometry used for visualization.
+/// - **[`material`](crate::material)** (Optional): The material is used to control the appearance of the `geometry`.
+/// - **[`transform`](crate::Transform)** (Optional): The transform from the [`Link`] frame to the `geometry`.
+/// - **`name`** (Optional): The [_string identifier_](crate::identifiers) (or name) of this visual element. For practical purposes, it is recommended to use unique identifiers/names.
+///
+/// They can be added to a [`LinkBuilder`](super::LinkBuilder) while constructing a [`Link`] by calling [`add_visual`](crate::link::builder::LinkBuilder::add_visual).
+///
+/// A `VisualBuilder` can be converted to a [`CollisionBuilder`] to make defining [`Collision`](crate::link::collision::Collision) easier. <br/>
+/// **WARNING:** It is not recommended to use high-detail meshes for collision geometries, since this will slow down the collision checking process.
+/// Also, keep in mind, that some simulators only support the use of convex meshes for collisions, if at all.
+///
+/// [`Link`]: crate::link::Link
 #[derive(Debug)]
 pub struct VisualBuilder {
-	// TODO: Figure out if I want to keep the name optional?.
+	/// The [_string identifier_](crate::identifiers) or name of this visual element.
+	///
+	/// For practical purposes, it is recommended to use unique identifiers/names.
 	pub(crate) name: Option<String>,
 	/// The transform from the origin of the parent `Link` to the origin of this `Visual`.
 	///
@@ -21,10 +40,9 @@ pub struct VisualBuilder {
 	///
 	/// In URDF this field is refered to as `<origin>`.
 	pub(crate) transform: Option<Transform>,
-
-	// Figure out if this needs to be public or not
+	/// The geometry of this Visual element.
 	pub(crate) geometry: Box<dyn GeometryInterface + Sync + Send>,
-	// Not sure about refCell
+	/// The material of this Visual element.
 	pub(crate) material_description: Option<MaterialDescriptor>,
 }
 

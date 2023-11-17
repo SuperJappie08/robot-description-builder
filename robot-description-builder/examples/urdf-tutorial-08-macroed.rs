@@ -6,7 +6,7 @@ use std::f32::consts::{FRAC_1_SQRT_2, FRAC_PI_2};
 use robot_description_builder as rdb;
 
 use rdb::{
-	link_data::{geometry::*, Collision, InertialData, Visual},
+	link_data::{geometry::*, Collision, Inertial, Visual},
 	material::MaterialDescriptor,
 	prelude::*,
 	to_rdf::{
@@ -54,7 +54,7 @@ fn main() {
 	let black_material = MaterialDescriptor::new_rgb(0., 0., 0.).named("black");
 	let white_material = MaterialDescriptor::new_rgb(1., 1., 1.).named("white");
 
-	let default_inertial = InertialData {
+	let default_inertial = Inertial {
 		ixx: 1e-3,
 		iyy: 1e-3,
 		izz: 1e-3,
@@ -68,7 +68,7 @@ fn main() {
 				.materialized(blue_material.clone()),
 		)
 		.add_collider(Collision::builder(CylinderGeometry::new(width, bodylen)))
-		.add_intertial(InertialData {
+		.add_intertial(Inertial {
 			mass: 10.,
 			..default_inertial
 		});
@@ -86,7 +86,7 @@ fn main() {
 	let right_leg_link = Link::builder("[\\[right]\\]_leg")
 		.add_collider(right_leg_link_vis.to_collision())
 		.add_visual(right_leg_link_vis)
-		.add_intertial(InertialData {
+		.add_intertial(Inertial {
 			mass: 10.,
 			..default_inertial
 		});
@@ -98,7 +98,7 @@ fn main() {
 			Visual::builder(BoxGeometry::new(baselen, 0.1, 0.1)).materialized(white_material),
 		)
 		.add_collider(Collision::builder(BoxGeometry::new(baselen, 0.1, 0.1)))
-		.add_intertial(InertialData {
+		.add_intertial(Inertial {
 			mass: 10.,
 			..default_inertial
 		});
@@ -123,7 +123,7 @@ fn main() {
 			Collision::builder(CylinderGeometry::new(wheeldiam / 2., 0.1))
 				.transformed(Transform::new_rotation(FRAC_PI_2, 0., 0.)),
 		)
-		.add_intertial(InertialData {
+		.add_intertial(Inertial {
 			mass: 1.,
 			..default_inertial
 		});
@@ -208,7 +208,7 @@ fn main() {
 			Collision::builder(CylinderGeometry::new(0.01, polelen))
 				.transformed(Transform::new((polelen / 2., 0., 0.), (0., FRAC_PI_2, 0.))),
 		)
-		.add_intertial(InertialData {
+		.add_intertial(Inertial {
 			mass: 0.05,
 			..default_inertial
 		})
@@ -227,7 +227,7 @@ fn main() {
 	let left_gripper = Link::builder("[[left]]_gripper")
 		.add_visual(Visual::builder(left_gripper_geometry.boxed_clone()))
 		.add_collider(Collision::builder(left_gripper_geometry))
-		.add_intertial(InertialData {
+		.add_intertial(Inertial {
 			mass: 0.05,
 			..default_inertial
 		})
@@ -255,7 +255,7 @@ fn main() {
 			Link::builder("[[left]]_tip")
 				.add_visual(left_tip_collider.to_visual())
 				.add_collider(left_tip_collider)
-				.add_intertial(InertialData {
+				.add_intertial(Inertial {
 					mass: 0.05,
 					..default_inertial
 				}),
@@ -316,7 +316,7 @@ fn main() {
 				.materialized(MaterialDescriptor::new_rgb(1., 1., 1.).named("white")),
 		)
 		.add_collider(Collision::builder(SphereGeometry::new(width)))
-		.add_intertial(InertialData {
+		.add_intertial(Inertial {
 			mass: 2.,
 			..default_inertial
 		});
@@ -343,7 +343,7 @@ fn main() {
 			Collision::builder(BoxGeometry::new(0.08, 0.08, 0.08))
 				.transformed(Transform::new_translation(-0.04, 0., 0.)),
 		)
-		.add_intertial(InertialData {
+		.add_intertial(Inertial {
 			mass: 1.,
 			..default_inertial
 		});

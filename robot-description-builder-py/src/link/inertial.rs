@@ -1,5 +1,5 @@
 use pyo3::{intern, prelude::*};
-use robot_description_builder::link_data::InertialData;
+use robot_description_builder::link_data::Inertial;
 
 use crate::transform::PyTransform;
 
@@ -30,6 +30,7 @@ pub struct PyInertial {
 	pub izz: f32,
 }
 
+#[allow(clippy::too_many_arguments)]
 #[pymethods]
 impl PyInertial {
 	#[new]
@@ -88,8 +89,8 @@ impl PyInertial {
 	}
 }
 
-impl From<InertialData> for PyInertial {
-	fn from(value: InertialData) -> Self {
+impl From<Inertial> for PyInertial {
+	fn from(value: Inertial) -> Self {
 		Self {
 			transform: value.transform.map(Into::into),
 			mass: value.mass,
@@ -103,7 +104,7 @@ impl From<InertialData> for PyInertial {
 	}
 }
 
-impl From<PyInertial> for InertialData {
+impl From<PyInertial> for Inertial {
 	fn from(value: PyInertial) -> Self {
 		Self {
 			transform: value.transform.map(Into::into),

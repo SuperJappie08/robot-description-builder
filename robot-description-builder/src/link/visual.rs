@@ -11,10 +11,23 @@ use crate::{
 	transform::Transform,
 };
 
+/// A `Visual` geometry for a `Link`.
+///
+/// This struct holds one of (the many) Visual geometries for the associated [`Link`].
+/// It can be constructed via the [`VisualBuilder`] (accessable via the [`builder`](Self::builder) method) and [added while building the `Link`](crate::link::builder::LinkBuilder::add_visual).
+/// It contains the following data:
+/// - **[`geometry`](crate::link_data::geometry)**: The geometry used for visualization.
+/// - **[`material`](crate::material)** (Optional): The material is used to control the appearance of the `geometry`.
+/// - **[`transform`](crate::Transform)** (Optional): The transform from the [`Link`] frame to the `geometry`.
+/// - **`name`** (Optional): The [_string identifier_](crate::identifiers) (or name) of this visual element. For practical purposes, it is recommended to use unique identifiers/names.
+///
+/// [`Link`]: crate::link::Link
 #[derive(Debug)]
 pub struct Visual {
-	/// The _string identifier_/name of this visual element.
 	// TODO: Add export option which generates name.
+	/// The [_string identifier_](crate::identifiers) or name of this visual element.
+	///
+	/// For practical purposes, it is recommended to use unique identifiers/names.
 	pub(crate) name: Option<String>,
 	/// The transform from the origin of the parent `Link` to the origin of this `Visual`.
 	///

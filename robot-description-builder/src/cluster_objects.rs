@@ -78,10 +78,16 @@ pub trait KinematicInterface: Sized {
 	/// ```
 	fn get_newest_link(&self) -> ArcLock<Link>;
 
+	/// Retrieves the `Link`-index of the Kinematic structure.
+	// TODO: EXPAND?
 	fn get_links(&self) -> ArcLock<HashMap<String, WeakLock<Link>>>;
+	/// Retrieves the `Joint`-index of the Kinematic structure.
+	// TODO: EXPAND?
 	fn get_joints(&self) -> ArcLock<HashMap<String, WeakLock<Joint>>>;
 	// FIXME: This not Ok end-user should not interact wiht MaterialData
 	fn get_materials(&self) -> ArcLock<HashMap<String, ArcLock<MaterialData>>>;
+	#[doc(hidden)]
+	// FIXME: Hidden until implemented
 	fn get_transmissions(&self) -> ArcLock<HashMap<String, ArcLock<Transmission>>>;
 
 	// TODO: EXAMPLE
@@ -94,9 +100,17 @@ pub trait KinematicInterface: Sized {
 	///
 	/// If the [`Joint`] does not exist `None` is returned.
 	fn get_joint(&self, name: &str) -> Option<ArcLock<Joint>>;
+	// TODO: EXAMPLE
+	/// Get the `Material` with the specified `name`.
+	///
+	/// If the [`Material`] does not exist `None` is returned.
 	fn get_material(&self, name: &str) -> Option<Material>;
+	#[doc(hidden)]
+	// FIXME: Hidden until implemented transmissions
 	fn get_transmission(&self, name: &str) -> Option<ArcLock<Transmission>>;
 
+	#[doc(hidden)]
+	// FIXME: Hidden until implemented
 	// TODO: NOT FINAL
 	fn try_add_transmission(
 		&self,
@@ -122,6 +136,8 @@ pub trait KinematicInterface: Sized {
 	/// Cleans up orphaned/unused `Material` entries from `material_index` HashMap
 	fn purge_materials(&self) -> Result<(), PoisonWriteIndexError<String, ArcLock<MaterialData>>>;
 
+	#[doc(hidden)]
+	// FIXME: Hidden until implemented
 	/// Cleans up orphaned/broken `Transmission` entries from the `transmissions` HashMap
 	fn purge_transmissions(
 		&self,
