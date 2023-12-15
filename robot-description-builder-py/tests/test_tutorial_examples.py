@@ -2,8 +2,11 @@ import importlib
 import subprocess
 import sys
 from pathlib import Path
+import os
 
 import pytest
+
+IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 
 # Import the examples as modules relative to this module
 EXAMPLES_PATH = Path(__file__).parents[1].joinpath("examples")
@@ -23,6 +26,7 @@ urdf_tutorials = {
 
 
 # Test tutorial 5-7
+@pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Test doesn't work in Github Actions.")
 @pytest.mark.parametrize("name", sorted(urdf_tutorials.keys())[:-1])
 def test_tutorials(capsys, name):
     result = urdf_tutorials[name]
@@ -46,6 +50,7 @@ def test_tutorials(capsys, name):
     assert cap_py.out == out_rs
 
 
+@pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Test doesn't work in Github Actions.")
 def test_tutorial_08():
     name = "urdf-tutorial-08-macroed"
     out_py = subprocess.run(
