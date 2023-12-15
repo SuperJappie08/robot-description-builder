@@ -5,7 +5,7 @@ build-backend = "maturin"
 [project]
 # Maybe change remove py from python package name
 name = "robot-description-builder"
-version = "0.0.2"
+version = "0.0.3"
 description = "A libary to create (valid) Robot descriptions"
 requires-python = ">=3.8"
 license = { text = "MIT" }
