@@ -1,0 +1,52 @@
+# Based on https://github.com/readthedocs-examples/example-mkdocs-basic/tree/a0bfa16c4e68603e7e377d61b955d21256508a40
+site_name: robot-description-builder-py 🐍
+strict: true
+
+theme:
+  name: readthedocs
+  highlightjs: true
+  navigation-depth: 10 #???
+
+plugins:
+  - search
+  - exclude:
+      glob:
+      - plugins/*
+      - __pycache__/*
+  - autorefs
+
+  # Generates API-Reference pages
+  - gen-files:
+      scripts:
+        - docs/plugins/gen_ref_pages.py
+
+  # Allows for the inclusion of docstrings
+  - mkdocstrings:
+      handlers:
+        # See: https://mkdocstrings.github.io/python/usage/
+        python:
+          paths: [python]
+          options:
+            separate_signature: false
+            members_order: source
+            # filters: ["!^_"]
+            # show_bases: true
+            # show_source: true
+            # group_by_category: true
+            signature_crossrefs: true
+            docstring_options:
+              ignore_init_summary: true
+            merge_init_into_class: true
+            docstring_style: google
+            extensions:
+              - docs/plugins/docstr_plugin.py
+            # preload_modules:
+            # - robot_description_builder._internal
+hooks:
+  - ./docs/plugins/hooks.py
+
+markdown_extensions:
+# TODO: Is this needed?
+  - markdown_include.include:
+      base_path: .
+  - admonition

@@ -1,3 +1,6 @@
+"""TODO: MODULE DOC
+
+"""
 from typing import Final, NamedTuple, Optional, Union
 
 # need to use type names instead of typing.Self (supported since Python 3.11)
@@ -25,7 +28,9 @@ class MaterialDescriptor:
     name: Optional[str]
     data: Final[Union[Color, TexturePath]]
 
-    def __new__(cls, data: Union[Color, TexturePath], name: Optional[str]=None) -> MaterialDescriptor: ...
+    def __new__(
+        cls, data: Union[Color, TexturePath], name: Optional[str] = None
+    ) -> MaterialDescriptor: ...
     def __repr__(self) -> str: ...
     def change_group_id(self, new_group_id: str) -> None: ...
     def apply_group_id(self) -> None: ...
