@@ -4,11 +4,13 @@ use robot_description_builder::{KinematicInterface, KinematicTree};
 
 use super::{robot::PyRobot, PyKinematicBase};
 
+#[cfg(feature = "experimental-transmission")]
+use crate::transmission::PyTransmission;
+
 use crate::{
 	joint::{PyJoint, PyJointBuilderChain},
 	link::{PyLink, PyLinkBuilderChain},
 	material::PyMaterial,
-	transmission::PyTransmission,
 	utils::{self, TryIntoPy},
 };
 
@@ -96,6 +98,7 @@ impl PyKinematicTree {
 		self.inner.get_material(&name).map(Into::into)
 	}
 
+	#[cfg(feature = "experimental-transmission")]
 	fn get_transmission(&self, name: String) -> Option<PyTransmission> {
 		self.inner
 			.get_transmission(&name)

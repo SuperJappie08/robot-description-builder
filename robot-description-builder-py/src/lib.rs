@@ -1,3 +1,4 @@
+#[deny(deprecated, deprecated_in_future)]
 mod cluster_objects;
 mod exceptions;
 mod identifier;
@@ -6,6 +7,7 @@ mod link;
 mod material;
 mod to_rdf;
 mod transform;
+#[cfg(feature = "experimental-transmission")]
 mod transmission;
 mod utils;
 
@@ -43,6 +45,7 @@ fn rdf_builder_py(py: Python, m: &PyModule) -> PyResult<()> {
 
 	joint::init_module(py, m)?;
 
+	#[cfg(feature = "experimental-transmission")]
 	transmission::init_module(py, m)?;
 
 	cluster_objects::init_module(py, m)?;

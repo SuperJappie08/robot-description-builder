@@ -6,7 +6,7 @@ pub mod visual;
 use std::sync::{Arc, RwLock, Weak};
 
 use itertools::Itertools;
-use pyo3::{ffi, intern, prelude::*, pyclass::CompareOp, AsPyPointer};
+use pyo3::{exceptions::PyReferenceError, ffi, prelude::*, pyclass::CompareOp};
 use robot_description_builder::{
 	link_data::LinkParent, linkbuilding::LinkBuilder, prelude::GroupIDChanger, Chained,
 	JointBuilder, Link,
@@ -143,10 +143,7 @@ impl PyLinkBuilder {
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		let class_name = py
-			.get_type::<Self>()
-			.getattr(intern!(py, "__qualname__"))?
-			.extract::<&str>()?;
+		let class_name = py.get_type_bound::<Self>().qualname()?;
 
 		let mut data = format!("'{}'", self.0.name());
 
@@ -237,11 +234,7 @@ impl PyLinkBuilderChain {
 	}
 
 	fn __repr__(slf: PyRef<'_, Self>) -> PyResult<String> {
-		let class_name = slf
-			.py()
-			.get_type::<Self>()
-			.getattr(intern!(slf.py(), "__qualname__"))?
-			.extract::<&str>()?;
+		let class_name = slf.py().get_type::<Self>().qualname()?;
 
 		// TODO: EXPAND
 		Ok(format!("{class_name}({}, ...)", slf.as_ref().get_name(),))
@@ -278,9 +271,7 @@ impl PyLink {
 	fn try_internal(&self) -> PyResult<Arc<RwLock<Link>>> {
 		match self.inner.upgrade() {
 			Some(l) => Ok(l),
-			None => Err(pyo3::exceptions::PyReferenceError::new_err(
-				"Link already collected",
-			)),
+			None => Err(PyReferenceError::new_err("Link already collected")),
 		}
 	}
 }
@@ -414,13 +405,7 @@ impl PyLink {
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
 		let binding = self.try_internal()?;
 		let link = binding.py_read()?;
-		let mut repr = format!(
-			"{}('{}'",
-			py.get_type::<Self>()
-				.getattr(intern!(py, "__qualname__"))?
-				.extract::<&str>()?,
-			link.name()
-		);
+		let mut repr = format!("{}('{}'", py.get_type::<Self>().qualname()?, link.name());
 
 		{
 			let visuals = link.visuals();

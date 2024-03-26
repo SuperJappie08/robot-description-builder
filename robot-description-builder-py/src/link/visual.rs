@@ -1,4 +1,4 @@
-use pyo3::{intern, prelude::*};
+use pyo3::prelude::*;
 
 use robot_description_builder::{link_data, linkbuilding::VisualBuilder, prelude::GroupIDChanger};
 
@@ -123,10 +123,7 @@ impl PyVisualBuilder {
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		let class_name = py
-			.get_type::<Self>()
-			.getattr(intern!(py, "__qualname__"))?
-			.extract::<&str>()?;
+		let class_name = py.get_type::<Self>().qualname()?;
 
 		let mut data = match self.0.name() {
 			Some(name) => format!("name='{name}', "),
@@ -206,10 +203,7 @@ impl PyVisual {
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		let class_name = py
-			.get_type::<Self>()
-			.getattr(intern!(py, "__qualname__"))?
-			.extract::<&str>()?;
+		let class_name = py.get_type::<Self>().qualname()?;
 
 		let mut data = match self.inner.name() {
 			Some(name) => format!("name='{name}', "),

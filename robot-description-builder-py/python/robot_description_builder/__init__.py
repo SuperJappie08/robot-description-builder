@@ -1,4 +1,5 @@
-from . import cluster_objects, exceptions, joint, link, material, transmission
+from . import cluster_objects, exceptions, joint, link, material 
+#, transmission
 from ._internal import MirrorAxis, Transform, to_urdf_string
 
 __doc__ = _internal.__doc__
@@ -11,7 +12,7 @@ __all__ = [
     "joint",
     "link",
     "material",
-    "transmission",
+    # "transmission",
     "Transform",
     "MirrorAxis",
     "to_urdf_string",

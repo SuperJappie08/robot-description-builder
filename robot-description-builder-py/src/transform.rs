@@ -1,4 +1,4 @@
-use pyo3::{basic::CompareOp, intern, prelude::*};
+use pyo3::{basic::CompareOp, prelude::*};
 use robot_description_builder::{MirrorAxis, Transform};
 
 const NONE_STR: &str = "None";
@@ -48,10 +48,7 @@ impl PyTransform {
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		let class_name = py
-			.get_type::<Self>()
-			.getattr(intern!(py, "__qualname__"))?
-			.extract::<&str>()?;
+		let class_name = py.get_type::<Self>().qualname()?;
 
 		let translation: Option<String> = match self.is_some_translation() {
 			true => Some(format!(

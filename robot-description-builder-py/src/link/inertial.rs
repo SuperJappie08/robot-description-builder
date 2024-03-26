@@ -1,4 +1,4 @@
-use pyo3::{intern, prelude::*};
+use pyo3::prelude::*;
 use robot_description_builder::link_data::Inertial;
 
 use crate::transform::PyTransform;
@@ -58,10 +58,7 @@ impl PyInertial {
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		let class_name = py
-			.get_type::<Self>()
-			.getattr(intern!(py, "__qualname__"))?
-			.extract::<&str>()?;
+		let class_name = py.get_type::<Self>().qualname()?;
 
 		let mut repr = format!(
 			"{}(mass = {}, ixx = {}, ixy = {}, ixz = {}, iyy = {}, iyz = {}, izz = {}",

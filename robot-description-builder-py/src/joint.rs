@@ -3,7 +3,7 @@ mod generic_joint_builder;
 mod smartjointbuilder;
 use std::sync::{Arc, RwLock, Weak};
 
-use pyo3::{intern, prelude::*};
+use pyo3::{exceptions::PyReferenceError, prelude::*};
 use robot_description_builder::{joint_data, Chained, Joint, JointBuilder, JointType};
 
 use crate::{
@@ -74,14 +74,10 @@ impl PyJointBuilderChain {
 		)
 	}
 
-	fn __repr__(slf: PyRef<'_, Self>) -> PyResult<String> {
-		let class_name = slf
-			.py()
-			.get_type::<Self>()
-			.getattr(intern!(slf.py(), "__qualname__"))?
-			.extract::<&str>()?;
+	fn __repr__(slf: &Bound<'_, Self>) -> PyResult<String> {
+		let class_name = slf.get_type().qualname()?;
 
-		let super_slf = slf.into_super();
+		let super_slf = slf.borrow().into_super();
 
 		// TODO: EXPAND
 		Ok(format!(
@@ -117,9 +113,7 @@ impl PyJoint {
 	fn try_internal(&self) -> PyResult<Arc<RwLock<Joint>>> {
 		match self.inner.upgrade() {
 			Some(l) => Ok(l),
-			None => Err(pyo3::exceptions::PyReferenceError::new_err(
-				"Joint already collected",
-			)),
+			None => Err(PyReferenceError::new_err("Joint already collected")),
 		}
 	}
 }
@@ -192,9 +186,7 @@ impl PyJoint {
 		let joint = binding.py_read()?;
 		let mut repr = format!(
 			"{}('{}', {}",
-			py.get_type::<Self>()
-				.getattr(intern!(py, "__qualname__"))?
-				.extract::<&str>()?,
+			py.get_type::<Self>().qualname()?,
 			joint.name(),
 			Into::<PyJointType>::into(joint.joint_type()).__pyo3__repr__()
 		);

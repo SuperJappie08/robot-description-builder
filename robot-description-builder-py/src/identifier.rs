@@ -1,4 +1,8 @@
-use pyo3::{exceptions::PyException, intern, prelude::*};
+use pyo3::{
+	exceptions::{PyException, PyNotImplementedError},
+	intern,
+	prelude::*,
+};
 use robot_description_builder::identifiers;
 
 pub(super) fn init_module(py: Python<'_>, module: &PyModule) -> PyResult<()> {
@@ -29,11 +33,11 @@ pub struct PyGroupIDChangable;
 impl PyGroupIDChangable {
 	fn change_group_id(&mut self, new_group_id: String, py: Python<'_>) -> PyResult<()> {
 		let qualname = py
-			.get_type::<Self>()
+			.get_type_bound::<Self>()
 			.getattr(intern!(py, "change_group_id"))?
 			.getattr(intern!(py, "__qualname__"))?
 			.extract::<&str>()?;
-		Err(pyo3::exceptions::PyNotImplementedError::new_err((format!(
+		Err(PyNotImplementedError::new_err((format!(
 			"{} is not implemented. ({{'new_group_id': '{}'}})",
 			qualname, new_group_id
 		),)))
@@ -41,11 +45,11 @@ impl PyGroupIDChangable {
 
 	fn apply_group_id(&mut self, py: Python<'_>) -> PyResult<()> {
 		let qualname = py
-			.get_type::<Self>()
+			.get_type_bound::<Self>()
 			.getattr(intern!(py, "apply_group_id"))?
 			.getattr(intern!(py, "__qualname__"))?
 			.extract::<&str>()?;
-		Err(pyo3::exceptions::PyNotImplementedError::new_err((format!(
+		Err(PyNotImplementedError::new_err((format!(
 			"{} is not implemented.",
 			qualname
 		),)))

@@ -7,12 +7,14 @@ use super::PyTransmissionHardwareInterface;
 #[derive(Debug, Clone, FromPyObject)]
 pub(super) struct PyTransmissionActuator(String, Option<f32>);
 
+unsafe impl PyNativeType for PyTransmissionActuator {
+	type AsRefSource = Self;
+}
+
 unsafe impl PyTypeInfo for PyTransmissionActuator {
 	const NAME: &'static str = "TransmissionActuator";
 
 	const MODULE: Option<&'static str> = Some("robot_description_builder.transmission");
-
-	type AsRefTarget = PyAny;
 
 	fn type_object_raw(py: Python<'_>) -> *mut pyo3::ffi::PyTypeObject {
 		py.import(intern!(py, "robot_description_builder.transmission"))

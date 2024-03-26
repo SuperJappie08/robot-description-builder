@@ -67,10 +67,7 @@ impl PyTransmissionBuilder {
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		let class_name = py
-			.get_type::<Self>()
-			.getattr(intern!(py, "__qualname__"))?
-			.extract::<&str>()?;
+		let class_name = py.get_type::<Self>().qual_name()?;
 
 		let data = format!(
 			"name='{}', type={}",

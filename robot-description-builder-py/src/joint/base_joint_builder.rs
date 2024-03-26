@@ -1,4 +1,9 @@
-use pyo3::{intern, prelude::*, types::PyDict};
+use pyo3::{
+	intern,
+	prelude::*,
+	sync::GILOnceCell,
+	types::{PyDict, PyType},
+};
 use robot_description_builder::JointBuilder;
 
 use crate::{link::PyLinkBuilder, transform::PyTransform};
@@ -15,6 +20,8 @@ pub struct PyJointBuilderBase {
 	pub(super) builder: JointBuilder,
 	pub(super) transform: Option<Py<PyTransform>>,
 }
+
+static PY_LIMIT_TYPE: GILOnceCell<Py<PyType>> = GILOnceCell::new();
 
 // These functions probally should become pub(super)
 impl PyJointBuilderBase {
@@ -118,23 +125,21 @@ impl PyJointBuilderBase {
 
 	// TODO: Better types
 	#[getter]
-	pub fn get_limit<'py>(&self, py: Python<'py>) -> PyResult<Option<&'py PyAny>> {
+	pub fn get_limit<'py>(&self, py: Python<'py>) -> PyResult<Option<Bound<'py, PyAny>>> {
 		match self.builder.limit() {
 			Some(limit) => {
-				let py_limit = py
-					.import(intern!(py, "robot_description_builder.joint"))?
-					.getattr(intern!(py, "limit"))?;
+				let py_limit = PY_LIMIT_TYPE
+					.get_or_try_init(py, || -> PyResult<Py<PyType>> {
+						Ok(py
+							.import_bound("robot_description_builder.joint")?
+							.getattr("limit")?
+							.downcast_into_exact()?
+							.unbind())
+					})?
+					.bind(py);
 
-				Ok(Some(py_limit.call_method1(
-					intern!(py, "__new__"),
-					(
-						py_limit,
-						limit.effort,
-						limit.velocity,
-						limit.lower,
-						limit.upper,
-					),
-				)?))
+				Some(py_limit.call1((limit.effort, limit.velocity, limit.lower, limit.upper)))
+					.transpose()
 			}
 			None => Ok(None),
 		}
@@ -145,7 +150,7 @@ impl PyJointBuilderBase {
 	pub fn get_mimic(&self, py: Python<'_>) -> PyResult<Option<PyObject>> {
 		match self.builder.mimic() {
 			Some(mimic) => {
-				let dict = PyDict::new(py);
+				let dict = PyDict::new_bound(py);
 				dict.set_item(intern!(py, "name"), mimic.joint_name.clone())?;
 				dict.set_item(intern!(py, "multiplier"), mimic.multiplier)?;
 				dict.set_item(intern!(py, "offset"), mimic.offset)?;
@@ -153,7 +158,7 @@ impl PyJointBuilderBase {
 				Ok(Some(unsafe {
 					Py::from_owned_ptr_or_err(
 						py,
-						pyo3::ffi::PyDictProxy_New(dict.as_mapping().into_ptr()),
+						pyo3::ffi::PyDictProxy_New(dict.into_mapping().into_ptr()),
 					)?
 				}))
 			}

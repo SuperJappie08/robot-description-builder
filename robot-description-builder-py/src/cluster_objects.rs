@@ -55,9 +55,9 @@ impl PyKinematicBase {
 		let materials_strong = tree.get_materials();
 
 		let result = Self {
-			links_dict: PyDict::new(py).into_py(py),
-			joints_dict: PyDict::new(py).into_py(py),
-			material_dict: PyDict::new(py).into_py(py),
+			links_dict: PyDict::new_bound(py).unbind(),
+			joints_dict: PyDict::new_bound(py).unbind(),
+			material_dict: PyDict::new_bound(py).unbind(),
 			implementor: weak_ref.clone(),
 			links_weak: Arc::downgrade(&links_strong),
 			joints_weak: Arc::downgrade(&joints_strong),

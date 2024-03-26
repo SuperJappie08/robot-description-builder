@@ -1,4 +1,4 @@
-use pyo3::{basic::CompareOp, intern, prelude::*};
+use pyo3::{basic::CompareOp, prelude::*};
 
 use robot_description_builder::link_data::geometry::{BoxGeometry, GeometryInterface};
 
@@ -28,10 +28,7 @@ impl PyBoxGeometry {
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		let class_name = py
-			.get_type::<Self>()
-			.getattr(intern!(py, "__qualname__"))?
-			.extract::<&str>()?;
+		let class_name = py.get_type::<Self>().qualname()?;
 
 		Ok(format!(
 			"{}({}, {}, {})",

@@ -125,10 +125,7 @@ impl PyJointBuilder {
 	}
 
 	pub fn __repr__(slf: PyRef<'_, Self>, py: Python<'_>) -> PyResult<String> {
-		let class_name = py
-			.get_type::<Self>()
-			.getattr(intern!(py, "__qualname__"))?
-			.extract::<&str>()?;
+		let class_name = py.get_type::<Self>().qualname()?;
 
 		let super_self = slf.as_ref();
 

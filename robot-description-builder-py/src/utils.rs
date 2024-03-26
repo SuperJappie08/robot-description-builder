@@ -1,7 +1,13 @@
 use std::sync::{PoisonError, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use itertools::Itertools;
-use pyo3::{prelude::*, pyclass_init::PyObjectInit, types::PyList, PyClass, PyTypeInfo};
+use pyo3::{
+	exceptions::{PyIndexError, PyRuntimeError, PyTypeError},
+	prelude::*,
+	pyclass_init::PyObjectInit,
+	types::PyList,
+	PyClass, PyTypeInfo,
+};
 
 pub trait PoisonErrorHandler<T>: Into<Result<T, PoisonError<T>>> {
 	fn to_pyerr(self) -> Result<T, PyErr>;
@@ -12,8 +18,7 @@ impl<'a, T> PoisonErrorHandler<RwLockReadGuard<'a, T>>
 {
 	fn to_pyerr(self) -> Result<RwLockReadGuard<'a, T>, PyErr> {
 		self.map_err(|_| {
-			// pyo3::exceptions::PyAttributeError::new_err("Lock Poisoned")
-			pyo3::exceptions::PyRuntimeError::new_err(
+			PyRuntimeError::new_err(
 				"Tried to read a Lock, which poissoned by a panic.", //, in this Rust version this is unrecoverable.",
 			)
 		})
@@ -25,7 +30,7 @@ impl<'a, T> PoisonErrorHandler<RwLockWriteGuard<'a, T>>
 {
 	fn to_pyerr(self) -> Result<RwLockWriteGuard<'a, T>, PyErr> {
 		self.map_err(|_| {
-			pyo3::exceptions::PyRuntimeError::new_err(
+			PyRuntimeError::new_err(
 				"Tried to write to Lock, which poissoned by a panic.", //, in this Rust version this is unrecoverable.",
 			)
 		})
@@ -52,7 +57,7 @@ pub trait TryIntoPy<T>: Sized {
 }
 
 pub trait TryIntoRefPyAny: Sized {
-	fn try_into_py_ref(self, py: Python<'_>) -> PyResult<&PyAny>;
+	fn try_into_py_ref(self, py: Python<'_>) -> PyResult<Bound<'_, PyAny>>;
 }
 
 impl<T> TryIntoPy<PyObject> for T
@@ -142,7 +147,7 @@ where
 	if obj.len()? > 0 {
 		obj.extract()
 	} else {
-		Err(pyo3::exceptions::PyIndexError::new_err(format!(
+		Err(PyIndexError::new_err(format!(
 			"Supplied list {} must be non empty",
 			obj.repr()?.extract::<&str>()?
 		)))
@@ -160,7 +165,7 @@ where
 	} else {
 		let py = obj.py();
 		let target_type = T::type_object(py);
-		Err(pyo3::exceptions::PyTypeError::new_err(format!(
+		Err(PyTypeError::new_err(format!(
 			"Expected type {target_type} or list[{target_type}] got {} instead.",
 			obj.get_type()
 		)))

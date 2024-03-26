@@ -8,6 +8,7 @@ repository = "https://github.com/SuperJappie08/robot-description-builder/tree/ma
 license = "MIT"
 keywords = ["urdf", "robotics"]
 categories = ["science::robotics", "data-structures", "simulation"]
+rust-version = "1.77"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

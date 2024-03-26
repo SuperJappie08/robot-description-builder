@@ -3,6 +3,7 @@ name = "robot-description-builder-py"
 version = "0.0.4-dev"
 edition = "2021"
 license = "MIT"
+rust-version = "1.77"
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -12,9 +13,12 @@ crate-type = ["cdylib"]
 
 [dependencies]
 itertools = "0.12.1"
-pyo3 = "0.20.0"
+pyo3 = { version = "0.21.0", features = ["gil-refs"] }
 robot-description-builder = { path = "../robot-description-builder", features = [
     "wrapper",
 ] }
 rdb-py-macro = { path = "./rdb-py-macro" }
 thiserror = "1.0"
+
+[features]
+experimental-transmission = []
