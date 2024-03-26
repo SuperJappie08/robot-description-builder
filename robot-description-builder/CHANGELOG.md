@@ -1,6 +1,17 @@
 # 🦀 Changelog 🦀
 The Changes between versions of [<b>`robot-description-builder`</b> for <b>Rust</b>](https://github.com/SuperJappie08/robot-description-builder/tree/master/robot-description-builder#robot-description-builder-) are recored here.
 
+## Version 0.0.4-dev
+
+### Misc
+- Bumped depency versions:
+    - `itertools` 0.12.0 -> 0.12.1
+    - `log` 0.4.19 -> 0.4.21
+    - `nalgebra` 0.32.3 -> 0.32.4
+    - `DEV` `test-log` 0.2.12 -> 0.2.15
+    - `DEV` `env_logger` 0.10.0 -> 0.11.3
+
+
 ## Version 0.0.3
 - Convert Collision and VisualBuilder between eachother.
 - Renamed all `origin` fields to `transform` to make the naming less URDF specific.

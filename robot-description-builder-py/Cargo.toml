@@ -1,6 +1,6 @@
 [package]
 name = "robot-description-builder-py"
-version = "0.0.3"
+version = "0.0.4-dev"
 edition = "2021"
 license = "MIT"
 
@@ -11,8 +11,10 @@ name = "robot_description_builder_py"
 crate-type = ["cdylib"]
 
 [dependencies]
-itertools = "0.12.0"
+itertools = "0.12.1"
 pyo3 = "0.20.0"
-robot-description-builder = { path = "../robot-description-builder", features=["wrapper"] }
-rdb-py-macro = {path = "./rdb-py-macro"}
+robot-description-builder = { path = "../robot-description-builder", features = [
+    "wrapper",
+] }
+rdb-py-macro = { path = "./rdb-py-macro" }
 thiserror = "1.0"

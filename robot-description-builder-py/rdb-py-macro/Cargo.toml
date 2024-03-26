@@ -10,8 +10,10 @@ publish = false
 proc-macro = true
 
 [dependencies]
-itertools = "0.12.0"
+itertools = "0.12.1"
 proc-macro2 = "1.0"
 quote = "1.0"
-syn = {version="2.0", features=["full"]}
-robot-description-builder = {path = "../../robot-description-builder", features = ["smart-joint-extension"]}
+syn = { version = "2.0", features = ["full"] }
+robot-description-builder = { path = "../../robot-description-builder", features = [
+    "smart-joint-extension",
+] }
