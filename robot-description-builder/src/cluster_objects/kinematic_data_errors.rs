@@ -57,11 +57,6 @@ pub enum AddLinkError {
 	"This is a nightly-only experimental API. (mutex_unpoison #96469)" */
 	#[error("The lock of the Link Index is poisoned and therefor could not be read")]
 	ReadIndex(#[from] PoisonReadIndexError<String, WeakLock<Link>>),
-	/// Error that results from `PoisonError<RwLockWriteGuard<'_, HashMap<String, Weak<RwLock<Link>>>>` occurs when attempting to write to a poisoned `Arc<RwLock<HashMap<String, Weak<RwLock<Link>>>>>`.
-	/* In the future the lock could be saved by overwriting with a newly generated index, however waiting for
-	"This is a nightly-only experimental API. (mutex_unpoison #96469)" */
-	#[error("The lock of the Link Index is poisoned and therefor could not be written to")]
-	WriteIndex(#[from] PoisonWriteIndexError<String, WeakLock<Link>>),
 	#[error(
 		"The new Link could not be added since its name '{0}' is already in use by another Link"
 	)]
@@ -73,7 +68,6 @@ impl PartialEq for AddLinkError {
 		match (self, other) {
 			(Self::ReadNewLink(l0), Self::ReadNewLink(r0)) => l0.get_ref() == r0.get_ref(),
 			(Self::ReadIndex(l0), Self::ReadIndex(r0)) => l0.get_ref() == r0.get_ref(),
-			(Self::WriteIndex(l0), Self::WriteIndex(r0)) => l0.get_ref() == r0.get_ref(),
 			(Self::Conflict(l0), Self::Conflict(r0)) => l0 == r0,
 			_ => false,
 		}
