@@ -160,7 +160,16 @@ impl Joint {
 			.retain(|joint| !Arc::ptr_eq(&self.get_self(), joint));
 
 		// TODO: This is most-likely Ok, however it could error on the write.
-		*self.tree.upgrade().unwrap().newest_link.write().unwrap() = Weak::clone(&self.parent_link);
+		*self
+			.tree
+			.upgrade()
+			.unwrap()
+			.newest_link
+			.write()
+			.unwrap_or_else(|err| {
+				self.tree.upgrade().unwrap().newest_link.clear_poison();
+				err.into_inner()
+			}) = Weak::clone(&self.parent_link);
 
 		Ok(builder)
 	}
