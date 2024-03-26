@@ -2,7 +2,7 @@ use std::io::{Read, Seek};
 
 use itertools::Itertools;
 use pyo3::{
-	exceptions::{PyBufferError, PyEOFError, PyKeyError, PyTypeError},
+	exceptions::{PyBufferError, PyEOFError, PyKeyError, PyNotImplementedError, PyTypeError},
 	intern,
 	prelude::*,
 	types::PyDict,
@@ -20,7 +20,7 @@ use super::dict2xmlmode;
 #[pyfunction(signature=(description, **kwargs))]
 pub(super) fn to_urdf_string(
 	description: &PyRobot,
-	kwargs: Option<&PyDict>,
+	kwargs: Option<&Bound<'_, PyDict>>,
 	py: Python<'_>,
 ) -> PyResult<String> {
 	let urdf_config = match kwargs {
@@ -49,7 +49,7 @@ pub(super) fn to_urdf_string(
 	Ok(out)
 }
 
-fn dict2urdfconfig(py: Python<'_>, kwds: &PyDict) -> PyResult<URDFConfig> {
+fn dict2urdfconfig(py: Python<'_>, kwds: &Bound<'_, PyDict>) -> PyResult<URDFConfig> {
 	let config = URDFConfig {
 		xml_mode: dict2xmlmode(py, kwds)?,
 		urdf_target: dict2urdftarget(py, kwds)?,
@@ -59,11 +59,11 @@ fn dict2urdfconfig(py: Python<'_>, kwds: &PyDict) -> PyResult<URDFConfig> {
 
 	if !kwds.is_empty() {
 		// FIXME: This should not be static
-		let qualname = py
-			.import(intern!(py, "robot_description_builder"))?
+		let bound = &py
+			.import_bound(intern!(py, "robot_description_builder"))?
 			.getattr(intern!(py, "to_urdf_string"))?
-			.getattr(intern!(py, "__qualname__"))?
-			.extract::<&str>()?;
+			.getattr(intern!(py, "__qualname__"))?;
+		let qualname = bound.extract::<&str>()?;
 		return Err(PyTypeError::new_err(format!(
 			"{} got an unexpected keyword argument '{}'",
 			qualname,
@@ -78,7 +78,7 @@ fn dict2urdfconfig(py: Python<'_>, kwds: &PyDict) -> PyResult<URDFConfig> {
 }
 
 /// Takes `'target'` argument from a `&PyDict` to extract a `URDFTarget`
-fn dict2urdftarget(py: Python<'_>, kwds: &PyDict) -> PyResult<URDFTarget> {
+fn dict2urdftarget(py: Python<'_>, kwds: &Bound<'_, PyDict>) -> PyResult<URDFTarget> {
 	if let Some(target) = kwds.get_item(intern!(py, "target"))? {
 		// target specified so extract the target string
 		let target = target.extract::<&str>()?;
@@ -100,9 +100,9 @@ fn dict2urdftarget(py: Python<'_>, kwds: &PyDict) -> PyResult<URDFTarget> {
 	Ok(URDFTarget::default())
 }
 
-fn dict2materialref(py: Python<'_>, kwds: &PyDict) -> PyResult<URDFMaterialReferences> {
+fn dict2materialref(py: Python<'_>, kwds: &Bound<'_, PyDict>) -> PyResult<URDFMaterialReferences> {
 	if let Some(material_mode) = kwds.get_item(intern!(py, "material_refmode"))? {
-		return Err(pyo3::exceptions::PyNotImplementedError::new_err(format!(
+		return Err(PyNotImplementedError::new_err(format!(
 			"TODO: material_ref_mode: {}",
 			material_mode
 		)));

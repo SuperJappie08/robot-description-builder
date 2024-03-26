@@ -3,7 +3,7 @@ use robot_description_builder::link_data::Inertial;
 
 use crate::transform::PyTransform;
 
-pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
+pub(super) fn init_module(_py: Python<'_>, module: &Bound<'_, PyModule>) -> PyResult<()> {
 	// let module = PyModule::new(py, "inertial")?;
 
 	module.add_class::<PyInertial>()?;
@@ -58,7 +58,7 @@ impl PyInertial {
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		let class_name = py.get_type::<Self>().qualname()?;
+		let class_name = py.get_type_bound::<Self>().qualname()?;
 
 		let mut repr = format!(
 			"{}(mass = {}, ixx = {}, ixy = {}, ixz = {}, iyy = {}, iyz = {}, izz = {}",

@@ -6,7 +6,7 @@ use pyo3::{
 };
 use robot_description_builder::JointBuilder;
 
-use crate::{link::PyLinkBuilder, transform::PyTransform};
+use crate::{link::PyLinkBuilder, transform::PyTransform, utils::GILOnceCellTypeExtract};
 
 use super::PyJointType;
 
@@ -128,15 +128,11 @@ impl PyJointBuilderBase {
 	pub fn get_limit<'py>(&self, py: Python<'py>) -> PyResult<Option<Bound<'py, PyAny>>> {
 		match self.builder.limit() {
 			Some(limit) => {
-				let py_limit = PY_LIMIT_TYPE
-					.get_or_try_init(py, || -> PyResult<Py<PyType>> {
-						Ok(py
-							.import_bound("robot_description_builder.joint")?
-							.getattr("limit")?
-							.downcast_into_exact()?
-							.unbind())
-					})?
-					.bind(py);
+				let py_limit = PY_LIMIT_TYPE.get_or_try_init_type_ref(
+					py,
+					"robot_description_builder.joint",
+					"limit",
+				)?;
 
 				Some(py_limit.call1((limit.effort, limit.velocity, limit.lower, limit.upper)))
 					.transpose()
@@ -158,7 +154,7 @@ impl PyJointBuilderBase {
 				Ok(Some(unsafe {
 					Py::from_owned_ptr_or_err(
 						py,
-						pyo3::ffi::PyDictProxy_New(dict.into_mapping().into_ptr()),
+						pyo3::ffi::PyDictProxy_New(dict.as_mapping().as_ptr()),
 					)?
 				}))
 			}
@@ -171,7 +167,7 @@ impl PyJointBuilderBase {
 	pub fn get_safety_controller(&self, py: Python<'_>) -> PyResult<Option<PyObject>> {
 		match self.builder.safety_controller() {
 			Some(safety_controller) => {
-				let dict = PyDict::new(py);
+				let dict = PyDict::new_bound(py);
 				dict.set_item(intern!(py, "k_velocity"), safety_controller.k_velocity)?;
 				dict.set_item(intern!(py, "k_position"), safety_controller.k_position)?;
 
@@ -188,7 +184,7 @@ impl PyJointBuilderBase {
 				Ok(Some(unsafe {
 					Py::from_owned_ptr_or_err(
 						py,
-						pyo3::ffi::PyDictProxy_New(dict.as_mapping().into_ptr()),
+						pyo3::ffi::PyDictProxy_New(dict.as_mapping().as_ptr()),
 					)?
 				}))
 			}

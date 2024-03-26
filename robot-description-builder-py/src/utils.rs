@@ -5,8 +5,9 @@ use pyo3::{
 	exceptions::{PyIndexError, PyRuntimeError, PyTypeError},
 	prelude::*,
 	pyclass_init::PyObjectInit,
-	types::PyList,
-	PyClass, PyTypeInfo,
+	sync::GILOnceCell,
+	types::{PyCFunction, PyFunction, PySequence, PyType},
+	PyClass, PyTypeCheck, PyTypeInfo,
 };
 
 pub trait PoisonErrorHandler<T>: Into<Result<T, PoisonError<T>>> {
@@ -135,16 +136,16 @@ where
 	unsafe {
 		Ok(Py::from_owned_ptr(
 			py,
-			initializer.into_new_object(py, py.get_type::<T>().as_type_ptr())?,
+			initializer.into_new_object(py, py.get_type_bound::<T>().as_type_ptr())?,
 		))
 	}
 }
 
-pub fn non_empty<'source, T>(obj: &'source PyAny) -> PyResult<Vec<T>>
+pub fn non_empty<'py, T>(obj: &Bound<'py, PySequence>) -> PyResult<Vec<T>>
 where
-	T: FromPyObject<'source>,
+	T: FromPyObject<'py>,
 {
-	if obj.len()? > 0 {
+	if !obj.is_empty()? {
 		obj.extract()
 	} else {
 		Err(PyIndexError::new_err(format!(
@@ -154,20 +155,87 @@ where
 	}
 }
 
-pub fn one_or_list<'source, T>(obj: &'source PyAny) -> PyResult<Vec<T>>
+pub fn one_or_list<'py, T>(obj: &Bound<'py, PyAny>) -> PyResult<Vec<T>>
 where
-	T: PyTypeInfo + FromPyObject<'source>,
+	T: PyTypeInfo + FromPyObject<'py>,
 {
-	if obj.is_instance_of::<PyList>() {
-		non_empty(obj)
+	if PySequence::type_check(obj) {
+		non_empty(unsafe { obj.downcast_unchecked() })
 	} else if obj.is_instance_of::<T>() {
 		Ok(vec![obj.extract()?])
 	} else {
 		let py = obj.py();
-		let target_type = T::type_object(py);
+		let target_type = T::type_object_bound(py);
 		Err(PyTypeError::new_err(format!(
 			"Expected type {target_type} or list[{target_type}] got {} instead.",
 			obj.get_type()
 		)))
+	}
+}
+
+/// Implement get_or_try_init_type_ref from PyO3: https://github.com/PyO3/pyo3/blob/1be2fad9bfa900dc2df412e32613641d9175d759/src/sync.rs#L203-L213
+pub(crate) trait GILOnceCellTypeExtract {
+	fn get_or_try_init_type_ref<'py>(
+		&'py self,
+		py: Python<'py>,
+		module_name: &str,
+		attr_name: &str,
+	) -> PyResult<&Bound<'py, PyType>>;
+}
+
+impl GILOnceCellTypeExtract for GILOnceCell<Py<PyType>> {
+	#[inline]
+	fn get_or_try_init_type_ref<'py>(
+		&'py self,
+		py: Python<'py>,
+		module_name: &str,
+		attr_name: &str,
+	) -> PyResult<&Bound<'py, PyType>> {
+		self.get_or_try_init(py, || {
+			py.import_bound(module_name)?.getattr(attr_name)?.extract()
+		})
+		.map(|ty| ty.bind(py))
+	}
+}
+
+pub(crate) trait GILOnceCellFuncExtract<F>
+where
+	F: PyTypeInfo,
+{
+	fn get_or_try_init_func_ref<'py>(
+		&'py self,
+		py: Python<'py>,
+		module_name: &str,
+		attr_name: &str,
+	) -> PyResult<&Bound<'py, F>>;
+}
+
+impl GILOnceCellFuncExtract<PyFunction> for GILOnceCell<Py<PyFunction>> {
+	#[inline]
+	fn get_or_try_init_func_ref<'py>(
+		&'py self,
+		py: Python<'py>,
+		module_name: &str,
+		attr_name: &str,
+	) -> PyResult<&Bound<'py, PyFunction>> {
+		self.get_or_try_init(py, || {
+			py.import_bound(module_name)?.getattr(attr_name)?.extract()
+		})
+		.map(|ty| ty.bind(py))
+	}
+}
+
+impl GILOnceCellFuncExtract<PyCFunction> for GILOnceCell<Py<PyCFunction>> {
+	#[inline]
+	fn get_or_try_init_func_ref<'py>(
+		&'py self,
+		py: Python<'py>,
+		module_name: &str,
+		attr_name: &str,
+	) -> PyResult<&Bound<'py, PyCFunction>> {
+		self.get_or_try_init(py, || {
+			py.import_bound(module_name)?.getattr(attr_name)?.extract()
+		})
+		.map(|ty| ty.bind(py))
 	}
 }

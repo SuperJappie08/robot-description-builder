@@ -11,7 +11,7 @@ pub use cylinder_geometry::PyCylinderGeometry;
 pub use mesh_geometry::PyMeshGeometry;
 pub use sphere_geometry::PySphereGeometry;
 
-pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
+pub(super) fn init_module(_py: Python<'_>, module: &Bound<'_, PyModule>) -> PyResult<()> {
 	// let module = PyModule::new(py, "geometry")?;
 
 	module.add_class::<PyGeometryBase>()?;

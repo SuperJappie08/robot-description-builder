@@ -3,7 +3,7 @@ use robot_description_builder::{
 	link_data::Collision, linkbuilding::CollisionBuilder, prelude::GroupIDChanger, Transform,
 };
 
-pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
+pub(super) fn init_module(_py: Python<'_>, module: &Bound<'_, PyModule>) -> PyResult<()> {
 	// let module = PyModule::new(py, "collision")?;
 
 	module.add_class::<PyCollision>()?;
@@ -94,7 +94,7 @@ impl PyCollisionBuilder {
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		let class_name = py.get_type::<Self>().qualname()?;
+		let class_name = py.get_type_bound::<Self>().qualname()?;
 
 		let mut data = match self.0.name() {
 			Some(name) => format!("name='{name}', "),
@@ -162,7 +162,7 @@ impl PyCollision {
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		let class_name = py.get_type::<Self>().qualname()?;
+		let class_name = py.get_type_bound::<Self>().qualname()?;
 
 		let mut data = match self.inner.name() {
 			Some(name) => format!("name='{name}', "),

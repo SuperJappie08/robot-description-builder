@@ -119,7 +119,7 @@ impl From<PyTransmissionActuator> for TransmissionActuator {
 // impl TryIntoRefPyAny for PyTransmissionJoint {
 // 	fn try_into_py_ref(self, py: Python<'_>) -> PyResult<&PyAny> {
 // 		// Unwraping should be Ok here
-// 		let py_joint = py // ? .get_type::<PyTransmissionJoint>()
+// 		let py_joint = py // ? .get_type_bound::<PyTransmissionJoint>()
 // 			.import(intern!(py, "robot_description_builder.transmission"))?
 // 			.getattr(intern!(py, "TransmissionJoint"))?;
 

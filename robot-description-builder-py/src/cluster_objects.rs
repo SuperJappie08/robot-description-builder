@@ -9,7 +9,12 @@ use std::{
 pub use kinematic_tree::PyKinematicTree;
 pub use robot::PyRobot;
 
-use pyo3::{ffi, prelude::*, types::PyDict};
+use pyo3::{
+	ffi,
+	prelude::*,
+	sync::GILOnceCell,
+	types::{PyCFunction, PyDict},
+};
 use robot_description_builder::{
 	material::{data::MaterialData, Material},
 	Joint, KinematicInterface, Link,
@@ -17,13 +22,15 @@ use robot_description_builder::{
 
 use crate::{joint::PyJoint, link::PyLink, material::PyMaterial, utils::PyReadWriteable};
 
-pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
+pub(super) fn init_module(_py: Python<'_>, module: &Bound<'_, PyModule>) -> PyResult<()> {
 	module.add_class::<PyKinematicBase>()?;
 	module.add_class::<PyKinematicTree>()?;
 	module.add_class::<PyRobot>()?;
 
 	Ok(())
 }
+
+static WEAKREF_PROXY_CONSTRUCTOR: GILOnceCell<Py<PyCFunction>> = GILOnceCell::new();
 
 #[derive(Debug)]
 #[pyclass(
@@ -78,7 +85,7 @@ impl PyKinematicBase {
 
 	#[inline]
 	pub(in crate::cluster_objects) fn update_links(&self, py: Python<'_>) -> PyResult<()> {
-		self.links_dict.as_ref(py).update({
+		self.links_dict.bind(py).update({
 			self.links_weak
 				.upgrade()
 				.unwrap() // This unwrap is Ok
@@ -87,14 +94,14 @@ impl PyKinematicBase {
 				.map(|(key, value)| (key.clone(), PyLink::new_weak(value, &self.implementor)))
 				.collect::<HashMap<_, _>>()
 				.into_py(py)
-				.downcast::<PyDict>(py)?
+				.downcast_bound::<PyDict>(py)?
 				.as_mapping()
 		})
 	}
 
 	#[inline]
 	pub(in crate::cluster_objects) fn update_joints(&self, py: Python<'_>) -> PyResult<()> {
-		self.joints_dict.as_ref(py).update({
+		self.joints_dict.bind(py).update({
 			self.joints_weak
 				.upgrade()
 				.unwrap() // This unwrap is Ok
@@ -103,14 +110,14 @@ impl PyKinematicBase {
 				.map(|(key, value)| (key.clone(), PyJoint::new_weak(value, &self.implementor)))
 				.collect::<HashMap<_, _>>()
 				.into_py(py)
-				.downcast::<PyDict>(py)?
+				.downcast_bound::<PyDict>(py)?
 				.as_mapping()
 		})
 	}
 
 	#[inline]
 	pub(in crate::cluster_objects) fn update_materials(&self, py: Python<'_>) -> PyResult<()> {
-		self.material_dict.as_ref(py).update({
+		self.material_dict.bind(py).update({
 			self.material_weak
 				.upgrade()
 				.unwrap() // This unwrap is Ok
@@ -124,7 +131,7 @@ impl PyKinematicBase {
 				})
 				.collect::<HashMap<_, PyMaterial>>()
 				.into_py(py)
-				.downcast::<PyDict>(py)?
+				.downcast_bound::<PyDict>(py)?
 				.as_mapping()
 		})
 	}
@@ -136,41 +143,20 @@ impl PyKinematicBase {
 	fn get_links(&mut self, py: Python<'_>) -> PyResult<PyObject> {
 		self.update_links(py)?;
 
-		unsafe {
-			Py::from_owned_ptr_or_err(
-				py,
-				ffi::PyDictProxy_New(self.links_dict.clone().as_ref(py).as_mapping().into_ptr()),
-			)
-		}
+		unsafe { Py::from_owned_ptr_or_err(py, ffi::PyDictProxy_New(self.links_dict.as_ptr())) }
 	}
 
 	#[getter]
 	fn get_joints(&mut self, py: Python<'_>) -> PyResult<PyObject> {
 		self.update_joints(py)?;
 
-		unsafe {
-			Py::from_owned_ptr_or_err(
-				py,
-				ffi::PyDictProxy_New(self.joints_dict.clone().as_ref(py).as_mapping().into_ptr()),
-			)
-		}
+		unsafe { Py::from_owned_ptr_or_err(py, ffi::PyDictProxy_New(self.joints_dict.as_ptr())) }
 	}
 
 	#[getter]
 	fn get_materials(&mut self, py: Python<'_>) -> PyResult<PyObject> {
 		self.update_materials(py)?;
 
-		unsafe {
-			Py::from_owned_ptr_or_err(
-				py,
-				ffi::PyDictProxy_New(
-					self.material_dict
-						.clone()
-						.as_ref(py)
-						.as_mapping()
-						.into_ptr(),
-				),
-			)
-		}
+		unsafe { Py::from_owned_ptr_or_err(py, ffi::PyDictProxy_New(self.material_dict.as_ptr())) }
 	}
 }

@@ -1,11 +1,14 @@
 use pyo3::{create_exception, exceptions::PyException, prelude::*};
 use robot_description_builder::{errors, reexport::quick_xml};
 
-pub(super) fn init_module(py: Python<'_>, module: &PyModule) -> PyResult<()> {
-	module.add("AttachChainError", py.get_type::<AttachChainError>())?;
-	module.add("RebuildBranchError", py.get_type::<AttachChainError>())?;
+pub(super) fn init_module(py: Python<'_>, module: &Bound<'_, PyModule>) -> PyResult<()> {
+	module.add("AttachChainError", py.get_type_bound::<AttachChainError>())?;
+	module.add(
+		"RebuildBranchError",
+		py.get_type_bound::<AttachChainError>(),
+	)?;
 
-	module.add("XMLError", py.get_type::<XMLError>())?;
+	module.add("XMLError", py.get_type_bound::<XMLError>())?;
 
 	Ok(())
 }

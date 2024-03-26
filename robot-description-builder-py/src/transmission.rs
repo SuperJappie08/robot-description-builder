@@ -20,7 +20,7 @@ pub use transmission_variants::{PyTransmissionHardwareInterface, PyTransmissionT
 
 use transmission_wrappers::PyTransmissionActuator;
 
-pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
+pub(super) fn init_module(_py: Python<'_>, module: &Bound<'_, PyModule>) -> PyResult<()> {
 	module.add_class::<PyTransmissionBuilder>()?;
 	module.add_class::<PyTransmission>()?;
 	module.add_class::<PyTransmissionType>()?;
@@ -119,7 +119,7 @@ impl PyTransmission {
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		let class_name = py.get_type::<Self>().qualname()?;
+		let class_name = py.get_type_bound::<Self>().qualname()?;
 
 		let mut data = format!(
 			"'{}', {}, joints=[",

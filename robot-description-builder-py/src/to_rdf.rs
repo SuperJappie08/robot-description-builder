@@ -6,14 +6,14 @@ use robot_description_builder::to_rdf::XMLMode;
 
 use to_urdf::to_urdf_string;
 
-pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
-	module.add_function(wrap_pyfunction!(to_urdf_string, module)?)?;
+pub(super) fn init_module(_py: Python<'_>, module: &Bound<'_, PyModule>) -> PyResult<()> {
+	module.add_function(wrap_pyfunction_bound!(to_urdf_string, module)?)?;
 
 	Ok(())
 }
 
 /// Takes `'indent'` argument from a `&PyDict` to extract a `XMLMode`
-fn dict2xmlmode(py: Python<'_>, kwds: &PyDict) -> PyResult<XMLMode> {
+fn dict2xmlmode(py: Python<'_>, kwds: &Bound<'_, PyDict>) -> PyResult<XMLMode> {
 	if let Some(indent) = kwds.get_item(intern!(py, "indent"))? {
 		if let Ok((c, count)) = indent.extract::<(char, usize)>() {
 			// Char and count so indentation

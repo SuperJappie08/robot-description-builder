@@ -3,7 +3,7 @@ use robot_description_builder::{MirrorAxis, Transform};
 
 const NONE_STR: &str = "None";
 
-pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
+pub(super) fn init_module(_py: Python<'_>, module: &Bound<'_, PyModule>) -> PyResult<()> {
 	module.add_class::<PyTransform>()?;
 	module.add_class::<PyMirrorAxis>()?;
 
@@ -48,7 +48,7 @@ impl PyTransform {
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		let class_name = py.get_type::<Self>().qualname()?;
+		let class_name = py.get_type_bound::<Self>().qualname()?;
 
 		let translation: Option<String> = match self.is_some_translation() {
 			true => Some(format!(

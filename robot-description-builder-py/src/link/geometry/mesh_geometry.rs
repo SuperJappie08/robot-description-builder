@@ -36,7 +36,7 @@ impl PyMeshGeometry {
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		let class_name = py.get_type::<Self>().qualname()?;
+		let class_name = py.get_type_bound::<Self>().qualname()?;
 
 		Ok(format!(
 			"{}(path='{}', bounding_box={:?}, scale={:?})",

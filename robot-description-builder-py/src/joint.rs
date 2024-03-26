@@ -16,7 +16,7 @@ use crate::{
 pub use base_joint_builder::PyJointBuilderBase;
 pub use generic_joint_builder::PyJointBuilder;
 
-pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
+pub(super) fn init_module(_py: Python<'_>, module: &Bound<'_, PyModule>) -> PyResult<()> {
 	module.add_class::<PyJoint>()?;
 	module.add_class::<PyJointBuilder>()?;
 	module.add_class::<PyJointType>()?;
@@ -186,7 +186,7 @@ impl PyJoint {
 		let joint = binding.py_read()?;
 		let mut repr = format!(
 			"{}('{}', {}",
-			py.get_type::<Self>().qualname()?,
+			py.get_type_bound::<Self>().qualname()?,
 			joint.name(),
 			Into::<PyJointType>::into(joint.joint_type()).__pyo3__repr__()
 		);

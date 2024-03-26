@@ -10,17 +10,17 @@ use robot_description_builder::{
 use crate::{
 	identifier::GroupIDError,
 	impl_into_py_callback,
-	utils::{PyReadWriteable, TryIntoRefPyAny},
+	utils::{GILOnceCellTypeExtract, PyReadWriteable, TryIntoRefPyAny},
 };
 
-pub(super) fn init_module(_py: Python<'_>, module: &PyModule) -> PyResult<()> {
+pub(super) fn init_module(_py: Python<'_>, module: &Bound<'_, PyModule>) -> PyResult<()> {
 	module.add_class::<PyMaterial>()?;
 	module.add_class::<PyMaterialDescriptor>()?;
 	Ok(())
 }
 
 // Sometimes it needed to be defined directly in macro
-const SUBMODULE_PATH: &'static str = "robot_description_builder.material";
+const SUBMODULE_PATH: &str = "robot_description_builder.material";
 
 static PY_COLOR_TYPE: GILOnceCell<Py<PyType>> = GILOnceCell::new();
 static PY_TEXTUREPATH_TYPE: GILOnceCell<Py<PyType>> = GILOnceCell::new();
@@ -72,27 +72,17 @@ impl TryIntoRefPyAny for PyMaterialData {
 	fn try_into_py_ref(self, py: Python<'_>) -> PyResult<Bound<'_, PyAny>> {
 		match self {
 			PyMaterialData::Color(red, green, blue, alpha) => {
-				let py_color = PY_COLOR_TYPE
-					.get_or_try_init(py, || -> PyResult<Py<PyType>> {
-						Ok(py
-							.import_bound(SUBMODULE_PATH)?
-							.getattr("Color")?
-							.downcast_into_exact()?
-							.unbind())
-					})?
-					.bind(py);
+				let py_color =
+					PY_COLOR_TYPE.get_or_try_init_type_ref(py, SUBMODULE_PATH, "Color")?;
 				py_color.call1((red, green, blue, alpha))
 			}
 			PyMaterialData::TexturePath { path } => {
-				let py_texture_path = PY_TEXTUREPATH_TYPE
-					.get_or_try_init(py, || -> PyResult<Py<PyType>> {
-						Ok(py
-							.import_bound(SUBMODULE_PATH)?
-							.getattr("TexturePath")?
-							.downcast_into_exact()?
-							.unbind())
-					})?
-					.bind(py);
+				let py_texture_path = PY_TEXTUREPATH_TYPE.get_or_try_init_type_ref(
+					py,
+					SUBMODULE_PATH,
+					"TexturePath",
+				)?;
+
 				py_texture_path.call1((path,))
 			}
 		}
@@ -154,7 +144,7 @@ impl PyMaterialDescriptor {
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		let class_name = py.get_type::<Self>().qualname()?;
+		let class_name = py.get_type_bound::<Self>().qualname()?;
 
 		let mut data = match self.0.name() {
 			Some(name) => format!("name='{}', ", name),
@@ -223,7 +213,7 @@ impl PyMaterial {
 	}
 
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
-		let class_name = py.get_type::<Self>().qualname()?;
+		let class_name = py.get_type_bound::<Self>().qualname()?;
 
 		let mut data = match self.0.name() {
 			Some(name) => format!("name='{name}', "),

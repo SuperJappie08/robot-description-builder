@@ -25,7 +25,7 @@ use crate::{
 	utils::{init_pyclass_initializer, PyReadWriteable, TryIntoPy},
 };
 
-pub(super) fn init_module(py: Python<'_>, module: &PyModule) -> PyResult<()> {
+pub(super) fn init_module(py: Python<'_>, module: &Bound<'_, PyModule>) -> PyResult<()> {
 	module.add_class::<PyLink>()?;
 	module.add_class::<PyLinkBuilder>()?;
 	module.add_class::<PyLinkBuilderChain>()?;
@@ -151,7 +151,7 @@ impl PyLinkBuilder {
 		data += self
 			.get_joints(py)?
 			.into_iter()
-			.map(|joint_builder| joint_builder.into_ref(py).repr())
+			.map(|joint_builder| joint_builder.bind_borrowed(py).repr())
 			.process_results(|mut iter| iter.join(", "))?
 			.as_str();
 		data += "]";
@@ -234,7 +234,7 @@ impl PyLinkBuilderChain {
 	}
 
 	fn __repr__(slf: PyRef<'_, Self>) -> PyResult<String> {
-		let class_name = slf.py().get_type::<Self>().qualname()?;
+		let class_name = slf.py().get_type_bound::<Self>().qualname()?;
 
 		// TODO: EXPAND
 		Ok(format!("{class_name}({}, ...)", slf.as_ref().get_name(),))
@@ -370,10 +370,11 @@ impl PyLink {
 			)
 			.map_err(AttachChainError::from)?;
 
-		let tree = unsafe {
-			PyObject::from_borrowed_ptr(py, ffi::PyWeakref_GetObject(self.tree.as_ptr()))
-		};
-		tree.extract::<PyRef<'_, PyKinematicBase>>(py)?
+		let tree =
+			unsafe { Bound::from_borrowed_ptr(py, ffi::PyWeakref_GetObject(self.tree.as_ptr())) };
+
+		tree.downcast::<PyKinematicBase>()?
+			.borrow()
 			.update_all(py)?;
 
 		Ok(())
@@ -392,10 +393,11 @@ impl PyLink {
 			.attach_joint_chain(PyJointBuilderChain::as_chained(joint_chain))
 			.map_err(AttachChainError::from)?;
 
-		let tree = unsafe {
-			PyObject::from_borrowed_ptr(py, ffi::PyWeakref_GetObject(self.tree.as_ptr()))
-		};
-		tree.extract::<PyRef<'_, PyKinematicBase>>(py)?
+		let tree =
+			unsafe { Bound::from_borrowed_ptr(py, ffi::PyWeakref_GetObject(self.tree.as_ptr())) };
+
+		tree.downcast::<PyKinematicBase>()?
+			.borrow()
 			.update_all(py)?;
 
 		Ok(())
@@ -405,7 +407,11 @@ impl PyLink {
 	pub fn __repr__(&self, py: Python<'_>) -> PyResult<String> {
 		let binding = self.try_internal()?;
 		let link = binding.py_read()?;
-		let mut repr = format!("{}('{}'", py.get_type::<Self>().qualname()?, link.name());
+		let mut repr = format!(
+			"{}('{}'",
+			py.get_type_bound::<Self>().qualname()?,
+			link.name()
+		);
 
 		{
 			let visuals = link.visuals();

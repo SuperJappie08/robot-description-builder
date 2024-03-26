@@ -1,4 +1,3 @@
-#[deny(deprecated, deprecated_in_future)]
 mod cluster_objects;
 mod exceptions;
 mod identifier;
@@ -32,7 +31,7 @@ use pyo3::prelude::*;
 /// A Python module implemented in Rust.
 #[pymodule]
 #[pyo3(name = "_internal")]
-fn rdf_builder_py(py: Python, m: &PyModule) -> PyResult<()> {
+fn rdf_builder_py(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
 	// INTERRESTING IDEA, DICT Constructors...
 
 	// PyO3 + Maturin can only generate a python module, not a convienent package

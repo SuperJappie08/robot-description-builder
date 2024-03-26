@@ -1,8 +1,8 @@
-use pyo3::{intern, prelude::*, PyClassInitializer};
+use pyo3::{prelude::*, PyClassInitializer};
 
 use robot_description_builder::{KinematicInterface, KinematicTree};
 
-use super::{robot::PyRobot, PyKinematicBase};
+use super::{robot::PyRobot, PyKinematicBase, WEAKREF_PROXY_CONSTRUCTOR};
 
 #[cfg(feature = "experimental-transmission")]
 use crate::transmission::PyTransmission;
@@ -11,7 +11,7 @@ use crate::{
 	joint::{PyJoint, PyJointBuilderChain},
 	link::{PyLink, PyLinkBuilderChain},
 	material::PyMaterial,
-	utils::{self, TryIntoPy},
+	utils::{self, GILOnceCellFuncExtract, TryIntoPy},
 };
 
 #[derive(Debug, Clone)]
@@ -28,7 +28,8 @@ pub struct PyKinematicTree {
 
 impl PyKinematicTree {
 	pub(crate) fn create(tree: KinematicTree, py: Python<'_>) -> PyResult<Py<PyKinematicTree>> {
-		let weakref = py.import(intern!(py, "weakref")).unwrap();
+		let weakref_proxy =
+			WEAKREF_PROXY_CONSTRUCTOR.get_or_try_init_func_ref(py, "weakref", "proxy")?;
 
 		let base = PyKinematicBase::new(py, &tree, &py.None())?;
 
@@ -43,8 +44,7 @@ impl PyKinematicTree {
 			py,
 		)?;
 
-		weakref
-			.getattr(intern!(py, "proxy"))?
+		weakref_proxy
 			.call1((&tree,))?
 			.to_object(py)
 			.clone_into(&mut tree.borrow_mut(py).me);

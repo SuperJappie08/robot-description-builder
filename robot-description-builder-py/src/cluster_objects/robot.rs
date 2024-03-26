@@ -1,9 +1,12 @@
-use pyo3::{intern, prelude::*};
+use pyo3::prelude::*;
 use robot_description_builder::{KinematicInterface, Robot};
 
-use crate::{link::PyLink, utils};
+use crate::{
+	link::PyLink,
+	utils::{self, GILOnceCellFuncExtract},
+};
 
-use super::{PyKinematicBase, PyKinematicTree};
+use super::{PyKinematicBase, PyKinematicTree, WEAKREF_PROXY_CONSTRUCTOR};
 
 #[derive(Debug)]
 #[pyclass(
@@ -23,7 +26,8 @@ impl PyRobot {
 		tree: Py<PyKinematicTree>,
 		py: Python<'_>,
 	) -> PyResult<Py<Self>> {
-		let weakref = py.import(intern!(py, "weakref"))?;
+		let weakref_proxy =
+			WEAKREF_PROXY_CONSTRUCTOR.get_or_try_init_func_ref(py, "weakref", "proxy")?;
 
 		let inner = tree.borrow(py).clone().into_inner().to_robot(name);
 		// Only drops the reference.
@@ -42,8 +46,7 @@ impl PyRobot {
 			py,
 		)?;
 
-		weakref
-			.getattr(intern!(py, "proxy"))?
+		weakref_proxy
 			.call1((&robot,))?
 			.to_object(py)
 			.clone_into(&mut robot.borrow_mut(py).me);

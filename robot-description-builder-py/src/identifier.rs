@@ -5,8 +5,8 @@ use pyo3::{
 };
 use robot_description_builder::identifiers;
 
-pub(super) fn init_module(py: Python<'_>, module: &PyModule) -> PyResult<()> {
-	module.add("GroupIDError", py.get_type::<GroupIDError>())?;
+pub(super) fn init_module(py: Python<'_>, module: &Bound<'_, PyModule>) -> PyResult<()> {
+	module.add("GroupIDError", py.get_type_bound::<GroupIDError>())?;
 
 	Ok(())
 }
@@ -32,11 +32,12 @@ pub struct PyGroupIDChangable;
 #[pymethods]
 impl PyGroupIDChangable {
 	fn change_group_id(&mut self, new_group_id: String, py: Python<'_>) -> PyResult<()> {
-		let qualname = py
+		let binding = py
 			.get_type_bound::<Self>()
 			.getattr(intern!(py, "change_group_id"))?
-			.getattr(intern!(py, "__qualname__"))?
-			.extract::<&str>()?;
+			.getattr(intern!(py, "__qualname__"))?;
+		let qualname = binding.extract::<&str>()?;
+
 		Err(PyNotImplementedError::new_err((format!(
 			"{} is not implemented. ({{'new_group_id': '{}'}})",
 			qualname, new_group_id
@@ -44,11 +45,12 @@ impl PyGroupIDChangable {
 	}
 
 	fn apply_group_id(&mut self, py: Python<'_>) -> PyResult<()> {
-		let qualname = py
+		let binding = py
 			.get_type_bound::<Self>()
 			.getattr(intern!(py, "apply_group_id"))?
-			.getattr(intern!(py, "__qualname__"))?
-			.extract::<&str>()?;
+			.getattr(intern!(py, "__qualname__"))?;
+		let qualname = binding.extract::<&str>()?;
+
 		Err(PyNotImplementedError::new_err((format!(
 			"{} is not implemented.",
 			qualname

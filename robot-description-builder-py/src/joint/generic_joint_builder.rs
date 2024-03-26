@@ -33,7 +33,7 @@ impl PyJointBuilder {
 	fn py_new(
 		name: String,
 		joint_type: PyJointType,
-		kwds: Option<&PyDict>,
+		kwds: Option<&Bound<'_, PyDict>>,
 		py: Python<'_>,
 	) -> PyResult<(Self, PyJointBuilderBase)> {
 		let builder = JointBuilder::new(name, joint_type.into());
@@ -42,17 +42,19 @@ impl PyJointBuilder {
 		if let Some(kwds) = kwds {
 			if let Some(transform) = kwds
 				.get_item(intern!(py, "transform"))?
-				.map(FromPyObject::extract)
+				.map(Bound::downcast_into)
+				.transpose()?
 			{
-				base.transform = transform?;
+				base.transform = Some(transform.unbind());
 				kwds.del_item(intern!(py, "transform"))?;
 			}
 
 			if let Some(axis) = kwds
 				.get_item(intern!(py, "axis"))?
-				.map(FromPyObject::extract)
+				.map(|obj| obj.extract())
+				.transpose()?
 			{
-				base.builder.with_axis(axis?);
+				base.builder.with_axis(axis);
 				kwds.del_item(intern!(py, "axis"))?;
 			}
 
@@ -65,9 +67,10 @@ impl PyJointBuilder {
 
 			if let Some(limit) = kwds
 				.get_item(intern!(py, "limit"))?
-				.map::<PyResult<PyLimit>, _>(FromPyObject::extract)
+				.map(|obj| obj.extract::<PyLimit>())
+				.transpose()?
 			{
-				*base.builder.limit_mut() = Some(limit?.into());
+				*base.builder.limit_mut() = Some(limit.into());
 				kwds.del_item(intern!(py, "limit"))?;
 			}
 
@@ -77,7 +80,7 @@ impl PyJointBuilder {
 
 			if !kwds.is_empty() {
 				let qual_name = py
-					.get_type::<Self>()
+					.get_type_bound::<Self>()
 					.getattr(intern!(py, "__new__"))?
 					.getattr(intern!(py, "__qualname__"))?;
 				return Err(PyTypeError::new_err(format!(
@@ -125,7 +128,7 @@ impl PyJointBuilder {
 	}
 
 	pub fn __repr__(slf: PyRef<'_, Self>, py: Python<'_>) -> PyResult<String> {
-		let class_name = py.get_type::<Self>().qualname()?;
+		let class_name = py.get_type_bound::<Self>().qualname()?;
 
 		let super_self = slf.as_ref();
 
