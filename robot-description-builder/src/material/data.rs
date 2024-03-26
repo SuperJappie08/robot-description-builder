@@ -83,9 +83,10 @@ impl<'a> MaterialDataReference<'a> {
 				match !right.is_poisoned() {
 					true => (*left).clone() == right.read().unwrap().clone(), // We can safely unwrap, since we have checked for poisoning.
 					false => {
+						// FIXME: Give a warning about unpoisoning.
 						// When the right lock has been poisoned, recover by overwriting with the left [`MaterialData`]
-						*right.write().map_err(|err| err.into_inner()).unwrap() = (*left).clone();
-						todo!("Unpoisoning is still a nightly-only experimental feature. (mutex_unpoison #96469)");
+						*right.overwrite() = (*left).clone();
+
 						true
 					}
 				}
@@ -94,9 +95,10 @@ impl<'a> MaterialDataReference<'a> {
 				match !left.is_poisoned() {
 					true => (*right).clone() == left.read().unwrap().clone(), // We can safely unwrap, since we have checked for poisoning.
 					false => {
+						// FIXME: Give a warning about unpoisoning.
 						// When the left lock has been poisoned, recover by overwriting with the right [`MaterialData`]
-						*left.write().map_err(|err| err.into_inner()).unwrap() = (*right).clone();
-						todo!("Unpoisoning is still a nightly-only experimental feature. (mutex_unpoison #96469)");
+						*left.overwrite() = (*right).clone();
+
 						true
 					}
 				}

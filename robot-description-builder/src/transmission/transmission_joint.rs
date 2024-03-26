@@ -62,7 +62,7 @@ impl TransmissionJointBuilder {
 		self,
 		tree: &Arc<KinematicDataTree>,
 	) -> Result<TransmissionJoint, BuildTransmissionError> {
-		let joint = match tree.joints.mread()?.get(self.name()).map(Weak::clone) {
+		let joint = match tree.joints.mread()?.get(self.name()).cloned() {
 			Some(joint) => joint,
 			None => return Err(BuildTransmissionError::InvalidJoint(self.joint_name)),
 		};

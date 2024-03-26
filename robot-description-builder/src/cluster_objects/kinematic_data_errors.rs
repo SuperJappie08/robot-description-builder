@@ -1,9 +1,6 @@
 use thiserror::Error;
 
-use std::{
-	collections::HashMap,
-	sync::{Arc, PoisonError},
-};
+use std::{collections::HashMap, sync::PoisonError};
 
 use crate::{
 	joint::Joint,
@@ -13,18 +10,12 @@ use crate::{
 	utils::{ArcLock, ErroredRead, ErroredWrite, WeakLock},
 };
 
-use super::kinematic_data_tree::KinematicDataTree;
-
 pub(crate) type PoisonReadIndexError<K, V> = PoisonError<ErroredRead<ArcLock<HashMap<K, V>>>>;
 pub(crate) type PoisonWriteIndexError<K, V> = PoisonError<ErroredWrite<ArcLock<HashMap<K, V>>>>;
 
 // TODO: Improve Doc
 #[derive(Debug, Error)]
 pub enum AddMaterialError {
-	//TODO: IMPR DOC
-	/// Error that results from `PoisonError<RwLockReadGuard<'_, MaterialData>>` occurs when attempting to read a poisoned `Arc<RwLock<MaterialData>>`.
-	#[error("The lock of the new Material is poisoned and therefore could not be read")]
-	ReadMaterial(#[from] PoisonError<ErroredRead<ArcLock<MaterialData>>>),
 	//TODO: IMPR DOC
 	/// Error that results from `PoisonError<RwLockReadGuard<'_, HashMap<String, ArcLock<MaterialData>>>>` occurs when attempting to read a poisoned `HashMap<String, ArcLock<MaterialData>>`.
 	/* In the future the lock could be saved by overwriting with a newly generated index (Might lose some data), however waiting for
@@ -45,7 +36,6 @@ pub enum AddMaterialError {
 impl PartialEq for AddMaterialError {
 	fn eq(&self, other: &Self) -> bool {
 		match (self, other) {
-			(Self::ReadMaterial(l0), Self::ReadMaterial(r0)) => l0.get_ref() == r0.get_ref(),
 			(Self::ReadIndex(l0), Self::ReadIndex(r0)) => l0.get_ref() == r0.get_ref(),
 			(Self::WriteIndex(l0), Self::WriteIndex(r0)) => l0.get_ref() == r0.get_ref(),
 			(Self::Conflict(l0), Self::Conflict(r0)) => l0 == r0,
@@ -76,11 +66,6 @@ pub enum AddLinkError {
 		"The new Link could not be added since its name '{0}' is already in use by another Link"
 	)]
 	Conflict(String),
-	/// Error that results from `PoisonError<RwLockWriteGuard<'_, Weak<RwLock<Link>>>>` occurs when attempting to write to a poisoned `RwLock<Weak<RwLock<Link>>>>`. (Only used for `KinematicDataTree``.newest_link`).
-	/* In the future the lock could be saved by overwriting with a newly generated index, however waiting for
-	"This is a nightly-only experimental API. (mutex_unpoison #96469)" */
-	#[error("The lock of the `newest_link` on the KinematicDataTree is poisoned and therefore could not be accessed")]
-	AccessNewestLink(#[from] PoisonError<ErroredWrite<Arc<KinematicDataTree>>>),
 }
 
 impl PartialEq for AddLinkError {
@@ -90,9 +75,6 @@ impl PartialEq for AddLinkError {
 			(Self::ReadIndex(l0), Self::ReadIndex(r0)) => l0.get_ref() == r0.get_ref(),
 			(Self::WriteIndex(l0), Self::WriteIndex(r0)) => l0.get_ref() == r0.get_ref(),
 			(Self::Conflict(l0), Self::Conflict(r0)) => l0 == r0,
-			(Self::AccessNewestLink(l0), Self::AccessNewestLink(r0)) => {
-				l0.get_ref() == r0.get_ref()
-			}
 			_ => false,
 		}
 	}
@@ -109,11 +91,6 @@ pub enum AddJointError {
 	"This is a nightly-only experimental API. (mutex_unpoison #96469)" */
 	#[error("The lock of the Joint Index is poisoned and therefore could not be read")]
 	ReadIndex(#[from] PoisonReadIndexError<String, WeakLock<Joint>>),
-	/// Error that results from `PoisonError<RwLockWriteGuard<'_, HashMap<String, Weak<RwLock<Joint>>>>` occurs when attempting to write to a poisoned `Arc<RwLock<HashMap<String, Weak<RwLock<Joint>>>>>`.
-	/* In the future the lock could be saved by overwriting with a newly generated index, however waiting for
-	"This is a nightly-only experimental API. (mutex_unpoison #96469)" */
-	#[error("The lock of Joint Index is poisoned and therefore could not be written to")]
-	WriteIndex(#[from] PoisonWriteIndexError<String, WeakLock<Joint>>),
 	#[error(
 		"The new Joint could not be added since its name '{0}' is already in use by another Joint"
 	)]
@@ -125,7 +102,6 @@ impl PartialEq for AddJointError {
 		match (self, other) {
 			(Self::ReadNewJoint(l0), Self::ReadNewJoint(r0)) => l0.get_ref() == r0.get_ref(),
 			(Self::ReadIndex(l0), Self::ReadIndex(r0)) => l0.get_ref() == r0.get_ref(),
-			(Self::WriteIndex(l0), Self::WriteIndex(r0)) => l0.get_ref() == r0.get_ref(),
 			(Self::Conflict(l0), Self::Conflict(r0)) => l0 == r0,
 			_ => false,
 		}
@@ -170,10 +146,4 @@ pub enum AttachChainError {
 	Joint(#[from] AddJointError),
 	#[error("An error occured when registering a Material: {0}")]
 	Material(#[from] AddMaterialError),
-}
-
-impl From<PoisonError<ErroredWrite<Arc<KinematicDataTree>>>> for AttachChainError {
-	fn from(value: PoisonError<ErroredWrite<Arc<KinematicDataTree>>>) -> Self {
-		Self::Link(value.into())
-	}
 }

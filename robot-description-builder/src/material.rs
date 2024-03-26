@@ -26,7 +26,7 @@ use crate::{
 		kinematic_data_errors::AddMaterialError, kinematic_data_tree::KinematicDataTree,
 	},
 	identifiers::GroupID,
-	utils::{errored_read_lock, ArcRW},
+	utils::ArcRW,
 };
 
 use data::{MaterialData, MaterialDataReference};
@@ -81,16 +81,19 @@ impl Material {
 						let material_data_index = Arc::clone(&tree.material_index);
 
 						// Check if there already exists a `Material` with the same name
-						let other_material = material_data_index.mread()?.get(name).map(Arc::clone);
+						let other_material = material_data_index.mread()?.get(name).cloned();
 
 						match other_material {
+							Some(poisoned_material) if poisoned_material.is_poisoned() => {
+								//FIXME: ISSUE A WARNING
+								*poisoned_material.overwrite() = data.clone();
+								poisoned_material
+							}
 							Some(other_material) => {
-								if *other_material
-									.read()
-									/* In the future the lock could be saved but waiting for
-									"This is a nightly-only experimental API. (mutex_unpoison #96469)" */
-									.map_err(|_| errored_read_lock(&other_material))?
-									== *data
+								// FIXME: FIX THIS EXCEPTION
+								if *other_material.read().expect(
+									"The Material has been poisoned between to code branches",
+								) == *data
 								{
 									other_material
 								} else {

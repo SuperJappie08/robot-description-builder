@@ -1,6 +1,6 @@
 use std::{
-	collections::HashMap,
-	sync::{Arc, PoisonError, RwLock, Weak},
+	collections::{HashMap, HashSet},
+	sync::{Arc, RwLock, Weak},
 };
 
 use itertools::Itertools;
@@ -16,7 +16,7 @@ use crate::{
 		transmission_builder_state::{WithActuator, WithJoints},
 		Transmission, TransmissionBuilder,
 	},
-	utils::{ArcLock, ArcRW, ErroredWrite, WeakLock},
+	utils::{ArcLock, ArcRW, WeakLock},
 };
 
 use super::{kinematic_data_errors::*, PoisonWriteIndexError};
@@ -90,26 +90,27 @@ impl KinematicDataTree {
 			however waiting for "This is a nightly-only experimental API. (mutex_unpoison #96469)" */
 			.map_err(AddLinkError::ReadIndex)?
 			.get(&name)
-			.map(Weak::clone);
+			.cloned();
 		if let Some(preexisting_link) = other.and_then(|weak_link| weak_link.upgrade()) {
 			if !Arc::ptr_eq(&preexisting_link, link) {
 				return Err(AttachChainError::Link(AddLinkError::Conflict(name)));
 			}
 		} else {
-			assert!(self
-				.links
-				.mwrite()
-				/* In the future this lock might be saveable by overwriting with a newly generated index,
-				however waiting for "This is a nightly-only experimental API. (mutex_unpoison #96469)" */
-				.map_err(AddLinkError::WriteIndex)?
-				.insert(name, Arc::downgrade(link))
-				.is_none());
-			*self
-				.newest_link
-				.write()
-				/* In the future the lock could be saved but waiting for
-				"This is a nightly-only experimental API. (mutex_unpoison #96469)" */
-				.map_err(|_| PoisonError::new(ErroredWrite(self.me.upgrade().unwrap())))? = Arc::downgrade(link);
+			let was_poisoned = self.links.is_poisoned();
+			assert_ne!(
+				self.links
+					.swrite(|| { self.rebuild_link_index() }) // FIXME: ADD Warning for Unpoison
+					/* In the future this lock might be saveable by overwriting with a newly generated index,
+					however waiting for "This is a nightly-only experimental API. (mutex_unpoison #96469)" */
+					.insert(name, Arc::downgrade(link))
+					.is_none(),
+				was_poisoned
+			);
+
+			*self.newest_link.write().unwrap_or_else(|err| {
+				self.newest_link.clear_poison();
+				err.into_inner()
+			}) = Arc::downgrade(link);
 		}
 
 		link.mwrite()
@@ -140,6 +141,17 @@ impl KinematicDataTree {
 		#[cfg(any(feature = "logging", test))]
 		log::debug!(target: "KinematicTreeData","Trying to attach Joint: {}", name);
 
+		/* START ADDED SECURITY REGION */
+
+		// TODO: Does this make sense here?, since it can be poisoned between uses
+		if self.joints.is_poisoned() {
+			// FIXME: Add warning that lock has been unpoisoned.
+			// TODO: ADD ERROR If neccessary
+			*self.joints.overwrite() = self.rebuild_joint_index();
+		}
+
+		/* END ADDED SECURITY REGION */
+
 		let other = self
 			.joints
 			.mread()
@@ -147,21 +159,22 @@ impl KinematicDataTree {
 			however waiting for "This is a nightly-only experimental API. (mutex_unpoison #96469)" */
 			.map_err(AddJointError::ReadIndex)?
 			.get(&name)
-			.map(Weak::clone);
+			.cloned();
+
 		if let Some(preexisting_joint) = other.and_then(|weak_joint| weak_joint.upgrade()) {
 			if !Arc::ptr_eq(&preexisting_joint, joint) {
 				return Err(AttachChainError::Joint(AddJointError::Conflict(name)));
 			}
 		// Multi Adding should not occure
 		} else {
-			assert!(self
-				.joints
-				.mwrite()
-				/* In the future this lock might be saveable by overwriting with a newly generated index,
-				however waiting for "This is a nightly-only experimental API. (mutex_unpoison #96469)" */
-				.map_err(AddJointError::WriteIndex)?
-				.insert(name, Arc::downgrade(joint))
-				.is_none());
+			let was_poisoned = self.joints.is_poisoned();
+			assert_ne!(
+				self.joints
+					.swrite(|| self.rebuild_joint_index())
+					.insert(name, Arc::downgrade(joint))
+					.is_none(),
+				was_poisoned
+			);
 		}
 
 		self.try_add_link(
@@ -183,7 +196,7 @@ impl KinematicDataTree {
 		#[cfg(any(feature = "logging", test))]
 		log::debug!(target: "KinematicTreeData","Trying to attach Transmission: {}", name);
 
-		let other_transmission = self.transmissions.mread()?.get(&name).map(Arc::clone);
+		let other_transmission = self.transmissions.mread()?.get(&name).cloned();
 		if other_transmission.is_some() {
 			Err(AddTransmissionError::Conflict(name))
 		} else {
@@ -234,6 +247,103 @@ impl KinematicDataTree {
 		// Ok(())
 		// TODO:
 		todo!("Not Implemnted yet! First Implement `Transmission`")
+	}
+
+	// TODO: TEST
+	fn rebuild_link_index(&self) -> HashMap<String, WeakLock<Link>> {
+		let mut set: HashSet<String> = HashSet::new();
+
+		let mut index: HashMap<String, WeakLock<Link>> = HashMap::new();
+
+		index.insert(
+			self.root_link.read().unwrap().name().to_string(), // FIXME: IS UNWRAP OK HERE?
+			Arc::downgrade(&self.root_link),
+		);
+
+		let mut index_len = index.len();
+		while set.len() < index_len {
+			let mut new_links = Vec::new();
+
+			for (link_id, link) in index.iter() {
+				if !set.contains(link_id) {
+					set.insert(link_id.to_string());
+
+					new_links.extend(
+						link.upgrade()
+							.unwrap() // FIXME: UNWRAP OK?
+							.mread()
+							.unwrap() // FIXME: UNWRAP OK?
+							.joints()
+							.iter()
+							.map(|joint| {
+								// FIXME: UNWRAP OK?
+								let next_link = joint.mread().unwrap().child_link();
+								let next_link_name = next_link.mread().unwrap().name().to_owned(); // FIXME: UNWRAP OK?
+								(next_link_name, Arc::downgrade(&next_link))
+							}),
+					);
+				}
+			}
+
+			index.extend(new_links.into_iter());
+			index_len = index.len();
+		}
+
+		index
+	}
+
+	// TODO: TEST
+	fn rebuild_joint_index(&self) -> HashMap<String, WeakLock<Joint>> {
+		let mut set: HashSet<String> = HashSet::new();
+
+		let mut index: HashMap<String, WeakLock<Joint>> = self
+			.root_link
+			.mread()
+			.unwrap() // FIXME: UNWRAP OK?
+			.joints()
+			.iter()
+			.map(|joint| {
+				(
+					joint.read().unwrap().name().to_owned(),
+					Arc::downgrade(joint),
+				)
+			}) // FIXME: UNWRAP OK?
+			.collect();
+
+		let mut index_len = index.len();
+		while set.len() < index_len {
+			let mut new_joints = Vec::new();
+
+			for (joint_id, joint) in index.iter() {
+				if !set.contains(joint_id) {
+					set.insert(joint_id.to_string());
+
+					new_joints.extend(
+						joint
+							.upgrade()
+							.unwrap() // FIXME: UNWRAP OK?
+							.mread()
+							.unwrap() // FIXME: UNWRAP OK?
+							.child_link
+							.mread()
+							.unwrap() // FIXME: UNWRAP OK?
+							.joints()
+							.iter()
+							.map(|joint| {
+								(
+									joint.read().unwrap().name().to_owned(), // FIXME: UNWRAP OK?
+									Arc::downgrade(joint),
+								)
+							}),
+					);
+				}
+			}
+
+			index.extend(new_joints.into_iter());
+			index_len = index.len();
+		}
+
+		index
 	}
 }
 
@@ -325,6 +435,7 @@ impl PartialEq for KinematicDataTree {
 
 #[cfg(test)]
 mod tests {
+	use itertools::Itertools;
 	use std::sync::{Arc, Weak};
 	use test_log::test;
 
@@ -334,6 +445,28 @@ mod tests {
 		link::builder::LinkBuilder,
 		link_data::LinkParent,
 	};
+
+	fn compare_rebuild_joint_index(tree: &KinematicDataTree) -> bool {
+		let new_joint_index = tree.rebuild_joint_index();
+
+		tree.joints.try_read().is_ok_and(move |index| {
+			if index.len() != new_joint_index.len() {
+				false
+			} else {
+				index
+					.iter()
+					.sorted_by_cached_key(|(k, _)| k.to_owned())
+					.zip_eq(
+						new_joint_index
+							.iter()
+							.sorted_by_cached_key(|(k, _)| k.to_owned()),
+					)
+					.all(|((o_name, o_weak), (n_name, n_weak))| {
+						o_name == n_name && Weak::ptr_eq(o_weak, n_weak)
+					})
+			}
+		})
+	}
 
 	// 	#[test]
 	// 	fn new_link() {
@@ -420,6 +553,8 @@ mod tests {
 			vec!["other-child-joint", "other-joint", "three",]
 		);
 
+		assert!(compare_rebuild_joint_index(&tree));
+
 		assert_eq!(tree.root_link.try_read().unwrap().name(), "example-link");
 		assert_eq!(
 			tree.newest_link
@@ -485,6 +620,8 @@ mod tests {
 					.upgrade()
 					.unwrap()
 			));
+
+			assert!(compare_rebuild_joint_index(&tree))
 		}
 
 		// Start childs of 'other-joint'

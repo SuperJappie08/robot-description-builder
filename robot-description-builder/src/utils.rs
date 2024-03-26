@@ -25,6 +25,12 @@ pub(crate) trait ArcRW: Sized {
 	/// Equivalent to [`RwLock::write`](std::sync::RwLock::write()), with a more useable error.
 	fn mwrite(&self)
 		-> Result<RwLockWriteGuard<'_, Self::Target>, PoisonError<ErroredWrite<Self>>>;
+
+	fn swrite(&self, recovery: impl FnOnce() -> Self::Target)
+		-> RwLockWriteGuard<'_, Self::Target>;
+
+	/// TODO: MAYBE CHANGE TO OVERWRITE ARGUMENT
+	fn overwrite(&self) -> RwLockWriteGuard<'_, Self::Target>;
 }
 
 impl<T> ArcRW for ArcLock<T> {
@@ -40,6 +46,26 @@ impl<T> ArcRW for ArcLock<T> {
 		&self,
 	) -> Result<RwLockWriteGuard<'_, Self::Target>, PoisonError<ErroredWrite<Self>>> {
 		self.write().map_err(|_| errored_write_lock(self))
+	}
+
+	fn swrite(
+		&self,
+		recovery: impl FnOnce() -> Self::Target,
+	) -> RwLockWriteGuard<'_, Self::Target> {
+		// FIXME: ISSUE A WARNING FOR UNPOISON
+		self.write().unwrap_or_else(|mut err| {
+			**err.get_mut() = recovery();
+			self.clear_poison();
+			err.into_inner()
+		})
+	}
+
+	fn overwrite(&self) -> RwLockWriteGuard<'_, Self::Target> {
+		// FIXME: ISSUE A WARNING FOR UNPOISON
+		self.write().unwrap_or_else(|err| {
+			self.clear_poison();
+			err.into_inner()
+		})
 	}
 }
 

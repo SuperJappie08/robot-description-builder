@@ -91,7 +91,7 @@ impl KinematicInterface for KinematicTree {
 			.read()
 			.unwrap() // FIXME: Unwrapping might not be ok
 			.get(name)
-			.map(Arc::clone)
+			.cloned()
 			.map(|data| Material::new_named_inited(name, data))
 	}
 
@@ -101,7 +101,7 @@ impl KinematicInterface for KinematicTree {
 			.read()
 			.unwrap() // FIXME: Unwrapping might not be ok
 			.get(name)
-			.map(Arc::clone)
+			.cloned()
 	}
 
 	fn try_add_transmission(
