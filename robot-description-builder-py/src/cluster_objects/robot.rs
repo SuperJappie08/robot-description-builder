@@ -1,12 +1,9 @@
-use pyo3::prelude::*;
+use pyo3::{prelude::*, types::PyWeakrefProxy};
 use robot_description_builder::{KinematicInterface, Robot};
 
-use crate::{
-	link::PyLink,
-	utils::{self, GILOnceCellFuncExtract},
-};
+use crate::{link::PyLink, utils};
 
-use super::{PyKinematicBase, PyKinematicTree, WEAKREF_PROXY_CONSTRUCTOR};
+use super::{PyKinematicBase, PyKinematicTree};
 
 #[derive(Debug)]
 #[pyclass(
@@ -17,7 +14,7 @@ use super::{PyKinematicBase, PyKinematicTree, WEAKREF_PROXY_CONSTRUCTOR};
 pub struct PyRobot {
 	inner: Robot,
 	// Weakref to self
-	me: PyObject,
+	me: Py<PyWeakrefProxy>,
 }
 
 impl PyRobot {
@@ -26,36 +23,33 @@ impl PyRobot {
 		tree: Py<PyKinematicTree>,
 		py: Python<'_>,
 	) -> PyResult<Py<Self>> {
-		let weakref_proxy =
-			WEAKREF_PROXY_CONSTRUCTOR.get_or_try_init_func_ref(py, "weakref", "proxy")?;
-
-		let inner = tree.borrow(py).clone().into_inner().to_robot(name);
+		let inner = tree.borrow(py).inner.clone().to_robot(name);
 		// Only drops the reference.
 		drop(tree);
 
-		let base = PyKinematicBase::new(py, &inner, &py.None())?;
+		// Temporary make it a broken value, so we can overwrite it.
+		let me = unsafe { py.None().downcast_bound_unchecked(py) }.clone();
+
+		let base = PyKinematicBase::new(py, &inner, &me)?;
 
 		let robot = utils::init_pyclass_initializer(
 			PyClassInitializer::new(
 				Self {
 					inner,
-					me: py.None(),
+					me: me.unbind(),
 				},
 				base.into(),
 			),
 			py,
 		)?;
 
-		weakref_proxy
-			.call1((&robot,))?
-			.to_object(py)
-			.clone_into(&mut robot.borrow_mut(py).me);
+		robot.borrow_mut(py).me = PyWeakrefProxy::new_bound(robot.bind(py))?.unbind();
 
-		let robot_weak = robot.borrow(py).me.clone();
+		let robot_weak = robot.borrow(py).me.bind(py).clone();
 
 		{
 			let mut base = robot.borrow_mut(py).into_super();
-			base.implementor = robot_weak;
+			base.implementor = robot_weak.unbind();
 
 			base.update_all(py)?;
 		}
@@ -63,8 +57,8 @@ impl PyRobot {
 		Ok(robot)
 	}
 
-	pub(crate) fn get_weak(&self) -> PyObject {
-		self.me.clone()
+	pub(crate) fn get_weak<'py>(&self, py: Python<'py>) -> Bound<'py, PyWeakrefProxy> {
+		self.me.bind(py).clone()
 	}
 
 	pub fn as_robot(&self) -> &Robot {
@@ -79,13 +73,13 @@ impl PyRobot {
 		self.inner.name().clone()
 	}
 	#[getter]
-	fn get_root_link(&self) -> PyLink {
-		(self.inner.get_root_link(), self.get_weak()).into()
+	fn get_root_link(&self, py: Python<'_>) -> PyLink {
+		(self.inner.get_root_link(), self.get_weak(py)).into()
 	}
 
 	#[getter]
-	fn get_newest_link(&self) -> PyLink {
-		(self.inner.get_newest_link(), self.get_weak()).into()
+	fn get_newest_link(&self, py: Python<'_>) -> PyLink {
+		(self.inner.get_newest_link(), self.get_weak(py)).into()
 	}
 }
 

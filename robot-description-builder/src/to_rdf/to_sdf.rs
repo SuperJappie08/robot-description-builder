@@ -34,7 +34,7 @@ pub fn to_sdf(
 	let mut writer = make_xml_writer(self.xml_mode);
 
 	writer.write_bom()?;
-	writer.write_event(&Event::Decl(BytesDecl::new("1.0", None, None)))?;
+	writer.write_event(Event::Decl(BytesDecl::new("1.0", None, None)))?;
 	tree.to_sdf(&mut writer, &sdf_config)?;
 	Ok(writer)
 }

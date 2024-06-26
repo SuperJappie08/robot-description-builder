@@ -178,7 +178,7 @@ pub fn to_urdf(
 	let mut writer = make_xml_writer(urdf_config.xml_mode);
 
 	writer.write_bom()?;
-	writer.write_event(&Event::Decl(BytesDecl::new("1.0", None, None)))?;
+	writer.write_event(Event::Decl(BytesDecl::new("1.0", None, None)))?;
 	tree.to_urdf(&mut writer, &urdf_config)?;
 	Ok(writer)
 }

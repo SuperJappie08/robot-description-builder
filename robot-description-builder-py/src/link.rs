@@ -6,10 +6,9 @@ pub mod visual;
 use std::sync::{Arc, RwLock, Weak};
 
 use itertools::Itertools;
-use pyo3::{exceptions::PyReferenceError, ffi, prelude::*, pyclass::CompareOp};
+use pyo3::{exceptions::PyReferenceError, prelude::*, pyclass::CompareOp, types::PyWeakrefProxy};
 use robot_description_builder::{
-	link_data::LinkParent, linkbuilding::LinkBuilder, prelude::GroupIDChanger, Chained,
-	JointBuilder, Link,
+	link_data::LinkParent, linkbuilding::LinkBuilder, prelude::GroupIDChanger, Chained, Link,
 };
 
 use collision::{PyCollision, PyCollisionBuilder};
@@ -20,7 +19,9 @@ use crate::{
 	cluster_objects::{PyKinematicBase, PyKinematicTree},
 	exceptions::{AttachChainError, RebuildBranchError},
 	identifier::GroupIDError,
-	joint::{PyJoint, PyJointBuilder, PyJointBuilderBase, PyJointBuilderChain},
+	joint::{
+		PyJoint, PyJointBuilder, PyJointBuilderBase, PyJointBuilderChain, PyJointBuilderMethods,
+	},
 	transform::PyMirrorAxis,
 	utils::{init_pyclass_initializer, PyReadWriteable, TryIntoPy},
 };
@@ -219,7 +220,8 @@ impl PyLinkBuilderChain {
 	}
 
 	fn as_chained(slf: PyRef<'_, Self>) -> Chained<LinkBuilder> {
-		unsafe { Chained::new(slf.into_super().0.clone()) }
+		let builder = slf.into_super().0.clone();
+		unsafe { Chained::new(builder) }
 	}
 }
 
@@ -257,14 +259,18 @@ impl TryIntoPy<Py<PyLinkBuilderChain>> for Chained<LinkBuilder> {
 pub struct PyLink {
 	inner: Weak<RwLock<Link>>,
 	/// Python weakref.proxy to the python parent tree.
-	tree: PyObject,
+	tree: Py<PyWeakrefProxy>,
 }
 
 impl PyLink {
-	pub(crate) fn new_weak(link: &Weak<RwLock<Link>>, tree: &PyObject) -> Self {
+	pub(crate) fn new_weak(
+		py: Python<'_>,
+		link: &Weak<RwLock<Link>>,
+		tree: &Py<PyWeakrefProxy>,
+	) -> Self {
 		Self {
 			inner: link.clone(),
-			tree: tree.clone(),
+			tree: tree.clone_ref(py),
 		}
 	}
 
@@ -288,25 +294,28 @@ impl PyLink {
 	/// The parent of the `Link`.
 	///
 	/// This can be either a `KinematicTree` or a `Joint` depending if this `Link` is the root of a tree or not.
-	fn get_parent(slf: PyRef<'_, Self>) -> PyResult<Py<PyAny>> {
+	fn get_parent(slf: PyRef<'_, Self>) -> PyResult<Bound<'_, PyAny>> {
+		let py = slf.py();
 		match slf.try_internal()?.py_read()?.parent() {
-			LinkParent::KinematicTree(_) => Ok(slf.tree.clone()),
-			LinkParent::Joint(joint) => Ok(Into::<PyJoint>::into((
-				Weak::upgrade(joint).unwrap(),
-				slf.tree.clone(),
-			))
-			.into_py(slf.py())),
+			LinkParent::KinematicTree(_) => Ok(slf.tree.bind(py).clone().into_any()),
+			LinkParent::Joint(joint) => Bound::new(
+				py,
+				Into::<PyJoint>::into((Weak::upgrade(joint).unwrap(), slf.tree.bind(py).clone())),
+			)
+			.map(Bound::into_any),
 		}
 	}
 
 	#[getter]
-	fn get_joints(&self) -> PyResult<Vec<PyJoint>> {
-		Ok(self
+	fn get_joints(slf: PyRef<'_, Self>) -> PyResult<Vec<PyJoint>> {
+		Ok(slf
 			.try_internal()?
 			.py_read()?
 			.joints()
 			.iter()
-			.map(|joint| Into::<PyJoint>::into((Arc::downgrade(joint), self.tree.clone())))
+			.map(|joint| {
+				Into::<PyJoint>::into((Arc::downgrade(joint), slf.tree.bind(slf.py()).clone()))
+			})
 			.collect())
 	}
 
@@ -358,22 +367,22 @@ impl PyLink {
 
 	fn try_attach_child(
 		&self,
-		joint_builder: PyJointBuilderBase,
+		joint_builder: Bound<'_, PyJointBuilderBase>,
 		link_builder: PyLinkBuilder,
 		py: Python<'_>,
 	) -> PyResult<()> {
 		self.try_internal()?
 			.py_write()?
 			.try_attach_child(
-				Into::<JointBuilder>::into(joint_builder),
+				joint_builder.as_jointbuilder(),
 				Into::<LinkBuilder>::into(link_builder),
 			)
 			.map_err(AttachChainError::from)?;
 
-		let tree =
-			unsafe { Bound::from_borrowed_ptr(py, ffi::PyWeakref_GetObject(self.tree.as_ptr())) };
-
-		tree.downcast::<PyKinematicBase>()?
+		self.tree
+			.bind(py)
+			.upgrade_as::<PyKinematicBase>()?
+			.expect("Parent KinematicTree should exist for Joint to exist")
 			.borrow()
 			.update_all(py)?;
 
@@ -393,10 +402,10 @@ impl PyLink {
 			.attach_joint_chain(PyJointBuilderChain::as_chained(joint_chain))
 			.map_err(AttachChainError::from)?;
 
-		let tree =
-			unsafe { Bound::from_borrowed_ptr(py, ffi::PyWeakref_GetObject(self.tree.as_ptr())) };
-
-		tree.downcast::<PyKinematicBase>()?
+		self.tree
+			.bind(py)
+			.upgrade_as::<PyKinematicBase>()?
+			.expect("Parent KinematicTree should exist for Joint to exist")
 			.borrow()
 			.update_all(py)?;
 
@@ -464,20 +473,20 @@ impl PyLink {
 	}
 }
 
-impl From<(Weak<RwLock<Link>>, PyObject)> for PyLink {
-	fn from(value: (Weak<RwLock<Link>>, PyObject)) -> Self {
+impl From<(Weak<RwLock<Link>>, Bound<'_, PyWeakrefProxy>)> for PyLink {
+	fn from(value: (Weak<RwLock<Link>>, Bound<'_, PyWeakrefProxy>)) -> Self {
 		Self {
 			inner: value.0,
-			tree: value.1,
+			tree: value.1.unbind(),
 		}
 	}
 }
 
-impl From<(Arc<RwLock<Link>>, PyObject)> for PyLink {
-	fn from(value: (Arc<RwLock<Link>>, PyObject)) -> Self {
+impl From<(Arc<RwLock<Link>>, Bound<'_, PyWeakrefProxy>)> for PyLink {
+	fn from(value: (Arc<RwLock<Link>>, Bound<'_, PyWeakrefProxy>)) -> Self {
 		Self {
 			inner: Arc::downgrade(&value.0),
-			tree: value.1,
+			tree: value.1.unbind(),
 		}
 	}
 }

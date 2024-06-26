@@ -3,7 +3,7 @@ mod generic_joint_builder;
 mod smartjointbuilder;
 use std::sync::{Arc, RwLock, Weak};
 
-use pyo3::{exceptions::PyReferenceError, prelude::*};
+use pyo3::{exceptions::PyReferenceError, prelude::*, types::PyWeakrefProxy};
 use robot_description_builder::{joint_data, Chained, Joint, JointBuilder, JointType};
 
 use crate::{
@@ -13,7 +13,7 @@ use crate::{
 	utils::{init_pyclass_initializer, PyReadWriteable, TryIntoPy},
 };
 
-pub use base_joint_builder::PyJointBuilderBase;
+pub use base_joint_builder::{PyJointBuilderBase, PyJointBuilderMethods};
 pub use generic_joint_builder::PyJointBuilder;
 
 pub(super) fn init_module(_py: Python<'_>, module: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -60,7 +60,8 @@ impl PyJointBuilderChain {
 	}
 
 	pub fn as_chained(slf: PyRef<'_, Self>) -> Chained<JointBuilder> {
-		unsafe { Chained::new(slf.into_super().as_ref().builder.clone()) }
+		let builder = slf.into_super().as_ref().builder.clone();
+		unsafe { Chained::new(builder) }
 	}
 }
 
@@ -94,19 +95,23 @@ impl TryIntoPy<Py<PyJointBuilderChain>> for Chained<JointBuilder> {
 	}
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 #[pyclass(name = "Joint", module = "robot_description_builder.joint", frozen)]
 pub struct PyJoint {
 	inner: Weak<RwLock<Joint>>,
 	/// Python weakref.proxy to the python parent tree.
-	tree: PyObject,
+	tree: Py<PyWeakrefProxy>,
 }
 
 impl PyJoint {
-	pub(crate) fn new_weak(joint: &Weak<RwLock<Joint>>, tree: &PyObject) -> Self {
+	pub(crate) fn new_weak(
+		py: Python<'_>,
+		joint: &Weak<RwLock<Joint>>,
+		tree: &Py<PyWeakrefProxy>,
+	) -> Self {
 		Self {
 			inner: Weak::clone(joint),
-			tree: tree.clone(),
+			tree: tree.clone_ref(py),
 		}
 	}
 
@@ -131,19 +136,19 @@ impl PyJoint {
 	}
 
 	#[getter]
-	fn get_parent_link(&self) -> PyResult<PyLink> {
+	fn get_parent_link(&self, py: Python<'_>) -> PyResult<PyLink> {
 		Ok((
 			self.try_internal()?.py_read()?.parent_link(),
-			self.tree.clone(),
+			self.tree.bind(py).clone(),
 		)
 			.into())
 	}
 
 	#[getter]
-	fn get_child_link(&self) -> PyResult<PyLink> {
+	fn get_child_link(&self, py: Python<'_>) -> PyResult<PyLink> {
 		Ok((
 			self.try_internal()?.py_read()?.child_link(),
-			self.tree.clone(),
+			self.tree.bind(py).clone(),
 		)
 			.into())
 	}
@@ -198,26 +203,26 @@ impl PyJoint {
 	}
 }
 
-impl From<(Weak<RwLock<Joint>>, PyObject)> for PyJoint {
-	fn from(value: (Weak<RwLock<Joint>>, PyObject)) -> Self {
+impl From<(Weak<RwLock<Joint>>, Bound<'_, PyWeakrefProxy>)> for PyJoint {
+	fn from(value: (Weak<RwLock<Joint>>, Bound<'_, PyWeakrefProxy>)) -> Self {
 		Self {
 			inner: value.0,
-			tree: value.1,
+			tree: value.1.unbind(),
 		}
 	}
 }
 
-impl From<(Arc<RwLock<Joint>>, PyObject)> for PyJoint {
-	fn from(value: (Arc<RwLock<Joint>>, PyObject)) -> Self {
+impl From<(Arc<RwLock<Joint>>, Bound<'_, PyWeakrefProxy>)> for PyJoint {
+	fn from(value: (Arc<RwLock<Joint>>, Bound<'_, PyWeakrefProxy>)) -> Self {
 		Self {
 			inner: Arc::downgrade(&value.0),
-			tree: value.1,
+			tree: value.1.unbind(),
 		}
 	}
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-#[pyclass(name = "JointType", module = "robot_description_builder.joint")]
+#[pyclass(name = "JointType", module = "robot_description_builder.joint", eq)]
 pub enum PyJointType {
 	Fixed,
 	Revolute,

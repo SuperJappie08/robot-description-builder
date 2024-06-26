@@ -14,18 +14,6 @@ use super::{PyJointBuilderBase, PyJointType, PyLimit};
 )]
 pub struct PyJointBuilder;
 
-impl PyJointBuilder {
-	fn as_jointbuilder(mut slf: PyRefMut<'_, Self>) -> JointBuilder {
-		if let Some(py_transform) = slf.as_ref().transform.clone() {
-			slf.as_mut()
-				.builder
-				.set_transform_simple(Python::with_gil(|py| (*py_transform.borrow(py)).into()))
-		}
-
-		slf.as_ref().builder.clone()
-	}
-}
-
 #[pymethods]
 impl PyJointBuilder {
 	#[new]

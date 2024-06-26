@@ -6,11 +6,15 @@ use pyo3::{
 };
 use robot_description_builder::JointBuilder;
 
-use crate::{link::PyLinkBuilder, transform::PyTransform, utils::GILOnceCellTypeExtract};
+use crate::{
+	link::PyLinkBuilder,
+	transform::PyTransform,
+	utils::{new_pydict_proxy_bound, GILOnceCellTypeExtract},
+};
 
 use super::PyJointType;
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default)]
 #[pyclass(
 	name = "JointBuilderBase",
 	module = "robot_description_builder.joint",
@@ -61,6 +65,27 @@ impl PyJointBuilderBase {
 	}
 }
 
+pub trait PyJointBuilderMethods {
+	fn as_jointbuilder(&self) -> JointBuilder;
+}
+
+impl<'py> PyJointBuilderMethods for Bound<'py, PyJointBuilderBase> {
+	fn as_jointbuilder(&self) -> JointBuilder {
+		if let Some(py_transform) = self
+			.borrow()
+			.transform
+			.as_ref()
+			.map(|obj| obj.bind(self.py()))
+		{
+			self.borrow_mut()
+				.builder
+				.set_transform_simple((*py_transform.borrow()).into())
+		}
+
+		self.borrow().builder.clone()
+	}
+}
+
 #[pymethods]
 impl PyJointBuilderBase {
 	#[getter]
@@ -74,10 +99,10 @@ impl PyJointBuilderBase {
 	}
 
 	#[getter]
-	pub fn get_transform(&self) -> Option<Py<PyTransform>> {
+	pub fn get_transform<'py>(&self, py: Python<'py>) -> Option<Borrowed<'_, 'py, PyTransform>> {
 		// TODO: How to now if updated
 		// Might be able to use pre-existing technique
-		self.transform.clone()
+		self.transform.as_ref().map(|obj| obj.bind_borrowed(py))
 	}
 
 	#[setter]
@@ -151,12 +176,7 @@ impl PyJointBuilderBase {
 				dict.set_item(intern!(py, "multiplier"), mimic.multiplier)?;
 				dict.set_item(intern!(py, "offset"), mimic.offset)?;
 
-				Ok(Some(unsafe {
-					Py::from_owned_ptr_or_err(
-						py,
-						pyo3::ffi::PyDictProxy_New(dict.as_mapping().as_ptr()),
-					)?
-				}))
+				Some(new_pydict_proxy_bound(&dict)).transpose()
 			}
 			None => Ok(None),
 		}
@@ -181,12 +201,7 @@ impl PyJointBuilderBase {
 					safety_controller.soft_upper_limit,
 				)?;
 
-				Ok(Some(unsafe {
-					Py::from_owned_ptr_or_err(
-						py,
-						pyo3::ffi::PyDictProxy_New(dict.as_mapping().as_ptr()),
-					)?
-				}))
+				Some(new_pydict_proxy_bound(&dict)).transpose()
 			}
 			None => Ok(None),
 		}

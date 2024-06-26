@@ -3,6 +3,7 @@ The Changes between versions of [<b>`robot-description-builder`</b> for <b>Pytho
 
 ## Version 0.0.4-dev
 - Migrate to PyO3's new bound API.
+- Migrate to PyO3's new `PyWeakrefProxy` objects
 
 ### Added
 - Added some tests for the `material` module.
@@ -10,11 +11,14 @@ The Changes between versions of [<b>`robot-description-builder`</b> for <b>Pytho
 
 ### Misc
 - Bumped depency versions:
-    - Rust: PyO3 0.20.0 -> 0.21.0
-    - Rust: itertools 0.12.0 -> 0.12.1
-    - Python: Maturin 1.3.2 -> 1.5.1
-    - Python: pytest 7.4.3 -> 8.1.1
+    - Rust: PyO3 0.20.0 -> 0.22.0
+    - Rust: itertools 0.12.0 -> 0.13.0
+    - Python: Maturin 1.3.2 -> 1.6
+    - Python: pytest 7.4.3 -> 8.2.2
 
+#### Internal Changes
+- Added `PyMappingProxy` creation function. (`new_pydict_proxy` & `new_pydict_proxy_bound`)
+- Removed internal `GILOnceCellFuncExtract<F>` trait since it was no longer being used.
 
 
 ## Version 0.0.3

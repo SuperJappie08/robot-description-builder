@@ -29,6 +29,7 @@ pub struct PyTransform {
 #[pymethods]
 impl PyTransform {
 	#[new]
+	#[pyo3(signature = (x=None, y=None, z=None, roll=None, pitch=None, yaw=None))]
 	fn py_new(
 		x: Option<f32>,
 		y: Option<f32>,
@@ -149,7 +150,7 @@ impl From<Transform> for PyTransform {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[pyclass(name = "MirrorAxis", module = "robot_description_builder")]
+#[pyclass(name = "MirrorAxis", module = "robot_description_builder", eq, eq_int)]
 pub enum PyMirrorAxis {
 	X,
 	Y,

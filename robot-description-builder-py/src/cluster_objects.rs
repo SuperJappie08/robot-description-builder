@@ -10,17 +10,20 @@ pub use kinematic_tree::PyKinematicTree;
 pub use robot::PyRobot;
 
 use pyo3::{
-	ffi,
 	prelude::*,
-	sync::GILOnceCell,
-	types::{PyCFunction, PyDict},
+	types::{PyDict, PyWeakrefProxy},
 };
 use robot_description_builder::{
 	material::{data::MaterialData, Material},
 	Joint, KinematicInterface, Link,
 };
 
-use crate::{joint::PyJoint, link::PyLink, material::PyMaterial, utils::PyReadWriteable};
+use crate::{
+	joint::PyJoint,
+	link::PyLink,
+	material::PyMaterial,
+	utils::{new_pydict_proxy, PyReadWriteable},
+};
 
 pub(super) fn init_module(_py: Python<'_>, module: &Bound<'_, PyModule>) -> PyResult<()> {
 	module.add_class::<PyKinematicBase>()?;
@@ -29,8 +32,6 @@ pub(super) fn init_module(_py: Python<'_>, module: &Bound<'_, PyModule>) -> PyRe
 
 	Ok(())
 }
-
-static WEAKREF_PROXY_CONSTRUCTOR: GILOnceCell<Py<PyCFunction>> = GILOnceCell::new();
 
 #[derive(Debug)]
 #[pyclass(
@@ -45,7 +46,7 @@ pub struct PyKinematicBase {
 	material_dict: Py<PyDict>,
 
 	// Weakref to object above
-	implementor: PyObject,
+	implementor: Py<PyWeakrefProxy>,
 	links_weak: Weak<RwLock<HashMap<String, Weak<RwLock<Link>>>>>,
 	joints_weak: Weak<RwLock<HashMap<String, Weak<RwLock<Joint>>>>>,
 	material_weak: Weak<RwLock<HashMap<String, Arc<RwLock<MaterialData>>>>>,
@@ -55,7 +56,7 @@ impl PyKinematicBase {
 	pub(in crate::cluster_objects) fn new(
 		py: Python<'_>,
 		tree: &impl KinematicInterface,
-		weak_ref: &PyObject,
+		weak_ref: &Bound<'_, PyWeakrefProxy>,
 	) -> PyResult<Self> {
 		let links_strong = tree.get_links();
 		let joints_strong = tree.get_joints();
@@ -65,7 +66,7 @@ impl PyKinematicBase {
 			links_dict: PyDict::new_bound(py).unbind(),
 			joints_dict: PyDict::new_bound(py).unbind(),
 			material_dict: PyDict::new_bound(py).unbind(),
-			implementor: weak_ref.clone(),
+			implementor: weak_ref.clone().unbind(),
 			links_weak: Arc::downgrade(&links_strong),
 			joints_weak: Arc::downgrade(&joints_strong),
 			material_weak: Arc::downgrade(&materials_strong),
@@ -91,7 +92,7 @@ impl PyKinematicBase {
 				.unwrap() // This unwrap is Ok
 				.py_read()?
 				.iter()
-				.map(|(key, value)| (key.clone(), PyLink::new_weak(value, &self.implementor)))
+				.map(|(key, value)| (key.clone(), PyLink::new_weak(py, value, &self.implementor)))
 				.collect::<HashMap<_, _>>()
 				.into_py(py)
 				.downcast_bound::<PyDict>(py)?
@@ -107,7 +108,7 @@ impl PyKinematicBase {
 				.unwrap() // This unwrap is Ok
 				.py_read()?
 				.iter()
-				.map(|(key, value)| (key.clone(), PyJoint::new_weak(value, &self.implementor)))
+				.map(|(key, value)| (key.clone(), PyJoint::new_weak(py, value, &self.implementor)))
 				.collect::<HashMap<_, _>>()
 				.into_py(py)
 				.downcast_bound::<PyDict>(py)?
@@ -143,20 +144,20 @@ impl PyKinematicBase {
 	fn get_links(&mut self, py: Python<'_>) -> PyResult<PyObject> {
 		self.update_links(py)?;
 
-		unsafe { Py::from_owned_ptr_or_err(py, ffi::PyDictProxy_New(self.links_dict.as_ptr())) }
+		new_pydict_proxy(py, &self.links_dict)
 	}
 
 	#[getter]
 	fn get_joints(&mut self, py: Python<'_>) -> PyResult<PyObject> {
 		self.update_joints(py)?;
 
-		unsafe { Py::from_owned_ptr_or_err(py, ffi::PyDictProxy_New(self.joints_dict.as_ptr())) }
+		new_pydict_proxy(py, &self.joints_dict)
 	}
 
 	#[getter]
 	fn get_materials(&mut self, py: Python<'_>) -> PyResult<PyObject> {
 		self.update_materials(py)?;
 
-		unsafe { Py::from_owned_ptr_or_err(py, ffi::PyDictProxy_New(self.material_dict.as_ptr())) }
+		new_pydict_proxy(py, &self.material_dict)
 	}
 }

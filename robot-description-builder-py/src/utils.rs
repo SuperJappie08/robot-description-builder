@@ -6,7 +6,7 @@ use pyo3::{
 	prelude::*,
 	pyclass_init::PyObjectInit,
 	sync::GILOnceCell,
-	types::{PyCFunction, PyFunction, PySequence, PyType},
+	types::{PyDict, PySequence, PyType},
 	PyClass, PyTypeCheck, PyTypeInfo,
 };
 
@@ -51,6 +51,14 @@ impl<T> PyReadWriteable<T> for RwLock<T> {
 	fn py_write(&self) -> PyResult<RwLockWriteGuard<'_, T>> {
 		self.write().to_pyerr()
 	}
+}
+
+pub fn new_pydict_proxy(py: Python<'_>, dict: &Py<PyDict>) -> PyResult<PyObject> {
+	unsafe { Py::from_owned_ptr_or_err(py, pyo3::ffi::PyDictProxy_New(dict.as_ptr())) }
+}
+
+pub fn new_pydict_proxy_bound(dict: &Bound<'_, PyDict>) -> PyResult<PyObject> {
+	unsafe { Py::from_owned_ptr_or_err(dict.py(), pyo3::ffi::PyDictProxy_New(dict.as_ptr())) }
 }
 
 pub trait TryIntoPy<T>: Sized {
@@ -191,48 +199,6 @@ impl GILOnceCellTypeExtract for GILOnceCell<Py<PyType>> {
 		module_name: &str,
 		attr_name: &str,
 	) -> PyResult<&Bound<'py, PyType>> {
-		self.get_or_try_init(py, || {
-			py.import_bound(module_name)?.getattr(attr_name)?.extract()
-		})
-		.map(|ty| ty.bind(py))
-	}
-}
-
-pub(crate) trait GILOnceCellFuncExtract<F>
-where
-	F: PyTypeInfo,
-{
-	fn get_or_try_init_func_ref<'py>(
-		&'py self,
-		py: Python<'py>,
-		module_name: &str,
-		attr_name: &str,
-	) -> PyResult<&Bound<'py, F>>;
-}
-
-impl GILOnceCellFuncExtract<PyFunction> for GILOnceCell<Py<PyFunction>> {
-	#[inline]
-	fn get_or_try_init_func_ref<'py>(
-		&'py self,
-		py: Python<'py>,
-		module_name: &str,
-		attr_name: &str,
-	) -> PyResult<&Bound<'py, PyFunction>> {
-		self.get_or_try_init(py, || {
-			py.import_bound(module_name)?.getattr(attr_name)?.extract()
-		})
-		.map(|ty| ty.bind(py))
-	}
-}
-
-impl GILOnceCellFuncExtract<PyCFunction> for GILOnceCell<Py<PyCFunction>> {
-	#[inline]
-	fn get_or_try_init_func_ref<'py>(
-		&'py self,
-		py: Python<'py>,
-		module_name: &str,
-		attr_name: &str,
-	) -> PyResult<&Bound<'py, PyCFunction>> {
 		self.get_or_try_init(py, || {
 			py.import_bound(module_name)?.getattr(attr_name)?.extract()
 		})

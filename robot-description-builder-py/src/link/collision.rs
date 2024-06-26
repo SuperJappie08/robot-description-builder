@@ -28,6 +28,7 @@ pub struct PyCollisionBuilder(CollisionBuilder);
 #[pymethods]
 impl PyCollisionBuilder {
 	#[new]
+	#[pyo3(signature=(geometry, name=None, transform=None))]
 	fn py_new(
 		geometry: &PyGeometryBase,
 		name: Option<String>,

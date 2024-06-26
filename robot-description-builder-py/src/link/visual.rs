@@ -30,12 +30,13 @@ pub struct PyVisualBuilder(VisualBuilder);
 impl PyVisualBuilder {
 	// TODO: Figure out what a practical signature is
 	#[new]
+	#[pyo3(signature = (geometry, name=None, transform=None, material=None))]
 	fn new(
 		geometry: &PyGeometryBase,
 		name: Option<String>,
 		transform: Option<PyTransform>,
 		material: Option<PyMaterialDescriptor>,
-	) -> PyVisualBuilder {
+	) -> Self {
 		Self(VisualBuilder::new_full(
 			name,
 			transform.map(Into::into),
