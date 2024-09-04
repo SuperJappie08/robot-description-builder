@@ -71,15 +71,14 @@ pub trait PyJointBuilderMethods {
 
 impl<'py> PyJointBuilderMethods for Bound<'py, PyJointBuilderBase> {
 	fn as_jointbuilder(&self) -> JointBuilder {
-		if let Some(py_transform) = self
-			.borrow()
-			.transform
-			.as_ref()
-			.map(|obj| obj.bind(self.py()))
-		{
-			self.borrow_mut()
-				.builder
-				.set_transform_simple((*py_transform.borrow()).into())
+		let transform = {
+			self.borrow()
+				.get_transform(self.py())
+				.map(|obj| (*obj.borrow()).into())
+		};
+
+		if let Some(transform) = transform {
+			self.borrow_mut().builder.set_transform_simple(transform)
 		}
 
 		self.borrow().builder.clone()

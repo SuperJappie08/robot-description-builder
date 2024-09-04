@@ -77,43 +77,6 @@ where
 		self.try_into_py_ref(py).map(Into::into)
 	}
 }
-// struct WrapPyObject<T>(T) where T: Sized + TryIntoRefPyAny;
-
-// impl<T> From<T> for WrapPyObject<T> where T: Sized + TryIntoRefPyAny {
-//     fn from(value: T) -> Self {
-//         Self(value)
-//     }
-// }
-
-// // https://github.com/PyO3/pyo3/issues/1813
-// impl<T> IntoPyCallbackOutput<*mut pyo3::ffi::PyObject> for WrapPyObject<T> where T: Sized + TryIntoRefPyAny + TryIntoPy<*mut pyo3::ffi::PyObject> {
-//     #[inline]
-// 	fn convert(self, py: Python<'_>) -> PyResult<*mut pyo3::ffi::PyObject> {
-//         Ok(self.0.try_into_py(py)?)
-//     }
-// }
-
-// https://github.com/PyO3/pyo3/blob/d71af734568263c986f8ed0c5a73ae62b6e9c0c1/src/callback.rs#LL50C9-L50C29
-// impl<T> IntoPyCallbackOutput<*mut pyo3::ffi::PyObject> for T where T: TryIntoPy<*mut pyo3::ffi::PyObject>
-// {
-//     #[inline]
-//     fn convert(self, py: Python<'_>) -> PyResult<*mut pyo3::ffi::PyObject> {
-//         Ok(self.try_into_py(py)?.into_ptr())
-//     }
-// }
-
-// // Nearly
-// impl<Value,Target> TryIntoPy<Target> for Value where Value: IntoPy<Target> {
-//     fn try_into_py<'py>(self, py: Python<'py>) -> PyResult<Target> {
-//         Ok(self.into_py(py))
-//     }
-// }
-
-// impl<Value> IntoPyCallbackOutput<*mut pyo3::ffi::PyObject> for Value where Value: TryIntoPy<PyObject> {
-//     fn convert(self, py: Python<'_>) -> PyResult<*mut pyo3::ffi::PyObject> {
-//         todo!()
-//     }
-// }
 
 impl<T> TryIntoPy<PyObject> for Vec<T>
 where

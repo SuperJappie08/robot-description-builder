@@ -46,11 +46,11 @@ impl PyKinematicTree {
 
 		tree.borrow_mut(py).me = PyWeakrefProxy::new_bound(tree.bind(py))?.unbind();
 
-		let tree_weak = tree.borrow(py).me.bind(py).clone();
+		let tree_weak = tree.borrow(py).me.clone_ref(py);
 
 		{
 			let mut base = tree.borrow_mut(py).into_super();
-			base.implementor = tree_weak.unbind();
+			base.implementor = tree_weak;
 
 			base.update_all(py)?;
 		}
